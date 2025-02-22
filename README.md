@@ -1,7 +1,7 @@
 # MTranServer
-An ultra-low resource consumption super-fast offline translation server, which only requires a CPU + 1G of memory to run. No need for GPU.
+An ultra-low resource consumption super-fast offline translation server, which only requires a CPU + 1G of memory to run. No need for GPU. The average response time for a single request is 50ms.
 
-超低资源消耗超快的离线翻译服务器，仅需 CPU + 1G 内存即可运行，无需 GPU。
+超低资源消耗超快的离线翻译服务器，仅需 CPU + 1G 内存即可运行，无需 GPU。单个请求平均响应时间 50ms
 
 The quality of translation is comparable to Google Translate
 
