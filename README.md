@@ -26,13 +26,19 @@
 
 ## Docker Compose 服务器部署
 
-目前仅支持 amd64 架构 CPU 的 Docker 部署。
+目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
-ARM、RISCV 架构在适配中 😳
+### 下载模型
+[国内下载地址](https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink)
+[国际下载地址]()
+
+## 使用
+
+目前可以在浏览器中使用沉浸式翻译插件、简约翻译(kiss translator)插件调用。
 
 ## 客户端版本
 
-Windows、Mac 客户端版本在适配中 [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未公开)，目前可以在浏览器中使用沉浸式翻译插件、简约翻译(kiss translator)插件调用。
+服务端翻译核心、Windows 和 Mac 客户端版本在适配中 [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未公开)
 
 ## 赞助我
 
