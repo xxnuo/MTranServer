@@ -30,9 +30,25 @@
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
-### 编写 Compose 文件
+### 准备
+
+准备一个存放配置的文件夹，打开终端执行以下命令
 
 ```bash
+mkdir mtranserver
+cd mtranserver
+touch config.ini
+touch compose.yml
+mkdir models
+```
+
+### 编写配置
+
+用编辑器打开 `compose.yml` 文件，写入以下内容。
+
+> 注：如果需要更改端口，请修改 `ports` 的值，比如修改为 `8990:8989` 表示将服务端口映射到本机 8990 端口。
+
+```yaml
 services:
   mtranserver:
     image: xxnuo/mtranserver:latest
@@ -45,13 +61,130 @@ services:
       - ./config.ini:/app/config.ini
 ```
 
-### 手动下载模型
+> 注：若你的机器在国内无法正常联网下载镜像，可以按如下操作导入镜像
+> 
+> 打开 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a>
+> 
+> 进入`下载 Docker 镜像文件夹`，选择最新版的镜像`mtranserver.image.tar`下载。保存到运行 Docker 的机器上。
+> 
+> 进入下载到的目录打开终端，执行如下命令导入镜像
+> ```bash
+> docker load -i mtranserver.image.tar
+> ```
+>
+> 然后正常继续下一步下载模型
 
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a>
+### 下载模型
+
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a> 模型在`下载模型文件夹内`
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
 
-### 使用
+按需要下载模型后`解压`每个语言的压缩包到 `models` 文件夹内。
+
+下载了英译中模型的当前文件夹结构示意图：
+```
+compose.yml
+config.ini
+models/
+├── enzh
+│   ├── lex.50.50.enzh.s2t.bin
+│   ├── model.enzh.intgemm.alphas.bin
+│   └── vocab.enzh.spm
+```
+如果你下载添加多个模型，这是有中译英、英译中模型文件夹结构示意图：
+```
+compose.yml
+config.ini
+models/
+├── enzh
+│   ├── lex.50.50.enzh.s2t.bin
+│   ├── model.enzh.intgemm.alphas.bin
+│   └── vocab.enzh.spm
+├── zhen
+│   ├── lex.50.50.zhen.t2s.bin
+│   ├── model.zhen.intgemm.alphas.bin
+│   └── vocab.zhen.spm
+```
+
+用不到的模型没必要下载。按自己的需求下载模型。
+
+注意：例如中译日的过程是先中译英，再英译日，也就是需要两个模型 `zhen` 和 `enja`。其他语言翻译过程类似。
+
+### 启动服务
+
+先启动测试，确保模型位置没放错、能正常启动加载模型、端口没被占用。
+
+```bash
+docker compose up
+```
+
+正常输出示例：
+```
+[+] Running 2/2
+ ✔ Network sample_default  Created  0.1s 
+ ✔ Container mtranserver   Created  0.1s 
+Attaching to mtranserver
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Using maximum available worker count: 16
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Starting Translation Service
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Service port: 8989
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Worker threads: 16
+mtranserver  | Successfully loaded model for language pair: enzh
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Models loaded.
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Using default max parallel translations: 32
+mtranserver  | (2025-03-03 12:49:24) [INFO    ] Max parallel translations: 32
+```
+
+然后按 `Ctrl+C` 停止服务运行，然后正式启动服务器
+
+```bash
+docker compose up -d
+```
+
+这时候服务器就在后台运行了。
+
+### API 地址
+
+Docker 主机服务器地址：
+
+```
+http://localhost:8989
+```
+
+沉浸式翻译 API URL：
+
+无 Token 验证：
+```
+自定义 API 设置 - API URL:
+http://localhost:8989/imme
+```
+
+有 Token 验证：
+```
+自定义 API 设置 - API URL:
+http://localhost:8989/imme?token=your_token
+```
+
+简约翻译(kiss translator) API URL：
+
+无 Token 验证：
+```
+Custom - URL:
+http://localhost:8989/kiss
+```
+
+有 Token 验证：
+```
+Custom - URL:
+http://localhost:8989/kiss
+
+KEY:
+your_token
+```
+
+`localhost` 可以替换为你的服务器地址。
+
+### 如何使用
 
 目前可以在浏览器中使用沉浸式翻译插件、简约翻译(kiss translator)插件调用。
 
