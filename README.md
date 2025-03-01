@@ -3,7 +3,7 @@
 
 <img src="./images/icon.png" width="auto" height="128" align="right">
 
-[English](README_en.md) | [日本語](README_ja.md) | 中文
+[English](README_en.md) | 中文
 
 一个超低资源消耗超快的离线翻译服务器，仅需 CPU + 1G 内存即可运行，无需 GPU。单个请求平均响应时间 50ms。支持全世界主要语言的翻译。
 
