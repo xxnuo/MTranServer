@@ -204,15 +204,15 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-## 客户端软件版
+## 其他
 
-Windows、Mac 和 Linux 独立客户端软件版在开发中，请耐心等待。
+Windows、Mac 和 Linux 独立客户端软件版 [MTranServerCore](https://github.com/xxnuo/MTranServerCore) 在开发中，请耐心等待。
 
 也可以在电脑上安装 `Docker Desktop` 后，按上面的指南使用 `Docker Compose` 部署尝鲜。
 
-服务端翻译推理框架使用的是 [marian-nmt](https://github.com/marian-nmt/marian-dev) 框架。
+服务端翻译推理框架使用的是 C++ 编写的 [marian-nmt](https://github.com/marian-nmt/marian-dev) 框架。
 
-服务器 API 源码: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未完成，请耐心等待)
+服务端 API 源码仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未完成，请耐心等待)
 
 ## 赞助我
 
