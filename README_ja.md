@@ -11,13 +11,15 @@ CPUと1GBのメモリのみで動作する超軽量・高速なオフライン�
 
 注意：このモデルはパフォーマンスの最適化と様々なデバイスでのプライベートデプロイメントに重点を置いているため、大規模言語モデルと比べると翻訳品質は劣ります。
 
+高品質な翻訳が必要な場合は、オンライン大規模モデルAPIをご利用ください。
+
 <img src="./images/preview.png" width="auto" height="328">
 
 ## 類似プロジェクトとの比較（CPU、英語から中国語）
 
 | プロジェクト名 | メモリ使用量 | 同時処理性能 | 翻訳品質 | 速度 | 追加情報 |
 |----------------|--------------|--------------|----------|--------|------------|
-| [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve) | 非常に高い | 低い | 普通 | 遅い | AndroidのRTranslatorは最適化されていますが、リソース使用量は依然として高く、速度も遅いです |
+| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 非常に高い | 低い | 普通 | 遅い | Android ポート [RTranslator](https://github.com/niedev/RTranslator)は最適化されていますが、リソース使用量は依然として高く、速度も遅いです。 |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 普通 | 普通 | 中程度 | 中級CPUで3文/秒、高級CPUで15-20文/秒。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高い | 普通 | やや劣る | 速い | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Any LLM | 非常に高い | 動的 | 良い | 非常に遅い | 32B以上のパラメータモデルは効果がありますが、高いハードウェア要件があります |
