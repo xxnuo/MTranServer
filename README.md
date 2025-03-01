@@ -1,7 +1,7 @@
 # MTranServer 
 > 迷你翻译服务器 测试版
 
-<img src="./images/logo.png" width="auto" height="128" align="right">
+<img src="./images/icon.png" width="auto" height="128" align="right">
 
 [English](README_en.md) | [日本語](README_ja.md) | 中文
 
