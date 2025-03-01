@@ -22,10 +22,12 @@
 | [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 很高 | 差 | 一般 | 慢 | Android 移植版的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快 |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高 | 一般 | 一般 | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句。[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高 | 一般 | 略差 | 快 | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| 其他大模型 | 超高 | 动态 | 好好好 | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高 |
+| 其他大模型 | 超高 | 动态 | 好好好 | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高|
 | MTranServer(本项目) | 低 | 高 | 一般 | 极快 | 单个请求平均响应时间 50ms |
 
-非严格测试，非量化版本对比，仅供参考。
+> 现有的 Transformer 架构的大模型的小参数量化版本不在考虑范围，因为实际调研使用发现翻译质量很不稳定且会乱翻，幻觉严重，速度也不快。等以后出了 Diffusion 架构的语言模型，再测试。
+>
+> 表中数据仅供参考，非严格测试，非量化版本对比。
 
 ## Docker Compose 服务器部署
 
