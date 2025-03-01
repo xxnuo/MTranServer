@@ -11,13 +11,14 @@ Translation quality comparable to Google Translate.
 
 Note: This model focuses on performance optimization and private deployment on various devices, so the translation quality will not match that of large language models.
 
+For high-quality translation, consider using online large language model APIs.
 <img src="./images/preview.png" width="auto" height="328">
 
 ## Comparison with Similar Projects (CPU, English to Chinese)
 
 | Project Name | Memory Usage | Concurrency | Translation Quality | Speed | Additional Info |
 |--------------|--------------|-------------|---------------------|-------|-----------------|
-| [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve) | Very High | Poor | Average | Slow | Android's [RTranslator](https://github.com/niedev/RTranslator) has optimizations but still has high resource usage and slower speed |
+| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | Very High | Poor | Average | Slow | Android's [RTranslator](https://github.com/niedev/RTranslator) has optimizations but still has high resource usage and slower speed |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High | Average | Average | Medium | Mid-range CPU: 3 sentences/s, high-end CPU: 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | High | Average | Below Average | Fast | [Performance Benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Any LLM | Extremely High | Dynamic | Good | Dynamic Very Slow | 32B or more parameter models perform well, but require high hardware requirements |
