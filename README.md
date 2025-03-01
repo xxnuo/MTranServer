@@ -166,6 +166,12 @@ docker compose up -d
 
 #### 翻译插件接口：
 
+> 注：
+> 
+> - [沉浸式翻译](https://immersivetranslate.com/zh-Hans/docs/services/custom/) 在`设置`页面，开发者模式中启用`Beta`特性，即可在`翻译服务`中看到`自定义 API 设置`。官方[图文教程](https://immersivetranslate.com/zh-Hans/docs/services/custom/)
+> 
+> - [简约翻译](https://github.com/fishjar/kiss-translator) 在`设置`页面，接口设置中滚动到下面，即可看到自定义接口 `Custom`
+
 | 名称 | URL | 插件设置 |
 | --- | --- | --- |
 | 沉浸式翻译无密码  | `http://localhost:8989/imme` | `自定义API 设置` - `API URL`|
@@ -173,13 +179,7 @@ docker compose up -d
 | 简约翻译无密码 | `http://localhost:8989/kiss` | `接口设置` - `Custom` - `URL`|
 | 简约翻译有密码 | `http://localhost:8989/kiss` | 同上，需要 `KEY` 填 `your_token` |
 
-> 注：
-> 
-> - [沉浸式翻译](https://immersivetranslate.com/zh-Hans/docs/services/custom/) 在`设置`页面，开发者模式中启用`Beta`特性，即可在`翻译服务`中看到`自定义 API 设置`。官方[图文教程](https://immersivetranslate.com/zh-Hans/docs/services/custom/)
-> 
-> - [简约翻译](https://github.com/fishjar/kiss-translator) 在`设置`页面，接口设置中滚动到下面，即可看到自定义接口 `Custom`
-
-普通用户参照表格内容设置好插件使用的接口地址就可以使用了。接下来请跳到下面的`如何更新`。
+**普通用户参照表格内容设置好插件使用的接口地址就可以使用了。接下来请跳到下面的`如何更新`。**
 
 #### 开发者接口：
 
