@@ -204,7 +204,7 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 | Heartbeat Check | `/__heartbeat__` | None | `Ready` | None |
 | Load Balancer Heartbeat | `/__lbheartbeat__` | None | `Ready` | None |
 
-### How to Update
+### 5. How to Update
 
 As this is a beta version of server and models, you may encounter issues. Regular updates are recommended.
 
