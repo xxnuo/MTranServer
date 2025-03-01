@@ -3,3 +3,4 @@
 /bin
 *.log
 core
+*.tar
