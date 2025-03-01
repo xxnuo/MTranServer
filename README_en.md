@@ -3,7 +3,7 @@
 
 <img src="./logo.jpg" width="auto" height="128" align="right">
 
-[中文版](README.md) | [日本語](README_ja.md) | English
+[中文](README.md) | [日本語](README_ja.md) | English
 
 A high-performance offline translation server with minimal resource requirements - runs on CPU with just 1GB memory, no GPU needed. Average response time of 50ms per request.
 
@@ -30,9 +30,13 @@ Currently only supports Docker deployment on amd64 architecture CPUs.
 
 Support for ARM and RISC-V architectures is under development 😳
 
+## Usage
+
+Currently available through browser extensions: Immersive Translation and Kiss Translator.
+
 ## Client Version
 
-Windows and Mac client versions ([MTranServerCore](https://github.com/xxnuo/MTranServerCore)) are under development (not yet public). Currently available through browser extensions: Immersive Translation and Kiss Translator.
+Service core, Windows and Mac client versions ([MTranServerCore](https://github.com/xxnuo/MTranServerCore)) are under development (not yet public).
 
 ## Support the Project
 

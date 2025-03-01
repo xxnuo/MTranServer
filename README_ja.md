@@ -30,9 +30,13 @@ CPUと1GBのメモリのみで動作する超軽量・高速なオフライン�
 
 ARM、RISCVアーキテクチャは開発中です 😳
 
+## 使用
+
+現在はブラウザで没入型翻訳プラグインやKiss Translatorプラグインを使用できます。
+
 ## クライアントバージョン
 
-Windows、Macクライアントバージョン（[MTranServerCore](https://github.com/xxnuo/MTranServerCore)）は開発中です（まだ非公開）。現在はブラウザで没入型翻訳プラグインやKiss Translatorプラグインを使用できます。
+サービスコア、Windows と Macクライアントバージョン（[MTranServerCore](https://github.com/xxnuo/MTranServerCore)）は開発中です（まだ非公開）。
 
 ## サポート
 
