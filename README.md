@@ -280,7 +280,6 @@ X: [@realxxnuo](https://x.com/realxxnuo)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://star-history.com/#xxnuo/MTranServer&Timeline)
 
-
 ## 高级设置
 
 在 `compose.yml` 文件同级目录创建 `config.ini` 文件，写入以下内容按需修改：
