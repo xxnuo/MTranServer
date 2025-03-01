@@ -1,7 +1,7 @@
 # MTranServer 
 > 迷你翻译服务器
 
-<img src="./logo.jpg" width="auto" height="128" align="right">
+<img src="./images/logo.jpg" width="auto" height="128" align="right">
 
 [English](README_en.md) | [日本語](README_ja.md) | 中文
 
@@ -11,7 +11,7 @@
 
 注意本模型专注于性能优化，所以翻译质量肯定是不如大模型翻译的效果。
 
-<img src="./preview.png" width="auto" height="328">
+<img src="./images/preview.png" width="auto" height="328">
 
 ## 同类项目效果(CPU,英译中)
 
