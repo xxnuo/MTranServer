@@ -9,7 +9,7 @@
 
 翻译质量与 Google 翻译相当。
 
-注意本模型专注于性能优化，所以翻译质量肯定是不如大模型翻译的效果。
+注意本模型专注于性能优化及多种设备私有部署，所以翻译质量肯定是不如大模型翻译的效果。
 
 <img src="./images/preview.png" width="auto" height="328">
 
@@ -216,7 +216,9 @@ Windows、Mac 和 Linux 独立客户端软件版 [MTranServerCore](https://githu
 
 ## 赞助我
 
-[☕️ 爱发电](https://afdian.com/a/xxnuo)
+[☕️ Buy me a coffee](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
+
+[中国大陆 ☕️ 爱发电](https://afdian.com/a/xxnuo)
 
 ---
 
