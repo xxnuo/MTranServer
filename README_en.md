@@ -1,7 +1,7 @@
 # MTranServer 
 > Mini Translation Server
 
-<img src="./logo.jpg" width="auto" height="128" align="right">
+<img src="./images/logo.jpg" width="auto" height="128" align="right">
 
 [中文](README.md) | [日本語](README_ja.md) | English
 
@@ -11,7 +11,7 @@ Translation quality comparable to Google Translate.
 
 Note: This model prioritizes performance optimization, so translation quality may not match that of large language models.
 
-<img src="./preview.png" width="auto" height="328">
+<img src="./images/preview.png" width="auto" height="328">
 
 ## Comparison with Similar Projects (CPU, English to Chinese)
 

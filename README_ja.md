@@ -1,7 +1,7 @@
 # MTranServer 
 > ミニ翻訳サーバー
 
-<img src="./logo.jpg" width="auto" height="128" align="right">
+<img src="./images/logo.jpg" width="auto" height="128" align="right">
 
 [English](README_en.md) | [中文](README.md) | 日本語
 
@@ -11,7 +11,7 @@ CPUと1GBのメモリのみで動作する超軽量・高速なオフライン�
 
 注意：このモデルはパフォーマンスの最適化に重点を置いているため、大規模言語モデルと比べると翻訳品質は劣ります。
 
-<img src="./preview.png" width="auto" height="328">
+<img src="./images/preview.png" width="auto" height="328">
 
 ## 類似プロジェクトとの比較（CPU、英語から中国語）
 
