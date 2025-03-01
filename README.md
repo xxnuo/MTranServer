@@ -166,12 +166,12 @@ docker compose up -d
 
 #### 翻译插件接口：
 
-| 名称 | URL | 备注 | 认证头 |
-| --- | --- | --- | --- |
-| 沉浸式翻译无密码  | `http://localhost:8989/imme` | `自定义API 设置` - `API URL`| 无 |
-| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | `自定义API 设置` - `API URL`| 只需改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
-| 简约翻译无密码 | `http://localhost:8989/kiss` | `接口设置` - `Custom` - `URL`| 无 |
-| 简约翻译有密码 | `http://localhost:8989/kiss` | 同上，并且 `KEY` 填 `your_token` | 无 |
+| 名称 | URL | 插件设置 |
+| --- | --- | --- |
+| 沉浸式翻译无密码  | `http://localhost:8989/imme` | `自定义API 设置` - `API URL`|
+| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
+| 简约翻译无密码 | `http://localhost:8989/kiss` | `接口设置` - `Custom` - `URL`|
+| 简约翻译有密码 | `http://localhost:8989/kiss` | 同上，需要 `KEY` 填 `your_token` |
 
 > 注：
 > 
