@@ -172,15 +172,17 @@ docker compose up -d
 
 #### 其他接口：
 
+> Base URL: `http://localhost:8989`
+
 | 名称 | URL | 请求格式 | 返回格式 | 认证头 |
 | --- | --- | --- | --- | --- |
-| 服务版本 | `http://localhost:8989/version` | 无 | 无 | 无 |
-| 语言对列表 | `http://localhost:8989/models` | 无 | 无 | Authorization: your_token |
-| 普通翻译接口 | `http://localhost:8989/translate` | `{"from": "en", "to": "zh", "text": "Hello, world!"}`| `{"result": "你好，世界！"}` | Authorization: your_token |
-| 批量翻译接口 | `http://localhost:8989/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`| `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
-| 健康检查 | `http://localhost:8989/health` | 无 | `{"status": "ok"}` | 无 |
-| 心跳检查 | `http://localhost:8989/__heartbeat__` | 无 | `Ready` | 无 |
-| 负载均衡心跳检查 | `http://localhost:8989/__lbheartbeat__` | 无 | `Ready` | 无 |
+| 服务版本 | `/version` | 无 | 无 | 无 |
+| 语言对列表 | `/models` | 无 | 无 | Authorization: your_token |
+| 普通翻译接口 | `/translate` | `{"from": "en", "to": "zh", "text": "Hello, world!"}`| `{"result": "你好，世界！"}` | Authorization: your_token |
+| 批量翻译接口 | `/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`| `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
+| 健康检查 | `/health` | 无 | `{"status": "ok"}` | 无 |
+| 心跳检查 | `/__heartbeat__` | 无 | `Ready` | 无 |
+| 负载均衡心跳检查 | `/__lbheartbeat__` | 无 | `Ready` | 无 |
 
 ### 如何使用
 
