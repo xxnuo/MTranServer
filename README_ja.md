@@ -1,7 +1,7 @@
 # MTranServer 
 > ミニ翻訳サーバー
 
-<img src="https://github.com/user-attachments/assets/c2f5be50-1004-48c3-a012-1dd4d7ab5ee6" width="auto" height="128" align="right">
+<img src="./logo.jpg" width="auto" height="128" align="right">
 
 [English](README_en.md) | [中文](README.md) | 日本語
 
@@ -10,6 +10,8 @@ CPUと1GBのメモリのみで動作する超軽量・高速なオフライン�
 翻訳品質はGoogle翻訳に匹敵します。
 
 注意：このモデルはパフォーマンスの最適化に重点を置いているため、大規模言語モデルと比べると翻訳品質は劣ります。
+
+<img src="./preview.png" width="auto" height="328">
 
 ## 類似プロジェクトとの比較（CPU、英語から中国語）
 

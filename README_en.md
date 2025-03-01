@@ -1,7 +1,7 @@
 # MTranServer 
 > Mini Translation Server
 
-<img src="https://github.com/user-attachments/assets/c2f5be50-1004-48c3-a012-1dd4d7ab5ee6" width="auto" height="128" align="right">
+<img src="./logo.jpg" width="auto" height="128" align="right">
 
 [中文版](README.md) | [日本語](README_ja.md) | English
 
@@ -10,6 +10,8 @@ A high-performance offline translation server with minimal resource requirements
 Translation quality comparable to Google Translate.
 
 Note: This model prioritizes performance optimization, so translation quality may not match that of large language models.
+
+<img src="./preview.png" width="auto" height="328">
 
 ## Comparison with Similar Projects (CPU, English to Chinese)
 
