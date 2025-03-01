@@ -92,6 +92,8 @@ Then proceed normally to the next step to download models.
 
 ### 2. Download Models
 
+> Models are being updated continuously
+
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">Mainland China Download Link (includes Docker image)</a> Models are in the `Download Models` folder
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">International Download Link</a>
@@ -218,15 +220,19 @@ docker compose up -d
 
 ## Other Information
 
-Windows, Mac, and Linux standalone client software version [MTranServerCore](https://github.com/xxnuo/MTranServerCore) is under development, please be patient.
+Windows, Mac, and Linux standalone client software version [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (under development, please be patient)
 
-You can also try it out by installing `Docker Desktop` on your computer and following the guide above to deploy with `Docker Compose`.
+Server API source code repository: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
 
-The server-side translation inference framework uses the C++-written [marian-nmt](https://github.com/marian-nmt/marian-dev) framework.
+## Thanks
 
-Server API source code repository: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (not yet complete, please be patient)
+Inference Framework: C++ [Marian-NMT](https://marian-nmt.github.io) Framework
 
-## Support the Project
+Translation Models: [firefox-translations-models](https://github.com/mozilla/firefox-translations-models)
+
+> Join us: [https://www.mozilla.org/zh-CN/contribute/](https://www.mozilla.org/zh-CN/contribute/)
+
+## Support Me
 
 [Buy me a coffee ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
 
