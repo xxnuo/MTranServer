@@ -1,26 +1,48 @@
-# MTranServer
-An ultra-low resource consumption super-fast offline translation server, which only requires a CPU + 1G of memory to run. No need for GPU. The average response time for a single request is 50ms.
+# MTranServer 
+> 迷你翻译服务器
 
-超低资源消耗超快的离线翻译服务器，仅需 CPU + 1G 内存即可运行，无需 GPU。单个请求平均响应时间 50ms
+[English](README_en.md) | 中文
 
-The quality of translation is comparable to Google Translate
+一个超低资源消耗超快的离线翻译服务器，仅需 CPU + 1G 内存即可运行，无需 GPU。单个请求平均响应时间 50ms
 
 翻译质量与 Google 翻译相当。
 
+注意本模型专注于性能优化，所以翻译质量肯定是不如大模型翻译的效果。
+
 ## 同类项目效果(CPU,英译中)
 
-| 项目名称                          | 内存占用 | 并发性能 | 翻译效果 | 速度       | 其他信息                                                                 |
-|-----------------------------------|----------|----------|----------|------------|--------------------------------------------------------------------------|
-| [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve)  | 3G       | 差     | 一般     | 一般       | [Android](https://github.com/niedev/RTranslator) 运行需要 2.5G RAM，翻译 75 tokens 耗时 8s，[RTranslator](https://github.com/niedev/RTranslator) 优化到了 1.3G RAM，75 tokens 只需要 2s。 |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)                    | -        | 一般        | 一般        | 一般          | LibreTranslate 在中端 CPU 上每秒可以处理约 3 句话，在高端 CPU 上每秒可以处理 15-20 句话。[performance](https://community.libretranslate.com/t/performance-benchmark-data/486)                                                                        |
-|[OPUS-MT model](https://github.com/OpenNMT/CTranslate2#benchmarks)|-|一般|略差|快|[benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks)|
-| MTranServer(本项目)                      | 1G       | 高     | 一般        | 快       | 单个请求平均响应时间 50ms |
+| 项目名称 | 内存占用 | 并发性能 | 翻译效果 | 速度 | 其他信息 |
+|----------|----------|----------|----------|------|----------|
+| [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve) | 很高 | 差 | 一般 | 慢 | Android 的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快 |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高 | 一般 | 一般 | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句。[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
+| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高 | 一般 | 略差 | 快 | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks) |
+| MTranServer(本项目) | 低 | 高 | 一般 | 极快 | 单个请求平均响应时间 50ms |
 
-这是一个粗略的 benchmark，因为上面两个模型实际上并不是针对端到端优化的模型，所以速度和占用是正常的。
-## Docker Compose Deployment
+非严格测试，非量化版本对比，仅供参考。
 
-Currently, only amd64 CPU is supported.
+## Docker Compose 服务器部署
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。
 
-还在开发中
+ARM、RISCV 架构在适配中 😳
+
+## 客户端版本
+
+Windows、Mac 客户端版本在适配中 [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未公开)，目前可以在浏览器中使用沉浸式翻译插件、简约翻译(kiss translator)插件调用。
+
+## 赞助我
+
+[☕️ 爱发电](https://afdian.com/a/xxnuo)
+
+---
+
+微信: x-xnuo
+
+X: [@realxxnuo](https://x.com/realxxnuo)
+
+欢迎加我交流技术和开源相关项目～
+
+找工作中。可以联系我查看我的简历。
+
+---
+
