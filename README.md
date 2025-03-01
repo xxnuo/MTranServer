@@ -65,7 +65,7 @@ services:
 > 
 > 打开 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a>
 > 
-> 进入`下载 Docker 镜像文件夹`，选择最新版的镜像`mtranserver.image.tar`下载。保存到运行 Docker 的机器上。
+> 进入`下载 Docker 镜像文件夹`，选择最新版的镜像 `mtranserver.image.tar` 下载保存到运行 Docker 的机器上。
 > 
 > 进入下载到的目录打开终端，执行如下命令导入镜像
 > ```bash
@@ -143,46 +143,20 @@ docker compose up -d
 
 这时候服务器就在后台运行了。
 
-### API 地址
+### API 文档
 
-Docker 主机服务器地址：
+> `your_token` 是你设置在 `config.ini` 文件中的 `CORE_API_TOKEN` 值。若未设置，则不需要进行密码认证。
+>
+> `localhost` 可以替换为你的服务器地址或 docker 容器名。
 
-```
-http://localhost:8989
-```
-
-沉浸式翻译 API URL：
-
-无 Token 验证：
-```
-自定义 API 设置 - API URL:
-http://localhost:8989/imme
-```
-
-有 Token 验证：
-```
-自定义 API 设置 - API URL:
-http://localhost:8989/imme?token=your_token
-```
-
-简约翻译(kiss translator) API URL：
-
-无 Token 验证：
-```
-Custom - URL:
-http://localhost:8989/kiss
-```
-
-有 Token 验证：
-```
-Custom - URL:
-http://localhost:8989/kiss
-
-KEY:
-your_token
-```
-
-`localhost` 可以替换为你的服务器地址。
+| 名称 | API URL | 备注 | 认证头 |
+| --- | --- | --- | --- |
+| 服务版本 | http://localhost:8989/version | 获取服务版本| 无 |
+| 模型列表 | http://localhost:8989/models | 获取模型列表| Authorization: your_token |
+| 沉浸式翻译无密码  | http://localhost:8989/imme | 自定义API 设置 - API URL| 无 |
+| 沉浸式翻译有密码 | http://localhost:8989/imme?token=your_token | 自定义API 设置 - API URL| 无需你设置 |
+| 简约翻译(kiss translator)  | http://localhost:8989/kiss | 接口设置 - Custom - URL| 无 |
+| 简约翻译(kiss translator) 有密码 | http://localhost:8989/kiss | KEY 填 your_token | 无需你设置 |
 
 ### 如何使用
 
