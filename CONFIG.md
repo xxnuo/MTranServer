@@ -1,22 +1,22 @@
-# 高级设置
+# Advanced Settings
 
-在 `compose.yml` 文件同级目录创建 `config.ini` 文件，写入以下内容按需修改：
+In the same directory as the `compose.yml` file, create a `config.ini` file and write the following content to modify as needed:
 
 ```ini
-; API 令牌，默认空
+; API token, default empty
 CORE_API_TOKEN=your_token
-; 内部端口号，默认 8989
+; Internal port, default 8989
 CORE_PORT=8989
-; 日志级别，默认 WARNING
+; Log level, default WARNING
 CORE_LOG_LEVEL=WARNING
-; 工作线程数，默认自动设置
+; Number of worker threads, default automatically set
 CORE_NUM_WORKERS=
-; 请求超时时间，默认 30000ms
+; Request timeout, default 30000ms
 CORE_REQUEST_TIMEOUT=
-; 最大并行翻译数，默认自动设置
+; Maximum number of parallel translations, default automatically set
 CORE_MAX_PARALLEL_TRANSLATIONS=
 ```
 
-> 也可以在环境变量使用相同的名字设置配置。
-> 
-> `config.ini` 配置文件的条目会覆盖环境变量设置。
+> You can also set the configuration using the same name in the environment variable.
+>
+> The entries in the `config.ini` file will override the environment variable settings.

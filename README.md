@@ -185,7 +185,7 @@ docker compose up -d
 
 这时候服务器就在后台运行了。
 
-### 4. API 文档
+### 4. 使用
 
 下面表格内的 `localhost` 可以替换为你的服务器地址或 Docker 容器名。
 
@@ -214,23 +214,9 @@ docker compose up -d
 | 简约翻译无密码 | `http://localhost:8989/kiss` | `接口设置` - `Custom` - `URL`|
 | 简约翻译有密码 | `http://localhost:8989/kiss` | 同上，需要 `KEY` 填 `your_token` |
 
-**普通用户参照表格内容设置好插件使用的接口地址就可以使用了。接下来请跳到下面的`如何更新`。**
+**普通用户参照表格内容设置好插件使用的接口地址就可以使用了。**
 
-#### 开发者接口：
-
-> Base URL: `http://localhost:8989`
-
-| 名称 | URL | 请求格式 | 返回格式 | 认证头 |
-| --- | --- | --- | --- | --- |
-| 服务版本 | `/version` | 无 | 无 | 无 |
-| 语言对列表 | `/models` | 无 | 无 | Authorization: your_token |
-| 普通翻译接口 | `/translate` | `{"from": "en", "to": "zh", "text": "Hello, world!"}`| `{"result": "你好，世界！"}` | Authorization: your_token |
-| 批量翻译接口 | `/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`| `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
-| 健康检查 | `/health` | 无 | `{"status": "ok"}` | 无 |
-| 心跳检查 | `/__heartbeat__` | 无 | `Ready` | 无 |
-| 负载均衡心跳检查 | `/__lbheartbeat__` | 无 | `Ready` | 无 |
-
-### 5. 如何更新
+### 5. 保持更新
 
 目前是测试版服务器和模型，可能会遇到问题，建议经常保持更新
 
@@ -245,6 +231,22 @@ docker compose up -d
 ```
 
 > 国内用户若无法正常 `pull` 镜像，按照 `1.3 可选步骤` 手动下载新镜像导入即可。
+
+### 开发者接口：
+
+> Base URL: `http://localhost:8989`
+
+| 名称 | URL | 请求格式 | 返回格式 | 认证头 |
+| --- | --- | --- | --- | --- |
+| 服务版本 | `/version` | 无 | 无 | 无 |
+| 语言对列表 | `/models` | 无 | 无 | Authorization: your_token |
+| 普通翻译接口 | `/translate` | `{"from": "en", "to": "zh", "text": "Hello, world!"}`| `{"result": "你好，世界！"}` | Authorization: your_token |
+| 批量翻译接口 | `/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`| `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
+| 健康检查 | `/health` | 无 | `{"status": "ok"}` | 无 |
+| 心跳检查 | `/__heartbeat__` | 无 | `Ready` | 无 |
+| 负载均衡心跳检查 | `/__lbheartbeat__` | 无 | `Ready` | 无 |
+
+> 开发者高级设置请参考 [CONFIG.md](./CONFIG.md)
 
 ## 源码仓库
 
