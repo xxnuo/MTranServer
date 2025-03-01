@@ -208,12 +208,17 @@ docker compose up -d
 
 目前是测试版服务器和模型，可能会遇到问题，建议经常保持更新
 
-下载新模型，解压覆盖到原 `models` 模型文件夹，然后更新重启服务器：
+下载新模型，解压覆盖到原 `models` 模型文件夹
+
+然后更新重启服务器：
+
 ```bash
 docker compose down
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+> 国内用户若无法正常 `pull` 镜像，按照 `1.3 可选步骤` 手动下载新镜像导入即可。
 
 ## 源码仓库
 
