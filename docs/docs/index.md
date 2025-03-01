@@ -2,36 +2,36 @@
 pageType: home
 
 hero:
-  name: My Site
-  text: A cool website!
-  tagline: This is the tagline
+  name: MTranServer
+  text: 迷你翻译服务器
+  tagline: 速度飞快 离线部署 无需显卡 自由版谷歌翻译服务器
   actions:
     - theme: brand
-      text: Quick Start
+      text: 快速开始
       link: /guide/
     - theme: alt
       text: GitHub
-      link: https://github.com/web-infra-dev/rspress
+      link: https://github.com/xxnuo/MTranServer
   image:
     src: /icon-min.png
-    alt: Logo
+    alt: icon
 features:
-  - title: Blazing fast build speed
-    details: The core compilation module is based on the Rust front-end toolchain, providing a more ultimate development experience.
-    icon: 🏃🏻‍♀️
-  - title: Support for MDX content writing
-    details: MDX is a powerful way to write content, allowing you to use React components in Markdown.
-    icon: 📦
-  - title: Built-in full-text search
-    details: Automatically generates a full-text search index for you during construction, providing out-of-the-box full-text search capabilities.
-    icon: 🎨
-  - title: Simpler I18n solution
-    details: With the built-in I18n solution, you can easily provide multi-language support for documents or components.
+  - title: 超快的速度
+    details: 翻译速度超快。平均每个请求 50 毫秒翻译完成
+    icon: ⚡️
+  - title: 超低自建配置
+    details: 自己部署一个英译中翻译服务只需要占用 1G 内存
+    icon: 💰
+  - title: 无需显卡
+    details: 和同类项目不同，CPU 跑都这么快了，还要什么显卡？
+    icon: 👋
+  - title: 支持的语言
+    details: 支持世界主流语言互译
     icon: 🌍
-  - title: Static site generation
-    details: In production, it automatically builds into static HTML files, which can be easily deployed anywhere.
-    icon: 🌈
-  - title: Providing multiple custom capabilities
-    details: Through its extension mechanism, you can easily extend theme UI and build process.
-    icon: 🔥
+  - title: 翻译质量
+    details: 专为速度优化，属普通机器翻译水平，与谷歌翻译相当。如需要高质量翻译，请使用大模型。
+    icon: 🤔
+  - title: 社区支持
+    details: 由 Mozilla 训练的模型 ❤️ 来自 Mozilla 社区
+    icon: 🦊
 ---
