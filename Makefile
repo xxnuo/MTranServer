@@ -6,11 +6,10 @@ run:
 	docker run --name mtranserver -it --rm -p 8989:8989 xxnuo/mtranserver:1.0.0
 
 export:
-	docker save -o mtranserver.image.tar xxnuo/mtranserver:1.0.0
+	docker save -o mtranserver.image.tar xxnuo/mtranserver:latest
 
 import:
 	docker load -i mtranserver.image.tar
-	docker tag xxnuo/mtranserver:1.0.0 xxnuo/mtranserver:latest
 
 push:
 	docker push xxnuo/mtranserver:1.0.0

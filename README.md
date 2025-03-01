@@ -28,11 +28,28 @@
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
-### 下载模型
-[国内下载地址](https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink)
-[国际下载地址](https://github.com/xxnuo/MTranServer/releases/tag/models)
+### 编写 Compose 文件
 
-## 使用
+```bash
+services:
+  mtranserver:
+    image: xxnuo/mtranserver:latest
+    container_name: mtranserver
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./models:/app/models
+      - ./config.ini:/app/config.ini
+```
+
+### 手动下载模型
+
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a>
+
+<a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
+
+### 使用
 
 目前可以在浏览器中使用沉浸式翻译插件、简约翻译(kiss translator)插件调用。
 
