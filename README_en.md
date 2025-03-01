@@ -31,6 +31,8 @@ Currently only supports Docker deployment on amd64 architecture CPUs.
 
 Support for ARM and RISC-V architectures is under development 😳
 
+You can also try it out by installing `Docker Desktop` on your computer and following the guide below to deploy with `Docker Compose`.
+
 ### 1. Preparation
 
 Create a folder for configuration files and run the following commands in terminal:
