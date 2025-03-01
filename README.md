@@ -206,7 +206,7 @@ docker compose up -d
 
 ## 客户端软件版
 
-Windows 和 Mac 客户端独立软件版在开发中，请耐心等待。
+Windows、Mac 和 Linux 独立客户端软件版在开发中，请耐心等待。
 
 也可以在电脑上安装 `Docker Desktop` 后，按上面的指南使用 `Docker Compose` 部署尝鲜。
 
