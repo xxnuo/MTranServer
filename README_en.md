@@ -1,7 +1,9 @@
 # MTranServer 
 > Mini Translation Server
 
-[中文版](README.md) | English
+<img src="https://github.com/user-attachments/assets/c6281154-2d2e-48dd-b757-99c995c8ef01" width="auto" height="64" align="center">
+
+[中文版](README.md) | [日本語](README_ja.md) | English
 
 A high-performance offline translation server with minimal resource requirements - runs on CPU with just 1GB memory, no GPU needed. Average response time of 50ms per request.
 
