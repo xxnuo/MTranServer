@@ -120,7 +120,7 @@ docker load -i mtranserver.image.tar
 
 ### 2. 下载模型
 
-> 持续更新模型中
+> 持续更新模型中，如果没有你需要的语言模型，可以联系我添加。
 
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/C3kffkLr8lxdtid5GYicAcFAnTh" target="_blank">中国大陆模型镜像下载地址</a>
 
