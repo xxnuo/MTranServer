@@ -104,7 +104,7 @@ services:
 
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/PSUHfwmKPlu6PodAniVcNEPgnCb" target="_blank">中国大陆 Docker 镜像下载</a>
 
-进入`下载 Docker 镜像文件夹`，选择最新版的镜像 `mtranserver.image.tar` 下载保存到运行 Docker 的机器上。
+选择最新版的镜像 `mtranserver.image.tar` 下载保存到运行 Docker 的机器上。
 
 进入下载到的目录打开终端，执行如下命令导入镜像
 ```bash
@@ -120,7 +120,7 @@ docker load -i mtranserver.image.tar
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
 
-按需要下载模型后`解压`每个语言的压缩包到 `models` 文件夹内。
+按需要下载模型后，`解压`每个语言的压缩包到 `models` 文件夹内。
 
 下载了英译中模型的当前文件夹结构示意图：
 ```
@@ -230,7 +230,7 @@ docker compose up -d
 
 目前是测试版服务器和模型，可能会遇到问题，建议经常保持更新
 
-下载新模型，解压覆盖到原 `models` 模型文件夹
+从上文地址下载新模型，解压覆盖到原 `models` 模型文件夹
 
 然后更新重启服务器：
 
