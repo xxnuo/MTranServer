@@ -1,5 +1,5 @@
 # MTranServer 
-> 迷你翻译服务器
+> 迷你翻译服务器 测试版
 
 <img src="./images/logo.jpg" width="auto" height="128" align="right">
 
@@ -25,8 +25,6 @@
 非严格测试，非量化版本对比，仅供参考。
 
 ## Docker Compose 服务器部署
-
-> 还没编写完成，请耐心等待
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
@@ -206,9 +204,15 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-## 客户端版本
+## 客户端软件版
 
-服务端翻译核心、Windows 和 Mac 客户端版本在适配中 [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未公开)
+Windows 和 Mac 客户端独立软件版在开发中，请耐心等待。
+
+也可以在电脑上安装 `Docker Desktop` 后，按上面的指南使用 `Docker Compose` 部署尝鲜。
+
+服务端翻译推理框架使用的是 [marian-nmt](https://github.com/marian-nmt/marian-dev) 框架。
+
+服务器 API 源码: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未完成，请耐心等待)
 
 ## 赞助我
 
