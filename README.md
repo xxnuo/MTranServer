@@ -44,7 +44,7 @@ mkdir models
 
 ### 编写配置
 
-#### 1.1 用编辑器打卡 `config.ini` 文件，写入以下内容
+#### 1.1 用编辑器打开 `config.ini` 文件，写入以下内容
 ```ini
 CORE_API_TOKEN=your_token
 ```
