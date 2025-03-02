@@ -92,6 +92,8 @@ docker load -i mtranserver.image.tar
 
 ### 2. モデルのダウンロード
 
+> モデルは継続的に更新中
+
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国本土ダウンロードリンク（Dockerイメージを含む）</a> モデルは`モデルダウンロード`フォルダにあります
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国際ダウンロードリンク</a>
@@ -218,13 +220,17 @@ docker compose up -d
 
 ## その他の情報
 
-Windows、Mac、Linuxのスタンドアロンクライアントソフトウェアバージョン[MTranServerCore](https://github.com/xxnuo/MTranServerCore)は開発中です。しばらくお待ちください。
+Windows、Mac、Linuxのスタンドアロンクライアントソフトウェアバージョン [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (開発中、しばらくお待ちください)
 
-コンピュータに`Docker Desktop`をインストールし、上記のガイドに従って`Docker Compose`でデプロイすることもできます。
+サーバーAPIのソースコードリポジトリ：[MTranServerCore](https://github.com/xxnuo/MTranServerCore)
 
-サーバーサイドの翻訳推論フレームワークには、C++で書かれた[marian-nmt](https://github.com/marian-nmt/marian-dev)フレームワークを使用しています。
+## 謝辞
 
-サーバーAPIのソースコードリポジトリ：[MTranServerCore](https://github.com/xxnuo/MTranServerCore)（まだ完成していません。しばらくお待ちください）
+推論フレームワーク：C++ [Marian-NMT](https://marian-nmt.github.io) フレームワーク
+
+翻訳モデル：[firefox-translations-models](https://github.com/mozilla/firefox-translations-models)
+
+> Join us: [https://www.mozilla.org/zh-CN/contribute/](https://www.mozilla.org/zh-CN/contribute/)
 
 ## サポート
 
