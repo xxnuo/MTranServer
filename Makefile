@@ -1,9 +1,9 @@
-build:
-	docker build -t xxnuo/mtranserver:1.0.0 .
-	docker tag xxnuo/mtranserver:1.0.0 xxnuo/mtranserver:latest
+VERSION=1.0.4
 
-run:
-	docker run --name mtranserver -it --rm -p 8989:8989 xxnuo/mtranserver:1.0.0
+build:
+	cp ../MTranServerCore/dist/core ./core
+	docker build -t xxnuo/mtranserver:$(VERSION) .
+	docker tag xxnuo/mtranserver:$(VERSION) xxnuo/mtranserver:latest
 
 export:
 	docker save -o mtranserver.image.tar xxnuo/mtranserver:latest
@@ -11,11 +11,11 @@ export:
 import:
 	docker load -i mtranserver.image.tar
 
-push:
-	docker push xxnuo/mtranserver:1.0.0
+push: build export
+	docker push xxnuo/mtranserver:$(VERSION)
 	docker push xxnuo/mtranserver:latest
 
-compose:
-	docker compose up
+test:
+	cd example/mtranserver && docker compose down && docker compose up
 
-.PHONY: build run export import push compose
+.PHONY: build run export import push test

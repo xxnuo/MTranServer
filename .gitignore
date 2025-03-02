@@ -5,6 +5,7 @@
 core
 *.tar
 
-/example/models/enzh
-/example/models/zhen
 *.psd
+*.bin
+*.spm
+*.zip
