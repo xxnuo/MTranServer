@@ -217,9 +217,9 @@ docker compose up -d
 
 ## 源码仓库
 
-Windows、Mac 和 Linux 独立客户端软件: [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (未开发完成，请耐心等待)
+Windows、Mac 和 Linux 独立客户端软件: [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (未公开，请耐心等待正式版公开)
 
-服务端 API 服务源码仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
+服务端 API 服务源码仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (未公开，请耐心等待正式版公开)
 
 ## 感谢
 
