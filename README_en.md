@@ -13,55 +13,74 @@ Note: This model focuses on speed and private deployment on various devices, so 
 
 For high-quality translation, consider using online large language model APIs.
 
-<img src="./images/preview.png" width="auto" height="328">
+## Demo
+
+> No demo yet, see preview image
+
+<img src="./images/preview.png" width="auto" height="460">
 
 ## Comparison with Similar Projects (CPU, English to Chinese)
 
 | Project Name | Memory Usage | Concurrency | Translation Quality | Speed | Additional Info |
 |--------------|--------------|-------------|---------------------|-------|-----------------|
-| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | Very High | Poor | Average | Slow | Android's [RTranslator](https://github.com/niedev/RTranslator) has optimizations but still has high resource usage and slower speed |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High | Average | Average | Medium | Mid-range CPU: 3 sentences/s, high-end CPU: 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | High | Average | Below Average | Fast | [Performance Benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| Any LLM | Extremely High | Dynamic | Good | Dynamic Very Slow | 32B or more parameter models perform well, but require high hardware requirements |
+| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | Very High | Poor | Average | Slow | Android port [RTranslator](https://github.com/niedev/RTranslator) has many optimizations, but still has high resource usage and is not fast |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High | Average | Average | Medium | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
+| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | High | Average | Below Average | Fast | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks) |
+| Any LLM | Extremely High | Dynamic | Very Good | Very Slow | 32B+ parameter models work well but have high hardware requirements |
 | MTranServer (This Project) | Low | High | Average | Ultra Fast | 50ms average response time per request |
 
-> The small-parameter quantized versions of the existing large Transformer-based large languagemodels are not considered because actual research and testing have shown that the translation quality is highly unstable, prone to disordered translations, severe hallucinations, and slow speeds. We will test the Diffusion architecture-based language models once they are released.
+> Existing small-parameter quantized versions of Transformer architecture large models are not considered, as actual research and usage have shown that translation quality is very unstable with random translations, severe hallucinations, and slow speeds. We will test Diffusion architecture language models when they are released.
 >
-> Note: Non-rigorous testing, non-quantized version comparison, for reference only.
+> Table data is for reference only, not strict testing, non-quantized version comparison.
 
-## Docker Compose Server Deployment
+## Docker Compose Deployment
 
-Currently only supports Docker deployment on amd64 architecture CPUs.
+Currently only supports Docker deployment on amd64 architecture CPUs. ARM and RISCV architectures are under development 😳
 
-Support for ARM and RISC-V architectures is under development 😳
+### Desktop Docker One-Click Package
 
-You can also try it out by installing `Docker Desktop` on your computer and following the guide below to deploy with `Docker Compose`.
+> Desktop one-click package deployment requires `Docker Desktop` to be installed. Please install it yourself.
 
-### 1. Preparation
+After ensuring that `Docker Desktop` is installed on your personal computer, download the desktop one-click package
+
+[Mainland China One-Click Package Download](https://ocn4e4onws23.feishu.cn/drive/folder/QN1SfG7QeliVWGdDJ8Dce2sUnkf)
+
+[International One-Click Package Download](https://github.com/xxnuo/MTranServer/releases/tag/onekey)
+
+`Extract` to any English directory, the folder structure is as follows:
+
+```
+mtranserver/
+├── compose.yml
+├── models/
+│   ├── enzh
+│   ├── lex.50.50.enzh.s2t.bin
+│   ├── model.enzh.intgemm.alphas.bin
+│   └── vocab.enzh.spm
+```
+
+> The one-click package only includes the English-Chinese model, if you need to download other language models, please jump to the next section "Download Models".
+
+Open the command line in the `mtranserver` directory and proceed to the `3. Start Service` section.
+
+### Server Docker Manual Deployment
+
+#### 1.1 Preparation
 
 Create a folder for configuration files and run the following commands in terminal:
 
 ```bash
 mkdir mtranserver
 cd mtranserver
-touch config.ini
 touch compose.yml
 mkdir models
 ```
 
-### Configuration
-
-#### 1.1 Open `config.ini` with an editor and write:
-```ini
-CORE_API_TOKEN=your_token
-```
-Note: Change `your_token` to your own password using English letters and numbers.
-
-For internal network use, setting a password is optional. However, for cloud servers, it's strongly recommended to set a password to protect against scanning, attacks, and abuse.
-
 #### 1.2 Open `compose.yml` with an editor and write:
 
-> Note: To change the port, modify the `ports` value. For example, change to `8990:8989` to map the service port to local port 8990.
+> 1. Change `your_token` below to your own password using English letters and numbers. For internal network use, setting a password is optional, but for `cloud servers`, it is strongly recommended to set a password to protect against `scanning, attacks, and abuse`.
+> 
+> 2. To change the port, modify the `ports` value. For example, change to `9999:8989` to map the service port to local port 9999.
 
 ```yaml
 services:
@@ -73,14 +92,15 @@ services:
       - "8989:8989"
     volumes:
       - ./models:/app/models
-      - ./config.ini:/app/config.ini
+    environment:
+      - CORE_API_TOKEN=your_token
 ```
 
 #### 1.3 Optional Step
 
 If you cannot download the image normally in mainland China, you can import the image as follows:
 
-Open <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">Mainland China Download Link (includes Docker image)</a>
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/PSUHfwmKPlu6PodAniVcNEPgnCb" target="_blank">Mainland China Docker Image Download</a>
 
 Enter the `Docker Image Download` folder, download the latest image `mtranserver.image.tar` to your Docker machine.
 
@@ -92,9 +112,9 @@ Then proceed normally to the next step to download models.
 
 ### 2. Download Models
 
-> Models are being updated continuously
+> Models are being continuously updated
 
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">Mainland China Download Link (includes Docker image)</a> Models are in the `Download Models` folder
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/C3kffkLr8lxdtid5GYicAcFAnTh" target="_blank">Mainland China Model Mirror Download</a>
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">International Download Link</a>
 
@@ -217,6 +237,8 @@ docker compose down
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+> For users in mainland China who cannot `pull` the image normally, follow the `1.3 Optional Step` to manually download and import the new image.
 
 ## Other Information
 

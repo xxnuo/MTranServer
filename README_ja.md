@@ -13,76 +13,49 @@ CPUと1GBのメモリのみで動作する超軽量・高速なオフライン�
 
 高品質な翻訳が必要な場合は、オンライン大規模モデルAPIをご利用ください。
 
-<img src="./images/preview.png" width="auto" height="328">
+## デモ
+
+> まだデモはありません。プレビュー画像をご覧ください
+
+<img src="./images/preview.png" width="auto" height="460">
 
 ## 類似プロジェクトとの比較（CPU、英語から中国語）
 
 | プロジェクト名 | メモリ使用量 | 同時処理性能 | 翻訳品質 | 速度 | 追加情報 |
 |----------------|--------------|--------------|----------|--------|------------|
-| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 非常に高い | 低い | 普通 | 遅い | Android ポート [RTranslator](https://github.com/niedev/RTranslator)は最適化されていますが、リソース使用量は依然として高く、速度も遅いです。 |
+| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 非常に高い | 低い | 普通 | 遅い | Android版 [RTranslator](https://github.com/niedev/RTranslator) は多くの最適化がされていますが、リソース使用量は依然として高く、速度も遅いです |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 普通 | 普通 | 中程度 | 中級CPUで3文/秒、高級CPUで15-20文/秒。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高い | 普通 | やや劣る | 速い | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| Any LLM | 非常に高い | 動的 | 良い | 非常に遅い | 32B以上のパラメータモデルは効果がありますが、高いハードウェア要件があります |
+| 大規模言語モデル | 非常に高い | 動的 | とても良い | とても遅い | 32B以上のパラメータモデルは効果が良好ですが、高いハードウェア要件があります |
 | MTranServer（本プロジェクト） | 低い | 高い | 普通 | 超高速 | 1リクエストあたりの平均応答時間50ms |
 
-> ※現在のTransformerアーキテクチャの大型モデルの小さなパラメータ量化バージョンは検討の対象外です。実際の調査や使用において、翻訳品質が非常に不安定で、乱翻し、幻覚が深刻で、速度も遅いためです。将来、Diffusionアーキテクチャの言語モデルがリリースされ次第、再度テストを行います。
+> 既存のTransformerアーキテクチャの大規模モデルの小規模パラメータ量子化バージョンは考慮対象外です。実際の研究と使用において、翻訳品質が非常に不安定で、ランダムな翻訳や深刻な幻覚が発生し、速度も遅いためです。Diffusionアーキテクチャの言語モデルがリリースされた際にテストを行う予定です。
 >
-> ※非厳密なテスト、非量子化バージョンの比較、参考値として。
+> 表のデータは参考値であり、厳密なテストや量子化バージョンの比較ではありません。
 
-## Docker Composeでのサーバーデプロイ
+## Docker Composeでのデプロイ
 
-現在、amd64アーキテクチャCPUのDockerデプロイメントのみをサポートしています。
+現在、amd64アーキテクチャCPUのDockerデプロイメントのみをサポートしています。ARM、RISCVアーキテクチャは開発中です 😳
 
-ARM、RISCVアーキテクチャは開発中です 😳
+### デスクトップDocker一括パッケージ
 
-コンピュータに`Docker Desktop`をインストールし、以下のガイドに従って`Docker Compose`でデプロイすることもできます。
+> デスクトップ一括パッケージのデプロイには`Docker Desktop`のインストールが必要です。各自でインストールしてください。
 
-### 1. 準備
+個人のコンピュータに`Docker Desktop`がインストールされていることを確認後、デスクトップ一括パッケージをダウンロードしてください
 
-設定ファイル用のフォルダを作成し、以下のコマンドを実行します：
+[中国本土一括パッケージダウンロード](https://ocn4e4onws23.feishu.cn/drive/folder/QN1SfG7QeliVWGdDJ8Dce2sUnkf)
 
-```bash
-mkdir mtranserver
-cd mtranserver
-touch config.ini
-touch compose.yml
-mkdir models
-```
+[国際一括パッケージダウンロード](https://github.com/xxnuo/MTranServer/releases/tag/onekey)
 
-### 設定
+任意の英語ディレクトリに`解凍`してください。フォルダ構造は以下の通りです：
 
-#### 1.1 `config.ini`をエディタで開き、以下の内容を記述します：
-```ini
-CORE_API_TOKEN=your_token
-```
-注意：`your_token`を英数字を使用した独自のパスワードに変更してください。
-
-内部ネットワークでの使用の場合、パスワードの設定は任意ですが、クラウドサーバーの場合は、スキャン、攻撃、乱用から保護するためにパスワードの設定を強く推奨します。
-
-#### 1.2 `compose.yml`をエディタで開き、以下の内容を記述します：
-
-> 注：ポートを変更する場合は、`ports`の値を変更してください。例えば、`8990:8989`に変更すると、サービスポートをローカルポート8990にマッピングします。
-
-```yaml
-services:
-  mtranserver:
-    image: xxnuo/mtranserver:latest
-    container_name: mtranserver
-    restart: unless-stopped
-    ports:
-      - "8989:8989"
-    volumes:
-      - ./models:/app/models
-      - ./config.ini:/app/config.ini
-```
-
-#### 1.3 オプションの手順
+#### 1.3 オプション手順
 
 中国本土でイメージを正常にダウンロードできない場合は、以下の手順でイメージをインポートできます：
 
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国本土ダウンロードリンク（Dockerイメージを含む）</a>
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/PSUHfwmKPlu6PodAniVcNEPgnCb" target="_blank">中国本土Dockerイメージダウンロード</a>
 
-`Dockerイメージダウンロード`フォルダに入り、最新のイメージ`mtranserver.image.tar`をDockerマシンにダウンロードします。
+`Dockerイメージダウンロード`フォルダに入り、最新のイメージ`mtranserver.image.tar`をDockerマシンにダウンロードしてください。
 
 ダウンロードディレクトリでターミナルを開き、以下のコマンドを実行してイメージをインポートします：
 ```bash
@@ -92,9 +65,9 @@ docker load -i mtranserver.image.tar
 
 ### 2. モデルのダウンロード
 
-> モデルは継続的に更新中
+> モデルは継続的に更新中です
 
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国本土ダウンロードリンク（Dockerイメージを含む）</a> モデルは`モデルダウンロード`フォルダにあります
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/C3kffkLr8lxdtid5GYicAcFAnTh" target="_blank">中国本土モデルミラーダウンロード</a>
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国際ダウンロードリンク</a>
 
@@ -211,14 +184,16 @@ docker compose up -d
 
 現在はベータ版のサーバーとモデルのため、問題が発生する可能性があります。定期的な更新を推奨します。
 
-新しいモデルをダウンロードし、元の`models`フォルダに展開して上書きし、サーバーを更新して再起動します：
+新しいモデルをダウンロードし、元の`models`フォルダに解凍して上書きし、サーバーを更新して再起動します：
 ```bash
 docker compose down
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-## その他の情報
+> 中国本土のユーザーで`pull`が正常にできない場合は、`1.3 オプション手順`に従って新しいイメージを手動でダウンロードしてインポートしてください。
+
+## ソースコードリポジトリ
 
 Windows、Mac、Linuxのスタンドアロンクライアントソフトウェアバージョン: [MTranServerDesktop](https://github.com/xxnuo/MTranServerDesktop) (未公開、正式版公開前)
 
