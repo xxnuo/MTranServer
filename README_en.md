@@ -105,7 +105,7 @@ If you cannot download the image normally in mainland China, you can import the 
 
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/PSUHfwmKPlu6PodAniVcNEPgnCb" target="_blank">Mainland China Docker Image Download</a>
 
-Enter the `Docker Image Download` folder, download the latest image `mtranserver.image.tar` to your Docker machine.
+Download the latest image `mtranserver.image.tar` to your Docker machine.
 
 Open terminal in the download directory and run the following command to import the image:
 ```bash
