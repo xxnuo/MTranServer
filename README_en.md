@@ -9,7 +9,7 @@ A high-performance offline translation server with minimal resource requirements
 
 Translation quality comparable to Google Translate.
 
-Note: This model focuses on performance optimization and private deployment on various devices, so the translation quality will not match that of large language models.
+Note: This model focuses on speed and private deployment on various devices, so the translation quality will not match that of large language models.
 
 For high-quality translation, consider using online large language model APIs.
 <img src="./images/preview.png" width="auto" height="328">
