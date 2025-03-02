@@ -220,9 +220,9 @@ docker compose up -d
 
 ## Other Information
 
-Windows, Mac, and Linux standalone client software version: [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (under development, please be patient)
+Windows, Mac, and Linux standalone client software version: [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (not public, please be patient for official release)
 
-Server API source code repository: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
+Server API source code repository: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (not public, please be patient for official release)
 
 ## Thanks
 
