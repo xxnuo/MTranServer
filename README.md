@@ -29,6 +29,8 @@
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
+或者在个人电脑上安装 `Docker Desktop` 后，按下面的指南使用 `Docker Compose` 部署尝鲜。
+
 ### 1. 准备
 
 准备一个存放配置的文件夹，打开终端执行以下命令
