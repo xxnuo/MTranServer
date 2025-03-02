@@ -7,4 +7,5 @@ services:
       - "8989:8989"
     volumes:
       - ./models:/app/models
-      - ./config.ini:/app/config.ini
+    environment:
+      - CORE_API_TOKEN=your_token
