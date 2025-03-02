@@ -23,8 +23,4 @@ Currently, only amd64 CPU is supported.
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。
 
-```bash
-docker run -d --name mtranserver -p 8686:8686 mtranserver:latest
-```
-
 还在开发中
