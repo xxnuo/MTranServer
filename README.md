@@ -58,9 +58,9 @@ mtranserver/
 ├── compose.yml
 ├── models/
 │   ├── enzh
-│   ├── lex.50.50.enzh.s2t.bin
-│   ├── model.enzh.intgemm.alphas.bin
-│   └── vocab.enzh.spm
+│   │   ├── lex.50.50.enzh.s2t.bin
+│   │   ├── model.enzh.intgemm.alphas.bin
+│   │   └── vocab.enzh.spm
 ```
 
 > 若你位于中国大陆，网络无法访问 Docker 下载镜像，请跳转到下文的 `1.3 可选步骤`。
