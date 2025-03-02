@@ -24,7 +24,9 @@ For high-quality translation, consider using online large language model APIs.
 | Any LLM | Extremely High | Dynamic | Good | Dynamic Very Slow | 32B or more parameter models perform well, but require high hardware requirements |
 | MTranServer (This Project) | Low | High | Average | Ultra Fast | 50ms average response time per request |
 
-*Note: Non-rigorous testing, non-quantized version comparison, for reference only.
+> The small-parameter quantized versions of the existing large Transformer-based large languagemodels are not considered because actual research and testing have shown that the translation quality is highly unstable, prone to disordered translations, severe hallucinations, and slow speeds. We will test the Diffusion architecture-based language models once they are released.
+>
+> Note: Non-rigorous testing, non-quantized version comparison, for reference only.
 
 ## Docker Compose Server Deployment
 
