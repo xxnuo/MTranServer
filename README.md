@@ -90,6 +90,8 @@ docker load -i mtranserver.image.tar
 
 ### 2. 下载模型
 
+> 持续更新模型中
+
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国大陆下载地址(内含 Docker 镜像下载)</a> 模型在`下载模型文件夹内`
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
@@ -213,15 +215,19 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-## 其他
+## 源码仓库
 
-Windows、Mac 和 Linux 独立客户端软件版 [MTranServerCore](https://github.com/xxnuo/MTranServerCore) 在开发中，请耐心等待。
+Windows、Mac 和 Linux 独立客户端软件版 [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (未开发完成，请耐心等待)
 
-也可以在电脑上安装 `Docker Desktop` 后，按上面的指南使用 `Docker Compose` 部署尝鲜。
+服务端 API 服务源码仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
 
-服务端翻译推理框架使用的是 C++ 编写的 [marian-nmt](https://github.com/marian-nmt/marian-dev) 框架。
+## 感谢
 
-服务端 API 源码仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore) (暂未完成，请耐心等待)
+推理框架: C++ [Marian-NMT](https://marian-nmt.github.io) 框架
+
+翻译模型: [firefox-translations-models](https://github.com/mozilla/firefox-translations-models)
+
+> Join us: [https://www.mozilla.org/zh-CN/contribute/](https://www.mozilla.org/zh-CN/contribute/)
 
 ## 赞助我
 
