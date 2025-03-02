@@ -230,7 +230,7 @@ Windows、Mac、Linuxのスタンドアロンクライアントソフトウェ�
 
 [コーヒーを奢る ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
 
-[中国本土 💗 Afdian](https://afdian.com/a/xxnuo)
+[中国本土 💗 Like](./DONATE.md)
 
 ---
 
