@@ -35,7 +35,9 @@
 
 ## Compose 部署
 
-目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
+目前仅支持 amd64 架构 CPU 的 Docker 部署。(需要 CPU 支持 AVX2 指令集, 其他 CPU 的兼容版本等我测试完成发布)
+
+ARM、RISCV 架构在适配中 😳
 
 ### 桌面端 Docker 一键包
 
