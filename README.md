@@ -13,7 +13,11 @@
 
 需要高质量的翻译建议使用在线大模型 API。
 
-<img src="./images/preview.png" width="auto" height="328">
+## Demo
+
+> 暂无，看预览图
+
+<img src="./images/preview.png" width="auto" height="460">
 
 ## 同类项目效果(CPU,英译中)
 
@@ -29,11 +33,11 @@
 >
 > 表中数据仅供参考，非严格测试，非量化版本对比。
 
-## 部署
+## Compose 部署
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
-### 桌面端一键包
+### 桌面端 Docker 一键包
 
 > 桌面端一键包部署需要安装 `Docker Desktop`，请自行安装。
 
@@ -59,7 +63,7 @@ mtranserver/
 
 在 `mtranserver` 目录内打开命令行，然后直接跳转到下文的 `3. 启动服务`。
 
-### 服务器手动部署
+### 服务器 Docker 手动部署
 
 #### 1.1 准备
 
