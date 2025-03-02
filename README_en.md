@@ -231,7 +231,7 @@ Server API source code repository: [MTranServerCore](https://github.com/xxnuo/MT
 
 [Mainland China 💗 Like](./DONATE.md)
 
----
+## Contact Me
 
 WeChat: x-xnuo
 
@@ -241,4 +241,6 @@ Feel free to connect with me to discuss technology and open-source projects!
 
 I'm currently seeking job opportunities. Please contact me to view my resume.
 
----
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://star-history.com/#xxnuo/MTranServer&Timeline)

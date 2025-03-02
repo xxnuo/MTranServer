@@ -232,7 +232,7 @@ Windows、Mac、Linuxのスタンドアロンクライアントソフトウェ�
 
 [中国本土 💗 Like](./DONATE.md)
 
----
+## 連絡先
 
 WeChat: x-xnuo
 
@@ -242,4 +242,6 @@ X: [@realxxnuo](https://x.com/realxxnuo)
 
 現在、求職中です。履歴書をご覧になりたい方はご連絡ください。
 
---- 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://star-history.com/#xxnuo/MTranServer&Timeline)

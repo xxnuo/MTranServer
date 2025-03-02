@@ -229,7 +229,7 @@ Windows、Mac 和 Linux 独立客户端软件版 [MTranServerCore](https://githu
 
 [中国大陆 💗 赞赏](./DONATE.md)
 
----
+## 联系我
 
 微信: x-xnuo
 
@@ -239,5 +239,6 @@ X: [@realxxnuo](https://x.com/realxxnuo)
 
 找工作中。可以联系我查看我的简历。
 
----
+## Star History
 
+[![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://star-history.com/#xxnuo/MTranServer&Timeline)
