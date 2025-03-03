@@ -155,8 +155,14 @@ docker compose up -d
 | 模型列表 | http://localhost:8989/models | 获取模型列表| Authorization: your_token |
 | 沉浸式翻译无密码  | http://localhost:8989/imme | 自定义API 设置 - API URL| 无 |
 | 沉浸式翻译有密码 | http://localhost:8989/imme?token=your_token | 自定义API 设置 - API URL| 无需你设置 |
-| 简约翻译(kiss translator)  | http://localhost:8989/kiss | 接口设置 - Custom - URL| 无 |
-| 简约翻译(kiss translator) 有密码 | http://localhost:8989/kiss | KEY 填 your_token | 无需你设置 |
+| 简约翻译 | http://localhost:8989/kiss | 接口设置 - Custom - URL| 无 |
+| 简约翻译有密码 | http://localhost:8989/kiss | KEY 填 your_token | 无需你设置 |
+
+> 注：
+> 
+> - [沉浸式翻译](https://immersivetranslate.com/zh-Hans/docs/services/custom/) 在`设置`页面，开发者模式中启用`Beta`特性，即可在`翻译服务`中看到`自定义 API 设置`。官方[图文教程](https://immersivetranslate.com/zh-Hans/docs/services/custom/)
+> 
+> - [简约翻译](https://github.com/fishjar/kiss-translator) 在`设置`页面，接口设置中滚动到下面，即可看到自定义接口 `Custom`
 
 ### 如何使用
 
