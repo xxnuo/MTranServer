@@ -1,7 +1,7 @@
 # MTranServer 
 > 迷你翻译服务器
 
-<img src="https://github.com/user-attachments/assets/c6281154-2d2e-48dd-b757-99c995c8ef01" width="auto" height="64" align="right">
+<img src="https://github.com/user-attachments/assets/c2f5be50-1004-48c3-a012-1dd4d7ab5ee6" width="auto" height="128" align="right">
 
 [English](README_en.md) | [日本語](README_ja.md) | 中文
 
