@@ -69,22 +69,23 @@ services:
       - ./config.ini:/app/config.ini
 ```
 
-> 注：若你的机器在国内无法正常联网下载镜像，可以按如下操作导入镜像
-> 
-> 打开 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a>
-> 
-> 进入`下载 Docker 镜像文件夹`，选择最新版的镜像 `mtranserver.image.tar` 下载保存到运行 Docker 的机器上。
-> 
-> 进入下载到的目录打开终端，执行如下命令导入镜像
-> ```bash
-> docker load -i mtranserver.image.tar
-> ```
->
-> 然后正常继续下一步下载模型
+#### 1.3 可选步骤
+
+若你的机器在中国大陆无法正常联网下载镜像，可以按如下操作导入镜像
+
+打开 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国大陆下载地址(内含 Docker 镜像下载)</a>
+
+进入`下载 Docker 镜像文件夹`，选择最新版的镜像 `mtranserver.image.tar` 下载保存到运行 Docker 的机器上。
+
+进入下载到的目录打开终端，执行如下命令导入镜像
+```bash
+docker load -i mtranserver.image.tar
+```
+然后正常继续下一步下载模型
 
 ### 2. 下载模型
 
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a> 模型在`下载模型文件夹内`
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国大陆下载地址(内含 Docker 镜像下载)</a> 模型在`下载模型文件夹内`
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
 
