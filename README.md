@@ -145,24 +145,42 @@ docker compose up -d
 
 ### API 文档
 
-> `your_token` 是你设置在 `config.ini` 文件中的 `CORE_API_TOKEN` 值。若未设置，则不需要进行密码认证。
->
-> `localhost` 可以替换为你的服务器地址或 docker 容器名。
+> 下面表格内的 `localhost` 可以替换为你的服务器地址或 Docker 容器名。
+> 
+> 如果未设置 `CORE_API_TOKEN`，翻译插件使用`无密码`的 API。
+> 
+> 如果设置了 `CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
+> 
+> 下面表格中的 `your_token` 替换为你在 `config.ini` 文件中设置的 `CORE_API_TOKEN` 值。
+> 
 
-| 名称 | API URL | 备注 | 认证头 |
+#### 翻译插件接口：
+
+| 名称 | URL | 备注 | 认证头 |
 | --- | --- | --- | --- |
-| 服务版本 | http://localhost:8989/version | 获取服务版本| 无 |
-| 模型列表 | http://localhost:8989/models | 获取模型列表| Authorization: your_token |
-| 沉浸式翻译无密码  | http://localhost:8989/imme | 自定义API 设置 - API URL| 无 |
-| 沉浸式翻译有密码 | http://localhost:8989/imme?token=your_token | 自定义API 设置 - API URL| 无需你设置 |
-| 简约翻译 | http://localhost:8989/kiss | 接口设置 - Custom - URL| 无 |
-| 简约翻译有密码 | http://localhost:8989/kiss | KEY 填 your_token | 无需你设置 |
+| 沉浸式翻译无密码  | `http://localhost:8989/imme` | 自定义API 设置 - API URL| 无 |
+| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 自定义API 设置 - API URL| 只需改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
+| 简约翻译无密码 | `http://localhost:8989/kiss` | 接口设置 - Custom - URL| 无 |
+| 简约翻译有密码 | `http://localhost:8989/kiss` | `KEY` 填 `your_token` | 无 |
 
 > 注：
 > 
 > - [沉浸式翻译](https://immersivetranslate.com/zh-Hans/docs/services/custom/) 在`设置`页面，开发者模式中启用`Beta`特性，即可在`翻译服务`中看到`自定义 API 设置`。官方[图文教程](https://immersivetranslate.com/zh-Hans/docs/services/custom/)
 > 
 > - [简约翻译](https://github.com/fishjar/kiss-translator) 在`设置`页面，接口设置中滚动到下面，即可看到自定义接口 `Custom`
+
+
+#### 其他接口：
+
+| 名称 | URL | 请求格式 | 返回格式 | 认证头 |
+| --- | --- | --- | --- | --- |
+| 服务版本 | `http://localhost:8989/version` | 无 | 无 | 无 |
+| 语言对列表 | `http://localhost:8989/models` | 无 | 无 | Authorization: your_token |
+| 普通翻译接口 | `http://localhost:8989/translate` | `{"from": "en", "to": "zh", "text": "Hello, world!"}`| `{"result": "你好，世界！"}` | Authorization: your_token |
+| 批量翻译接口 | `http://localhost:8989/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`| `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
+| 健康检查 | `http://localhost:8989/health` | 无 | `{"status": "ok"}` | 无 |
+| 心跳检查 | `http://localhost:8989/__heartbeat__` | 无 | `Ready` | 无 |
+| 负载均衡心跳检查 | `http://localhost:8989/__lbheartbeat__` | 无 | `Ready` | 无 |
 
 ### 如何使用
 
