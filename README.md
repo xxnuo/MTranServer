@@ -26,6 +26,8 @@
 
 ## Docker Compose 服务器部署
 
+> 还没编写完成，请耐心等待
+
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
 ### 编写 Compose 文件
