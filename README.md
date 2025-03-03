@@ -30,7 +30,7 @@
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
-### 准备
+### 1. 准备
 
 准备一个存放配置的文件夹，打开终端执行以下命令
 
@@ -44,7 +44,15 @@ mkdir models
 
 ### 编写配置
 
-用编辑器打开 `compose.yml` 文件，写入以下内容。
+#### 1.1 用编辑器打卡 `config.ini` 文件，写入以下内容
+```ini
+CORE_API_TOKEN=your_token
+```
+注意，修改这里的 `your_token` 为你自己设置的一个密码，使用英文大小写和数字。
+
+自己内网可以不设置，如果是`云服务器`强烈建议设置一个密码，保护服务以免被`扫到、攻击、滥用`。
+
+#### 1.2 用编辑器打开 `compose.yml` 文件，写入以下内容
 
 > 注：如果需要更改端口，请修改 `ports` 的值，比如修改为 `8990:8989` 表示将服务端口映射到本机 8990 端口。
 
@@ -74,7 +82,7 @@ services:
 >
 > 然后正常继续下一步下载模型
 
-### 下载模型
+### 2. 下载模型
 
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">国内下载地址(内含 Docker 镜像下载)</a> 模型在`下载模型文件夹内`
 
@@ -111,7 +119,7 @@ models/
 
 注意：例如中译日的过程是先中译英，再英译日，也就是需要两个模型 `zhen` 和 `enja`。其他语言翻译过程类似。
 
-### 启动服务
+### 3. 启动服务
 
 先启动测试，确保模型位置没放错、能正常启动加载模型、端口没被占用。
 
@@ -143,11 +151,13 @@ docker compose up -d
 
 这时候服务器就在后台运行了。
 
-### API 文档
+### 4. API 文档
 
 下面表格内的 `localhost` 可以替换为你的服务器地址或 Docker 容器名。
 
-如果未设置 `CORE_API_TOKEN`，翻译插件使用`无密码`的 API。
+下面表格内的 `8989` 端口可以替换为你在 `compose.yml` 文件中设置的端口值。
+
+如果未设置 `CORE_API_TOKEN` 或者设置为空，翻译插件使用`无密码`的 API。
 
 如果设置了 `CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
 
@@ -157,10 +167,10 @@ docker compose up -d
 
 | 名称 | URL | 备注 | 认证头 |
 | --- | --- | --- | --- |
-| 沉浸式翻译无密码  | `http://localhost:8989/imme` | 自定义API 设置 - API URL| 无 |
-| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 自定义API 设置 - API URL| 只需改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
-| 简约翻译无密码 | `http://localhost:8989/kiss` | 接口设置 - Custom - URL| 无 |
-| 简约翻译有密码 | `http://localhost:8989/kiss` | `KEY` 填 `your_token` | 无 |
+| 沉浸式翻译无密码  | `http://localhost:8989/imme` | `自定义API 设置` - `API URL`| 无 |
+| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | `自定义API 设置` - `API URL`| 只需改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
+| 简约翻译无密码 | `http://localhost:8989/kiss` | `接口设置` - `Custom` - `URL`| 无 |
+| 简约翻译有密码 | `http://localhost:8989/kiss` | 同上，并且 `KEY` 填 `your_token` | 无 |
 
 > 注：
 > 
@@ -168,8 +178,9 @@ docker compose up -d
 > 
 > - [简约翻译](https://github.com/fishjar/kiss-translator) 在`设置`页面，接口设置中滚动到下面，即可看到自定义接口 `Custom`
 
+普通用户参照表格内容设置好插件使用的接口地址就可以使用了。接下来请跳到下面的`如何更新`。
 
-#### 其他接口：
+#### 开发者接口：
 
 > Base URL: `http://localhost:8989`
 
@@ -183,9 +194,16 @@ docker compose up -d
 | 心跳检查 | `/__heartbeat__` | 无 | `Ready` | 无 |
 | 负载均衡心跳检查 | `/__lbheartbeat__` | 无 | `Ready` | 无 |
 
-### 如何使用
+### 如何更新
 
-目前可以在浏览器中使用沉浸式翻译插件、简约翻译(kiss translator)插件调用。
+目前是测试版服务器和模型，可能会遇到问题，建议经常保持更新
+
+下载新模型，解压覆盖到原 `models` 模型文件夹，然后更新重启服务器：
+```bash
+docker compose down
+docker pull xxnuo/mtranserver:latest
+docker compose up -d
+```
 
 ## 客户端版本
 
