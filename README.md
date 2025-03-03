@@ -1,13 +1,17 @@
 # MTranServer 
 > 迷你翻译服务器
 
-[English](README_en.md) | 中文
+<img src="https://github.com/user-attachments/assets/c6281154-2d2e-48dd-b757-99c995c8ef01" width="auto" height="64" align="center">
+
+[English](README_en.md) | [日本語](README_ja.md) | 中文
 
 一个超低资源消耗超快的离线翻译服务器，仅需 CPU + 1G 内存即可运行，无需 GPU。单个请求平均响应时间 50ms
 
 翻译质量与 Google 翻译相当。
 
 注意本模型专注于性能优化，所以翻译质量肯定是不如大模型翻译的效果。
+
+<img src="https://github.com/user-attachments/assets/8c59a234-8485-48d0-9009-1ab250b81013" width="auto" height="328">
 
 ## 同类项目效果(CPU,英译中)
 
