@@ -11,16 +11,18 @@
 
 注意本模型专注于性能优化及多种设备私有部署，所以翻译质量肯定是不如大模型翻译的效果。
 
+需要高质量的翻译建议使用在线大模型 API。
+
 <img src="./images/preview.png" width="auto" height="328">
 
 ## 同类项目效果(CPU,英译中)
 
 | 项目名称 | 内存占用 | 并发性能 | 翻译效果 | 速度 | 其他信息 |
 |----------|----------|----------|----------|------|----------|
-| [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve) | 很高 | 差 | 一般 | 慢 | Android 的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快 |
+| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 很高 | 差 | 一般 | 慢 | Android 移植版的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快 |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高 | 一般 | 一般 | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句。[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高 | 一般 | 略差 | 快 | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| Any LLM | 超高 | 动态 | 好好好 | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高 |
+| 其他大模型 | 超高 | 动态 | 好好好 | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高 |
 | MTranServer(本项目) | 低 | 高 | 一般 | 极快 | 单个请求平均响应时间 50ms |
 
 非严格测试，非量化版本对比，仅供参考。
