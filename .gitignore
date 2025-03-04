@@ -4,4 +4,6 @@
 *.log
 core
 *.tar
-/sample
+
+/example/models/enzh
+/example/models/zhen
