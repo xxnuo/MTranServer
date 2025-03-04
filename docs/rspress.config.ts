@@ -6,8 +6,8 @@ export default defineConfig({
   title: 'MTranServer',
   icon: '/icon-min.png',
   logo: {
-    light: '/icon-min.png',
-    dark: '/icon-min.png',
+    light: '/icon-banner-light.png',
+    dark: '/icon-banner-dark.png',
   },
   themeConfig: {
     socialLinks: [
