@@ -123,6 +123,8 @@ Then proceed normally to the next step to download models.
 
 Extract each language's compressed package into the `models` folder.
 
+> Warning: If you use multiple models, memory usage will double, please choose the appropriate model according to your server configuration.
+
 Example folder structure with English-Chinese model:
 ```
 compose.yml
@@ -146,8 +148,6 @@ models/
 │   ├── model.zhen.intgemm.alphas.bin
 │   └── vocab.zhen.spm
 ```
-
-Only download the models you need.
 
 Note: For example, Chinese to Japanese translation first translates Chinese to English, then English to Japanese, requiring both `zhen` and `enja` models. Other language translations work similarly.
 

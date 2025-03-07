@@ -126,7 +126,9 @@ docker load -i mtranserver.image.tar
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
 
-按需要下载模型后，`解压`每个语言的压缩包到 `models` 文件夹内。
+下载模型后，`解压`每个语言的压缩包到 `models` 文件夹内。
+
+> 警告：如果使用多个模型，内存占用会成倍增加，请根据自己服务器配置选择合适的模型。
 
 下载了英译中模型的当前文件夹结构示意图：
 ```
@@ -150,8 +152,6 @@ models/
 │   ├── model.zhen.intgemm.alphas.bin
 │   └── vocab.zhen.spm
 ```
-
-用不到的模型没必要下载。按自己的需求下载模型。
 
 注意：例如中译日的过程是先中译英，再英译日，也就是需要两个模型 `zhen` 和 `enja`。其他语言翻译过程类似。
 
