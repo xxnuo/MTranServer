@@ -44,6 +44,8 @@ ARM、RISCV 架构在适配中 😳
 ### 桌面端 Docker 一键包
 
 > 桌面端一键包部署需要安装 `Docker Desktop`，请自行安装。
+> 
+> Windows、Mac 的 Docker Desktop 内存分配机制会给虚拟机分配比较多的内存，是正常的。Linux 服务器则是正常占用。
 
 确保个人电脑上安装有 `Docker Desktop` 后，下载桌面端一键包
 
