@@ -9,3 +9,4 @@ core
 *.bin
 *.spm
 *.zip
+.env
