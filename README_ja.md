@@ -20,6 +20,7 @@ CPUと1GBのメモリのみで動作する超軽量・高速なオフライン�
 | [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve) | 非常に高い | 低い | 普通 | 遅い | AndroidのRTranslatorは最適化されていますが、リソース使用量は依然として高く、速度も遅いです |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 普通 | 普通 | 中程度 | 中級CPUで3文/秒、高級CPUで15-20文/秒。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高い | 普通 | やや劣る | 速い | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks) |
+| Any LLM | 非常に高い | 動的 | 良い | 非常に遅い | 32B以上のパラメータモデルは効果がありますが、高いハードウェア要件があります |
 | MTranServer（本プロジェクト） | 低い | 高い | 普通 | 超高速 | 1リクエストあたりの平均応答時間50ms |
 
 ※非厳密なテスト、非量子化バージョンの比較、参考値として。

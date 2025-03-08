@@ -20,6 +20,7 @@ Note: This model focuses on performance optimization and private deployment on v
 | [facebook/nllb-200-distilled-600M](https://github.com/thammegowda/nllb-serve) | Very High | Poor | Average | Slow | Android's [RTranslator](https://github.com/niedev/RTranslator) has optimizations but still has high resource usage and slower speed |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High | Average | Average | Medium | Mid-range CPU: 3 sentences/s, high-end CPU: 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | High | Average | Below Average | Fast | [Performance Benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
+| Any LLM | Extremely High | Dynamic | Good | Dynamic Very Slow | 32B or more parameter models perform well, but require high hardware requirements |
 | MTranServer (This Project) | Low | High | Average | Ultra Fast | 50ms average response time per request |
 
 *Note: Non-rigorous testing, non-quantized version comparison, for reference only.
