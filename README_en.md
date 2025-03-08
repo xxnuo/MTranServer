@@ -1,7 +1,7 @@
 # MTranServer 
 > Mini Translation Server Beta Version
 
-<img src="./images/logo.jpg" width="auto" height="128" align="right">
+<img src="./images/logo.png" width="auto" height="128" align="right">
 
 [中文](README.md) | [日本語](README_ja.md) | English
 

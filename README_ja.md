@@ -1,7 +1,7 @@
 # MTranServer 
 > ミニ翻訳サーバー ベータ版
 
-<img src="./images/logo.jpg" width="auto" height="128" align="right">
+<img src="./images/logo.png" width="auto" height="128" align="right">
 
 [English](README_en.md) | [中文](README.md) | 日本語
 
