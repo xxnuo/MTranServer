@@ -179,7 +179,7 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 > 
 > - [Kiss Translator](https://github.com/fishjar/kiss-translator) - Scroll down in `Settings` page to find the custom interface `Custom`. Similarly, set `Maximum Concurrent Requests` and `Request Interval Time` to fully utilize server performance. I set `Maximum Concurrent Requests` to `100` and `Request Interval Time` to `1`. You can adjust based on your server configuration.
 >
-> Configure the plugin's custom interface address according to the table below.
+> Configure the plugin's custom interface address according to the table below. Note: The first request will be slower because it needs to load the model. Subsequent requests will be faster.
 
 | Name | URL | Plugin Setting |
 | --- | --- | --- |
