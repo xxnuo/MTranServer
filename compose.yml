@@ -1,1 +1,10 @@
-
+services:
+  mtranserver:
+    image: xxnuo/mtranserver:latest
+    container_name: mtranserver
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./models:/app/models
+      - ./config.ini:/app/config.ini
