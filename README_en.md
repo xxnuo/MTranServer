@@ -33,6 +33,15 @@ For high-quality translation, consider using online large language model APIs.
 >
 > Table data is for reference only, not strict testing, non-quantized version comparison.
 
+## Update Log
+
+2025.03.08 v1.0.4 -> v1.1.0
+- Fixed memory overflow issue, now running a single English-Chinese model requires only 800M+ memory, and other language model memory usage has also been significantly reduced
+- Added interfaces for multiple plugins
+
+2025.03.07 v1.0.3 -> v1.0.4
+- Added Persian and Polish models
+
 ## Docker Compose Deployment
 
 Currently only supports Docker deployment on amd64 architecture CPUs. ARM and RISCV architectures are under development 😳
