@@ -18,4 +18,7 @@ push: build export
 test:
 	cd example/mtranserver && docker compose down && docker compose up
 
+run:
+	cd example/mtranserver && docker compose down && docker compose up -d
+
 .PHONY: build run export import push test
