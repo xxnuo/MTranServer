@@ -174,9 +174,11 @@ docker compose up -d
 
 > 注：
 > 
-> - [Immersive Translation](https://immersivetranslate.com/docs/services/custom/) - 設定画面で開発者モードの`Beta`機能を有効にすると、翻訳サービスに`カスタムAPI設定`が表示されます。公式の[画像付きチュートリアル](https://immersivetranslate.com/docs/services/custom/)
+> - [Immersive Translation](https://immersivetranslate.com/docs/services/custom/) - 設定画面で開発者モードの`Beta`機能を有効にすると、翻訳サービスに`カスタムAPI設定`が表示されます（[公式チュートリアル](https://immersivetranslate.com/docs/services/custom/)）。その後、`カスタムAPI設定`の`1秒あたりの最大リクエスト数`を増やしてサーバーのパフォーマンスを最大限に活用します。私の設定では`1秒あたりの最大リクエスト数`を`5000`に、`1リクエストあたりの最大段落数`を`10`に設定しています。サーバーの構成に応じて調整してください。
 > 
-> - [Kiss Translator](https://github.com/fishjar/kiss-translator) - 設定ページをスクロールすると、カスタムインターフェース`Custom`が表示されます。
+> - [Kiss Translator](https://github.com/fishjar/kiss-translator) - 設定ページをスクロールすると、カスタムインターフェース`Custom`が表示されます。同様に、`最大同時リクエスト数`と`リクエスト間隔時間`を設定してサーバーのパフォーマンスを最大限に活用します。私の設定では`最大同時リクエスト数`を`100`に、`リクエスト間隔時間`を`1`に設定しています。サーバーの構成に応じて調整してください。
+>
+> 以下の表に従ってプラグインのカスタムインターフェースアドレスを設定してください。
 
 | 名前 | URL | プラグイン設定 |
 | --- | --- | --- |
