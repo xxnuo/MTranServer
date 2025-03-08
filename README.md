@@ -29,37 +29,54 @@
 >
 > 表中数据仅供参考，非严格测试，非量化版本对比。
 
-## Docker Compose 服务器部署
+## 部署
 
 目前仅支持 amd64 架构 CPU 的 Docker 部署。ARM、RISCV 架构在适配中 😳
 
-或者在个人电脑上安装 `Docker Desktop` 后，按下面的指南使用 `Docker Compose` 部署尝鲜。
+### 桌面端一键包
 
-### 1. 准备
+> 桌面端一键包部署需要安装 `Docker Desktop`，请自行安装。
 
-准备一个存放配置的文件夹，打开终端执行以下命令
+确保个人电脑上安装有 `Docker Desktop` 后，下载桌面端一键包
+
+[中国大陆一键包下载地址](https://ocn4e4onws23.feishu.cn/drive/folder/QN1SfG7QeliVWGdDJ8Dce2sUnkf)
+
+[国际一键包下载地址](https://github.com/xxnuo/MTranServer/releases/tag/onekey)
+
+`解压`到任意英文目录，文件夹结构示意图如下：
+
+```
+mtranserver/
+├── compose.yml
+├── models/
+│   ├── enzh
+│   ├── lex.50.50.enzh.s2t.bin
+│   ├── model.enzh.intgemm.alphas.bin
+│   └── vocab.enzh.spm
+```
+
+> 一键包仅包含英译中模型，如果需要下载其他语言的模型，请跳转到下文的 `2. 下载模型`。
+
+在 `mtranserver` 目录内打开命令行，然后直接跳转到下文的 `3. 启动服务`。
+
+### 服务器手动部署
+
+#### 1.1 准备
+
+服务器准备一个存放配置的文件夹，打开终端执行以下命令
 
 ```bash
 mkdir mtranserver
 cd mtranserver
-touch config.ini
 touch compose.yml
 mkdir models
 ```
 
-### 编写配置
-
-#### 1.1 用编辑器打开 `config.ini` 文件，写入以下内容
-```ini
-CORE_API_TOKEN=your_token
-```
-注意，修改这里的 `your_token` 为你自己设置的一个密码，使用英文大小写和数字。
-
-自己内网可以不设置，如果是`云服务器`强烈建议设置一个密码，保护服务以免被`扫到、攻击、滥用`。
-
 #### 1.2 用编辑器打开 `compose.yml` 文件，写入以下内容
 
-> 注：如果需要更改端口，请修改 `ports` 的值，比如修改为 `8990:8989` 表示将服务端口映射到本机 8990 端口。
+> 1. 修改下面的 `your_token` 为你自己设置的一个密码，使用英文大小写和数字。自己内网可以不设置，如果是`云服务器`强烈建议设置一个密码，保护服务以免被`扫到、攻击、滥用`。
+> 
+> 2. 如果需要更改端口，修改 `ports` 的值，比如修改为 `9999:8989` 表示将服务端口映射到本机 9999 端口。
 
 ```yaml
 services:
@@ -71,14 +88,15 @@ services:
       - "8989:8989"
     volumes:
       - ./models:/app/models
-      - ./config.ini:/app/config.ini
+    environment:
+      - CORE_API_TOKEN=your_token
 ```
 
 #### 1.3 可选步骤
 
 若你的机器在中国大陆无法正常联网下载镜像，可以按如下操作导入镜像
 
-打开 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国大陆下载地址(内含 Docker 镜像下载)</a>
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/PSUHfwmKPlu6PodAniVcNEPgnCb" target="_blank">中国大陆 Docker 镜像下载</a>
 
 进入`下载 Docker 镜像文件夹`，选择最新版的镜像 `mtranserver.image.tar` 下载保存到运行 Docker 的机器上。
 
@@ -92,7 +110,7 @@ docker load -i mtranserver.image.tar
 
 > 持续更新模型中
 
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink" target="_blank">中国大陆下载地址(内含 Docker 镜像下载)</a> 模型在`下载模型文件夹内`
+<a href="https://ocn4e4onws23.feishu.cn/drive/folder/C3kffkLr8lxdtid5GYicAcFAnTh" target="_blank">中国大陆模型镜像下载地址</a>
 
 <a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">国际下载地址</a>
 
