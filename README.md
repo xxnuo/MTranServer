@@ -272,7 +272,7 @@ Windows、Mac 和 Linux 独立客户端软件: [MTranServerDesktop](https://gith
 
 X: [@realxxnuo](https://x.com/realxxnuo)
 
-欢迎加我交流技术和开源相关项目～
+欢迎加我交流技术/开源相关项目/私有化部署～
 
 找工作中。可以联系我查看我的简历。
 
