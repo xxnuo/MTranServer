@@ -1,5 +1,5 @@
 # MTranServer 
-> 迷你翻译服务器 测试版
+> 迷你翻译服务器 测试版 ⭐️ 给我个 Star 吧
 
 <img src="./images/icon.png" width="auto" height="128" align="right">
 
