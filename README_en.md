@@ -115,7 +115,7 @@ Then proceed normally to the next step to download models.
 
 ### 2. Download Models
 
-> Models are being continuously updated
+> Models are being continuously updated, if you don't have the language model you need, please contact me to add it.
 
 <a href="https://ocn4e4onws23.feishu.cn/drive/folder/C3kffkLr8lxdtid5GYicAcFAnTh" target="_blank">Mainland China Model Mirror Download</a>
 
