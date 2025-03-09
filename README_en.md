@@ -229,7 +229,7 @@ Server API source code repository: [MTranServerCore](https://github.com/xxnuo/MT
 
 [Buy me a coffee ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
 
-[Mainland China 💗 Afdian](https://afdian.com/a/xxnuo)
+[Mainland China 💗 Like](./DONATE.md)
 
 ---
 

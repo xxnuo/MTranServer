@@ -227,7 +227,7 @@ Windows、Mac 和 Linux 独立客户端软件版 [MTranServerCore](https://githu
 
 [Buy me a coffee ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
 
-[中国大陆 💗 爱发电](https://afdian.com/a/xxnuo)
+[中国大陆 💗 赞赏](./DONATE.md)
 
 ---
 
