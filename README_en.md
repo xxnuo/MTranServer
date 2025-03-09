@@ -59,6 +59,9 @@ mtranserver/
 │   └── vocab.enzh.spm
 ```
 
+
+> If you are in mainland China, the network cannot access the Docker image download, please jump to the next section "1.3 Optional Step".
+>
 > The one-click package only includes the English-Chinese model, if you need to download other language models, please jump to the next section "Download Models".
 
 Open the command line in the `mtranserver` directory and proceed to the `3. Start Service` section.
