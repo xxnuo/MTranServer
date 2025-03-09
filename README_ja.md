@@ -1,5 +1,5 @@
 # MTranServer 
-> ミニ翻訳サーバー ベータ版
+> ミニ翻訳サーバー ベータ版 ⭐️ スターをください
 
 <img src="./images/icon.png" width="auto" height="128" align="right">
 

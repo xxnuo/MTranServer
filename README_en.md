@@ -1,5 +1,5 @@
 # MTranServer 
-> Mini Translation Server Beta Version
+> Mini Translation Server Beta Version ⭐️ Please give me a Star
 
 <img src="./images/icon.png" width="auto" height="128" align="right">
 
