@@ -30,7 +30,7 @@
 
 ### 下载模型
 [国内下载地址](https://ocn4e4onws23.feishu.cn/drive/folder/IboFf5DXhl1iPnd2DGAcEZ9qnnd?from=from_copylink)
-[国际下载地址]()
+[国际下载地址](https://github.com/xxnuo/MTranServer/releases/tag/models)
 
 ## 使用
 
