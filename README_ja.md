@@ -220,9 +220,9 @@ docker compose up -d
 
 ## その他の情報
 
-Windows、Mac、Linuxのスタンドアロンクライアントソフトウェアバージョン [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (開発中、しばらくお待ちください)
+Windows、Mac、Linuxのスタンドアロンクライアントソフトウェアバージョン: [MTranServerClient](https://github.com/xxnuo/MTranServerClient) (開発中、しばらくお待ちください)
 
-サーバーAPIのソースコードリポジトリ：[MTranServerCore](https://github.com/xxnuo/MTranServerCore)
+サーバーAPIのソースコードリポジトリ: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
 
 ## 謝辞
 
