@@ -145,14 +145,13 @@ docker compose up -d
 
 ### API 文档
 
-> 下面表格内的 `localhost` 可以替换为你的服务器地址或 Docker 容器名。
-> 
-> 如果未设置 `CORE_API_TOKEN`，翻译插件使用`无密码`的 API。
-> 
-> 如果设置了 `CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
-> 
-> 下面表格中的 `your_token` 替换为你在 `config.ini` 文件中设置的 `CORE_API_TOKEN` 值。
-> 
+下面表格内的 `localhost` 可以替换为你的服务器地址或 Docker 容器名。
+
+如果未设置 `CORE_API_TOKEN`，翻译插件使用`无密码`的 API。
+
+如果设置了 `CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
+
+下面表格中的 `your_token` 替换为你在 `config.ini` 文件中设置的 `CORE_API_TOKEN` 值。
 
 #### 翻译插件接口：
 
