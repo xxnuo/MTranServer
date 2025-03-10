@@ -183,7 +183,7 @@ docker compose up -d
 
 The server will now run in the background.
 
-### 4. API Documentation
+### 4. Usage
 
 In the following tables, `localhost` can be replaced with your server address or Docker container name.
 
@@ -212,9 +212,22 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 | Kiss Translator (No Password) | `http://localhost:8989/kiss` | `Interface Settings` - `Custom` - `URL` |
 | Kiss Translator (With Password) | `http://localhost:8989/kiss` | Same as above, fill `KEY` with `your_token` |
 
-**Regular users can start using the service after setting up the plugin interface address according to the table above. Skip to "How to Update" below.**
+**Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
-#### Developer APIs:
+### 5. Keep Updating
+
+As this is a beta version of server and models, you may encounter issues. Regular updates are recommended.
+
+Download new models, extract and overwrite the original `models` folder, then update and restart the server:
+```bash
+docker compose down
+docker pull xxnuo/mtranserver:latest
+docker compose up -d
+```
+
+> For users in mainland China who cannot `pull` the image normally, follow the `1.3 Optional Step` to manually download and import the new image.
+
+### Developer APIs:
 
 > Base URL: `http://localhost:8989`
 
@@ -228,20 +241,9 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 | Heartbeat Check | `/__heartbeat__` | None | `Ready` | None |
 | Load Balancer Heartbeat | `/__lbheartbeat__` | None | `Ready` | None |
 
-### 5. How to Update
+> Developer advanced settings please refer to [CONFIG.md](./CONFIG.md)
 
-As this is a beta version of server and models, you may encounter issues. Regular updates are recommended.
-
-Download new models, extract and overwrite the original `models` folder, then update and restart the server:
-```bash
-docker compose down
-docker pull xxnuo/mtranserver:latest
-docker compose up -d
-```
-
-> For users in mainland China who cannot `pull` the image normally, follow the `1.3 Optional Step` to manually download and import the new image.
-
-## Other Information
+## Source Code Repository
 
 Windows, Mac, and Linux standalone client software version: [MTranServerDesktop](https://github.com/xxnuo/MTranServerDesktop) (not public, please be patient for official release)
 
@@ -274,22 +276,3 @@ I'm currently seeking job opportunities. Please contact me to view my resume.
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://star-history.com/#xxnuo/MTranServer&Timeline)
-
-## Advanced Settings
-
-In the same directory as the `compose.yml` file, create a `config.ini` file and write the following content to modify as needed:
-
-```ini
-; API token, default empty
-CORE_API_TOKEN=your_token
-; Internal port, default 8989
-CORE_PORT=8989
-; Log level, default WARNING
-CORE_LOG_LEVEL=WARNING
-; Number of worker threads, default automatically set
-CORE_NUM_WORKERS=
-; Request timeout, default 30000ms
-CORE_REQUEST_TIMEOUT=
-; Maximum number of parallel translations, default automatically set
-CORE_MAX_PARALLEL_TRANSLATIONS=
-```
