@@ -25,6 +25,6 @@ jobs:
         uses: crazy-max/ghaction-github-pages@v3.1.0  # Using an action to publish to GitHub Pages
         with:
           target_branch: main  # The branch to which the changes will be sent
-          build_dir: 'i18n'  # The directory with the collected files
+          build_dir: './'  # The directory with the collected files
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Transferring a GitHub access token
