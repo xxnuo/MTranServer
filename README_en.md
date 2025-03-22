@@ -284,6 +284,10 @@ Translation Models: [firefox-translations-models](https://github.com/mozilla/fir
 
 ## Contact Me
 
+WeChat Community
+
+![Community](./images/community.png)
+
 WeChat: x-xnuo
 
 X: [@realxxnuo](https://x.com/realxxnuo)

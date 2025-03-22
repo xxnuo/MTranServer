@@ -284,6 +284,10 @@ Windows、Mac 和 Linux 独立客户端软件: [MTranServerDesktop](https://gith
 
 ## 联系我
 
+内测问题交流群
+
+![Community](./images/community.png)
+
 微信: x-xnuo
 
 X: [@realxxnuo](https://x.com/realxxnuo)
