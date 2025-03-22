@@ -36,6 +36,10 @@ For high-quality translation, consider using online large language model APIs.
 
 ## Update Log
 
+2025.03.22 v2.0.1 -> v2.0.2
+
+- Adapt to AMD64 architecture
+
 2025.03.21 v1.1.0 -> v2.0.1
 
 - Adapt to ARM architecture 
