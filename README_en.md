@@ -51,11 +51,7 @@ For high-quality translation, consider using online large language model APIs.
 - Fixed memory overflow issue, now running a single English-Chinese model requires only 800M+ memory, and other language model memory usage has also been significantly reduced
 - Added interfaces for multiple plugins
 
-## Docker Compose Deployment
-
-Currently only supports Docker deployment on amd64 architecture CPUs. ARM and RISCV architectures are under development 😳
-
-### Desktop Docker One-Click Package
+## Desktop Docker One-Click Package
 
 > Desktop one-click package deployment requires `Docker Desktop` to be installed. Please install it yourself.
 
@@ -83,7 +79,7 @@ mtranserver/
 
 Open the command line in the `mtranserver` directory and proceed to the `3. Start Service` section.
 
-### Server Docker Manual Deployment
+### Server Docker Compose Deployment
 
 #### 1.1 Preparation
 
