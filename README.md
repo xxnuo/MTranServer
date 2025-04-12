@@ -272,9 +272,9 @@ docker compose up -d
 
 ## 仓库
 
-Windows、Mac 和 Linux 独立客户端软件: [MTranServerDesktop](https://github.com/mcpport/MTranServerDesktop)
+Windows、Mac 和 Linux 独立客户端软件: [MTranServerDesktop](https://github.com/xxnuo/MTranServerDesktop)
 
-服务端 API 仓库: [MTranServerCore](https://github.com/mcpport/MTranServerCore)
+服务端 API 仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
 
 ## 赞助我
 
