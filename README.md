@@ -270,11 +270,11 @@ docker compose up -d
 
 > 开发者高级设置请参考 [CONFIG.md](./CONFIG.md)
 
-## 仓库
+## Repos
 
-Windows、Mac 和 Linux 独立客户端软件: [MTranServerDesktop](https://github.com/xxnuo/MTranServerDesktop)
+Rust 版本服务端：[LinguaSpark/server-rs](https://github.com/LinguaSpark/server)
 
-服务端 API 仓库: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
+TODO：客户端版本计划中
 
 ## 赞助我
 
