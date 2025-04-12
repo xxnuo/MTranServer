@@ -272,7 +272,7 @@ docker compose up -d
 
 ## Repos
 
-Rust 版本服务端：[LinguaSpark/server-rs](https://github.com/LinguaSpark/server)
+Rust 版本服务端：[LinguaSpark/server](https://github.com/LinguaSpark/server)
 
 TODO：客户端版本计划中
 
