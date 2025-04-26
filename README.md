@@ -113,6 +113,7 @@ services:
       - ./models:/app/models
     environment:
       - CORE_API_TOKEN=your_token
+      - CORE_NUM_WORKERS=1
 ```
 
 #### 1.3 可选步骤
