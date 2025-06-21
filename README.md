@@ -285,10 +285,6 @@ TODO：客户端版本计划中
 
 ## 联系我
 
-内测问题交流群
-
-![Community](./images/community.png)
-
 微信: x-xnuo
 
 X: [@realxxnuo](https://x.com/realxxnuo)
