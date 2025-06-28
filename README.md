@@ -3,9 +3,9 @@
 > 迷你翻译服务器 测试版 ⭐️ 给我个 Star 吧
 
 <img src="./images/icon.png" width="auto" height="128" align="right">
-
+<!--
 [English](README_en.md) | 中文
-
+-->
 一个超低资源消耗超快的离线翻译服务器，英译中模型仅需 300MiB 内存即可运行，无需显卡。单个请求平均响应时间 50ms。支持全世界主要语言的翻译。
 
 翻译质量与 Google 翻译相当。
