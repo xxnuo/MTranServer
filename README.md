@@ -273,16 +273,16 @@ docker compose up -d
 
 ## Repos
 
-Rust 版本服务端：[mtranservercore-rs](https://github.com/LinguaSpark/server)
+服务端：[mtranservercore-rs](https://github.com/LinguaSpark/server)
 
-TODO：客户端版本计划中
-
+客户端: [LinguaSpark](https://github.com/orgs/LinguaSpark/repositories)
+<!--
 ## 赞助
 
 [Buy me a coffee ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
 
 [中国大陆 💗 赞赏](./DONATE.md)
-
+-->
 ## 贡献者
 
 <table>
@@ -294,6 +294,8 @@ TODO：客户端版本计划中
   </tbody>
 </table>
 
+<!--
 ## ✨✨✨
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://www.star-history.com/#xxnuo/MTranServer&Timeline)
+-->
