@@ -275,7 +275,8 @@ docker compose up -d
 
 服务端：[mtranservercore-rs](https://github.com/LinguaSpark/server)
 
-客户端: [LinguaSpark](https://github.com/orgs/LinguaSpark/repositories)
+客户端：[LinguaSpark](https://github.com/orgs/LinguaSpark/repositories)
+
 <!--
 ## 赞助
 
@@ -283,6 +284,7 @@ docker compose up -d
 
 [中国大陆 💗 赞赏](./DONATE.md)
 -->
+
 ## 贡献者
 
 <table>
