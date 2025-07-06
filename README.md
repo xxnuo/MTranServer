@@ -277,22 +277,23 @@ Rust 版本服务端：[mtranservercore-rs](https://github.com/LinguaSpark/serve
 
 TODO：客户端版本计划中
 
-## 赞助我
+## 赞助
 
 [Buy me a coffee ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
 
 [中国大陆 💗 赞赏](./DONATE.md)
 
-## 联系我
+## 贡献者
 
-微信: x-xnuo
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Devillmy"><img src="https://avatars.githubusercontent.com/u/36851750?v=3?s=100" width="100px;" alt="Lv Meiyang"/><br /><sub><b>Lv Meiyang</b></sub></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/xxnuo"><img src="https://avatars.githubusercontent.com/u/54252779?v=3?s=100" width="100px;" alt="Leo"/><br /><sub><b>Leo</b></sub></td>
+    </tr>
+  </tbody>
+</table>
 
-X: [@realxxnuo](https://x.com/realxxnuo)
-
-欢迎加我交流技术/开源相关项目/私有化部署～
-
-找工作中。可以联系我查看我的简历。
-
-## Star History
+## ✨✨✨
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://www.star-history.com/#xxnuo/MTranServer&Timeline)
