@@ -273,7 +273,7 @@ docker compose up -d
 
 ## Repos
 
-服务端：[mtranservercore-rs](https://github.com/LinguaSpark/server)
+服务端：[server-rs](https://github.com/LinguaSpark/server)
 
 客户端：[LinguaSpark](https://github.com/orgs/LinguaSpark/repositories)
 
