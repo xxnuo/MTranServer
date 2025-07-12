@@ -3,10 +3,10 @@ name: Build and Publish Docker Image
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [test]
     tags: ["v*"]
   pull_request:
-    branches: [main]
+    branches: [test]
 
 permissions:
   contents: read
