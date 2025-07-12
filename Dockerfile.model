@@ -3,25 +3,35 @@ FROM node:lts-alpine AS builder
 WORKDIR /app
 COPY package.json package.json
 COPY packages/ ./packages/
-# RUN npm install --registry=https://registry.npmmirror.com
 RUN npm install
 
 COPY js/ ./js/
-COPY start.sh ./
-RUN chmod +x start.sh
+
+ARG PRELOAD_SRC_LANG=""
+ARG PRELOAD_TARGET_LANG=""
+
+RUN if [ -n "$PRELOAD_SRC_LANG" ] ; then \
+    node js/utils/preload.js $PRELOAD_SRC_LANG en; \
+    fi
+
+RUN if [ -n "$PRELOAD_TARGET_LANG" ]; then \
+    node js/utils/preload.js en $PRELOAD_TARGET_LANG; \
+    fi
 
 FROM alpine:latest
 
-# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
 RUN apk update && \
     apk add --no-cache nodejs curl
 
 WORKDIR /app
 
-COPY --from=builder /app/js ./js
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/start.sh ./
-RUN chmod +x start.sh
+COPY --from=builder /root/.cache/mtran /root/.cache/mtran
+
+COPY js ./js
+COPY package.json ./package.json
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
 
 EXPOSE 8989
 
@@ -29,15 +39,5 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=8989
 
-ARG PRELOAD_SRC_LANG=""
-ARG PRELOAD_TARGET_LANG=""
-
-RUN if [ -n "$PRELOAD_SRC_LANG" ] ; then \
-    node js/utils/preload.js $PRELOAD_SRC_LANG $PRELOAD_TARGET_LANG; \
-    fi
-
-RUN if [ -n "$PRELOAD_TARGET_LANG" ]; then \
-    node js/utils/preload.js $PRELOAD_TARGET_LANG $PRELOAD_SRC_LANG; \
-    fi
 
 CMD ["./start.sh"]
