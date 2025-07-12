@@ -6,7 +6,66 @@ const { translate, batchTranslate } = require("../../utils/translator");
  * @param {Object} options 选项
  */
 function kissPlugin(fastify, options) {
-  fastify.post("/kiss", async (request, reply) => {
+  fastify.post("/kiss", {
+    schema: {
+      description: "简约翻译插件API",
+      tags: ["plugins"],
+      headers: {
+        type: "object",
+        required: ["key"],
+        properties: {
+          key: { type: "string", description: "API访问令牌" }
+        }
+      },
+      body: {
+        type: "object",
+        properties: {
+          from: { type: "string", description: "源语言代码，默认为auto" },
+          to: { type: "string", description: "目标语言代码，默认为zh-Hans" },
+          text: { type: "string", description: "需要翻译的文本" },
+          texts: { 
+            type: "array", 
+            description: "需要批量翻译的文本数组",
+            items: { type: "string" }
+          }
+        },
+        anyOf: [
+          { required: ["text"] },
+          { required: ["texts"] }
+        ]
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            code: { type: "integer", description: "状态码" },
+            text: { type: "string", description: "翻译结果，批量翻译时为换行符分隔的结果" }
+          }
+        },
+        400: {
+          type: "object",
+          properties: {
+            code: { type: "integer" },
+            error: { type: "string" }
+          }
+        },
+        401: {
+          type: "object",
+          properties: {
+            error: { type: "string" },
+            message: { type: "string" }
+          }
+        },
+        500: {
+          type: "object",
+          properties: {
+            code: { type: "integer" },
+            error: { type: "string" }
+          }
+        }
+      }
+    }
+  }, async (request, reply) => {
     // 验证token
     const token = request.headers.key;
     if (!options.validateToken(token)) {
