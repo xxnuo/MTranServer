@@ -3,7 +3,8 @@ FROM node:lts-alpine AS builder
 WORKDIR /app
 COPY package.json package.json
 COPY packages/ ./packages/
-RUN npm install --registry=https://registry.npmmirror.com
+# RUN npm install --registry=https://registry.npmmirror.com
+RUN npm install
 
 COPY js/ ./js/
 COPY start.sh ./
@@ -11,8 +12,8 @@ RUN chmod +x start.sh
 
 FROM alpine:latest
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
-    apk update && \
+# RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories && \
+RUN apk update && \
     apk add --no-cache nodejs curl
 
 WORKDIR /app
