@@ -1,5 +1,7 @@
 # MTranServer
 
+[English](README_en.md) | 中文
+
 <img src="./images/icon.png" width="auto" height="128" align="right">
 <!--
 [English](README_en.md) | 中文
