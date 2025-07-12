@@ -5,7 +5,8 @@ COPY package.json package.json
 COPY packages/ ./packages/
 RUN npm install
 
-COPY js/ ./js/
+COPY js/utils/preload.js ./js/utils/preload.js
+COPY js/utils/translator.js ./js/utils/translator.js
 
 ARG PRELOAD_SRC_LANG=""
 ARG PRELOAD_TARGET_LANG=""
