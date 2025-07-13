@@ -14,3 +14,9 @@ prepare-js:
 	mkdir -p packages
 	curl -L https://github.com/xxnuo/MTranServer/releases/download/core/mtran-core.tgz -o packages/mtran-core.tgz
 	pnpm install
+
+build:
+	docker build -t xxnuo/mtranserver:latest .
+
+test:
+	docker run -it --rm --name mtranserver-test -p 8989:8989 xxnuo/mtranserver:latest
