@@ -21,7 +21,7 @@ build:
 build-zh:
 	docker build -t xxnuo/mtranserver:test-zh \
     --build-arg PRELOAD_SRC_LANG=zh-Hans \
-    --build-arg PRELOAD_TARGET_LANG=en \
+    --build-arg PRELOAD_TARGET_LANG=zh-Hans \
     -f Dockerfile.model .
 
 test: build
