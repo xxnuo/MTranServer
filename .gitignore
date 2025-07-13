@@ -10,3 +10,6 @@ core
 *.spm
 *.zip
 .env
+/node_modules
+/packages
+pnpm-lock.yaml
