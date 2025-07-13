@@ -118,11 +118,14 @@ async function start() {
         cert: fs.readFileSync(config.httpsCert),
       };
       console.log(`HTTPS Service URL: https://${config.host}:${config.port}`);
+      console.log(`Swagger UI: https://${config.host}:${config.port}/docs`);
     } else {
       // 输出服务信息
       console.log(`HTTP Service URL: http://${config.host}:${config.port}`);
+      console.log(`Swagger UI: http://${config.host}:${config.port}/docs`);
     }
-
+    
+    
     // 监听端口
     await server.listen(listenOptions);
   } catch (err) {
