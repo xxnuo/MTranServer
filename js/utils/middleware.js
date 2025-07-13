@@ -1,4 +1,4 @@
-const { validateToken } = require('./config');
+const { validateToken } = require("./config");
 
 /**
  * 认证中间件
@@ -9,12 +9,14 @@ const { validateToken } = require('./config');
 function authenticate(request, reply, done) {
   const authHeader = request.headers.authorization;
   const token = request.query.token;
-  
+
   // 检查Authorization头或URL中的token参数
   if (validateToken(authHeader) || validateToken(token)) {
     done();
   } else {
-    reply.code(401).send({ error: 'Unauthorized', message: 'Invalid or missing API token' });
+    reply
+      .code(401)
+      .send({ error: "Unauthorized", message: "Invalid or missing API token" });
   }
 }
 
@@ -26,15 +28,15 @@ function authenticate(request, reply, done) {
  */
 function errorHandler(error, request, reply) {
   console.error(`Error processing request: ${error.message}`);
-  
+
   // 返回适当的错误响应
   reply.code(error.statusCode || 500).send({
-    error: error.name || 'InternalServerError',
-    message: error.message || 'An unknown error occurred'
+    error: error.name || "InternalServerError",
+    message: error.message || "An unknown error occurred",
   });
 }
 
 module.exports = {
   authenticate,
-  errorHandler
-}; 
+  errorHandler,
+};

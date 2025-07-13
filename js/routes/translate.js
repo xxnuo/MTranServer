@@ -15,6 +15,22 @@ function registerTranslateRoutes(fastify, options) {
     "/languages",
     {
       preHandler: options.authenticate,
+      schema: {
+        description:
+          "Get the supported languages. Use this endpoint to get the language codes for translation.",
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              languages: {
+                type: "array",
+                items: { type: "string" },
+                description: "The supported languages",
+              },
+            },
+          },
+        },
+      },
     },
     async (request, reply) => {
       return { languages: supportedLanguages };
@@ -27,6 +43,8 @@ function registerTranslateRoutes(fastify, options) {
     {
       preHandler: options.authenticate,
       schema: {
+        description:
+          "Translate a text. Use this endpoint to translate a single text; from: The source language. Recommend using language code from /languages endpoint. Use 'auto' for automatic detection (adds ~0.04s delay). For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; to: The target language. Using language code from /languages endpoint. For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; text: The text to translate",
         body: {
           type: "object",
           required: ["from", "to", "text"],
@@ -75,6 +93,8 @@ function registerTranslateRoutes(fastify, options) {
     {
       preHandler: options.authenticate,
       schema: {
+        description:
+          "Translate a batch of texts. Use this endpoint to translate a batch of texts. from: The source language. Recommend using language code from /languages endpoint. Use 'auto' for automatic detection (adds ~0.04s delay). For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; to: The target language. Using language code from /languages endpoint. For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; texts: The texts to translate",
         body: {
           type: "object",
           required: ["from", "to", "texts"],
