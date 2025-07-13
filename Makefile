@@ -8,6 +8,7 @@ env:
 		exit 1; \
 	fi
 	git pull
+	pnpm i -g nodemon
 	$(MAKE) prepare
 
 prepare:
@@ -29,3 +30,9 @@ test: build
 
 test-zh: build-zh
 	docker run -it --rm --name mtranserver-test-zh -p 8989:8989 xxnuo/mtranserver:test-zh
+
+dev:
+	node js/mts.js
+
+watch:
+	nodemon --watch js --ext js --exec "node js/mts.js"
