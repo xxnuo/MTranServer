@@ -95,7 +95,7 @@ jobs:
           labels: ${{ steps.meta-zh.outputs.labels }}
           build-args: |
             PRELOAD_SRC_LANG=zh-Hans
-            PRELOAD_TARGET_LANG=en
+            PRELOAD_TARGET_LANG=zh-Hans
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -124,6 +124,6 @@ jobs:
           labels: ${{ steps.meta-ja.outputs.labels }}
           build-args: |
             PRELOAD_SRC_LANG=ja
-            PRELOAD_TARGET_LANG=en
+            PRELOAD_TARGET_LANG=ja
           cache-from: type=gha
           cache-to: type=gha,mode=max
