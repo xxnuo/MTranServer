@@ -16,7 +16,7 @@ For high-quality translation, consider using online large language model APIs.
 
 ## Demo
 
-> No demo yet, see preview image
+> Coming soon
 
 <img src="./images/preview.png" width="auto" height="460">
 
@@ -36,63 +36,46 @@ For high-quality translation, consider using online large language model APIs.
 
 ## Update Log
 
-2025.03.22 v2.0.1 -> v2.0.2
+2025.07.16 v3.0.0 [Coming Soon]
 
-- Adapt to AMD64 architecture
+- Complete rewrite
+- Better compatibility
+- Stronger performance
 
-2025.03.21 v1.1.0 -> v2.0.1
+> Note: This update is currently in progress, the guides and images below have not been updated yet [2025.07.16], please be patient...
 
-- Adapt to ARM architecture 
-- Update the framework 
-- Update the models
+## Desktop Client
 
-2025.03.08 v1.0.4 -> v1.1.0
+Desktop client software coming soon, stay tuned.
 
-- Fixed memory overflow issue, now running a single English-Chinese model requires only 800M+ memory, and other language model memory usage has also been significantly reduced
-- Added interfaces for multiple plugins
+## Server Deployment
 
-## Desktop Docker One-Click Package
+> This may be challenging for regular users, consider using the desktop client when available.
 
-> Desktop one-click package deployment requires `Docker Desktop` to be installed. Please install it yourself.
+### 1.1 Requirements
 
-After ensuring that `Docker Desktop` is installed on your personal computer, download the desktop one-click package
+- Docker
+- Docker Compose (optional)
 
-[Mainland China One-Click Package Download](https://ocn4e4onws23.feishu.cn/drive/folder/QN1SfG7QeliVWGdDJ8Dce2sUnkf)
+### 1.2 Docker Deployment
 
-[International One-Click Package Download](https://github.com/xxnuo/MTranServer/releases/tag/onekey)
+Copy the command below and execute it in your terminal.
 
-`Extract` to any English directory, the folder structure is as follows:
-
-```
-mtranserver/
-├── compose.yml
-├── models/
-│   ├── enzh
-│   ├── lex.50.50.enzh.s2t.bin
-│   ├── model.enzh.intgemm.alphas.bin
-│   └── vocab.enzh.spm
+```bash
+docker run -d --name mtranserver -p 8989:8989 -e CORE_API_TOKEN=your_token xxnuo/mtranserver:latest
 ```
 
-> If you are in mainland China, the network cannot access the Docker image download, please jump to the next section "1.3 Optional Step".
->
-> The one-click package only includes the English-Chinese model, if you need to download other language models, please jump to the next section "Download Models".
+### 1.3 Docker Compose Deployment
 
-Open the command line in the `mtranserver` directory and proceed to the `3. Start Service` section.
-
-### Server Docker Compose Deployment
-
-#### 1.1 Preparation
-
-Create a folder for configuration files and run the following commands in terminal:
+Prepare a folder for configuration files on your server and run the following commands in terminal:
 
 ```bash
 mkdir mtranserver
 cd mtranserver
 touch compose.yml
-mkdir models
 ```
 
-#### 1.2 Open `compose.yml` with an editor and write:
+Open `compose.yml` with an editor and add the following content:
 
 > 1. Change `your_token` below to your own password using English letters and numbers. For internal network use, setting a password is optional, but for `cloud servers`, it is strongly recommended to set a password to protect against `scanning, attacks, and abuse`.
 >
@@ -106,71 +89,11 @@ services:
     restart: unless-stopped
     ports:
       - "8989:8989"
-    volumes:
-      - ./models:/app/models
     environment:
       - CORE_API_TOKEN=your_token
 ```
 
-#### 1.3 Optional Step
-
-If you cannot download the image normally in mainland China, you can import the image as follows:
-
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/PSUHfwmKPlu6PodAniVcNEPgnCb" target="_blank">Mainland China Docker Image Download</a>
-
-Download the latest image `mtranserver.image.tar` to your Docker machine.
-
-Open terminal in the download directory and run the following command to import the image:
-
-```bash
-docker load -i mtranserver.image.tar
-```
-
-Then proceed normally to the next step to download models.
-
-### 2. Download Models
-
-> Models are being continuously updated, if you don't have the language model you need, please contact me to add it.
-
-<a href="https://ocn4e4onws23.feishu.cn/drive/folder/C3kffkLr8lxdtid5GYicAcFAnTh" target="_blank">Mainland China Model Mirror Download</a>
-
-<a href="https://github.com/xxnuo/MTranServer/releases/tag/models" target="_blank">International Download Link</a>
-
-Extract each language's compressed package into the `models` folder.
-
-> Warning: If you use multiple models, memory usage will double, please choose the appropriate model according to your server configuration.
-
-Example folder structure with English-Chinese model:
-
-```
-compose.yml
-models/
-├── enzh
-│   ├── lex.50.50.enzh.s2t.bin
-│   ├── model.enzh.intgemm.alphas.bin
-│   └── vocab.enzh.spm
-```
-
-Example with Chinese-English and English-Chinese models:
-
-```
-compose.yml
-models/
-├── enzh
-│   ├── lex.50.50.enzh.s2t.bin
-│   ├── model.enzh.intgemm.alphas.bin
-│   └── vocab.enzh.spm
-├── zhen
-│   ├── lex.50.50.zhen.t2s.bin
-│   ├── model.zhen.intgemm.alphas.bin
-│   └── vocab.zhen.spm
-```
-
-Note: For example, Chinese to Japanese translation first translates Chinese to English, then English to Japanese, requiring both `zhen` and `enja` models. Other language translations work similarly.
-
-### 3. Start Service
-
-First, test the service to ensure models are placed correctly, can load normally, and the port isn't occupied.
+First, test the service to ensure the port isn't occupied:
 
 ```bash
 docker compose up
@@ -201,7 +124,19 @@ docker compose up -d
 
 The server will now run in the background.
 
-### 4. Usage
+## Preparing Models
+
+⚠️ Note: Models will be automatically downloaded in the background when you first request the translation API, no manual download needed.
+
+The automatic model download feature requires internet connection (no proxy needed in mainland China), **all subsequent translations and other functions work completely offline without internet**.
+
+**So the first translation won't be instant, you'll need to wait a moment!**
+
+You can monitor the progress in the Docker logs. Download speed depends on your network speed, typically completing a language model download within 10 seconds. If the download times out or fails, check if your container has normal internet access.
+
+If your machine is on an internal network without internet access, you can follow the instructions below to manually download models.
+
+### 4. API Usage
 
 In the following tables, `localhost` can be replaced with your server address or Docker container name.
 
@@ -223,12 +158,14 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 >
 > Configure the plugin's custom interface address according to the table below. Note: The first request will be slower because it needs to load the model. Subsequent requests will be faster.
 
-| Name                                  | URL                                           | Plugin Setting                                                    |
-| ------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
-| Immersive Translation (No Password)   | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                 |
-| Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `CORE_API_TOKEN` value |
-| Kiss Translator (No Password)         | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                           |
-| Kiss Translator (With Password)       | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                       |
+| Name                                           | URL                                           | Plugin Setting                                                    |
+| ---------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| Immersive Translation (No Password)            | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                 |
+| Immersive Translation (With Password)          | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `CORE_API_TOKEN` value |
+| Kiss Translator (No Password)                  | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                           |
+| Kiss Translator (With Password)                | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                       |
+| Selection Translator Custom Source (No Password)| `http://localhost:8989/hcfy`                  | `Settings` - `Others` - `Custom Translation Source` - `API URL`   |
+| Selection Translator Custom Source (With Password)| `http://localhost:8989/hcfy?token=your_token` | `Settings` - `Others` - `Custom Translation Source` - `API URL`   |
 
 **Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
@@ -252,29 +189,16 @@ docker compose up -d
 
 | Name                    | URL                | Request Format                                                            | Response Format                                 | Auth Header               |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
-| Service Version         | `/version`         | None                                                                      | None                                            | None                      |
-| Language Pair List      | `/models`          | None                                                                      | None                                            | Authorization: your_token |
+| Service Version         | `/version`         | None                                                                      | `{"version": "v1.1.0"}`                         | None                      |
+| Language Pair List      | `/models`          | None                                                                      | `{"models":["zhen","enzh"]}`                    | Authorization: your_token |
 | Standard Translation    | `/translate`       | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                     | `{"result": "你好，世界！"}`                    | Authorization: your_token |
 | Batch Translation       | `/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}` | `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
 | Health Check            | `/health`          | None                                                                      | `{"status": "ok"}`                              | None                      |
 | Heartbeat Check         | `/__heartbeat__`   | None                                                                      | `Ready`                                         | None                      |
 | Load Balancer Heartbeat | `/__lbheartbeat__` | None                                                                      | `Ready`                                         | None                      |
 | Google Translate Compatible Interface 1 | `/language/translate/v2` | `{"q": "The Great Pyramid of Giza", "source": "en", "target": "zh", "format": "text"}` | `{"data": {"translations": [{"translatedText": "吉萨大金字塔"}]}}` | Authorization: your_token |
+
 > Developer advanced settings please refer to [CONFIG.md](./CONFIG.md)
-
-## Repository
-
-Windows, Mac, and Linux standalone client software version: [MTranServerDesktop](https://github.com/xxnuo/MTranServerDesktop)
-
-Server API repository: [MTranServerCore](https://github.com/xxnuo/MTranServerCore)
-
-## Thanks
-
-Inference Framework: C++ [Marian-NMT](https://marian-nmt.github.io) Framework
-
-Translation Models: [firefox-translations-models](https://github.com/mozilla/firefox-translations-models)
-
-> Join us: [https://www.mozilla.org/zh-CN/contribute/](https://www.mozilla.org/zh-CN/contribute/)
 
 ## Support Me
 
@@ -282,19 +206,16 @@ Translation Models: [firefox-translations-models](https://github.com/mozilla/fir
 
 [Mainland China 💗 Like](./DONATE.md)
 
-## Contact Me
+## Contributors
 
-WeChat Community
-
-![Community](./images/community.png)
-
-WeChat: x-xnuo
-
-X: [@realxxnuo](https://x.com/realxxnuo)
-
-Feel free to connect with me to discuss technology and open-source projects!
-
-I'm currently seeking job opportunities. Please contact me to view my resume.
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Devillmy"><img src="https://avatars.githubusercontent.com/u/36851750?v=3?s=100" width="100px;" alt="Lv Meiyang"/><br /><sub><b>Lv Meiyang</b></sub></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/xxnuo"><img src="https://avatars.githubusercontent.com/u/54252779?v=3?s=100" width="100px;" alt="Leo"/><br /><sub><b>Leo</b></sub></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Star History
 
