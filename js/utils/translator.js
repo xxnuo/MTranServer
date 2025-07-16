@@ -1,13 +1,13 @@
 const Translator = require("@mtran/core");
 
-const loadedModels = new Set();
+const loadedLangs = new Set();
+let supportedLanguages = Translator.GetSupportLanguages();
 
-/**
- * 获取支持的语言列表
- * @returns {Array} 支持的语言列表
- */
-function getSupportedLanguages() {
-  return Translator.GetSupportLanguages();
+function checkSupportLanguage(from, to) {
+  return (
+    (supportedLanguages.includes(from) || from === "auto") &&
+    supportedLanguages.includes(to)
+  );
 }
 
 /**
@@ -17,10 +17,13 @@ function getSupportedLanguages() {
  * @returns {Promise<void>}
  */
 async function preloadModel(from, to) {
+  if (!checkSupportLanguage(from, to)) {
+    throw new Error("Unsupported language pair");
+  }
   const modelKey = `${from}_${to}`;
-  if (!loadedModels.has(modelKey)) {
+  if (!loadedLangs.has(modelKey)) {
     await Translator.Preload(from, to);
-    loadedModels.add(modelKey);
+    loadedLangs.add(modelKey);
     console.log(`Successfully loaded model for language pair: ${modelKey}`);
   }
 }
@@ -33,8 +36,9 @@ async function preloadModel(from, to) {
  * @returns {Promise<string>} 翻译结果
  */
 async function translate(text, from, to) {
-  // 如果模型未加载，先加载模型
-  await preloadModel(from, to);
+  if (!checkSupportLanguage(from, to)) {
+    throw new Error("Unsupported language pair");
+  }
   return Translator.Translate(text, from, to);
 }
 
@@ -46,9 +50,9 @@ async function translate(text, from, to) {
  * @returns {Promise<string[]>} 翻译结果数组
  */
 async function batchTranslate(texts, from, to) {
-  // 如果模型未加载，先加载模型
-  await preloadModel(from, to);
-
+  if (!checkSupportLanguage(from, to)) {
+    throw new Error("Unsupported language pair");
+  }
   // 并行处理翻译请求
   const promises = texts.map((text) => Translator.Translate(text, from, to));
   return Promise.all(promises);
@@ -64,7 +68,7 @@ async function shutdown() {
 }
 
 module.exports = {
-  getSupportedLanguages,
+  supportedLanguages,
   preloadModel,
   translate,
   batchTranslate,
