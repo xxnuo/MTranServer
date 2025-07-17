@@ -57,7 +57,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -81,7 +81,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.model
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-zh.outputs.tags }}
           labels: ${{ steps.meta-zh.outputs.labels }}
@@ -108,7 +108,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.model
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64/v8
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-ja.outputs.tags }}
           labels: ${{ steps.meta-ja.outputs.labels }}
