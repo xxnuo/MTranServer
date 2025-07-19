@@ -7,7 +7,7 @@ const { translate } = require("../../utils/translator");
  */
 function googlePlugin(fastify, options) {
   fastify.post(
-    "/language/translate/v2",
+    "/google/language/translate/v2",
     {
       preHandler: options.authenticate,
       schema: {
