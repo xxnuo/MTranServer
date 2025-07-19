@@ -6,7 +6,7 @@
 const defaultConfig = {
   port: process.env.PORT || 8989,
   host: process.env.HOST || "0.0.0.0",
-  apiToken: process.env.CORE_API_TOKEN || "",
+  apiToken: process.env.API_TOKEN || process.env.CORE_API_TOKEN || "", // 兼容旧版本
   logLevel: process.env.LOG_LEVEL || "warn",
   https: process.env.HTTPS === "true" || false,
   httpsKey: process.env.HTTPS_KEY || "",
@@ -28,7 +28,7 @@ function getConfig() {
  */
 function validateToken(token) {
   // 如果未设置API令牌，则不需要验证
-  if (!defaultConfig.apiToken) {
+  if (defaultConfig.apiToken === "") {
     return true;
   }
   return token === defaultConfig.apiToken;

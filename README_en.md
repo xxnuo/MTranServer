@@ -102,18 +102,8 @@ docker compose up
 Example normal output:
 
 ```
-[+] Running 2/2
- ✔ Network sample_default  Created  0.1s
- ✔ Container mtranserver   Created  0.1s
-Attaching to mtranserver
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Using maximum available worker count: 16
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Starting Translation Service
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Service port: 8989
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Worker threads: 16
-mtranserver  | Successfully loaded model for language pair: enzh
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Models loaded.
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Using default max parallel translations: 32
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Max parallel translations: 32
+HTTP Service URL: http://0.0.0.0:8989
+Swagger UI: http://0.0.0.0:8989/docs
 ```
 
 Then press `Ctrl+C` to stop the service, and start it officially:
@@ -142,13 +132,13 @@ In the following tables, `localhost` can be replaced with your server address or
 
 The port `8989` can be replaced with the port value you set in `compose.yml`.
 
-If `CORE_API_TOKEN` is not set or empty, translation plugins use the API without password.
+If `API_TOKEN` or `CORE_API_TOKEN` is not set or empty, translation plugins use the API without password.
 
-If `CORE_API_TOKEN` is set, translation plugins use the API with password.
+If `API_TOKEN` or `CORE_API_TOKEN` is set, translation plugins use the API with password.
 
-Replace `your_token` in the following tables with your `CORE_API_TOKEN` value from `config.ini`.
+Replace `your_token` in the following tables with your `API_TOKEN` or `CORE_API_TOKEN` value from environment variables.
 
-#### Translation Plugin Interfaces:
+#### Translation Plugin Interfaces
 
 > Note:
 >
@@ -161,7 +151,7 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 | Name                                           | URL                                           | Plugin Setting                                                    |
 | ---------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
 | Immersive Translation (No Password)            | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                 |
-| Immersive Translation (With Password)          | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `CORE_API_TOKEN` value |
+| Immersive Translation (With Password)          | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `API_TOKEN` or `CORE_API_TOKEN` value |
 | Kiss Translator (No Password)                  | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                           |
 | Kiss Translator (With Password)                | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                       |
 | Selection Translator Custom Source (No Password)| `http://localhost:8989/hcfy`                  | `Settings` - `Others` - `Custom Translation Source` - `API URL`   |
@@ -171,19 +161,13 @@ Replace `your_token` in the following tables with your `CORE_API_TOKEN` value fr
 
 ### 5. Keep Updating
 
-As this is a beta version of server and models, you may encounter issues. Regular updates are recommended.
-
-Download new models, extract and overwrite the original `models` folder, then update and restart the server:
-
 ```bash
-docker compose down
+cd mtranserver
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-> For users in mainland China who cannot `pull` the image normally, follow the `1.3 Optional Step` to manually download and import the new image.
-
-### Developer APIs:
+### Developer APIs
 
 > Base URL: `http://localhost:8989`
 >
