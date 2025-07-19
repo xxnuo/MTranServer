@@ -17,7 +17,7 @@ function immePlugin(fastify, options) {
           type: "object",
           // 移除必需的token要求
           properties: {
-            token: { type: "string", description: "API访问令牌" },
+            token: { type: "string", description: "token" },
           },
         },
         body: {
@@ -88,7 +88,7 @@ function immePlugin(fastify, options) {
       if (!validateToken(token)) {
         return reply.code(401).send({
           error: "Unauthorized",
-          message: "Invalid or missing API token",
+          message: "Invalid or missing token",
         });
       }
 

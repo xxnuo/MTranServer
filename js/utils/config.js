@@ -5,12 +5,12 @@
 // 默认配置
 const defaultConfig = {
   port: process.env.PORT || 8989,
-  host: process.env.HOST || '0.0.0.0',
-  apiToken: process.env.CORE_API_TOKEN || '',
-  logLevel: process.env.LOG_LEVEL || 'warn',
-  https: process.env.HTTPS === 'true' || false,
-  httpsKey: process.env.HTTPS_KEY || '',
-  httpsCert: process.env.HTTPS_CERT || '',
+  host: process.env.HOST || "0.0.0.0",
+  apiToken: process.env.CORE_API_TOKEN || "",
+  logLevel: process.env.LOG_LEVEL || "warn",
+  https: process.env.HTTPS === "true" || false,
+  httpsKey: process.env.HTTPS_KEY || "",
+  httpsCert: process.env.HTTPS_CERT || "",
 };
 
 /**
@@ -31,7 +31,6 @@ function validateToken(token) {
   if (!defaultConfig.apiToken) {
     return true;
   }
-  
   return token === defaultConfig.apiToken;
 }
 
@@ -40,12 +39,12 @@ function validateToken(token) {
  * @returns {string} 版本号
  */
 function getVersion() {
-  const packageJson = require('../../package.json');
-  return packageJson.version || 'unknown';
+  const packageJson = require("../../package.json");
+  return packageJson.version || "unknown";
 }
 
 module.exports = {
   getConfig,
   validateToken,
-  getVersion
-}; 
+  getVersion,
+};
