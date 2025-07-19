@@ -35,7 +35,7 @@
 
 ## 更新日志
 
-2025.07.16 v3.0.0 [即将发布]
+2025.07.21 v3.0.1
 
 - 完全重写服务架构，提高稳定性和性能
 - 添加 Swagger UI 接口文档
@@ -43,10 +43,6 @@
 - 添加模型自动下载机制，使用更流畅
 - 支持更多语言对的翻译
 - 更新模型
-
-⚠️⚠️⚠️注意，本次更新改动较大，正在进行中，下面的指南和镜像尚未更新建设完成 [2025.07.16]，请耐心等待...
-
-⚠️⚠️⚠️请勿升级 3.0.0-rc1，等待正式版发布！
 
 ## 桌面端
 
@@ -66,7 +62,7 @@
 复制下面的命令，在终端执行。
 
 ```bash
-docker run -d --name mtranserver -p 8989:8989 -e CORE_API_TOKEN=your_token xxnuo/mtranserver:latest
+docker run -d --name mtranserver -p 8989:8989 -e API_TOKEN=your_token xxnuo/mtranserver:latest
 ```
 
 ### 1.3 Docker Compose 部署
