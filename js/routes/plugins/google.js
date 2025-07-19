@@ -11,16 +11,46 @@ function googlePlugin(fastify, options) {
     {
       preHandler: options.authenticate,
       schema: {
+        description: "Google翻译兼容API",
+        tags: ["plugins"],
         body: {
           type: "object",
           required: ["q", "source", "target"],
           properties: {
-            q: { type: "string" },
-            source: { type: "string" },
-            target: { type: "string" },
-            format: { type: "string", default: "text" },
+            q: { type: "string", description: "需要翻译的文本" },
+            source: { type: "string", description: "源语言代码" },
+            target: { type: "string", description: "目标语言代码" },
+            format: { type: "string", default: "text", description: "文本格式，默认为text" },
           },
         },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              data: {
+                type: "object",
+                properties: {
+                  translations: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        translatedText: { type: "string", description: "翻译结果" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          500: {
+            type: "object",
+            properties: {
+              error: { type: "string" },
+              message: { type: "string" }
+            }
+          }
+        }
       },
     },
     async (request, reply) => {
