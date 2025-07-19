@@ -36,9 +36,11 @@ For high-quality translation, consider using online large language model APIs.
 
 2025.07.16 v3.0.0 [Coming Soon]
 
-- Complete rewrite
-- Better compatibility
-- Stronger performance
+- Complete rewrite of service architecture for improved stability and performance
+- Added Swagger UI API documentation for easier developer usage
+- Added support for secure HTTPS connections
+- Optimized model auto-download mechanism for smoother first-time use
+- Support for more language pairs and update models
 
 > Note: This update is currently in progress, the guides and images below have not been updated yet [2025.07.16], please be patient...
 
@@ -184,11 +186,13 @@ docker compose up -d
 ### Developer APIs:
 
 > Base URL: `http://localhost:8989`
+>
+> In v3.0.0, complete API documentation can be viewed at `http://localhost:8989/docs` using Swagger UI
 
 | Name                    | URL                | Request Format                                                            | Response Format                                 | Auth Header               |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
-| Service Version         | `/version`         | None                                                                      | `{"version": "v1.1.0"}`                         | None                      |
-| Language Pair List      | `/models`          | None                                                                      | `{"models":["zhen","enzh"]}`                    | Authorization: your_token |
+| Service Version         | `/version`         | None                                                                      | `{"version": "v3.0.0"}`                         | None                      |
+| Supported Languages     | `/languages`       | None                                                                      | `{"languages":["en","zh","ja","ko"...]}`        | Authorization: your_token |
 | Standard Translation    | `/translate`       | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                     | `{"result": "你好，世界！"}`                    | Authorization: your_token |
 | Batch Translation       | `/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}` | `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
 | Health Check            | `/health`          | None                                                                      | `{"status": "ok"}`                              | None                      |
