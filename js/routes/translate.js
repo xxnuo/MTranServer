@@ -18,6 +18,17 @@ function registerTranslateRoutes(fastify, options) {
       schema: {
         description:
           "Get the supported languages. Use this endpoint to get the language codes for translation.",
+        security: [{ Authorization: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            Authorization: {
+              type: "string",
+              description:
+                "API token for authentication (format: 'your_token')",
+            },
+          },
+        },
         response: {
           200: {
             type: "object",
@@ -45,6 +56,17 @@ function registerTranslateRoutes(fastify, options) {
       schema: {
         description:
           "Translate a text. Use this endpoint to translate a single text; from: The source language. Recommend using language code from /languages endpoint. Use 'auto' for automatic detection (adds ~0.04s delay). For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; to: The target language. Using language code from /languages endpoint. For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; text: The text to translate",
+        security: [{ Authorization: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            Authorization: {
+              type: "string",
+              description:
+                "API token for authentication (format: 'your_token')",
+            },
+          },
+        },
         body: {
           type: "object",
           required: ["from", "to", "text"],
@@ -95,6 +117,17 @@ function registerTranslateRoutes(fastify, options) {
       schema: {
         description:
           "Translate a batch of texts. Use this endpoint to translate a batch of texts. from: The source language. Recommend using language code from /languages endpoint. Use 'auto' for automatic detection (adds ~0.04s delay). For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; to: The target language. Using language code from /languages endpoint. For Chinese translation, 'zh-Hans' is more efficient than 'zh-CN'; texts: The texts to translate",
+        security: [{ Authorization: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            Authorization: {
+              type: "string",
+              description:
+                "API token for authentication (format: 'your_token')",
+            },
+          },
+        },
         body: {
           type: "object",
           required: ["from", "to", "texts"],
