@@ -57,7 +57,13 @@
 - Docker
 - Docker Compose（可选）
 
-### 1.2 Docker 部署
+### 1.2 镜像版本
+
+- 默认无内置模型翻译时自动下载：`xxnuo/mtranserver:latest`
+- 内置中英互译模型：`xxnuo/mtranserver:latest-zh`
+- 内置日英互译模型：`xxnuo/mtranserver:latest-ja`
+
+### 1.3 Docker 部署
 
 复制下面的命令，在终端执行。
 
@@ -65,7 +71,7 @@
 docker run -d --name mtranserver -p 8989:8989 -e API_TOKEN=your_token xxnuo/mtranserver:latest
 ```
 
-### 1.3 Docker Compose 部署
+### 1.4 Docker Compose 部署
 
 服务器准备一个存放配置的文件夹，打开终端执行以下命令
 
