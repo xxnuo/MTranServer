@@ -152,8 +152,6 @@ Replace `your_token` in the following tables with your `API_TOKEN` or `CORE_API_
 | Immersive Translation (With Password)          | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `API_TOKEN` or `CORE_API_TOKEN` value |
 | Kiss Translator (No Password)                  | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                           |
 | Kiss Translator (With Password)                | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                       |
-| Selection Translator Custom Source (No Password)| `http://localhost:8989/hcfy`                  | `Settings` - `Others` - `Custom Translation Source` - `API URL`   |
-| Selection Translator Custom Source (With Password)| `http://localhost:8989/hcfy?token=your_token` | `Settings` - `Others` - `Custom Translation Source` - `API URL`   |
 
 **Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
