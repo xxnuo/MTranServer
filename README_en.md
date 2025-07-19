@@ -34,15 +34,13 @@ For high-quality translation, consider using online large language model APIs.
 
 ## Update Log
 
-2025.07.16 v3.0.0 [Coming Soon]
+2025.07.21 v3.0.1
 
 - Complete rewrite of service architecture for improved stability and performance
 - Added Swagger UI API documentation for easier developer usage
 - Added support for secure HTTPS connections
 - Optimized model auto-download mechanism for smoother first-time use
 - Support for more language pairs and update models
-
-> Note: This update is currently in progress, the guides and images below have not been updated yet [2025.07.16], please be patient...
 
 ## Desktop Client
 
@@ -62,7 +60,7 @@ Desktop client software coming soon, stay tuned.
 Copy the command below and execute it in your terminal.
 
 ```bash
-docker run -d --name mtranserver -p 8989:8989 -e CORE_API_TOKEN=your_token xxnuo/mtranserver:latest
+docker run -d --name mtranserver -p 8989:8989 -e API_TOKEN=your_token xxnuo/mtranserver:latest
 ```
 
 ### 1.3 Docker Compose Deployment
@@ -101,7 +99,7 @@ docker compose up
 
 Example normal output:
 
-```
+```bash
 HTTP Service URL: http://0.0.0.0:8989
 Swagger UI: http://0.0.0.0:8989/docs
 ```
