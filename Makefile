@@ -1,4 +1,4 @@
-.PHONY: env prepare-js
+.PHONY: env prepare build test
 
 env:
 	if pnpm -v > /dev/null 2>&1; then \
@@ -8,13 +8,12 @@ env:
 		exit 1; \
 	fi
 	git pull
-	$(MAKE) prepare-js
+	$(MAKE) prepare
 
-prepare-js:
+prepare:
 	mkdir -p packages
 	curl -L https://github.com/xxnuo/MTranServer/releases/download/core/mtran-core.tgz -o packages/mtran-core.tgz
-	pnpm install
-
+	
 build:
 	docker build -t xxnuo/mtranserver:latest .
 
