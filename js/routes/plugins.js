@@ -1,7 +1,8 @@
-const immePlugin = require('./plugins/imme');
-const kissPlugin = require('./plugins/kiss');
-const hcfyPlugin = require('./plugins/hcfy');
-const googlePlugin = require('./plugins/google');
+const immePlugin = require("./plugins/imme");
+const kissPlugin = require("./plugins/kiss");
+const googlePlugin = require("./plugins/google");
+const deeplPlugin = require("./plugins/deepl");
+const deeplxPlugin = require("./plugins/deeplx");
 
 /**
  * 注册翻译插件兼容路由
@@ -12,8 +13,9 @@ function registerPluginRoutes(fastify, options) {
   // 加载各个插件
   immePlugin(fastify, options);
   kissPlugin(fastify, options);
-  hcfyPlugin(fastify, options);
   googlePlugin(fastify, options);
+  deeplPlugin(fastify, options);
+  deeplxPlugin(fastify, options);
 }
 
 module.exports = registerPluginRoutes;
