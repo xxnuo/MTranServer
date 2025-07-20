@@ -23,8 +23,8 @@
 | [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 很高     | 差       | 一般     | 慢   | Android 移植版的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快                        |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | 很高     | 一般     | 一般     | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句。[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)           | 高       | 一般     | 略差     | 快   | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                     |
-| 其他大模型                                                             | 超高     | 动态     | 好好好     | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高                                                                                  |
-| MTranServer(本项目)                                                    | 低       | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms                                                                                                         |
+| 其他大模型                                                             | 超高     | 动态     | 好好好   | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高                                                                                  |
+| MTranServer(本项目)                                                    | 低       | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms, 加载英译中模型后占用约 450MB 内存                                                                      |
 
 > 现有的 Transformer 架构的大模型的小参数量化版本不在考虑范围。
 >
@@ -156,12 +156,12 @@ docker compose up -d
 >
 > 接下来按下表的设置方法设置插件的自定义接口地址。注意第一次请求会慢一些，因为需要加载模型。以后的请求会很快。
 
-| 名称                       | URL                                           | 插件设置                                                          |
-| -------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
-| 沉浸式翻译无密码           | `http://localhost:8989/imme`                  | `自定义API 设置` - `API URL`                                      |
-| 沉浸式翻译有密码           | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `API_TOKEN` 或 `CORE_API_TOKEN` 值 |
-| 简约翻译无密码             | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                     |
-| 简约翻译有密码             | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                  |
+| 名称             | URL                                           | 插件设置                                                                         |
+| ---------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| 沉浸式翻译无密码 | `http://localhost:8989/imme`                  | `自定义API 设置` - `API URL`                                                     |
+| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `API_TOKEN` 或 `CORE_API_TOKEN` 值 |
+| 简约翻译无密码   | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                                    |
+| 简约翻译有密码   | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                                 |
 
 **普通用户参照表格内容设置好插件使用的接口地址就可以使用了。**
 
@@ -176,18 +176,18 @@ docker compose up -d
 ### 开发者接口
 
 > Base URL: `http://localhost:8989`
-> 
-> 在 v3.0.0 及以上版本中，API文档可通过访问 `http://localhost:8989/docs` 查看完整 Swagger 文档
+>
+> 在 v3.0.0 及以上版本中，API 文档可通过访问 `http://localhost:8989/docs` 查看完整 Swagger 文档
 
-| 名称               | URL                      | 请求格式                                                                               | 返回格式                                        | 认证头                    |
-| ------------------ | ------------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
-| 服务版本           | `/version`               | 无                                                                                     | `{"version": "v3.0.0"}`                         | 无                        |
-| 支持的语言列表     | `/languages`             | 无                                                                                     | `{"languages":["en","zh","ja","ko"...]}`        | Authorization: your_token |
-| 普通翻译接口       | `/translate`             | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                                  | `{"result": "你好，世界！"}`                    | Authorization: your_token |
-| 批量翻译接口       | `/translate/batch`       | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`              | `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
-| 健康检查           | `/health`                | 无                                                                                     | `{"status": "ok"}`                              | 无                        |
-| 心跳检查           | `/__heartbeat__`         | 无                                                                                     | `Ready`                                         | 无                        |
-| 负载均衡心跳检查   | `/__lbheartbeat__`       | 无                                                                                     | `Ready`                                         | 无                        |
+| 名称               | URL                      | 请求格式                                                                               | 返回格式                                                           | 认证头                    |
+| ------------------ | ------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------- |
+| 服务版本           | `/version`               | 无                                                                                     | `{"version": "v3.0.0"}`                                            | 无                        |
+| 支持的语言列表     | `/languages`             | 无                                                                                     | `{"languages":["en","zh","ja","ko"...]}`                           | Authorization: your_token |
+| 普通翻译接口       | `/translate`             | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                                  | `{"result": "你好，世界！"}`                                       | Authorization: your_token |
+| 批量翻译接口       | `/translate/batch`       | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`              | `{"results": ["你好，世界！", "你好，世界！"]}`                    | Authorization: your_token |
+| 健康检查           | `/health`                | 无                                                                                     | `{"status": "ok"}`                                                 | 无                        |
+| 心跳检查           | `/__heartbeat__`         | 无                                                                                     | `Ready`                                                            | 无                        |
+| 负载均衡心跳检查   | `/__lbheartbeat__`       | 无                                                                                     | `Ready`                                                            | 无                        |
 | 谷歌翻译兼容接口 1 | `/language/translate/v2` | `{"q": "The Great Pyramid of Giza", "source": "en", "target": "zh", "format": "text"}` | `{"data": {"translations": [{"translatedText": "吉萨大金字塔"}]}}` | Authorization: your_token |
 
 > 开发者高级设置请参考 [CONFIG.md](./CONFIG.md)
