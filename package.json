@@ -3,9 +3,9 @@
   "homepage": "https://github.com/xxnuo",
   "version": "3.0.0",
   "type": "commonjs",
-  "main": "dist/mts.js",
+  "main": "js/mts.js",
   "bin": {
-    "mt": "dist/mts.js"
+    "mt": "js/mts.js"
   },
   "keywords": [
     "translation",
@@ -21,6 +21,9 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@mtran/core": "file:packages/mtran-core.tgz"
+    "@fastify/cors": "^11.0.1",
+    "@mtran/core": "file:packages/mtran-core.tgz",
+    "fastify": "^5.4.0",
+    "pino-pretty": "^13.0.0"
   }
 }
