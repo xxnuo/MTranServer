@@ -15,7 +15,17 @@ prepare:
 	curl -L https://github.com/xxnuo/MTranServer/releases/download/core/mtran-core.tgz -o packages/mtran-core.tgz
 	
 build:
-	docker build -t xxnuo/mtranserver:latest .
+	docker build -t xxnuo/mtranserver:test \
+    -f Dockerfile .
 
-test:
-	docker run -it --rm --name mtranserver-test -p 8989:8989 xxnuo/mtranserver:latest
+build-zh:
+	docker build -t xxnuo/mtranserver:test-zh \
+    --build-arg PRELOAD_SRC_LANG=zh-Hans \
+    --build-arg PRELOAD_TARGET_LANG=en \
+    -f Dockerfile.model .
+
+test: build
+	docker run -it --rm --name mtranserver-test -p 8989:8989 xxnuo/mtranserver:test
+
+test-zh: build-zh
+	docker run -it --rm --name mtranserver-test-zh -p 8989:8989 xxnuo/mtranserver:test-zh
