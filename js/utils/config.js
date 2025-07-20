@@ -7,7 +7,7 @@ const defaultConfig = {
   port: process.env.PORT || 8989,
   host: process.env.HOST || '0.0.0.0',
   apiToken: process.env.CORE_API_TOKEN || '',
-  logLevel: process.env.LOG_LEVEL || 'info'
+  logLevel: process.env.LOG_LEVEL || 'warn'
 };
 
 /**
