@@ -1,7 +1,5 @@
 # MTranServer
 
-> Mini Translation Server Beta Version ⭐️ Please give me a Star
-
 <img src="./images/icon.png" width="64px" height="64px" align="right" alt="MTran">
 
 [中文](README.md) | English
