@@ -22,15 +22,15 @@ echo ""
 
 # 运行测试
 echo "=== 运行核心API测试 ==="
-node tests/core-api.js
+node tests/base.js
 echo ""
 
 echo "=== 运行翻译API测试 ==="
-node tests/translate-api.js
+node tests/translate.js
 echo ""
 
 echo "=== 运行翻译插件兼容API测试 ==="
-node tests/plugin-api.js
+node tests/plugin.js
 echo ""
 
 echo "所有测试完成!" 
