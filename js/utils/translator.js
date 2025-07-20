@@ -1,6 +1,5 @@
 const Translator = require("@mtran/core");
 
-// 缓存已加载的模型
 const loadedModels = new Set();
 
 /**
@@ -49,9 +48,9 @@ async function translate(text, from, to) {
 async function batchTranslate(texts, from, to) {
   // 如果模型未加载，先加载模型
   await preloadModel(from, to);
-  
+
   // 并行处理翻译请求
-  const promises = texts.map(text => Translator.Translate(text, from, to));
+  const promises = texts.map((text) => Translator.Translate(text, from, to));
   return Promise.all(promises);
 }
 
@@ -64,19 +63,10 @@ async function shutdown() {
   console.log("Translation engine shutdown complete");
 }
 
-/**
- * 获取已加载的模型列表
- * @returns {string[]} 已加载的模型列表
- */
-function getLoadedModels() {
-  return Array.from(loadedModels);
-}
-
 module.exports = {
   getSupportedLanguages,
   preloadModel,
   translate,
   batchTranslate,
   shutdown,
-  getLoadedModels
-}; 
+};
