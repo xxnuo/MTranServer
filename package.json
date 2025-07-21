@@ -1,0 +1,26 @@
+{
+  "name": "@mtran/server",
+  "homepage": "https://github.com/xxnuo",
+  "version": "3.0.0",
+  "type": "commonjs",
+  "main": "dist/mts.js",
+  "bin": {
+    "mt": "dist/mts.js"
+  },
+  "keywords": [
+    "translation",
+    "offline",
+    "bergamot",
+    "machine-translation",
+    "nlp",
+    "node"
+  ],
+  "author": "xxnuo",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@mtran/core": "file:packages/mtran-core.tgz"
+  }
+}
