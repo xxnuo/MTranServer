@@ -60,15 +60,9 @@ server.register(swagger, {
 server.register(swaggerUi, {
   routePrefix: "/docs",
   uiConfig: {
-    docExpansion: "list",
-    deepLinking: false,
     tryItOutEnabled: false,
     persistAuthorization: true,
     displayRequestDuration: true,
-    syntaxHighlight: {
-      activate: true,
-      theme: "agate",
-    },
   },
   transformSpecification: (swaggerObject, request, reply) => {
     // 动态调整 URL 协议，确保与请求协议一致
