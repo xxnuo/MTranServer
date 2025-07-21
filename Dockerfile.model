@@ -28,4 +28,15 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=8989
 
+ARG PRELOAD_SRC_LANG=""
+ARG PRELOAD_TARGET_LANG=""
+
+RUN if [ -n "$PRELOAD_SRC_LANG" ] ; then \
+    node js/utils/preload.js $PRELOAD_SRC_LANG $PRELOAD_TARGET_LANG; \
+    fi
+
+RUN if [ -n "$PRELOAD_TARGET_LANG" ]; then \
+    node js/utils/preload.js $PRELOAD_TARGET_LANG $PRELOAD_SRC_LANG; \
+    fi
+
 CMD ["./start.sh"]
