@@ -156,8 +156,6 @@ docker compose up -d
 | 沉浸式翻译有密码           | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `API_TOKEN` 或 `CORE_API_TOKEN` 值 |
 | 简约翻译无密码             | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                     |
 | 简约翻译有密码             | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                  |
-| 划词翻译自定义翻译源无密码 | `http://localhost:8989/hcfy`                  | `设置`-`其他`-`自定义翻译源`-`接口地址`                           |
-| 划词翻译自定义翻译源有密码 | `http://localhost:8989/hcfy?token=your_token` | `设置`-`其他`-`自定义翻译源`-`接口地址`                           |
 
 **普通用户参照表格内容设置好插件使用的接口地址就可以使用了。**
 
