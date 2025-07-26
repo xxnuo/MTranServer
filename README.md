@@ -37,9 +37,12 @@
 
 2025.07.16 v3.0.0 [即将发布]
 
-- 完全重写
-- 兼容性更好
-- 性能更强
+- 完全重写服务架构，提高稳定性和性能
+- 添加 Swagger UI 接口文档
+- 支持 HTTPS 安全连接
+- 添加模型自动下载机制，使用更流畅
+- 支持更多语言对的翻译
+- 更新模型
 
 ⚠️⚠️⚠️注意，本次更新改动较大，正在进行中，下面的指南和镜像尚未更新建设完成 [2025.07.16]，请耐心等待...
 
@@ -189,11 +192,13 @@ docker compose up -d
 ### 开发者接口：
 
 > Base URL: `http://localhost:8989`
+> 
+> 在 v3.0.0 及以上版本中，API文档可通过访问 `http://localhost:8989/docs` 查看完整 Swagger 文档
 
 | 名称               | URL                      | 请求格式                                                                               | 返回格式                                        | 认证头                    |
 | ------------------ | ------------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
-| 服务版本           | `/version`               | 无                                                                                     | `{"version": "v1.1.0"}`                         | 无                        |
-| 语言对列表         | `/models`                | 无                                                                                     | `{"models":["zhen","enzh"]}`                    | Authorization: your_token |
+| 服务版本           | `/version`               | 无                                                                                     | `{"version": "v3.0.0"}`                         | 无                        |
+| 支持的语言列表     | `/languages`             | 无                                                                                     | `{"languages":["en","zh","ja","ko"...]}`        | Authorization: your_token |
 | 普通翻译接口       | `/translate`             | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                                  | `{"result": "你好，世界！"}`                    | Authorization: your_token |
 | 批量翻译接口       | `/translate/batch`       | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`              | `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
 | 健康检查           | `/health`                | 无                                                                                     | `{"status": "ok"}`                              | 无                        |
