@@ -55,7 +55,13 @@ Desktop client software coming soon, stay tuned.
 - Docker
 - Docker Compose (optional)
 
-### 1.2 Docker Deployment
+### 1.2 Image Versions
+
+- Default version (download models automatically when no built-in models are available): `xxnuo/mtranserver:latest`
+- Built-in Chinese <-> English translation models: `xxnuo/mtranserver:latest-zh`
+- Built-in Japanese <-> English translation models: `xxnuo/mtranserver:latest-ja`
+
+### 1.3 Docker Deployment
 
 Copy the command below and execute it in your terminal.
 
@@ -63,7 +69,7 @@ Copy the command below and execute it in your terminal.
 docker run -d --name mtranserver -p 8989:8989 -e API_TOKEN=your_token xxnuo/mtranserver:latest
 ```
 
-### 1.3 Docker Compose Deployment
+### 1.4 Docker Compose Deployment
 
 Prepare a folder for configuration files on your server and run the following commands in terminal:
 
@@ -146,12 +152,12 @@ Replace `your_token` in the following tables with your `API_TOKEN` or `CORE_API_
 >
 > Configure the plugin's custom interface address according to the table below. Note: The first request will be slower because it needs to load the model. Subsequent requests will be faster.
 
-| Name                                           | URL                                           | Plugin Setting                                                    |
-| ---------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
-| Immersive Translation (No Password)            | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                 |
-| Immersive Translation (With Password)          | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `API_TOKEN` or `CORE_API_TOKEN` value |
-| Kiss Translator (No Password)                  | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                           |
-| Kiss Translator (With Password)                | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                       |
+| Name                                  | URL                                           | Plugin Setting                                                                   |
+| ------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| Immersive Translation (No Password)   | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                                |
+| Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `API_TOKEN` or `CORE_API_TOKEN` value |
+| Kiss Translator (No Password)         | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                                          |
+| Kiss Translator (With Password)       | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                                      |
 
 **Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
@@ -169,15 +175,15 @@ docker compose up -d
 >
 > In v3.0.0, complete API documentation can be viewed at `http://localhost:8989/docs` using Swagger UI
 
-| Name                    | URL                | Request Format                                                            | Response Format                                 | Auth Header               |
-| ----------------------- | ------------------ | ------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------- |
-| Service Version         | `/version`         | None                                                                      | `{"version": "v3.0.0"}`                         | None                      |
-| Supported Languages     | `/languages`       | None                                                                      | `{"languages":["en","zh","ja","ko"...]}`        | Authorization: your_token |
-| Standard Translation    | `/translate`       | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                     | `{"result": "你好，世界！"}`                    | Authorization: your_token |
-| Batch Translation       | `/translate/batch` | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}` | `{"results": ["你好，世界！", "你好，世界！"]}` | Authorization: your_token |
-| Health Check            | `/health`          | None                                                                      | `{"status": "ok"}`                              | None                      |
-| Heartbeat Check         | `/__heartbeat__`   | None                                                                      | `Ready`                                         | None                      |
-| Load Balancer Heartbeat | `/__lbheartbeat__` | None                                                                      | `Ready`                                         | None                      |
+| Name                                    | URL                      | Request Format                                                                         | Response Format                                                    | Auth Header               |
+| --------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------- |
+| Service Version                         | `/version`               | None                                                                                   | `{"version": "v3.0.0"}`                                            | None                      |
+| Supported Languages                     | `/languages`             | None                                                                                   | `{"languages":["en","zh","ja","ko"...]}`                           | Authorization: your_token |
+| Standard Translation                    | `/translate`             | `{"from": "en", "to": "zh", "text": "Hello, world!"}`                                  | `{"result": "你好，世界！"}`                                       | Authorization: your_token |
+| Batch Translation                       | `/translate/batch`       | `{"from": "en", "to": "zh", "texts": ["Hello, world!", "Hello, world!"]}`              | `{"results": ["你好，世界！", "你好，世界！"]}`                    | Authorization: your_token |
+| Health Check                            | `/health`                | None                                                                                   | `{"status": "ok"}`                                                 | None                      |
+| Heartbeat Check                         | `/__heartbeat__`         | None                                                                                   | `Ready`                                                            | None                      |
+| Load Balancer Heartbeat                 | `/__lbheartbeat__`       | None                                                                                   | `Ready`                                                            | None                      |
 | Google Translate Compatible Interface 1 | `/language/translate/v2` | `{"q": "The Great Pyramid of Giza", "source": "en", "target": "zh", "format": "text"}` | `{"data": {"translations": [{"translatedText": "吉萨大金字塔"}]}}` | Authorization: your_token |
 
 > Developer advanced settings please refer to [CONFIG.md](./CONFIG.md)
