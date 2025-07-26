@@ -84,6 +84,8 @@ touch compose.yml
 > 1. 修改下面的 `your_token` 为你自己设置的一个密码，使用英文大小写和数字。自己内网可以不设置，如果是`云服务器`强烈建议设置一个密码，保护服务以免被`扫到、攻击、滥用`。
 >
 > 2. 如果需要更改端口，修改 `ports` 的值，比如修改为 `9999:8989` 表示将服务端口映射到本机 9999 端口。
+>
+> 3. 建议使用 `API_TOKEN` 设置密码，旧版本的 `CORE_API_TOKEN` 也还可以生效。
 
 ```yaml
 services:
@@ -94,7 +96,7 @@ services:
     ports:
       - "8989:8989"
     environment:
-      - CORE_API_TOKEN=your_token
+      - API_TOKEN=your_token
 ```
 
 先启动测试，确保 8989 端口没被占用。
@@ -106,18 +108,8 @@ docker compose up
 正常输出示例：
 
 ```bash
-[+] Running 2/2
- ✔ Network sample_default  Created  0.1s
- ✔ Container mtranserver   Created  0.1s
-Attaching to mtranserver
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Using maximum available worker count: 16
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Starting Translation Service
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Service port: 8989
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Worker threads: 16
-mtranserver  | Successfully loaded model for language pair: enzh
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Models loaded.
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Using default max parallel translations: 32
-mtranserver  | (2025-03-03 12:49:24) [INFO    ] Max parallel translations: 32
+HTTP Service URL: http://0.0.0.0:8989
+Swagger UI: http://0.0.0.0:8989/docs
 ```
 
 然后按 `Ctrl+C` 停止服务运行，然后正式启动服务器
@@ -146,13 +138,13 @@ docker compose up -d
 
 下面表格内的 `8989` 端口可以替换为你在 `compose.yml` 文件中设置的端口值。
 
-如果未设置 `CORE_API_TOKEN` 或者设置为空，翻译插件使用`无密码`的 API。
+如果未设置环境变量 `API_TOKEN`、`CORE_API_TOKEN` 或者设置为空，翻译插件使用`无密码`的 API。
 
-如果设置了 `CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
+如果设置了 `API_TOKEN`、`CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
 
-下面表格中的 `your_token` 替换为你在 `config.ini` 文件中设置的 `CORE_API_TOKEN` 值。
+下面表格中的 `your_token` 替换为你在环境变量中设置的 `API_TOKEN` 值。
 
-#### 翻译插件接口：
+#### 翻译插件接口
 
 > 注：
 >
@@ -165,7 +157,7 @@ docker compose up -d
 | 名称                       | URL                                           | 插件设置                                                          |
 | -------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
 | 沉浸式翻译无密码           | `http://localhost:8989/imme`                  | `自定义API 设置` - `API URL`                                      |
-| 沉浸式翻译有密码           | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
+| 沉浸式翻译有密码           | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `API_TOKEN` 或 `CORE_API_TOKEN` 值 |
 | 简约翻译无密码             | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                     |
 | 简约翻译有密码             | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                  |
 | 划词翻译自定义翻译源无密码 | `http://localhost:8989/hcfy`                  | `设置`-`其他`-`自定义翻译源`-`接口地址`                           |
@@ -175,21 +167,13 @@ docker compose up -d
 
 ### 5. 保持更新
 
-目前是测试版服务器和模型，可能会遇到问题，建议经常保持更新
-
-从上文地址下载新模型，解压覆盖到原 `models` 模型文件夹
-
-然后更新重启服务器：
-
 ```bash
-docker compose down
+cd mtranserver
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-> 国内用户若无法正常 `pull` 镜像，按照 `1.3 可选步骤` 手动下载新镜像导入即可。
-
-### 开发者接口：
+### 开发者接口
 
 > Base URL: `http://localhost:8989`
 > 
