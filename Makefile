@@ -32,7 +32,7 @@ test-zh: build-zh
 	docker run -it --rm --name mtranserver-test-zh -p 8989:8989 xxnuo/mtranserver:test-zh
 
 dev:
-	node js/mts.js
+	LOG_LEVEL=debug node js/mts.js
 
 watch:
-	nodemon --watch js --ext js --exec "node js/mts.js"
+	LOG_LEVEL=debug nodemon --watch js --ext js --exec "node js/mts.js"
