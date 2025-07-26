@@ -46,9 +46,9 @@ server.register(swagger, {
     },
     components: {
       securitySchemes: {
-        apiKey: {
+        Authorization: {
           type: "apiKey",
-          name: "Key",
+          name: "Authorization",
           in: "header",
         },
       },
