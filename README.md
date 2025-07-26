@@ -134,7 +134,7 @@ docker compose up -d
 
 如果属于内网机器无法访问互联网可按照下文指导手动下载模型。
 
-### 4. API 使用
+### API 使用
 
 下面表格内的 `localhost` 可以替换为你的服务器地址或 Docker 容器名。
 
@@ -165,7 +165,7 @@ docker compose up -d
 
 **普通用户参照表格内容设置好插件使用的接口地址就可以使用了。**
 
-### 5. 保持更新
+### 保持更新
 
 ```bash
 cd mtranserver
