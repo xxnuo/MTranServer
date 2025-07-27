@@ -1,4 +1,5 @@
 const { translate, batchTranslate } = require("../../utils/translator");
+const { validateToken } = require("../../utils/config");
 
 /**
  * DeepLX 翻译兼容API路由处理
@@ -15,11 +16,10 @@ function deeplPlugin(fastify, options) {
         tags: ["plugins"],
         headers: {
           type: "object",
-          required: ["authorization"],
           properties: {
             authorization: {
               type: "string",
-              description: "DeepL-Auth-Key [yourAccessToken]格式的授权信息",
+              description: "token",
             },
           },
         },
@@ -64,10 +64,10 @@ function deeplPlugin(fastify, options) {
       try {
         // 验证Authorization头部
         const authHeader = request.headers.authorization;
-        if (!authHeader || !authHeader.startsWith("DeepL-Auth-Key ")) {
+        if (!validateToken(authHeader)) {
           return reply.code(401).send({
-            message:
-              "缺少有效的Authorization头部，格式应为: DeepL-Auth-Key [yourAccessToken]",
+            error: "Unauthorized",
+            message: "Invalid or missing token",
           });
         }
 
