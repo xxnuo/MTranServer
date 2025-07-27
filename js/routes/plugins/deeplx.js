@@ -7,12 +7,11 @@ const { validateToken } = require("../../utils/config");
  * @param {Object} options 选项
  */
 function deeplPlugin(fastify, options) {
-  // DeepL官方API兼容端点
   fastify.post(
     "/deeplx/v2/translate",
     {
       schema: {
-        description: "DeepL官方API兼容端点",
+        description: "DeepLX v2 API",
         tags: ["plugins"],
         headers: {
           type: "object",
@@ -101,6 +100,201 @@ function deeplPlugin(fastify, options) {
         }
       } catch (error) {
         reply.code(500).send({
+          message: error.message,
+        });
+      }
+    }
+  );
+
+  fastify.post(
+    "/deeplx/translate",
+    {
+      schema: {
+        description: "DeepLX API",
+        tags: ["plugins"],
+        headers: {
+          type: "object",
+          properties: {
+            authorization: {
+              type: "string",
+              description: "Bearer token",
+            },
+          },
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            token: { type: "string", description: "访问令牌" },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["text", "source_lang", "target_lang"],
+          properties: {
+            text: { type: "string", description: "需要翻译的文本" },
+            source_lang: { type: "string", description: "源语言代码" },
+            target_lang: { type: "string", description: "目标语言代码" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              alternatives: {
+                type: "array",
+                items: { type: "string" },
+                description: "备选翻译结果",
+              },
+              code: { type: "integer", description: "状态码" },
+              data: { type: "string", description: "翻译结果" },
+              id: { type: "integer", description: "请求ID" },
+              method: { type: "string", description: "翻译方法" },
+              source_lang: { type: "string", description: "源语言代码" },
+              target_lang: { type: "string", description: "目标语言代码" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        // 验证Authorization头部或URL参数中的token
+        const authHeader = request.headers.authorization;
+        const urlToken = request.query.token;
+
+        // 从Bearer token中提取token值
+        let tokenFromHeader = null;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          tokenFromHeader = authHeader.substring(7);
+        }
+
+        // 检查token是否有效
+        if (!(validateToken(tokenFromHeader) || validateToken(urlToken))) {
+          return reply.code(401).send({
+            error: "Unauthorized",
+            message: "Invalid or missing token",
+          });
+        }
+
+        const { text, source_lang, target_lang } = request.body;
+
+        // 执行翻译
+        const translatedText = await translate(text, source_lang, target_lang);
+
+        // 构建符合DeepLX格式的响应
+        return {
+          alternatives: [],
+          code: 200,
+          data: translatedText,
+          id: 1, // Math.floor(Math.random() * 10000000000), // 生成随机ID
+          method: "Free",
+          source_lang: source_lang.toUpperCase(),
+          target_lang: target_lang.toUpperCase(),
+        };
+      } catch (error) {
+        reply.code(500).send({
+          code: 500,
+          message: error.message,
+        });
+      }
+    }
+  );
+
+  fastify.post(
+    "/deeplx/v1/translate",
+    {
+      schema: {
+        description: "DeepLX v1 API",
+        tags: ["plugins"],
+        headers: {
+          type: "object",
+          properties: {
+            authorization: {
+              type: "string",
+              description: "Bearer token",
+            },
+            "content-type": {
+              type: "string",
+              description: "内容类型",
+            },
+          },
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            token: { type: "string", description: "访问令牌" },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["text", "source_lang", "target_lang"],
+          properties: {
+            text: { type: "string", description: "需要翻译的文本" },
+            source_lang: { type: "string", description: "源语言代码" },
+            target_lang: { type: "string", description: "目标语言代码" },
+          },
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              alternatives: {
+                type: "array",
+                items: { type: "string" },
+                description: "备选翻译结果",
+              },
+              code: { type: "integer", description: "状态码" },
+              data: { type: "string", description: "翻译结果" },
+              id: { type: "integer", description: "请求ID" },
+              method: { type: "string", description: "翻译方法" },
+              source_lang: { type: "string", description: "源语言代码" },
+              target_lang: { type: "string", description: "目标语言代码" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        // 验证Authorization头部或URL参数中的token
+        const authHeader = request.headers.authorization;
+        const urlToken = request.query.token;
+
+        // 从Bearer token中提取token值
+        let tokenFromHeader = null;
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          tokenFromHeader = authHeader.substring(7);
+        }
+
+        // 检查token是否有效
+        if (!(validateToken(tokenFromHeader) || validateToken(urlToken))) {
+          return reply.code(401).send({
+            error: "Unauthorized",
+            message: "Invalid or missing token",
+          });
+        }
+
+        const { text, source_lang, target_lang } = request.body;
+
+        // 执行翻译
+        const translatedText = await translate(text, source_lang, target_lang);
+
+        // 生成随机ID
+        // const id = Math.floor(Math.random() * 10000000000);
+
+        // 构建响应
+        return {
+          alternatives: [], // 实际应用中可能需要提供备选翻译
+          code: 200,
+          data: translatedText,
+          id: 2, // id,
+          method: "Pro",
+          source_lang: source_lang.toUpperCase(),
+          target_lang: target_lang.toUpperCase(),
+        };
+      } catch (error) {
+        reply.code(500).send({
+          code: 500,
           message: error.message,
         });
       }
