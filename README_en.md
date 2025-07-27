@@ -130,7 +130,7 @@ You can monitor the progress in the Docker logs. Download speed depends on your 
 
 If your machine is on an internal network without internet access, you can follow the instructions below to manually download models.
 
-### 4. API Usage
+### API Usage
 
 In the following tables, `localhost` can be replaced with your server address or Docker container name.
 
@@ -161,7 +161,7 @@ Replace `your_token` in the following tables with your `API_TOKEN` or `CORE_API_
 
 **Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
-### 5. Keep Updating
+### Keep Updating
 
 ```bash
 cd mtranserver
