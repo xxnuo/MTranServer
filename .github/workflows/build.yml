@@ -58,8 +58,12 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+          # 确保标准镜像使用不带后缀的标签
+          flavor: |
+            latest=true
 
       - name: Build and push standard image
+        id: build-standard
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -83,8 +87,14 @@ jobs:
             type=semver,pattern={{version}}-zh
             type=semver,pattern={{major}}.{{minor}}-zh
             type=raw,value=latest-zh,enable=${{ github.ref_type == 'tag' }}
+          # 确保生成的标签与其他镜像不冲突
+          flavor: |
+            suffix=-zh,onlatest=true
 
       - name: Build and push Chinese model image
+        id: build-zh
+        # 确保中文镜像在标准镜像构建完成后构建
+        if: ${{ success() && (steps.build-standard.outcome == 'success' || steps.build-standard.outcome == 'skipped') }}
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -112,8 +122,14 @@ jobs:
             type=semver,pattern={{version}}-ja
             type=semver,pattern={{major}}.{{minor}}-ja
             type=raw,value=latest-ja,enable=${{ github.ref_type == 'tag' }}
+          # 确保生成的标签与其他镜像不冲突
+          flavor: |
+            suffix=-ja,onlatest=true
 
       - name: Build and push Japanese model image
+        id: build-ja
+        # 确保日语镜像在标准镜像构建完成后构建
+        if: ${{ success() && (steps.build-standard.outcome == 'success' || steps.build-standard.outcome == 'skipped') }}
         uses: docker/build-push-action@v4
         with:
           context: .
