@@ -34,13 +34,7 @@ For high-quality translation, consider using online large language model APIs.
 
 ## Update Log
 
-2025.07.21 v3.0.1
-
-- Complete rewrite of service architecture for improved stability and performance
-- Added Swagger UI API documentation for easier developer usage
-- Added support for secure HTTPS connections
-- Optimized model auto-download mechanism for smoother first-time use
-- Support for more language pairs and update models
+[Update Log](./CHANGELOG.md)
 
 ## Desktop Client
 
