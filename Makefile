@@ -35,8 +35,8 @@ test-zh: build-zh
 
 dev:
 	pnpm i
-	LOG_LEVEL=debug node js/mts.js
+	LOG_LEVEL=debug node --expose-gc js/mts.js
 
 watch:
 	pnpm i
-	LOG_LEVEL=debug nodemon --watch js --ext js --exec "node js/mts.js"
+	LOG_LEVEL=debug nodemon --watch js --ext js --exec "node --expose-gc js/mts.js"
