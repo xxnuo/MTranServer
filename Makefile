@@ -40,3 +40,7 @@ dev:
 watch:
 	pnpm i
 	LOG_LEVEL=debug nodemon --watch js --ext js --exec "node --expose-gc js/mts.js"
+
+trace:
+	pnpm i
+	LOG_LEVEL=debug node --expose-gc --inspect-brk js/mts.js
