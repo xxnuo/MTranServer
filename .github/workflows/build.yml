@@ -19,8 +19,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Prepare packages
-        run: make prepare
+      - name: Update packages
+        run: make update
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
