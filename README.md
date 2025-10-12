@@ -184,12 +184,6 @@ docker compose up -d
 
 > 开发者高级设置请参考 [CONFIG.md](./CONFIG.md)
 
-## 赞助
-
-[Buy me a coffee ☕️](https://www.creem.io/payment/prod_3QOnrHlGyrtTaKHsOw9Vs1)
-
-[中国大陆 💗 赞赏](./DONATE.md)
-
 ## 贡献者
 
 <table>
@@ -204,3 +198,10 @@ docker compose up -d
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xxnuo/MTranServer&type=Timeline)](https://www.star-history.com/#xxnuo/MTranServer&Timeline)
+
+
+## Thanks
+
+[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
+
+[Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).
