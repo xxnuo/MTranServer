@@ -1,6 +1,5 @@
 /models
 /.bin
-/bin
 *.log
 core
 *.tar
@@ -13,4 +12,5 @@ core
 /node_modules
 /packages
 pnpm-lock.yaml
-/v3/bin
+
+bin/worker
