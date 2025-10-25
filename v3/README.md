@@ -1,5 +1,3 @@
-# Golang version
-
-Server implementation is in this repository.
+# MTranServer v3
 
 Core implementation is in [MTranCore](https://github.com/xxnuo/MTranCore)
