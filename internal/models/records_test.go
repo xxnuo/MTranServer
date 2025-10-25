@@ -215,3 +215,183 @@ func TestVersionGrouping(t *testing.T) {
 		}
 	}
 }
+
+func TestDownloadRecords(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping download test in short mode")
+	}
+
+	// 保存原始配置
+	oldConfig := config.GlobalConfig
+	defer func() { config.GlobalConfig = oldConfig }()
+
+	// 创建临时测试目录
+	tmpDir := t.TempDir()
+
+	// 设置测试配置
+	config.GlobalConfig = &config.Config{
+		ConfigDir: tmpDir,
+		ModelDir:  filepath.Join(tmpDir, "models"),
+	}
+
+	// 重置缓存
+	GlobalRecords = nil
+
+	// 测试下载
+	err := downloadRecords()
+	if err != nil {
+		t.Fatalf("downloadRecords() error = %v", err)
+	}
+
+	// 检查 records.json 是否被下载
+	recordsPath := filepath.Join(tmpDir, "records.json")
+	if _, err := os.Stat(recordsPath); os.IsNotExist(err) {
+		t.Fatal("records.json was not downloaded")
+	}
+
+	// 检查缓存是否被设置
+	if GlobalRecords == nil {
+		t.Fatal("GlobalRecords was not set after download")
+	}
+
+	// 检查数据是否正确解析
+	if len(GlobalRecords.Data) == 0 {
+		t.Fatal("GlobalRecords.Data is empty after download")
+	}
+}
+
+func TestRealDownloadModel(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping model download test in short mode")
+	}
+
+	t.Log("This test is real world test.")
+
+	// 初始化 records
+	err := initRecords()
+	if err != nil {
+		t.Fatalf("initRecords() error = %v", err)
+	}
+
+	// 测试下载模型（选择一个较小的模型进行测试）
+	err = downloadModel("ja", "en", "")
+	if err != nil {
+		t.Fatalf("downloadModel() error = %v", err)
+	}
+
+	// 验证模型文件已下载
+	modelDir := config.GetConfig().ModelDir
+	files, err := os.ReadDir(modelDir)
+	if err != nil {
+		t.Fatalf("Failed to read model directory: %v", err)
+	}
+
+	if len(files) == 0 {
+		t.Fatal("No model files were downloaded")
+	}
+
+	// 验证下载的文件与 records 中的记录匹配
+	downloadedFiles := make(map[string]bool)
+	for _, file := range files {
+		downloadedFiles[file.Name()] = true
+	}
+
+	expectedFileTypes := []string{"model", "vocab", "lex", "trgvocab", "srcvocab"}
+	for _, record := range GlobalRecords.Data {
+		if record.ToLang == "ja" && record.FromLang == "en" {
+			if !downloadedFiles[record.Attachment.Filename] {
+				t.Errorf("Expected file %s was not downloaded", record.Attachment.Filename)
+			}
+			// 验证文件类型
+			found := false
+			for _, ft := range expectedFileTypes {
+				if record.FileType == ft {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Logf("Unexpected fileType: %s", record.FileType)
+			}
+		}
+	}
+}
+
+func TestDownloadModelLatestVersion(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping model download test in short mode")
+	}
+
+	// 保存原始配置
+	oldConfig := config.GlobalConfig
+	defer func() { config.GlobalConfig = oldConfig }()
+
+	// 创建临时测试目录
+	tmpDir := t.TempDir()
+
+	// 设置测试配置
+	config.GlobalConfig = &config.Config{
+		ConfigDir: tmpDir,
+		ModelDir:  filepath.Join(tmpDir, "models"),
+	}
+
+	// 重置缓存
+	GlobalRecords = nil
+
+	// 初始化 records
+	err := initRecords()
+	if err != nil {
+		t.Fatalf("initRecords() error = %v", err)
+	}
+
+	// 测试下载最新版本的模型（不指定版本号）
+	err = downloadModel("de", "en", "")
+	if err != nil {
+		t.Fatalf("downloadModel() error = %v", err)
+	}
+
+	// 验证模型文件已下载
+	modelDir := filepath.Join(tmpDir, "models")
+	files, err := os.ReadDir(modelDir)
+	if err != nil {
+		t.Fatalf("Failed to read model directory: %v", err)
+	}
+
+	if len(files) == 0 {
+		t.Fatal("No model files were downloaded")
+	}
+}
+
+func TestDownloadModelNonExistent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping test in short mode")
+	}
+
+	// 保存原始配置
+	oldConfig := config.GlobalConfig
+	defer func() { config.GlobalConfig = oldConfig }()
+
+	// 创建临时测试目录
+	tmpDir := t.TempDir()
+
+	// 设置测试配置
+	config.GlobalConfig = &config.Config{
+		ConfigDir: tmpDir,
+		ModelDir:  filepath.Join(tmpDir, "models"),
+	}
+
+	// 重置缓存
+	GlobalRecords = nil
+
+	// 初始化 records
+	err := initRecords()
+	if err != nil {
+		t.Fatalf("initRecords() error = %v", err)
+	}
+
+	// 测试下载不存在的语言对
+	err = downloadModel("zz", "yy", "")
+	if err == nil {
+		t.Fatal("Expected error for non-existent language pair, got nil")
+	}
+}
