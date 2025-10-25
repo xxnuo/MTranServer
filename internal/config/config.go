@@ -23,8 +23,15 @@ type Config struct {
 	EnableOfflineMode bool
 }
 
+var (
+	GlobalConfig *Config = nil
+)
+
 // LoadConfig 加载配置，优先级：命令行参数 > 环境变量 > 默认值
 func LoadConfig() *Config {
+	if GlobalConfig != nil {
+		return GlobalConfig
+	}
 	cfg := &Config{}
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -43,5 +50,6 @@ func LoadConfig() *Config {
 	flag.BoolVar(&cfg.EnableOfflineMode, "offline", utils.GetBoolEnv("MT_OFFLINE", false), "Enable offline mode")
 
 	flag.Parse()
+	GlobalConfig = cfg
 	return cfg
 }

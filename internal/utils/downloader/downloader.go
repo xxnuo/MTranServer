@@ -2,14 +2,16 @@ package downloader
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
+	"crypto/tls"
 	"fmt"
-	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/hashicorp/go-getter"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
 // Downloader 下载器结构
@@ -43,7 +45,7 @@ func (d *Downloader) SetProgressFunc(fn getter.ProgressTracker) {
 }
 
 // Download 下载文件到指定目录
-func (d *Downloader) Download(url, filename string, opts *DownloadOptions) error {
+func (d *Downloader) Download(urlStr, filename string, opts *DownloadOptions) error {
 	if opts == nil {
 		opts = &DownloadOptions{
 			Context: context.Background(),
@@ -66,7 +68,7 @@ func (d *Downloader) Download(url, filename string, opts *DownloadOptions) error
 		if _, err := os.Stat(dst); err == nil {
 			// 文件存在，检查 SHA256
 			if opts.SHA256 != "" {
-				if err := verifySHA256(dst, opts.SHA256); err == nil {
+				if err := utils.VerifySHA256(dst, opts.SHA256); err == nil {
 					// 文件已存在且校验通过，跳过下载
 					return nil
 				}
@@ -78,9 +80,59 @@ func (d *Downloader) Download(url, filename string, opts *DownloadOptions) error
 	tmpFile := dst + ".tmp"
 	defer os.Remove(tmpFile)
 
+	// 创建 HTTP 客户端，支持代理和重定向
+	httpClient := &http.Client{
+		Timeout: 30 * time.Minute,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// 允许最多 10 次重定向
+			if len(via) >= 10 {
+				return fmt.Errorf("stopped after 10 redirects")
+			}
+			return nil
+		},
+	}
+
+	// 配置代理
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+
+	// 从环境变量读取代理设置
+	if proxyURL := os.Getenv("HTTP_PROXY"); proxyURL != "" {
+		if parsedURL, err := url.Parse(proxyURL); err == nil {
+			transport.Proxy = http.ProxyURL(parsedURL)
+		}
+	} else if proxyURL := os.Getenv("http_proxy"); proxyURL != "" {
+		if parsedURL, err := url.Parse(proxyURL); err == nil {
+			transport.Proxy = http.ProxyURL(parsedURL)
+		}
+	}
+
+	// 支持 HTTPS_PROXY
+	if proxyURL := os.Getenv("HTTPS_PROXY"); proxyURL != "" {
+		if parsedURL, err := url.Parse(proxyURL); err == nil {
+			transport.Proxy = http.ProxyURL(parsedURL)
+		}
+	} else if proxyURL := os.Getenv("https_proxy"); proxyURL != "" {
+		if parsedURL, err := url.Parse(proxyURL); err == nil {
+			transport.Proxy = http.ProxyURL(parsedURL)
+		}
+	}
+
+	httpClient.Transport = transport
+
+	// 配置 HttpGetter
+	httpGetter := &getter.HttpGetter{
+		Client: httpClient,
+	}
+
 	// 配置 getter 客户端选项
 	clientOpts := []getter.ClientOption{
 		getter.WithContext(opts.Context),
+		getter.WithGetters(map[string]getter.Getter{
+			"http":  httpGetter,
+			"https": httpGetter,
+		}),
 	}
 
 	if d.ProgressFunc != nil {
@@ -89,7 +141,7 @@ func (d *Downloader) Download(url, filename string, opts *DownloadOptions) error
 
 	// 创建 getter 客户端
 	client := &getter.Client{
-		Src:  url,
+		Src:  urlStr,
 		Dst:  tmpFile,
 		Mode: getter.ClientModeFile,
 	}
@@ -106,7 +158,7 @@ func (d *Downloader) Download(url, filename string, opts *DownloadOptions) error
 
 	// 校验 SHA256
 	if opts.SHA256 != "" {
-		if err := verifySHA256(tmpFile, opts.SHA256); err != nil {
+		if err := utils.VerifySHA256(tmpFile, opts.SHA256); err != nil {
 			return fmt.Errorf("Failed to verify SHA256: %w", err)
 		}
 	}
@@ -129,41 +181,4 @@ func DownloadFile(url, destPath, sha256sum string) error {
 		SHA256:  sha256sum,
 		Context: context.Background(),
 	})
-}
-
-// verifySHA256 校验文件的 SHA256
-func verifySHA256(filepath, expectedHash string) error {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return fmt.Errorf("Failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return fmt.Errorf("Failed to calculate SHA256: %w", err)
-	}
-
-	actualHash := hex.EncodeToString(hash.Sum(nil))
-	if actualHash != expectedHash {
-		return fmt.Errorf("SHA256 mismatch: expected %s, actual %s", expectedHash, actualHash)
-	}
-
-	return nil
-}
-
-// CalculateSHA256 计算文件的 SHA256
-func CalculateSHA256(filepath string) (string, error) {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return "", fmt.Errorf("Failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", fmt.Errorf("Failed to calculate SHA256: %w", err)
-	}
-
-	return hex.EncodeToString(hash.Sum(nil)), nil
 }
