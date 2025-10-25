@@ -1,6 +1,6 @@
 # Rust version (community version)
 
-Only works in x86_64 Linux and some APIs are not compatible with the original version, recommend to use [golang version](../go/README.md) instead.
+Performance improvement is not significant, only works in x86_64 Linux and some APIs are not compatible with the original version, recommend to use [golang version](../../v3/README.md) instead.
 
 Rust server source code is in [LinguaSpark/server](https://github.com/LinguaSpark/server)
 
