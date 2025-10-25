@@ -1,0 +1,4 @@
+github.com/ShinyTrinkets/meta-logger v0.2.0 h1:oR533+wuhSJ+vLsnSq1CBSGQygNv8nDsvuRUVcOls0g=
+github.com/ShinyTrinkets/meta-logger v0.2.0/go.mod h1:cY1KnpPfpLIopR+arZXHYVrVGO6AETrhi3HmRGFjU+U=
+github.com/ShinyTrinkets/overseer v0.6.0 h1:SxzF7nACfr9Ln9oR4yyRfHSYkfXIu81UAwBw5A6LsPc=
+github.com/ShinyTrinkets/overseer v0.6.0/go.mod h1:NB2kg7uXESqJYBC7Y+5cdCFTpCZBPwEsSdYnabfNOOw=

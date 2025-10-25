@@ -26,16 +26,20 @@ download-core:
 	@echo "Detecting platform: $(GOOS)-$(GOARCH)"
 	@echo "Downloading $(WORKER_BINARY) from $(DOWNLOAD_URL)..."
 	@mkdir -p bin
-	@rm -f bin/worker$(SUFFIX)
+	@rm -f bin/worker
 	@curl -L -o bin/worker$(SUFFIX) $(DOWNLOAD_URL) || (echo "Failed to download worker binary" && exit 1)
-	@chmod +x bin/worker$(SUFFIX)
-	@echo "Downloaded successfully to bin/worker$(SUFFIX)"
+	@chmod +x bin/worker
+	@echo "Downloaded successfully to bin/worker"
+	@go generate ./bin
+	@echo "Generated successfully to bin/bin.go"
 
 build-core:
 	@echo "Building core..."
 	@mkdir -p bin
-	@rm -f bin/worker$(SUFFIX)
+	@rm -f bin/worker
 	@cd ../../MTranCore && make build-worker
-	@cp ../../MTranCore/build/worker bin/worker$(SUFFIX)
-	@chmod +x bin/worker$(SUFFIX)
-	@echo "Built successfully to bin/worker$(SUFFIX)"
+	@cp ../../MTranCore/build/worker bin/worker
+	@chmod +x bin/worker
+	@echo "Built successfully to bin/worker"
+	@go generate ./bin
+	@echo "Generated successfully to bin/bin.go"
