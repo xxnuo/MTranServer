@@ -1,3 +1,3 @@
 # C++ version
 
-Origianl version, source code is missing, continue to develop in golang version
+Origianl version, continue to develop in golang version
