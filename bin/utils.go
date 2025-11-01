@@ -2,6 +2,7 @@ package bin
 
 import "crypto/sha256"
 
+//go:generate go run gen_update.go
 //go:generate go run gen_hash.go
 
 // GetWorkerInfo returns information about the embedded worker binary

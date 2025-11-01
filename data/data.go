@@ -1,4 +1,4 @@
-package bin
+package data
 
 import (
 	_ "embed"
