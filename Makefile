@@ -21,6 +21,7 @@ DOWNLOAD_URL := https://github.com/$(GITHUB_REPO)/releases/latest/download/$(WOR
 
 # Download core binary from https://github.com/xxnuo/MTranCore/releases/latest
 # Support: linux-amd64, linux-arm64, linux-386, windows-amd64, darwin-amd64, darwin-arm64
+# Extra: js-wasm
 download-core:
 	@echo "Detecting platform: $(GOOS)-$(GOARCH)"
 	@echo "Downloading $(WORKER_BINARY) from $(DOWNLOAD_URL)..."
