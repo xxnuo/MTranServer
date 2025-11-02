@@ -5,4 +5,4 @@ import (
 )
 
 //go:embed worker
-var workerBin []byte
+var WorkerBinary []byte
