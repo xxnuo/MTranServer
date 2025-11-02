@@ -43,3 +43,8 @@ build-core:
 	@echo "Built successfully to bin/worker"
 	@go generate ./bin
 	@echo "Generated successfully to bin/bin.go"
+
+download-records:
+	@mkdir -p data
+	@curl -L -o data/records.json https://remote-settings.mozilla.org/v1/buckets/main/collections/translations-models/records
+	@echo "Downloaded successfully to data/records.json"

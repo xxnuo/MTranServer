@@ -1,11 +1,11 @@
-package process_test
+package manager_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/xxnuo/MTranServer/bin"
-	"github.com/xxnuo/MTranServer/internal/process"
+	"github.com/xxnuo/MTranServer/internal/manager"
 	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
@@ -16,7 +16,7 @@ func TestBasicUsage(t *testing.T) {
 	}
 
 	// Create worker arguments with custom configuration
-	args := process.NewWorkerArgs()
+	args := manager.NewWorkerArgs()
 	args.Host = "127.0.0.1"
 	port, err := utils.GetFreePort()
 	if err != nil {
@@ -30,7 +30,7 @@ func TestBasicUsage(t *testing.T) {
 	// Binary will be written to /tmp by default (BinaryPath is empty)
 
 	// Create a new worker
-	worker := process.NewWorker(args)
+	worker := manager.NewWorker(args)
 	defer worker.Cleanup()
 
 	// Start the worker
@@ -88,14 +88,14 @@ func TestLifecycle(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	args := process.NewWorkerArgs()
+	args := manager.NewWorkerArgs()
 	port, err := utils.GetFreePort()
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
 	args.Port = port
 	// Binary will be written to /tmp by default
-	worker := process.NewWorker(args)
+	worker := manager.NewWorker(args)
 	defer worker.Cleanup()
 
 	// Start
@@ -129,13 +129,13 @@ func TestWorkerHash(t *testing.T) {
 	t.Logf("Worker binary size: %d bytes", len(bin.WorkerBinary))
 
 	// Verify the worker starts successfully with the hash check
-	args := process.NewWorkerArgs()
+	args := manager.NewWorkerArgs()
 	port, err := utils.GetFreePort()
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
 	args.Port = port
-	worker := process.NewWorker(args)
+	worker := manager.NewWorker(args)
 	defer worker.Cleanup()
 
 	// First start - should write binary and hash file
@@ -164,14 +164,14 @@ func TestCustomBinaryPath(t *testing.T) {
 	}
 
 	// Test with custom binary path
-	args := process.NewWorkerArgs()
+	args := manager.NewWorkerArgs()
 	port, err := utils.GetFreePort()
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
 	args.Port = port
 	args.BinaryPath = "/tmp/custom-mtran-worker" // Custom path
-	worker := process.NewWorker(args)
+	worker := manager.NewWorker(args)
 	defer worker.Cleanup()
 
 	if err := worker.Start(); err != nil {
@@ -195,7 +195,7 @@ func TestMultipleWorkers(t *testing.T) {
 	}
 
 	// Create multiple workers with different ports
-	workers := make([]*process.Worker, 0, 3)
+	workers := make([]*manager.Worker, 0, 3)
 
 	for i := 0; i < 3; i++ {
 		port, err := utils.GetFreePort()
@@ -203,13 +203,13 @@ func TestMultipleWorkers(t *testing.T) {
 			t.Fatalf("Failed to get free port: %v", err)
 		}
 
-		args := process.NewWorkerArgs()
+		args := manager.NewWorkerArgs()
 		args.Port = port
 		args.Host = "127.0.0.1"
 		args.EnableWebSocket = true
 		// Each worker writes to /tmp by default but has unique ID based on port
 
-		worker := process.NewWorker(args)
+		worker := manager.NewWorker(args)
 		workers = append(workers, worker)
 
 		if err := worker.Start(); err != nil {
