@@ -27,8 +27,8 @@ var (
 	GlobalConfig *Config = nil
 )
 
-// LoadConfig 加载配置，优先级：命令行参数 > 环境变量 > 默认值
-func LoadConfig() *Config {
+// GetConfig 加载配置，优先级：命令行参数 > 环境变量 > 默认值
+func GetConfig() *Config {
 	if GlobalConfig != nil {
 		return GlobalConfig
 	}
