@@ -1,5 +1,7 @@
-# Rust version
+# Rust version (community version)
 
-Source code is in https://github.com/LinguaSpark/server
+Only works in x86_64 Linux and some APIs are not compatible with the original version, recommend to use [golang version](../go/README.md) instead.
 
-Core source code is in https://github.com/LinguaSpark/core
+Rust server source code is in [LinguaSpark/server](https://github.com/LinguaSpark/server)
+
+Rust core source code is in [LinguaSpark/core](https://github.com/LinguaSpark/core)
