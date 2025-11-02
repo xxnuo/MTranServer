@@ -13,3 +13,4 @@ core
 /node_modules
 /packages
 pnpm-lock.yaml
+/v3/bin
