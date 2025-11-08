@@ -85,6 +85,9 @@ func main() {
 	// 创建 Gin 路由
 	r := gin.Default()
 
+	// 添加 CORS 中间件
+	r.Use(corsMiddleware())
+
 	// 配置 Swagger
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -154,6 +157,23 @@ func registerRoutes(r *gin.Engine) {
 	// 插件兼容接口
 	r.POST("/imme", handleImmeTranslate)
 	r.POST("/kiss", handleKissTranslate)
+}
+
+// CORS 中间件
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, KEY")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
 }
 
 // 认证中间件
@@ -262,7 +282,7 @@ func handleLanguages(c *gin.Context) {
 // TranslateRequest 翻译请求
 type TranslateRequest struct {
 	From string `json:"from" binding:"required" example:"en"`
-	To   string `json:"to" binding:"required" example:"zh"`
+	To   string `json:"to" binding:"required" example:"zh-Hans"`
 	Text string `json:"text" binding:"required" example:"Hello, world!"`
 	HTML bool   `json:"html" example:"false"`
 }
@@ -330,7 +350,7 @@ func handleTranslate(c *gin.Context) {
 // TranslateBatchRequest 批量翻译请求
 type TranslateBatchRequest struct {
 	From  string   `json:"from" binding:"required" example:"en"`
-	To    string   `json:"to" binding:"required" example:"zh"`
+	To    string   `json:"to" binding:"required" example:"zh-Hans"`
 	Texts []string `json:"texts" binding:"required" example:"Hello, world!,Good morning!"`
 	HTML  bool     `json:"html" example:"false"`
 }
@@ -403,7 +423,7 @@ func handleTranslateBatch(c *gin.Context) {
 type GoogleTranslateRequest struct {
 	Q      string `json:"q" binding:"required" example:"The Great Pyramid of Giza"`
 	Source string `json:"source" binding:"required" example:"en"`
-	Target string `json:"target" binding:"required" example:"zh"`
+	Target string `json:"target" binding:"required" example:"zh-Hans"`
 	Format string `json:"format" example:"text"`
 }
 
@@ -481,7 +501,7 @@ func handleGoogleCompatTranslate(c *gin.Context) {
 // ImmeTranslateRequest 沉浸式翻译请求
 type ImmeTranslateRequest struct {
 	From  string   `json:"from" binding:"required" example:"en"`
-	To    string   `json:"to" binding:"required" example:"zh"`
+	To    string   `json:"to" binding:"required" example:"zh-Hans"`
 	Trans []string `json:"trans" binding:"required" example:"Hello, world!,Good morning!"`
 }
 
@@ -557,7 +577,7 @@ func handleImmeTranslate(c *gin.Context) {
 // KissTranslateRequest 简约翻译请求
 type KissTranslateRequest struct {
 	From string `json:"from" binding:"required" example:"en"`
-	To   string `json:"to" binding:"required" example:"zh"`
+	To   string `json:"to" binding:"required" example:"zh-Hans"`
 	Text string `json:"text" binding:"required" example:"Hello, world!"`
 }
 
