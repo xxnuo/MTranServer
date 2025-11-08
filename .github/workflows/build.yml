@@ -3,10 +3,8 @@ name: Build and Release
 on:
   workflow_dispatch:
   push:
-    branches: [main, test]
+    branches: [main]
     tags: ["v*"]
-  pull_request:
-    branches: [main, test]
 
 permissions:
   contents: write
@@ -74,10 +72,11 @@ jobs:
           path: artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
           draft: false
           prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
