@@ -36,8 +36,7 @@ download: download-core download-records
 
 generate-docs:
 	@echo "Generating docs..."
-	@go install github.com/swaggo/swag/cmd/swag@latest
-	@$(shell go env GOPATH)/bin/swag init -g ./cmd/mtranserver/main.go -o ./internal/docs
+	@go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
 	@echo "Docs generated successfully"
 
 build: generate-docs
