@@ -83,5 +83,16 @@ jobs:
           draft: false
           prerelease: false
           make_latest: true
+          body: |
+            ## MTranServer ${{ github.ref_name }}
+            
+            ### Download
+            
+            - **Linux x86_64**: `mtranserver-linux-amd64`
+            - **Linux ARM64**: `mtranserver-linux-arm64`
+            - **Linux x86**: `mtranserver-linux-386`
+            - **macOS Intel**: `mtranserver-darwin-amd64`
+            - **macOS Apple Silicon**: `mtranserver-darwin-arm64`
+            - **Windows x86_64**: `mtranserver-windows-amd64.exe`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
