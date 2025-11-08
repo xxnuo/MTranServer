@@ -14,7 +14,7 @@ func main() {
 	log.Printf("Downloading records.json from %s...", models.RecordsUrl)
 
 	// Download using downloader
-	d := downloader.New("./data")
+	d := downloader.New(".")
 	err := d.Download(models.RecordsUrl, models.RecordsFileName, &downloader.DownloadOptions{
 		Context:   context.Background(),
 		Overwrite: true,
