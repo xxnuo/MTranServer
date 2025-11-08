@@ -49,6 +49,12 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
 
+      - name: Build docs
+        run: make generate-docs
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+
       - name: Build binary
         run: make build
         env:
