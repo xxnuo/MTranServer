@@ -58,7 +58,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mtranserver-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/mtranserver-${{ matrix.goos }}-${{ matrix.goarch }}*
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
