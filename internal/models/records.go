@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	RecordsUrl         = "https://remote-settings.mozilla.org/v1/buckets/main/collections/translations-models/records"
+	RecordsUrl         = "https://firefox.settings.services.mozilla.com/v1/buckets/main-preview/collections/translations-models/records"
 	RecordsFileName    = "records.json"
 	AttachmentsBaseUrl = "https://firefox-settings-attachments.cdn.mozilla.net"
 )
@@ -49,10 +49,10 @@ var (
 	GlobalRecords *RecordsData
 )
 
-// 检测默认配置目录下是否存在 records.json
+// InitRecords 检测默认配置目录下是否存在 records.json
 // 存在则解析本地 records.json
 // 不存在则写出默认内嵌的 records.json 到配置目录然后解析
-func initRecords() error {
+func InitRecords() error {
 	cfg := config.GetConfig()
 	recordsPath := filepath.Join(cfg.ConfigDir, "records.json")
 
@@ -82,9 +82,9 @@ func initRecords() error {
 	return nil
 }
 
-// 更新 records.json，从远程下载 records.json 到配置目录
+// DownloadRecords 更新 records.json，从远程下载 records.json 到配置目录
 // 然后解析本地 records.json
-func downloadRecords() error {
+func DownloadRecords() error {
 	cfg := config.GetConfig()
 
 	// 下载 records.json
@@ -96,19 +96,19 @@ func downloadRecords() error {
 	}
 
 	// 解析本地 records.json
-	return initRecords()
+	return InitRecords()
 }
 
-// 解析 records.json，找到对应的模型属性
+// DownloadModel 解析 records.json，找到对应的模型属性
 // 检查配置目录下是否存在对应的模型文件，可通过 sha256 校验
 // 不存在则下载到配置目录
 // 参数：toLang 目标语言，fromLang 源语言，version 模型版本
 // records 里同一个 fromLang 和 toLang 会存在多个 version 的模型
 // 需要根据 version 下载对应的模型，未指定 version 则下载最新版本
-func downloadModel(toLang string, fromLang string, version string) error {
+func DownloadModel(toLang string, fromLang string, version string) error {
 	// 确保 records 已加载
 	if GlobalRecords == nil {
-		if err := initRecords(); err != nil {
+		if err := InitRecords(); err != nil {
 			return err
 		}
 	}
@@ -167,4 +167,74 @@ func downloadModel(toLang string, fromLang string, version string) error {
 	}
 
 	return nil
+}
+
+// GetModelFiles 根据语言对查找模型文件路径
+// 返回 map[string]string，key 为文件类型：model, lex, vocab_src, vocab_trg
+func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error) {
+	// 确保 records 已加载
+	if GlobalRecords == nil {
+		if err := InitRecords(); err != nil {
+			return nil, fmt.Errorf("failed to init records: %w", err)
+		}
+	}
+
+	files := make(map[string]string)
+	fileTypeMap := make(map[string]string) // fileType -> fullPath
+
+	// 从 records 中查找匹配的文件
+	for _, record := range GlobalRecords.Data {
+		if record.FromLang == fromLang && record.ToLang == toLang {
+			filename := record.Attachment.Filename
+			fullPath := filepath.Join(modelDir, filename)
+
+			// 检查文件是否存在
+			if _, err := os.Stat(fullPath); err == nil {
+				fileTypeMap[record.FileType] = fullPath
+			}
+		}
+	}
+
+	// 映射 fileType 到所需的 key
+	if modelPath, ok := fileTypeMap["model"]; ok {
+		files["model"] = modelPath
+	} else {
+		return nil, fmt.Errorf("model file not found for %s -> %s", fromLang, toLang)
+	}
+
+	if lexPath, ok := fileTypeMap["lex"]; ok {
+		files["lex"] = lexPath
+	} else {
+		return nil, fmt.Errorf("lex file not found for %s -> %s", fromLang, toLang)
+	}
+
+	// vocab_src 可能是 vocab 或 srcvocab
+	if vocabPath, ok := fileTypeMap["vocab"]; ok {
+		files["vocab_src"] = vocabPath
+	} else if srcvocabPath, ok := fileTypeMap["srcvocab"]; ok {
+		files["vocab_src"] = srcvocabPath
+	} else {
+		return nil, fmt.Errorf("vocab file not found for %s -> %s", fromLang, toLang)
+	}
+
+	// trgvocab 可能是 trgvocab 或 vocab（反向）
+	if trgvocabPath, ok := fileTypeMap["trgvocab"]; ok {
+		files["vocab_trg"] = trgvocabPath
+	} else {
+		// 尝试查找反向的 vocab
+		for _, record := range GlobalRecords.Data {
+			if record.FromLang == toLang && record.ToLang == fromLang && record.FileType == "vocab" {
+				fullPath := filepath.Join(modelDir, record.Attachment.Filename)
+				if _, err := os.Stat(fullPath); err == nil {
+					files["vocab_trg"] = fullPath
+					break
+				}
+			}
+		}
+		if _, ok := files["vocab_trg"]; !ok {
+			return nil, fmt.Errorf("trgvocab file not found for %s -> %s", fromLang, toLang)
+		}
+	}
+
+	return files, nil
 }

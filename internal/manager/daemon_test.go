@@ -26,9 +26,7 @@ func TestBasicUsage(t *testing.T) {
 	args.EnableWebSocket = true
 	args.EnableHTTP = true
 	args.LogLevel = "debug"
-	args.WorkDir = "/tmp/mtran"
-	// Binary will be written to /tmp by default (BinaryPath is empty)
-
+	args.WorkDir = "."
 	// Create a new worker
 	worker := manager.NewWorker(args)
 	defer worker.Cleanup()

@@ -1,4 +1,4 @@
-.PHONY: download-core
+.PHONY: download-core download-records download generate-docs
 
 # Detect OS and architecture
 GOOS ?= $(shell go env GOOS)
@@ -23,18 +23,19 @@ DOWNLOAD_URL := https://github.com/$(GITHUB_REPO)/releases/latest/download/$(WOR
 # Support: linux-amd64, linux-arm64, linux-386, windows-amd64, darwin-amd64, darwin-arm64
 # Extra: js-wasm
 download-core:
+	touch ./bin/worker
 	@go generate ./bin
 	@echo "Downloaded core binary from repository successfully"
 
-build-core:
-	@echo "Building core..."
-	@rm -f bin/worker
-	@cd ../../MTranCore && make build-worker
-	@cp ../../MTranCore/build/worker bin/worker
-	@chmod +x bin/worker
-	@echo "Built successfully to bin/worker"
-	@go generate ./bin/gen_hash.go
-	@echo "Generated successfully to bin/bin.go"
-
 download-records:
+	touch ./data/records.json
 	@go run ./data/gen_records.go
+
+download: download-core download-records
+	@echo "Downloaded successfully"
+
+generate-docs:
+	@echo "Generating docs..."
+	@go install github.com/swaggo/swag/cmd/swag@latest
+	@swag init -g ./cmd/mtranserver/main.go -o ./internal/docs
+	@echo "Docs generated successfully"
