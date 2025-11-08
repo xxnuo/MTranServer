@@ -485,7 +485,7 @@
                 },
                 "target": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
@@ -525,7 +525,7 @@
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 },
                 "trans": {
                     "type": "array",
@@ -573,7 +573,7 @@
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
@@ -615,7 +615,7 @@
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
@@ -656,7 +656,7 @@
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },

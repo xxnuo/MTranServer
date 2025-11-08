@@ -12,7 +12,7 @@ definitions:
         example: en
         type: string
       target:
-        example: zh
+        example: zh-Hans
         type: string
     required:
     - q
@@ -39,7 +39,7 @@ definitions:
         example: en
         type: string
       to:
-        example: zh
+        example: zh-Hans
         type: string
       trans:
         example:
@@ -73,7 +73,7 @@ definitions:
         example: Hello, world!
         type: string
       to:
-        example: zh
+        example: zh-Hans
         type: string
     required:
     - from
@@ -103,7 +103,7 @@ definitions:
           type: string
         type: array
       to:
-        example: zh
+        example: zh-Hans
         type: string
     required:
     - from
@@ -132,7 +132,7 @@ definitions:
         example: Hello, world!
         type: string
       to:
-        example: zh
+        example: zh-Hans
         type: string
     required:
     - from
