@@ -11,10 +11,16 @@ import (
 
 	"github.com/ShinyTrinkets/overseer"
 	"github.com/xxnuo/MTranServer/bin"
+	"github.com/xxnuo/MTranServer/internal/config"
 )
 
 const (
 	maxLogLines = 1000
+)
+
+var (
+	workerBinaryInitialized bool
+	workerBinaryMu          sync.Mutex
 )
 
 // WorkerArgs 包含工作进程的配置
@@ -27,20 +33,20 @@ type WorkerArgs struct {
 	EnableWebSocket bool
 	GRPCUnixSocket  string
 	LogLevel        string
-	BinaryPath      string // 写入工作程序二进制文件的路径，如果为空则使用 /tmp
+	BinaryPath      string // 写入工作程序二进制文件的路径，如果为空则使用 ConfigDir/bin/mtrancore
 }
 
 // NewWorkerArgs 创建一个新的 WorkerArgs 实例，使用默认值
 func NewWorkerArgs() *WorkerArgs {
 	return &WorkerArgs{
-		Host:            "0.0.0.0",
+		Host:            "127.0.0.1",
 		Port:            8988,
 		WorkDir:         ".",
 		EnableGRPC:      false,
 		EnableHTTP:      false,
 		EnableWebSocket: true,
 		GRPCUnixSocket:  "",
-		LogLevel:        "info",
+		LogLevel:        "warning",
 	}
 }
 
@@ -55,6 +61,8 @@ type Worker struct {
 	stateChan  chan *overseer.ProcessJSON
 	logs       []string
 	maxLogs    int
+	done       chan struct{} // 用于通知 goroutine 退出
+	wg         sync.WaitGroup
 }
 
 // NewWorker 创建一个新的 Worker 实例
@@ -62,7 +70,9 @@ func NewWorker(args *WorkerArgs) *Worker {
 	// 确定二进制文件路径
 	binaryPath := args.BinaryPath
 	if binaryPath == "" {
-		binaryPath = "/tmp/mtran-worker"
+		// 默认使用配置目录下的 bin/mtrancore
+		cfg := config.GetConfig()
+		binaryPath = filepath.Join(cfg.ConfigDir, "bin", "mtrancore")
 	}
 
 	// 根据二进制文件路径和端口生成唯一的 worker ID
@@ -77,6 +87,7 @@ func NewWorker(args *WorkerArgs) *Worker {
 		stateChan:  make(chan *overseer.ProcessJSON, 10),
 		logs:       make([]string, 0, maxLogLines),
 		maxLogs:    maxLogLines,
+		done:       make(chan struct{}),
 	}
 
 	// 订阅日志和状态变化
@@ -84,33 +95,47 @@ func NewWorker(args *WorkerArgs) *Worker {
 	w.overseer.WatchState(w.stateChan)
 
 	// 启动日志收集器
+	w.wg.Add(1)
 	go w.collectLogs()
 
 	return w
 }
 
-// ensureWorkerBinary 提取嵌入的工作程序二进制文件到指定路径
-func (w *Worker) ensureWorkerBinary() error {
+// EnsureWorkerBinary 提取嵌入的工作程序二进制文件到指定路径
+func EnsureWorkerBinary(cfg *config.Config) error {
+	workerBinaryMu.Lock()
+	defer workerBinaryMu.Unlock()
+
+	// 如果已经初始化过，直接返回
+	if workerBinaryInitialized {
+		return nil
+	}
+
+	// 从配置获取二进制文件路径
+	binaryPath := filepath.Join(cfg.ConfigDir, "bin", "mtrancore")
+
 	// 检查二进制文件是否已存在并且匹配哈希
-	if data, err := os.ReadFile(w.binaryPath); err == nil {
+	if data, err := os.ReadFile(binaryPath); err == nil {
 		// 二进制文件存在，计算其哈希并比较
 		existingHash := fmt.Sprintf("%x", bin.ComputeHash(data))
 		if existingHash == bin.WorkerHash {
 			// 哈希匹配，二进制文件是最新的
+			workerBinaryInitialized = true
 			return nil
 		}
 	}
 
 	// 确保父目录存在
-	if err := os.MkdirAll(filepath.Dir(w.binaryPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(binaryPath), 0755); err != nil {
 		return fmt.Errorf("failed to create directory for worker binary: %w", err)
 	}
 
 	// 写入嵌入的二进制文件
-	if err := os.WriteFile(w.binaryPath, bin.WorkerBinary, 0755); err != nil {
+	if err := os.WriteFile(binaryPath, bin.WorkerBinary, 0755); err != nil {
 		return fmt.Errorf("failed to write worker binary: %w", err)
 	}
 
+	workerBinaryInitialized = true
 	return nil
 }
 
@@ -171,8 +196,8 @@ func (w *Worker) Start() error {
 	}
 
 	// 确保工作程序二进制文件可用
-	if err := w.ensureWorkerBinary(); err != nil {
-		return err
+	if _, err := os.Stat(w.binaryPath); err != nil {
+		return fmt.Errorf("worker binary not found at %s: %w", w.binaryPath, err)
 	}
 
 	// 构建命令行参数

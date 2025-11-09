@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/manager"
 	"github.com/xxnuo/MTranServer/internal/models"
 	"github.com/xxnuo/MTranServer/internal/routes"
 	"github.com/xxnuo/MTranServer/internal/services"
@@ -34,6 +35,11 @@ func Run() error {
 	// 创建必要的目录
 	if err := os.MkdirAll(cfg.ModelDir, 0755); err != nil {
 		return fmt.Errorf("failed to create model directory: %w", err)
+	}
+
+	// 初始化 worker 二进制文件
+	if err := manager.EnsureWorkerBinary(cfg); err != nil {
+		return fmt.Errorf("failed to initialize worker binary: %w", err)
 	}
 
 	// 获取 API Token
@@ -59,6 +65,9 @@ func Run() error {
 		Handler: r,
 	}
 
+	// 用于等待优雅关闭完成的通道
+	shutdownDone := make(chan struct{})
+
 	// 优雅关闭
 	go func() {
 		sigChan := make(chan os.Signal, 1)
@@ -76,14 +85,22 @@ func Run() error {
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Printf("Server forced to shutdown: %v", err)
 		}
+
+		close(shutdownDone)
 	}()
 
 	log.Printf("HTTP Service URL: http://%s", addr)
 	log.Printf("Swagger UI: http://%s/docs/index.html", addr)
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		// 服务器启动失败，确保清理资源
+		services.CleanupAllEngines()
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+
+	// 等待优雅关闭完成
+	<-shutdownDone
+	log.Println("Server shutdown complete")
 
 	return nil
 }
