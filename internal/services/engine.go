@@ -11,11 +11,7 @@ import (
 	"github.com/xxnuo/MTranServer/internal/config"
 	"github.com/xxnuo/MTranServer/internal/manager"
 	"github.com/xxnuo/MTranServer/internal/models"
-)
-
-const (
-	// Worker 空闲超时时间
-	workerIdleTimeout = 5 * time.Minute
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
 // EngineInfo 引擎信息
@@ -32,20 +28,7 @@ var (
 	// 存储已加载的翻译引擎 key: "fromLang-toLang"
 	engines = make(map[string]*EngineInfo)
 	engMu   sync.RWMutex
-
-	// 端口分配
-	nextPort = 8988
-	portMu   sync.Mutex
 )
-
-// allocatePort 分配一个新的端口号
-func allocatePort() int {
-	portMu.Lock()
-	defer portMu.Unlock()
-	port := nextPort
-	nextPort++
-	return port
-}
 
 // resetIdleTimer 重置空闲计时器
 func (ei *EngineInfo) resetIdleTimer() {
@@ -59,8 +42,12 @@ func (ei *EngineInfo) resetIdleTimer() {
 		ei.stopTimer.Stop()
 	}
 
+	// 从配置获取超时时间
+	cfg := config.GetConfig()
+	timeout := time.Duration(cfg.WorkerIdleTimeout) * time.Second
+
 	// 创建新的计时器
-	ei.stopTimer = time.AfterFunc(workerIdleTimeout, func() {
+	ei.stopTimer = time.AfterFunc(timeout, func() {
 		key := fmt.Sprintf("%s-%s", ei.FromLang, ei.ToLang)
 		log.Printf("Engine %s idle timeout, stopping...", key)
 
@@ -126,7 +113,10 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 	}
 
 	// 创建 Worker，分配独立端口
-	port := allocatePort()
+	port, err := utils.GetFreePort()
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate port: %w", err)
+	}
 	args := manager.NewWorkerArgs()
 	args.Port = port
 

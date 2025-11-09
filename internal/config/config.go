@@ -21,6 +21,7 @@ type Config struct {
 	Port              string
 	EnableWebUI       bool
 	EnableOfflineMode bool
+	WorkerIdleTimeout int // Worker 空闲超时时间（秒）
 }
 
 var (
@@ -48,6 +49,7 @@ func GetConfig() *Config {
 	flag.StringVar(&cfg.Port, "port", utils.GetEnv("MT_PORT", "8989"), "Server port")
 	flag.BoolVar(&cfg.EnableWebUI, "ui", utils.GetBoolEnv("MT_UI", false), "Enable web UI")
 	flag.BoolVar(&cfg.EnableOfflineMode, "offline", utils.GetBoolEnv("MT_OFFLINE", false), "Enable offline mode")
+	flag.IntVar(&cfg.WorkerIdleTimeout, "worker-idle-timeout", utils.GetIntEnv("MT_WORKER_IDLE_TIMEOUT", 300), "Worker idle timeout in seconds")
 
 	flag.Parse()
 	GlobalConfig = cfg

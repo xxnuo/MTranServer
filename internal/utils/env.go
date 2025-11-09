@@ -23,3 +23,14 @@ func GetBoolEnv(key string, defaultValue bool) bool {
 	}
 	return defaultValue
 }
+
+// GetIntEnv gets the environment variable value as int or returns the default value
+func GetIntEnv(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		result, err := strconv.Atoi(value)
+		if err == nil {
+			return result
+		}
+	}
+	return defaultValue
+}
