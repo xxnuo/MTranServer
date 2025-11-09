@@ -1,4 +1,4 @@
-package models
+package models_test
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/xxnuo/MTranServer/data"
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/models"
 )
 
 func TestInitRecords(t *testing.T) {
@@ -25,10 +26,10 @@ func TestInitRecords(t *testing.T) {
 	}
 
 	// 重置缓存
-	GlobalRecords = nil
+	models.GlobalRecords = nil
 
 	// 测试初始化
-	err := initRecords()
+	err := models.InitRecords()
 	if err != nil {
 		t.Fatalf("initRecords() error = %v", err)
 	}
@@ -40,30 +41,30 @@ func TestInitRecords(t *testing.T) {
 	}
 
 	// 检查缓存是否被设置
-	if GlobalRecords == nil {
+	if models.GlobalRecords == nil {
 		t.Fatal("GlobalRecords was not set")
 	}
 
 	// 检查数据是否正确解析
-	if len(GlobalRecords.Data) == 0 {
+	if len(models.GlobalRecords.Data) == 0 {
 		t.Fatal("GlobalRecords.Data is empty")
 	}
 
 	// 再次调用 initRecords，应该使用已存在的文件
-	GlobalRecords = nil
-	err = initRecords()
+	models.GlobalRecords = nil
+	err = models.InitRecords()
 	if err != nil {
 		t.Fatalf("initRecords() second call error = %v", err)
 	}
 
-	if GlobalRecords == nil || len(GlobalRecords.Data) == 0 {
+	if models.GlobalRecords == nil || len(models.GlobalRecords.Data) == 0 {
 		t.Fatal("Failed to load from existing records.json")
 	}
 }
 
 func TestRecordsDataStructure(t *testing.T) {
 	// 测试 JSON 解析
-	var records RecordsData
+	var records models.RecordsData
 	err := json.Unmarshal(data.RecordsJson, &records)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal embedded records.json: %v", err)
@@ -103,7 +104,7 @@ func TestRecordsDataStructure(t *testing.T) {
 
 func TestFindModelRecords(t *testing.T) {
 	// 解析内嵌数据
-	var records RecordsData
+	var records models.RecordsData
 	err := json.Unmarshal(data.RecordsJson, &records)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal records: %v", err)
@@ -153,7 +154,7 @@ func TestFindModelRecords(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var matchedRecords []RecordItem
+			var matchedRecords []models.RecordItem
 			for _, record := range records.Data {
 				if record.ToLang == tt.toLang && record.FromLang == tt.fromLang {
 					if tt.version == "" || record.Version == tt.version {
@@ -176,14 +177,14 @@ func TestFindModelRecords(t *testing.T) {
 
 func TestVersionGrouping(t *testing.T) {
 	// 解析内嵌数据
-	var records RecordsData
+	var records models.RecordsData
 	err := json.Unmarshal(data.RecordsJson, &records)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal records: %v", err)
 	}
 
 	// 找到 en->pl 的所有记录
-	var matchedRecords []RecordItem
+	var matchedRecords []models.RecordItem
 	for _, record := range records.Data {
 		if record.ToLang == "pl" && record.FromLang == "en" {
 			matchedRecords = append(matchedRecords, record)
@@ -195,7 +196,7 @@ func TestVersionGrouping(t *testing.T) {
 	}
 
 	// 按 fileType 分组
-	fileTypeMap := make(map[string][]RecordItem)
+	fileTypeMap := make(map[string][]models.RecordItem)
 	for _, record := range matchedRecords {
 		fileTypeMap[record.FileType] = append(fileTypeMap[record.FileType], record)
 	}
@@ -235,10 +236,10 @@ func TestDownloadRecords(t *testing.T) {
 	}
 
 	// 重置缓存
-	GlobalRecords = nil
+	models.GlobalRecords = nil
 
 	// 测试下载
-	err := downloadRecords()
+	err := models.DownloadRecords()
 	if err != nil {
 		t.Fatalf("downloadRecords() error = %v", err)
 	}
@@ -250,12 +251,12 @@ func TestDownloadRecords(t *testing.T) {
 	}
 
 	// 检查缓存是否被设置
-	if GlobalRecords == nil {
+	if models.GlobalRecords == nil {
 		t.Fatal("GlobalRecords was not set after download")
 	}
 
 	// 检查数据是否正确解析
-	if len(GlobalRecords.Data) == 0 {
+	if len(models.GlobalRecords.Data) == 0 {
 		t.Fatal("GlobalRecords.Data is empty after download")
 	}
 }
@@ -268,13 +269,13 @@ func TestRealDownloadModel(t *testing.T) {
 	t.Log("This test is real world test.")
 
 	// 初始化 records
-	err := initRecords()
+	err := models.InitRecords()
 	if err != nil {
 		t.Fatalf("initRecords() error = %v", err)
 	}
 
 	// 测试下载模型（选择一个较小的模型进行测试）
-	err = downloadModel("ja", "en", "")
+	err = models.DownloadModel("ja", "en", "")
 	if err != nil {
 		t.Fatalf("downloadModel() error = %v", err)
 	}
@@ -297,7 +298,7 @@ func TestRealDownloadModel(t *testing.T) {
 	}
 
 	expectedFileTypes := []string{"model", "vocab", "lex", "trgvocab", "srcvocab"}
-	for _, record := range GlobalRecords.Data {
+	for _, record := range models.GlobalRecords.Data {
 		if record.ToLang == "ja" && record.FromLang == "en" {
 			if !downloadedFiles[record.Attachment.Filename] {
 				t.Errorf("Expected file %s was not downloaded", record.Attachment.Filename)
@@ -336,16 +337,16 @@ func TestDownloadModelLatestVersion(t *testing.T) {
 	}
 
 	// 重置缓存
-	GlobalRecords = nil
+	models.GlobalRecords = nil
 
 	// 初始化 records
-	err := initRecords()
+	err := models.InitRecords()
 	if err != nil {
 		t.Fatalf("initRecords() error = %v", err)
 	}
 
 	// 测试下载最新版本的模型（不指定版本号）
-	err = downloadModel("de", "en", "")
+	err = models.DownloadModel("de", "en", "")
 	if err != nil {
 		t.Fatalf("downloadModel() error = %v", err)
 	}
@@ -381,16 +382,16 @@ func TestDownloadModelNonExistent(t *testing.T) {
 	}
 
 	// 重置缓存
-	GlobalRecords = nil
+	models.GlobalRecords = nil
 
 	// 初始化 records
-	err := initRecords()
+	err := models.InitRecords()
 	if err != nil {
 		t.Fatalf("initRecords() error = %v", err)
 	}
 
 	// 测试下载不存在的语言对
-	err = downloadModel("zz", "yy", "")
+	err = models.DownloadModel("zz", "yy", "")
 	if err == nil {
 		t.Fatal("Expected error for non-existent language pair, got nil")
 	}

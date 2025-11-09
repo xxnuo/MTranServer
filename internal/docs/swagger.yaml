@@ -1,0 +1,452 @@
+basePath: /
+definitions:
+  main.GoogleTranslateRequest:
+    properties:
+      format:
+        example: text
+        type: string
+      q:
+        example: The Great Pyramid of Giza
+        type: string
+      source:
+        example: en
+        type: string
+      target:
+        example: zh
+        type: string
+    required:
+    - q
+    - source
+    - target
+    type: object
+  main.GoogleTranslateResponse:
+    properties:
+      data:
+        properties:
+          translations:
+            items:
+              properties:
+                translatedText:
+                  example: 吉萨大金字塔
+                  type: string
+              type: object
+            type: array
+        type: object
+    type: object
+  main.ImmeTranslateRequest:
+    properties:
+      from:
+        example: en
+        type: string
+      to:
+        example: zh
+        type: string
+      trans:
+        example:
+        - Hello
+        - ' world!'
+        - Good morning!
+        items:
+          type: string
+        type: array
+    required:
+    - from
+    - to
+    - trans
+    type: object
+  main.ImmeTranslateResponse:
+    properties:
+      trans:
+        example:
+        - 你好，世界！
+        - 早上好！
+        items:
+          type: string
+        type: array
+    type: object
+  main.KissTranslateRequest:
+    properties:
+      from:
+        example: en
+        type: string
+      text:
+        example: Hello, world!
+        type: string
+      to:
+        example: zh
+        type: string
+    required:
+    - from
+    - text
+    - to
+    type: object
+  main.KissTranslateResponse:
+    properties:
+      text:
+        example: 你好，世界！
+        type: string
+    type: object
+  main.TranslateBatchRequest:
+    properties:
+      from:
+        example: en
+        type: string
+      html:
+        example: false
+        type: boolean
+      texts:
+        example:
+        - Hello
+        - ' world!'
+        - Good morning!
+        items:
+          type: string
+        type: array
+      to:
+        example: zh
+        type: string
+    required:
+    - from
+    - texts
+    - to
+    type: object
+  main.TranslateBatchResponse:
+    properties:
+      results:
+        example:
+        - 你好，世界！
+        - 早上好！
+        items:
+          type: string
+        type: array
+    type: object
+  main.TranslateRequest:
+    properties:
+      from:
+        example: en
+        type: string
+      html:
+        example: false
+        type: boolean
+      text:
+        example: Hello, world!
+        type: string
+      to:
+        example: zh
+        type: string
+    required:
+    - from
+    - text
+    - to
+    type: object
+  main.TranslateResponse:
+    properties:
+      result:
+        example: 你好，世界！
+        type: string
+    type: object
+host: localhost:8989
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: https://github.com/xxnuo/MTranServer/issues
+  description: 超低资源消耗超快的离线翻译服务器 API
+  license:
+    name: MIT
+    url: https://github.com/xxnuo/MTranServer/blob/main/LICENSE
+  termsOfService: https://github.com/xxnuo/MTranServer
+  title: MTranServer API
+  version: 3.0.0
+paths:
+  /__heartbeat__:
+    get:
+      description: 返回服务状态
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Ready
+          schema:
+            type: string
+      summary: 心跳检查
+      tags:
+      - 系统
+  /__lbheartbeat__:
+    get:
+      description: 返回负载均衡器心跳状态
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Ready
+          schema:
+            type: string
+      summary: 负载均衡心跳检查
+      tags:
+      - 系统
+  /health:
+    get:
+      description: 检查服务是否正常运行
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 健康检查
+      tags:
+      - 系统
+  /imme:
+    post:
+      consumes:
+      - application/json
+      description: 为沉浸式翻译插件提供的翻译接口
+      parameters:
+      - description: API Token
+        in: query
+        name: token
+        type: string
+      - description: 沉浸式翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.ImmeTranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ImmeTranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 沉浸式翻译插件接口
+      tags:
+      - 插件
+  /kiss:
+    post:
+      consumes:
+      - application/json
+      description: 为简约翻译插件提供的翻译接口
+      parameters:
+      - description: API Token
+        in: header
+        name: KEY
+        type: string
+      - description: 简约翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.KissTranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.KissTranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 简约翻译插件接口
+      tags:
+      - 插件
+  /language/translate/v2:
+    post:
+      consumes:
+      - application/json
+      description: 兼容 Google Translate API v2 的翻译接口
+      parameters:
+      - description: Google 翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.GoogleTranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.GoogleTranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      - ApiKeyQuery: []
+      summary: Google 翻译兼容接口
+      tags:
+      - 翻译
+  /languages:
+    get:
+      description: 返回所有支持的翻译语言代码
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      - ApiKeyQuery: []
+      summary: 获取支持的语言列表
+      tags:
+      - 翻译
+  /translate:
+    post:
+      consumes:
+      - application/json
+      description: 翻译单个文本
+      parameters:
+      - description: 翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.TranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.TranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      - ApiKeyQuery: []
+      summary: 单文本翻译
+      tags:
+      - 翻译
+  /translate/batch:
+    post:
+      consumes:
+      - application/json
+      description: 批量翻译多个文本
+      parameters:
+      - description: 批量翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.TranslateBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.TranslateBatchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      - ApiKeyQuery: []
+      summary: 批量翻译
+      tags:
+      - 翻译
+  /version:
+    get:
+      description: 返回当前服务的版本号
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 获取服务版本
+      tags:
+      - 系统
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  ApiKeyQuery:
+    in: query
+    name: token
+    type: apiKey
+swagger: "2.0"
