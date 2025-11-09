@@ -13,22 +13,83 @@ import (
 	"github.com/xxnuo/MTranServer/internal/models"
 )
 
-var (
-	// 存储已加载的翻译引擎 key: "fromLang-toLang"
-	engines = make(map[string]*manager.Manager)
-	engMu   sync.RWMutex
+const (
+	// Worker 空闲超时时间
+	workerIdleTimeout = 5 * time.Minute
 )
 
+// EngineInfo 引擎信息
+type EngineInfo struct {
+	Manager   *manager.Manager
+	LastUsed  time.Time
+	FromLang  string
+	ToLang    string
+	stopTimer *time.Timer
+	mu        sync.Mutex
+}
+
+var (
+	// 存储已加载的翻译引擎 key: "fromLang-toLang"
+	engines = make(map[string]*EngineInfo)
+	engMu   sync.RWMutex
+
+	// 端口分配
+	nextPort = 8988
+	portMu   sync.Mutex
+)
+
+// allocatePort 分配一个新的端口号
+func allocatePort() int {
+	portMu.Lock()
+	defer portMu.Unlock()
+	port := nextPort
+	nextPort++
+	return port
+}
+
+// resetIdleTimer 重置空闲计时器
+func (ei *EngineInfo) resetIdleTimer() {
+	ei.mu.Lock()
+	defer ei.mu.Unlock()
+
+	ei.LastUsed = time.Now()
+
+	// 停止旧的计时器
+	if ei.stopTimer != nil {
+		ei.stopTimer.Stop()
+	}
+
+	// 创建新的计时器
+	ei.stopTimer = time.AfterFunc(workerIdleTimeout, func() {
+		key := fmt.Sprintf("%s-%s", ei.FromLang, ei.ToLang)
+		log.Printf("Engine %s idle timeout, stopping...", key)
+
+		engMu.Lock()
+		defer engMu.Unlock()
+
+		if info, ok := engines[key]; ok {
+			if err := info.Manager.Cleanup(); err != nil {
+				log.Printf("Failed to cleanup engine %s: %v", key, err)
+			}
+			delete(engines, key)
+			log.Printf("Engine %s stopped due to idle timeout", key)
+		}
+	})
+}
+
 // GetOrCreateEngine 获取或创建翻译引擎
+// 一个 worker 只对应一个语言方向的翻译（fromLang -> toLang）
 func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 	key := fmt.Sprintf("%s-%s", fromLang, toLang)
 
 	// 检查是否已存在
 	engMu.RLock()
-	if m, ok := engines[key]; ok {
-		if m.IsRunning() {
+	if info, ok := engines[key]; ok {
+		if info.Manager.IsRunning() {
 			engMu.RUnlock()
-			return m, nil
+			// 更新最后使用时间并重置空闲计时器
+			info.resetIdleTimer()
+			return info.Manager, nil
 		}
 	}
 	engMu.RUnlock()
@@ -38,9 +99,10 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 	defer engMu.Unlock()
 
 	// 再次检查（双重检查锁定）
-	if m, ok := engines[key]; ok {
-		if m.IsRunning() {
-			return m, nil
+	if info, ok := engines[key]; ok {
+		if info.Manager.IsRunning() {
+			info.resetIdleTimer()
+			return info.Manager, nil
 		}
 	}
 
@@ -63,11 +125,14 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 		return nil, fmt.Errorf("failed to find model files: %w", err)
 	}
 
-	// 创建 Worker
-	port := 8988 + len(engines) // 动态分配端口
+	// 创建 Worker，分配独立端口
+	port := allocatePort()
 	args := manager.NewWorkerArgs()
 	args.Port = port
-	args.WorkDir = cfg.ModelDir
+
+	// WorkDir 设置为语言对子目录
+	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
+	args.WorkDir = langPairDir
 
 	m := manager.NewManager(args)
 
@@ -101,8 +166,17 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	engines[key] = m
-	log.Printf("Engine created successfully for %s -> %s", fromLang, toLang)
+	// 创建引擎信息并设置空闲计时器
+	info := &EngineInfo{
+		Manager:  m,
+		LastUsed: time.Now(),
+		FromLang: fromLang,
+		ToLang:   toLang,
+	}
+	info.resetIdleTimer()
+
+	engines[key] = info
+	log.Printf("Engine created successfully for %s -> %s on port %d", fromLang, toLang, port)
 
 	return m, nil
 }
@@ -112,10 +186,22 @@ func CleanupAllEngines() {
 	engMu.Lock()
 	defer engMu.Unlock()
 
-	for key, m := range engines {
+	for key, info := range engines {
 		log.Printf("Stopping engine: %s", key)
-		if err := m.Cleanup(); err != nil {
+
+		// 停止空闲计时器
+		info.mu.Lock()
+		if info.stopTimer != nil {
+			info.stopTimer.Stop()
+		}
+		info.mu.Unlock()
+
+		// 清理 Manager
+		if err := info.Manager.Cleanup(); err != nil {
 			log.Printf("Failed to cleanup engine %s: %v", key, err)
 		}
 	}
+
+	// 清空 engines map
+	engines = make(map[string]*EngineInfo)
 }
