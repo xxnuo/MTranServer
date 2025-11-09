@@ -49,6 +49,47 @@ var (
 	GlobalRecords *RecordsData
 )
 
+// GetLanguagePairs 获取所有可用的语言对
+func (r *RecordsData) GetLanguagePairs() []string {
+	pairMap := make(map[string]bool)
+	for _, record := range r.Data {
+		pair := fmt.Sprintf("%s-%s", record.FromLang, record.ToLang)
+		pairMap[pair] = true
+	}
+
+	pairs := make([]string, 0, len(pairMap))
+	for pair := range pairMap {
+		pairs = append(pairs, pair)
+	}
+	return pairs
+}
+
+// HasLanguagePair 检查是否支持指定的语言对
+func (r *RecordsData) HasLanguagePair(fromLang, toLang string) bool {
+	for _, record := range r.Data {
+		if record.FromLang == fromLang && record.ToLang == toLang {
+			return true
+		}
+	}
+	return false
+}
+
+// GetVersions 获取指定语言对的所有可用版本
+func (r *RecordsData) GetVersions(fromLang, toLang string) []string {
+	versionMap := make(map[string]bool)
+	for _, record := range r.Data {
+		if record.FromLang == fromLang && record.ToLang == toLang {
+			versionMap[record.Version] = true
+		}
+	}
+
+	versions := make([]string, 0, len(versionMap))
+	for version := range versionMap {
+		versions = append(versions, version)
+	}
+	return versions
+}
+
 // InitRecords 检测默认配置目录下是否存在 records.json
 // 存在则解析本地 records.json
 // 不存在则写出默认内嵌的 records.json 到配置目录然后解析
@@ -152,7 +193,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 	// 构建语言对子目录
 	cfg := config.GetConfig()
 	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
-	
+
 	// 创建语言对子目录
 	if err := os.MkdirAll(langPairDir, 0755); err != nil {
 		return fmt.Errorf("Failed to create language pair directory: %w", err)
@@ -242,4 +283,58 @@ func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error)
 	}
 
 	return files, nil
+}
+
+// IsModelDownloaded 检查指定语言对的模型是否已下载
+func IsModelDownloaded(modelDir, fromLang, toLang string) bool {
+	_, err := GetModelFiles(modelDir, fromLang, toLang)
+	return err == nil
+}
+
+// GetSupportedLanguages 获取所有支持的语言列表
+func GetSupportedLanguages() ([]string, error) {
+	if GlobalRecords == nil {
+		if err := InitRecords(); err != nil {
+			return nil, err
+		}
+	}
+
+	langMap := make(map[string]bool)
+	for _, record := range GlobalRecords.Data {
+		langMap[record.FromLang] = true
+		langMap[record.ToLang] = true
+	}
+
+	langs := make([]string, 0, len(langMap))
+	for lang := range langMap {
+		langs = append(langs, lang)
+	}
+	return langs, nil
+}
+
+// ValidateLanguagePair 验证语言对是否有效
+func ValidateLanguagePair(fromLang, toLang string) error {
+	if GlobalRecords == nil {
+		if err := InitRecords(); err != nil {
+			return fmt.Errorf("failed to init records: %w", err)
+		}
+	}
+
+	if fromLang == "" {
+		return fmt.Errorf("source language cannot be empty")
+	}
+
+	if toLang == "" {
+		return fmt.Errorf("target language cannot be empty")
+	}
+
+	if fromLang == toLang {
+		return fmt.Errorf("source and target languages cannot be the same")
+	}
+
+	if !GlobalRecords.HasLanguagePair(fromLang, toLang) {
+		return fmt.Errorf("language pair %s -> %s is not supported", fromLang, toLang)
+	}
+
+	return nil
 }
