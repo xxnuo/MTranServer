@@ -39,3 +39,8 @@ generate-docs:
 	@go install github.com/swaggo/swag/cmd/swag@latest
 	@swag init -g ./cmd/mtranserver/main.go -o ./internal/docs
 	@echo "Docs generated successfully"
+
+build: generate-docs
+	@echo "Building..."
+	@go build -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
+	@echo "Built successfully"
