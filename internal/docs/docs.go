@@ -491,7 +491,7 @@ const docTemplate = `{
                 },
                 "target": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
@@ -531,7 +531,7 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 },
                 "trans": {
                     "type": "array",
@@ -579,7 +579,7 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
@@ -621,7 +621,7 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
@@ -662,7 +662,7 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh"
+                    "example": "zh-Hans"
                 }
             }
         },
