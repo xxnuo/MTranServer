@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  main.GoogleTranslateRequest:
+  handlers.GoogleTranslateRequest:
     properties:
       format:
         example: text
@@ -19,7 +19,7 @@ definitions:
     - source
     - target
     type: object
-  main.GoogleTranslateResponse:
+  handlers.GoogleTranslateResponse:
     properties:
       data:
         properties:
@@ -33,7 +33,7 @@ definitions:
             type: array
         type: object
     type: object
-  main.ImmeTranslateRequest:
+  handlers.ImmeTranslateRequest:
     properties:
       from:
         example: en
@@ -54,7 +54,7 @@ definitions:
     - to
     - trans
     type: object
-  main.ImmeTranslateResponse:
+  handlers.ImmeTranslateResponse:
     properties:
       trans:
         example:
@@ -64,7 +64,7 @@ definitions:
           type: string
         type: array
     type: object
-  main.KissTranslateRequest:
+  handlers.KissTranslateRequest:
     properties:
       from:
         example: en
@@ -80,13 +80,13 @@ definitions:
     - text
     - to
     type: object
-  main.KissTranslateResponse:
+  handlers.KissTranslateResponse:
     properties:
       text:
         example: 你好，世界！
         type: string
     type: object
-  main.TranslateBatchRequest:
+  handlers.TranslateBatchRequest:
     properties:
       from:
         example: en
@@ -110,7 +110,7 @@ definitions:
     - texts
     - to
     type: object
-  main.TranslateBatchResponse:
+  handlers.TranslateBatchResponse:
     properties:
       results:
         example:
@@ -120,7 +120,7 @@ definitions:
           type: string
         type: array
     type: object
-  main.TranslateRequest:
+  handlers.TranslateRequest:
     properties:
       from:
         example: en
@@ -139,7 +139,7 @@ definitions:
     - text
     - to
     type: object
-  main.TranslateResponse:
+  handlers.TranslateResponse:
     properties:
       result:
         example: 你好，世界！
@@ -215,14 +215,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.ImmeTranslateRequest'
+          $ref: '#/definitions/handlers.ImmeTranslateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.ImmeTranslateResponse'
+            $ref: '#/definitions/handlers.ImmeTranslateResponse'
         "400":
           description: Bad Request
           schema:
@@ -259,14 +259,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.KissTranslateRequest'
+          $ref: '#/definitions/handlers.KissTranslateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.KissTranslateResponse'
+            $ref: '#/definitions/handlers.KissTranslateResponse'
         "400":
           description: Bad Request
           schema:
@@ -299,14 +299,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.GoogleTranslateRequest'
+          $ref: '#/definitions/handlers.GoogleTranslateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.GoogleTranslateResponse'
+            $ref: '#/definitions/handlers.GoogleTranslateResponse'
         "400":
           description: Bad Request
           schema:
@@ -362,14 +362,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.TranslateRequest'
+          $ref: '#/definitions/handlers.TranslateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.TranslateResponse'
+            $ref: '#/definitions/handlers.TranslateResponse'
         "400":
           description: Bad Request
           schema:
@@ -399,14 +399,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.TranslateBatchRequest'
+          $ref: '#/definitions/handlers.TranslateBatchRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.TranslateBatchResponse'
+            $ref: '#/definitions/handlers.TranslateBatchResponse'
         "400":
           description: Bad Request
           schema:

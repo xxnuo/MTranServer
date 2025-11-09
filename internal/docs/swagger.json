@@ -107,7 +107,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ImmeTranslateRequest"
+                            "$ref": "#/definitions/handlers.ImmeTranslateRequest"
                         }
                     }
                 ],
@@ -115,7 +115,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.ImmeTranslateResponse"
+                            "$ref": "#/definitions/handlers.ImmeTranslateResponse"
                         }
                     },
                     "400": {
@@ -174,7 +174,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.KissTranslateRequest"
+                            "$ref": "#/definitions/handlers.KissTranslateRequest"
                         }
                     }
                 ],
@@ -182,7 +182,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.KissTranslateResponse"
+                            "$ref": "#/definitions/handlers.KissTranslateResponse"
                         }
                     },
                     "400": {
@@ -243,7 +243,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.GoogleTranslateRequest"
+                            "$ref": "#/definitions/handlers.GoogleTranslateRequest"
                         }
                     }
                 ],
@@ -251,7 +251,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.GoogleTranslateResponse"
+                            "$ref": "#/definitions/handlers.GoogleTranslateResponse"
                         }
                     },
                     "400": {
@@ -346,7 +346,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateRequest"
+                            "$ref": "#/definitions/handlers.TranslateRequest"
                         }
                     }
                 ],
@@ -354,7 +354,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateResponse"
+                            "$ref": "#/definitions/handlers.TranslateResponse"
                         }
                     },
                     "400": {
@@ -406,7 +406,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateBatchRequest"
+                            "$ref": "#/definitions/handlers.TranslateBatchRequest"
                         }
                     }
                 ],
@@ -414,7 +414,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateBatchResponse"
+                            "$ref": "#/definitions/handlers.TranslateBatchResponse"
                         }
                     },
                     "400": {
@@ -463,7 +463,7 @@
         }
     },
     "definitions": {
-        "main.GoogleTranslateRequest": {
+        "handlers.GoogleTranslateRequest": {
             "type": "object",
             "required": [
                 "q",
@@ -489,7 +489,7 @@
                 }
             }
         },
-        "main.GoogleTranslateResponse": {
+        "handlers.GoogleTranslateResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -511,7 +511,7 @@
                 }
             }
         },
-        "main.ImmeTranslateRequest": {
+        "handlers.ImmeTranslateRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -540,7 +540,7 @@
                 }
             }
         },
-        "main.ImmeTranslateResponse": {
+        "handlers.ImmeTranslateResponse": {
             "type": "object",
             "properties": {
                 "trans": {
@@ -555,7 +555,7 @@
                 }
             }
         },
-        "main.KissTranslateRequest": {
+        "handlers.KissTranslateRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -577,7 +577,7 @@
                 }
             }
         },
-        "main.KissTranslateResponse": {
+        "handlers.KissTranslateResponse": {
             "type": "object",
             "properties": {
                 "text": {
@@ -586,7 +586,7 @@
                 }
             }
         },
-        "main.TranslateBatchRequest": {
+        "handlers.TranslateBatchRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -619,7 +619,7 @@
                 }
             }
         },
-        "main.TranslateBatchResponse": {
+        "handlers.TranslateBatchResponse": {
             "type": "object",
             "properties": {
                 "results": {
@@ -634,7 +634,7 @@
                 }
             }
         },
-        "main.TranslateRequest": {
+        "handlers.TranslateRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -660,7 +660,7 @@
                 }
             }
         },
-        "main.TranslateResponse": {
+        "handlers.TranslateResponse": {
             "type": "object",
             "properties": {
                 "result": {

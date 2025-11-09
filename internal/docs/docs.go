@@ -113,7 +113,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.ImmeTranslateRequest"
+                            "$ref": "#/definitions/handlers.ImmeTranslateRequest"
                         }
                     }
                 ],
@@ -121,7 +121,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.ImmeTranslateResponse"
+                            "$ref": "#/definitions/handlers.ImmeTranslateResponse"
                         }
                     },
                     "400": {
@@ -180,7 +180,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.KissTranslateRequest"
+                            "$ref": "#/definitions/handlers.KissTranslateRequest"
                         }
                     }
                 ],
@@ -188,7 +188,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.KissTranslateResponse"
+                            "$ref": "#/definitions/handlers.KissTranslateResponse"
                         }
                     },
                     "400": {
@@ -249,7 +249,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.GoogleTranslateRequest"
+                            "$ref": "#/definitions/handlers.GoogleTranslateRequest"
                         }
                     }
                 ],
@@ -257,7 +257,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.GoogleTranslateResponse"
+                            "$ref": "#/definitions/handlers.GoogleTranslateResponse"
                         }
                     },
                     "400": {
@@ -352,7 +352,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateRequest"
+                            "$ref": "#/definitions/handlers.TranslateRequest"
                         }
                     }
                 ],
@@ -360,7 +360,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateResponse"
+                            "$ref": "#/definitions/handlers.TranslateResponse"
                         }
                     },
                     "400": {
@@ -412,7 +412,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateBatchRequest"
+                            "$ref": "#/definitions/handlers.TranslateBatchRequest"
                         }
                     }
                 ],
@@ -420,7 +420,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.TranslateBatchResponse"
+                            "$ref": "#/definitions/handlers.TranslateBatchResponse"
                         }
                     },
                     "400": {
@@ -469,7 +469,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.GoogleTranslateRequest": {
+        "handlers.GoogleTranslateRequest": {
             "type": "object",
             "required": [
                 "q",
@@ -495,7 +495,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.GoogleTranslateResponse": {
+        "handlers.GoogleTranslateResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -517,7 +517,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.ImmeTranslateRequest": {
+        "handlers.ImmeTranslateRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -546,7 +546,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.ImmeTranslateResponse": {
+        "handlers.ImmeTranslateResponse": {
             "type": "object",
             "properties": {
                 "trans": {
@@ -561,7 +561,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.KissTranslateRequest": {
+        "handlers.KissTranslateRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -583,7 +583,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.KissTranslateResponse": {
+        "handlers.KissTranslateResponse": {
             "type": "object",
             "properties": {
                 "text": {
@@ -592,7 +592,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.TranslateBatchRequest": {
+        "handlers.TranslateBatchRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -625,7 +625,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.TranslateBatchResponse": {
+        "handlers.TranslateBatchResponse": {
             "type": "object",
             "properties": {
                 "results": {
@@ -640,7 +640,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.TranslateRequest": {
+        "handlers.TranslateRequest": {
             "type": "object",
             "required": [
                 "from",
@@ -666,7 +666,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.TranslateResponse": {
+        "handlers.TranslateResponse": {
             "type": "object",
             "properties": {
                 "result": {
