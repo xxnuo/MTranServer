@@ -51,7 +51,6 @@ func GetConfig() *Config {
 	flag.BoolVar(&cfg.EnableOfflineMode, "offline", utils.GetBoolEnv("MT_OFFLINE", false), "Enable offline mode")
 	flag.IntVar(&cfg.WorkerIdleTimeout, "worker-idle-timeout", utils.GetIntEnv("MT_WORKER_IDLE_TIMEOUT", 300), "Worker idle timeout in seconds")
 
-	flag.Parse()
 	GlobalConfig = cfg
 	return cfg
 }
