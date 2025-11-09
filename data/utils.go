@@ -1,3 +1,3 @@
 package data
 
-//go:generate go run gen_records.go
+//go:generate env GOOS= GOARCH= go run gen_records.go

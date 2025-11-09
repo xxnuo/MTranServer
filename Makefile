@@ -1,4 +1,4 @@
-.PHONY: download-core download-records download generate-docs
+.PHONY: download download-core download-records generate-docs
 
 # Detect OS and architecture
 GOOS ?= $(shell go env GOOS)
@@ -24,20 +24,19 @@ DOWNLOAD_URL := https://github.com/$(GITHUB_REPO)/releases/latest/download/$(WOR
 # Extra: js-wasm
 download-core:
 	touch ./bin/worker
-	@go generate ./bin
+	@GOOS= GOARCH= go generate ./bin
 	@echo "Downloaded core binary from repository successfully"
 
 download-records:
 	touch ./data/records.json
-	@go run ./data/gen_records.go
+	@GOOS= GOARCH= go generate ./data
 
 download: download-core download-records
 	@echo "Downloaded successfully"
 
 generate-docs:
 	@echo "Generating docs..."
-	@go install github.com/swaggo/swag/cmd/swag@latest
-	@swag init -g ./cmd/mtranserver/main.go -o ./internal/docs
+	@GOOS= GOARCH= go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
 	@echo "Docs generated successfully"
 
 build: generate-docs
