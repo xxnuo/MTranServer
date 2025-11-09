@@ -8,8 +8,8 @@ import (
 
 	"github.com/xxnuo/MTranServer/data"
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/downloader"
 	"github.com/xxnuo/MTranServer/internal/utils"
-	"github.com/xxnuo/MTranServer/internal/utils/downloader"
 )
 
 const (
@@ -101,7 +101,7 @@ func DownloadRecords() error {
 
 // DownloadModel 解析 records.json，找到对应的模型属性
 // 检查配置目录下是否存在对应的模型文件，可通过 sha256 校验
-// 不存在则下载到配置目录
+// 不存在则下载到语言对子目录
 // 参数：toLang 目标语言，fromLang 源语言，version 模型版本
 // records 里同一个 fromLang 和 toLang 会存在多个 version 的模型
 // 需要根据 version 下载对应的模型，未指定 version 则下载最新版本
@@ -149,9 +149,17 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 		}
 	}
 
-	// 下载所有需要的文件
+	// 构建语言对子目录
 	cfg := config.GetConfig()
-	d := downloader.New(cfg.ModelDir)
+	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
+	
+	// 创建语言对子目录
+	if err := os.MkdirAll(langPairDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create language pair directory: %w", err)
+	}
+
+	// 下载所有需要的文件到语言对子目录
+	d := downloader.New(langPairDir)
 
 	for _, record := range targetRecords {
 		filename := record.Attachment.Filename
@@ -171,6 +179,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 
 // GetModelFiles 根据语言对查找模型文件路径
 // 返回 map[string]string，key 为文件类型：model, lex, vocab_src, vocab_trg
+// 支持单个词表文件同时用于源语言和目标语言
 func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error) {
 	// 确保 records 已加载
 	if GlobalRecords == nil {
@@ -179,6 +188,9 @@ func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error)
 		}
 	}
 
+	// 构建语言对子目录
+	langPairDir := filepath.Join(modelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
+
 	files := make(map[string]string)
 	fileTypeMap := make(map[string]string) // fileType -> fullPath
 
@@ -186,7 +198,7 @@ func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error)
 	for _, record := range GlobalRecords.Data {
 		if record.FromLang == fromLang && record.ToLang == toLang {
 			filename := record.Attachment.Filename
-			fullPath := filepath.Join(modelDir, filename)
+			fullPath := filepath.Join(langPairDir, filename)
 
 			// 检查文件是否存在
 			if _, err := os.Stat(fullPath); err == nil {
@@ -208,31 +220,24 @@ func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error)
 		return nil, fmt.Errorf("lex file not found for %s -> %s", fromLang, toLang)
 	}
 
-	// vocab_src 可能是 vocab 或 srcvocab
+	// 处理词表文件：可能是单个 vocab 文件或分开的 srcvocab/trgvocab
+	// 优先查找 vocab（单个词表文件）
 	if vocabPath, ok := fileTypeMap["vocab"]; ok {
+		// 单个词表文件同时用于源语言和目标语言
 		files["vocab_src"] = vocabPath
-	} else if srcvocabPath, ok := fileTypeMap["srcvocab"]; ok {
-		files["vocab_src"] = srcvocabPath
+		files["vocab_trg"] = vocabPath
 	} else {
-		return nil, fmt.Errorf("vocab file not found for %s -> %s", fromLang, toLang)
-	}
-
-	// trgvocab 可能是 trgvocab 或 vocab（反向）
-	if trgvocabPath, ok := fileTypeMap["trgvocab"]; ok {
-		files["vocab_trg"] = trgvocabPath
-	} else {
-		// 尝试查找反向的 vocab
-		for _, record := range GlobalRecords.Data {
-			if record.FromLang == toLang && record.ToLang == fromLang && record.FileType == "vocab" {
-				fullPath := filepath.Join(modelDir, record.Attachment.Filename)
-				if _, err := os.Stat(fullPath); err == nil {
-					files["vocab_trg"] = fullPath
-					break
-				}
-			}
+		// 查找分开的词表文件
+		if srcvocabPath, ok := fileTypeMap["srcvocab"]; ok {
+			files["vocab_src"] = srcvocabPath
+		} else {
+			return nil, fmt.Errorf("source vocab file not found for %s -> %s", fromLang, toLang)
 		}
-		if _, ok := files["vocab_trg"]; !ok {
-			return nil, fmt.Errorf("trgvocab file not found for %s -> %s", fromLang, toLang)
+
+		if trgvocabPath, ok := fileTypeMap["trgvocab"]; ok {
+			files["vocab_trg"] = trgvocabPath
+		} else {
+			return nil, fmt.Errorf("target vocab file not found for %s -> %s", fromLang, toLang)
 		}
 	}
 
