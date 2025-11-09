@@ -116,7 +116,7 @@ func (m *Manager) Cleanup() error {
 
 	var errs []error
 
-	// 关闭 Client
+	// 关闭 Client（忽略错误，继续清理）
 	if m.client != nil {
 		if err := m.client.Close(); err != nil {
 			errs = append(errs, fmt.Errorf("failed to close client: %w", err))
@@ -124,11 +124,12 @@ func (m *Manager) Cleanup() error {
 		m.client = nil
 	}
 
-	// 清理 Worker
+	// 清理 Worker（即使 client 关闭失败也要清理）
 	if m.worker != nil {
 		if err := m.worker.Cleanup(); err != nil {
 			errs = append(errs, fmt.Errorf("failed to cleanup worker: %w", err))
 		}
+		// 不设置为 nil，因为 worker 结构体可能还需要保留
 	}
 
 	if len(errs) > 0 {

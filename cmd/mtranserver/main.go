@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/xxnuo/MTranServer/internal/server"
+	"github.com/xxnuo/MTranServer/internal/services"
 )
 
 // @title           MTranServer API
@@ -33,4 +34,6 @@ func main() {
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
+
+	services.CleanupAllEngines()
 }

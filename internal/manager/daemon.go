@@ -301,8 +301,47 @@ func (w *Worker) Logs() []string {
 
 // collectLogs 收集工作进程的日志
 func (w *Worker) collectLogs() {
+	defer w.wg.Done()
+
 	for {
 		select {
+		case <-w.done:
+			// 收到退出信号，清空剩余的日志消息后退出
+			for {
+				select {
+				case msg, ok := <-w.logChan:
+					if !ok {
+						return
+					}
+					w.mu.Lock()
+					logType := "INFO"
+					if msg.Type == 1 {
+						logType = "ERROR"
+					}
+					logLine := fmt.Sprintf("[%s] [%s] %s",
+						time.Now().Format("2006-01-02 15:04:05"), logType, msg.Text)
+					w.logs = append(w.logs, logLine)
+					if len(w.logs) > w.maxLogs {
+						w.logs = w.logs[len(w.logs)-w.maxLogs:]
+					}
+					w.mu.Unlock()
+				case state, ok := <-w.stateChan:
+					if !ok {
+						return
+					}
+					w.mu.Lock()
+					stateLog := fmt.Sprintf("[%s] Worker state: %s (PID: %d)",
+						time.Now().Format("2006-01-02 15:04:05"), state.State, state.PID)
+					w.logs = append(w.logs, stateLog)
+					if len(w.logs) > w.maxLogs {
+						w.logs = w.logs[len(w.logs)-w.maxLogs:]
+					}
+					w.mu.Unlock()
+				default:
+					return
+				}
+			}
+
 		case msg, ok := <-w.logChan:
 			if !ok {
 				return
@@ -360,23 +399,70 @@ func (w *Worker) Signal(sig syscall.Signal) error {
 
 // Cleanup 清理资源
 func (w *Worker) Cleanup() error {
+	w.mu.Lock()
+
+	var errs []error
+
 	// 如果正在运行，则停止
-	if w.IsRunning() {
-		if err := w.Stop(); err != nil {
-			return err
+	if w.overseer.HasProc(w.id) {
+		status := w.overseer.Status(w.id)
+		if status != nil && status.State == "running" {
+			// 先尝试优雅停止
+			if err := w.overseer.Stop(w.id); err != nil {
+				errs = append(errs, fmt.Errorf("failed to stop worker gracefully: %w", err))
+			}
+
+			// 等待进程停止，超时后强制杀死
+			timeout := time.After(5 * time.Second)
+			ticker := time.NewTicker(100 * time.Millisecond)
+			defer ticker.Stop()
+
+		waitLoop:
+			for {
+				select {
+				case <-timeout:
+					// 强制杀死进程
+					if err := w.overseer.Signal(w.id, syscall.SIGKILL); err != nil {
+						errs = append(errs, fmt.Errorf("failed to kill worker: %w", err))
+					}
+					time.Sleep(200 * time.Millisecond)
+					break waitLoop
+				case <-ticker.C:
+					status := w.overseer.Status(w.id)
+					if status == nil || status.State != "running" {
+						break waitLoop
+					}
+				}
+			}
 		}
+
+		// 从 overseer 中移除进程
+		w.overseer.Remove(w.id)
 	}
 
-	// 取消订阅通道
+	// 取消订阅通道（如果还未取消）
 	w.overseer.UnWatchLogs(w.logChan)
 	w.overseer.UnWatchState(w.stateChan)
 
-	// 关闭通道
-	close(w.logChan)
-	close(w.stateChan)
+	// 通知 collectLogs goroutine 退出
+	select {
+	case <-w.done:
+		// 已经关闭
+	default:
+		close(w.done)
+	}
+
+	w.mu.Unlock()
+
+	// 等待 collectLogs goroutine 退出
+	w.wg.Wait()
 
 	// 注意: 我们不在这里删除工作程序二进制文件，因为它可能被共享
 	// 或者用户有意放置在特定位置
+
+	if len(errs) > 0 {
+		return fmt.Errorf("cleanup errors: %v", errs)
+	}
 
 	return nil
 }

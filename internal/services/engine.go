@@ -176,20 +176,55 @@ func CleanupAllEngines() {
 	engMu.Lock()
 	defer engMu.Unlock()
 
+	if len(engines) == 0 {
+		log.Println("No engines to cleanup")
+		return
+	}
+
+	log.Printf("Cleaning up %d engine(s)...", len(engines))
+
+	// 使用 WaitGroup 并发清理所有引擎以加快关闭速度
+	var wg sync.WaitGroup
 	for key, info := range engines {
-		log.Printf("Stopping engine: %s", key)
+		wg.Add(1)
+		go func(k string, ei *EngineInfo) {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("Panic while cleaning up engine %s: %v", k, r)
+				}
+			}()
 
-		// 停止空闲计时器
-		info.mu.Lock()
-		if info.stopTimer != nil {
-			info.stopTimer.Stop()
-		}
-		info.mu.Unlock()
+			log.Printf("Stopping engine: %s", k)
 
-		// 清理 Manager
-		if err := info.Manager.Cleanup(); err != nil {
-			log.Printf("Failed to cleanup engine %s: %v", key, err)
-		}
+			// 停止空闲计时器
+			ei.mu.Lock()
+			if ei.stopTimer != nil {
+				ei.stopTimer.Stop()
+			}
+			ei.mu.Unlock()
+
+			// 清理 Manager
+			if err := ei.Manager.Cleanup(); err != nil {
+				log.Printf("Failed to cleanup engine %s: %v", k, err)
+			} else {
+				log.Printf("Engine %s cleaned up successfully", k)
+			}
+		}(key, info)
+	}
+
+	// 等待所有清理完成，最多等待 15 秒
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		log.Println("All engines cleaned up successfully")
+	case <-time.After(15 * time.Second):
+		log.Println("Warning: Engine cleanup timeout after 15 seconds")
 	}
 
 	// 清空 engines map
