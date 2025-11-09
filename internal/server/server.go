@@ -18,9 +18,8 @@ import (
 	"github.com/xxnuo/MTranServer/internal/routes"
 	"github.com/xxnuo/MTranServer/internal/services"
 	"github.com/xxnuo/MTranServer/internal/utils"
+	"github.com/xxnuo/MTranServer/internal/version"
 )
-
-const Version = "v3.0.0"
 
 // Run 启动服务器
 func Run() error {
@@ -107,5 +106,5 @@ func Run() error {
 
 // GetVersion 获取版本号
 func GetVersion() string {
-	return Version
+	return version.GetVersion()
 }

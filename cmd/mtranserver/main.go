@@ -1,10 +1,14 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/xxnuo/MTranServer/internal/server"
 	"github.com/xxnuo/MTranServer/internal/services"
+	"github.com/xxnuo/MTranServer/internal/version"
 )
 
 // @title           MTranServer API
@@ -31,6 +35,14 @@ import (
 // @name token
 
 func main() {
+	versionFlag := flag.Bool("version", false, "显示版本信息")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("MTranServer %s\n", version.GetVersion())
+		os.Exit(0)
+	}
+
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}

@@ -4,9 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xxnuo/MTranServer/internal/version"
 )
-
-const Version = "v3.0.0"
 
 // handleVersion 获取服务版本
 // @Summary      获取服务版本
@@ -17,7 +16,7 @@ const Version = "v3.0.0"
 // @Router       /version [get]
 func HandleVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"version": Version,
+		"version": version.GetVersion(),
 	})
 }
 

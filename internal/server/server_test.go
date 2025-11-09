@@ -28,7 +28,6 @@ func TestMain(m *testing.M) {
 func TestGetVersion(t *testing.T) {
 	version := GetVersion()
 	assert.NotEmpty(t, version)
-	assert.Equal(t, "v3.0.0", version)
 }
 
 func TestServerRoutes(t *testing.T) {

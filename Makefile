@@ -39,7 +39,11 @@ generate-docs:
 	@GOOS= GOARCH= go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
 	@echo "Docs generated successfully"
 
+# Get version from git tag
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0-dev")
+LDFLAGS := -X github.com/xxnuo/MTranServer/internal/version.Version=$(VERSION)
+
 build: generate-docs
-	@echo "Building..."
-	@go build -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
+	@echo "Building version $(VERSION)..."
+	@go build -ldflags "$(LDFLAGS)" -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
 	@echo "Built successfully"

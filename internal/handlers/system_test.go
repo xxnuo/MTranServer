@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/xxnuo/MTranServer/internal/version"
 )
 
 func TestHandleVersion(t *testing.T) {
@@ -19,7 +20,7 @@ func TestHandleVersion(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "version")
-	assert.Contains(t, w.Body.String(), Version)
+	assert.Contains(t, w.Body.String(), version.GetVersion())
 }
 
 func TestHandleHealth(t *testing.T) {
