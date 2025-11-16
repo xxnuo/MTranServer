@@ -38,7 +38,7 @@
   -model-dir string     模型目录 (默认 "~/.config/mtran/models")
   -host string          服务器监听地址 (默认 "0.0.0.0")
   -port string          服务器端口 (默认 "8989")
-  -ui                   启用 Web UI (默认 false)
+  -ui                   启用 Web UI (默认 true)
   -offline              启用离线模式，不自动下载新模型 (默认 false)
   -worker-idle-timeout int  Worker 空闲超时时间（秒） (默认 300)
 
@@ -57,7 +57,7 @@
 | MT_MODEL_DIR          | 模型目录                                 | ~/.config/mtran/models | 任意路径                    |
 | MT_HOST               | 服务器监听地址                           | 0.0.0.0| 任意 IP 地址                |
 | MT_PORT               | 服务器端口                               | 8989   | 1-65535                     |
-| MT_UI                 | 启用 Web UI                              | false  | true, false                 |
+| MT_ENABLE_UI          | 启用 Web UI                              | true   | true, false                 |
 | MT_OFFLINE            | 离线模式，不自动下载新语言的模型，仅使用已下载的模型 | false  | true, false                 |
 | MT_WORKER_IDLE_TIMEOUT| Worker 空闲超时时间（秒）                | 300    | 任意正整数                  |
 | API_TOKEN             | API 访问令牌                             | 空     | 任意字符串                  |

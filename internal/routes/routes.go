@@ -7,6 +7,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"github.com/xxnuo/MTranServer/internal/config"
 	"github.com/xxnuo/MTranServer/internal/docs"
 	"github.com/xxnuo/MTranServer/internal/handlers"
 	"github.com/xxnuo/MTranServer/internal/middleware"
@@ -48,12 +49,15 @@ func Setup(r *gin.Engine, apiToken string) {
 	r.POST("/hcfy", handlers.HandleHcfyTranslate(apiToken))
 
 	// 前端静态文件服务
-	distFS, err := ui.GetDistFS()
-	if err == nil {
-		r.StaticFS("/ui", http.FS(distFS))
-		// 根路径重定向到 /ui
-		r.GET("/", func(c *gin.Context) {
-			c.Redirect(http.StatusMovedPermanently, "/ui/")
-		})
+	cfg := config.GetConfig()
+	if cfg.EnableWebUI {
+		distFS, err := ui.GetDistFS()
+		if err == nil {
+			r.StaticFS("/ui", http.FS(distFS))
+			// 根路径重定向到 /ui
+			r.GET("/", func(c *gin.Context) {
+				c.Redirect(http.StatusMovedPermanently, "/ui/")
+			})
+		}
 	}
 }

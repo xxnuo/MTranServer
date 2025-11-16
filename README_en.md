@@ -42,7 +42,7 @@ Options:
   -model-dir string     Model directory (default "~/.config/mtran/models")
   -host string          Server host address (default "0.0.0.0")
   -port string          Server port (default "8989")
-  -ui                   Enable Web UI (default false)
+  -ui                   Enable Web UI (default true)
   -offline              Enable offline mode, disable automatic model download (default false)
   -worker-idle-timeout int  Worker idle timeout in seconds (default 300)
 
@@ -61,7 +61,7 @@ Examples:
 | MT_MODEL_DIR          | Model directory                          | ~/.config/mtran/models | Any path                    |
 | MT_HOST               | Server host address                      | 0.0.0.0 | Any IP address              |
 | MT_PORT               | Server port                              | 8989    | 1-65535                     |
-| MT_UI                 | Enable Web UI                            | false   | true, false                 |
+| MT_ENABLE_UI          | Enable Web UI                            | true    | true, false                 |
 | MT_OFFLINE            | Offline mode, disable automatic download of new language models, only use downloaded models | false   | true, false                 |
 | MT_WORKER_IDLE_TIMEOUT| Worker idle timeout (seconds)            | 300     | Any positive integer        |
 | API_TOKEN             | API access token                         | empty   | Any string                  |
