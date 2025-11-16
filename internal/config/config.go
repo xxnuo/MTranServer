@@ -42,7 +42,7 @@ func GetConfig() *Config {
 	cfg.ConfigDir = filepath.Join(cfg.HomeDir, "server")
 	cfg.ModelDir = filepath.Join(cfg.HomeDir, "models")
 
-	flag.StringVar(&cfg.LogLevel, "log-level", utils.GetEnv("MT_LOG_LEVEL", "info"), "Log level (debug, info, warn, error)")
+	flag.StringVar(&cfg.LogLevel, "log-level", utils.GetEnv("MT_LOG_LEVEL", "warn"), "Log level (debug, info, warn, error)")
 	flag.StringVar(&cfg.ConfigDir, "config-dir", utils.GetEnv("MT_CONFIG_DIR", cfg.ConfigDir), "Config directory")
 	flag.StringVar(&cfg.ModelDir, "model-dir", utils.GetEnv("MT_MODEL_DIR", cfg.ModelDir), "Model directory")
 	flag.StringVar(&cfg.Host, "host", utils.GetEnv("MT_HOST", "0.0.0.0"), "Server host address")

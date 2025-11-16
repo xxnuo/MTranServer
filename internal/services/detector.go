@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/pemistahl/lingua-go"
+	"github.com/xxnuo/MTranServer/internal/logger"
 )
 
 var (
@@ -15,10 +16,12 @@ var (
 // initDetector 初始化语言检测器（懒加载）
 func initDetector() {
 	detectorOnce.Do(func() {
+		logger.Debug("Initializing language detector")
 		detector = lingua.NewLanguageDetectorBuilder().
 			FromAllLanguages().
 			WithPreloadedLanguageModels().
 			Build()
+		logger.Debug("Language detector initialized")
 	})
 }
 

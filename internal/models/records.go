@@ -9,6 +9,7 @@ import (
 	"github.com/xxnuo/MTranServer/data"
 	"github.com/xxnuo/MTranServer/internal/config"
 	"github.com/xxnuo/MTranServer/internal/downloader"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
@@ -100,6 +101,7 @@ func InitRecords() error {
 	// 检查文件是否存在
 	if _, err := os.Stat(recordsPath); os.IsNotExist(err) {
 		// 不存在，写出内嵌的 records.json
+		logger.Info("Initializing records.json from embedded data")
 		if err := os.MkdirAll(cfg.ConfigDir, 0755); err != nil {
 			return fmt.Errorf("Failed to create config directory: %w", err)
 		}
@@ -109,6 +111,7 @@ func InitRecords() error {
 	}
 
 	// 解析本地 records.json
+	logger.Debug("Loading records.json from %s", recordsPath)
 	fileData, err := os.ReadFile(recordsPath)
 	if err != nil {
 		return fmt.Errorf("Failed to read records.json: %w", err)
@@ -120,6 +123,7 @@ func InitRecords() error {
 	}
 
 	GlobalRecords = &records
+	logger.Debug("Loaded %d model records", len(records.Data))
 	return nil
 }
 
@@ -128,6 +132,7 @@ func InitRecords() error {
 func DownloadRecords() error {
 	cfg := config.GetConfig()
 
+	logger.Info("Updating records.json from remote")
 	// 下载 records.json
 	d := downloader.New(cfg.ConfigDir)
 	if err := d.Download(RecordsUrl, RecordsFileName, &downloader.DownloadOptions{
@@ -199,6 +204,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 		return fmt.Errorf("Failed to create language pair directory: %w", err)
 	}
 
+	logger.Info("Downloading model files for %s -> %s", fromLang, toLang)
 	// 下载所有需要的文件到语言对子目录
 	d := downloader.New(langPairDir)
 
@@ -207,6 +213,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 		fileUrl := AttachmentsBaseUrl + "/" + record.Attachment.Location
 		sha256sum := record.Attachment.Hash
 
+		logger.Debug("Downloading model file: %s (type: %s)", filename, record.FileType)
 		if err := d.Download(fileUrl, filename, &downloader.DownloadOptions{
 			SHA256:    sha256sum,
 			Overwrite: false,
@@ -215,6 +222,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 		}
 	}
 
+	logger.Info("Model files downloaded successfully for %s -> %s", fromLang, toLang)
 	return nil
 }
 

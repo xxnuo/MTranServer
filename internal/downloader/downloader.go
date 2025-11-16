@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-getter"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
@@ -70,11 +71,14 @@ func (d *Downloader) Download(urlStr, filename string, opts *DownloadOptions) er
 			if opts.SHA256 != "" {
 				if err := utils.VerifySHA256(dst, opts.SHA256); err == nil {
 					// 文件已存在且校验通过，跳过下载
+					logger.Debug("File %s already exists and verified, skipping download", filename)
 					return nil
 				}
 			}
 		}
 	}
+
+	logger.Info("Downloading %s from %s", filename, urlStr)
 
 	// 创建临时文件
 	tmpFile := dst + ".tmp"
@@ -156,11 +160,15 @@ func (d *Downloader) Download(urlStr, filename string, opts *DownloadOptions) er
 		return fmt.Errorf("Failed to download: %w", err)
 	}
 
+	logger.Debug("Download completed: %s", filename)
+
 	// 校验 SHA256
 	if opts.SHA256 != "" {
+		logger.Debug("Verifying SHA256 for %s", filename)
 		if err := utils.VerifySHA256(tmpFile, opts.SHA256); err != nil {
 			return fmt.Errorf("Failed to verify SHA256: %w", err)
 		}
+		logger.Debug("SHA256 verification passed for %s", filename)
 	}
 
 	// 移动临时文件到目标位置
@@ -168,6 +176,7 @@ func (d *Downloader) Download(urlStr, filename string, opts *DownloadOptions) er
 		return fmt.Errorf("Failed to move file: %w", err)
 	}
 
+	logger.Info("Successfully downloaded: %s", filename)
 	return nil
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/ShinyTrinkets/overseer"
 	"github.com/xxnuo/MTranServer/bin"
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/logger"
 )
 
 const (
@@ -120,9 +121,11 @@ func EnsureWorkerBinary(cfg *config.Config) error {
 		existingHash := fmt.Sprintf("%x", bin.ComputeHash(data))
 		if existingHash == bin.WorkerHash {
 			// 哈希匹配，二进制文件是最新的
+			logger.Debug("Worker binary already exists and is up to date")
 			workerBinaryInitialized = true
 			return nil
 		}
+		logger.Info("Worker binary hash mismatch, updating...")
 	}
 
 	// 确保父目录存在
@@ -130,11 +133,13 @@ func EnsureWorkerBinary(cfg *config.Config) error {
 		return fmt.Errorf("failed to create directory for worker binary: %w", err)
 	}
 
+	logger.Info("Extracting worker binary to %s", binaryPath)
 	// 写入嵌入的二进制文件
 	if err := os.WriteFile(binaryPath, bin.WorkerBinary, 0755); err != nil {
 		return fmt.Errorf("failed to write worker binary: %w", err)
 	}
 
+	logger.Info("Worker binary extracted successfully")
 	workerBinaryInitialized = true
 	return nil
 }
@@ -205,6 +210,7 @@ func (w *Worker) Start() error {
 
 	// 将工作进程添加到 overseer
 	// 注意: overseer.Add 接受 []string 作为单个参数，而不是可变参数字符串
+	logger.Debug("Starting worker %s on port %d", w.id, w.args.Port)
 	cmd := w.overseer.Add(w.id, w.binaryPath, args)
 	if cmd == nil {
 		return fmt.Errorf("failed to add worker to overseer")
@@ -221,6 +227,7 @@ func (w *Worker) Start() error {
 	// 等待一段时间让进程启动
 	time.Sleep(100 * time.Millisecond)
 
+	logger.Debug("Worker %s started", w.id)
 	return nil
 }
 
@@ -239,6 +246,7 @@ func (w *Worker) Stop() error {
 	}
 
 	// 优雅地停止进程
+	logger.Debug("Stopping worker %s", w.id)
 	if err := w.overseer.Stop(w.id); err != nil {
 		return fmt.Errorf("failed to stop worker: %w", err)
 	}
@@ -252,11 +260,13 @@ func (w *Worker) Stop() error {
 		select {
 		case <-timeout:
 			// 如果优雅停止失败，则强制杀死进程
+			logger.Warn("Worker %s stop timeout, forcing kill", w.id)
 			w.overseer.Signal(w.id, syscall.SIGKILL)
 			return fmt.Errorf("worker stop timeout, forced kill")
 		case <-ticker.C:
 			status := w.overseer.Status(w.id)
 			if status != nil && status.State != "running" {
+				logger.Debug("Worker %s stopped", w.id)
 				return nil
 			}
 		}

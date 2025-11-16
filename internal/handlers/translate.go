@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/services"
 )
 
@@ -47,17 +48,20 @@ func HandleTranslate(c *gin.Context) {
 	}
 
 	// 使用 TranslateWithPivot 处理可能需要中转的翻译（支持 auto 模式）
+	logger.Debug("Translation request: %s -> %s, text length: %d", req.From, req.To, len(req.Text))
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
 
 	result, err := services.TranslateWithPivot(ctx, req.From, req.To, req.Text, req.HTML)
 	if err != nil {
+		logger.Error("Translation failed (%s -> %s): %v", req.From, req.To, err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": fmt.Sprintf("Translation failed: %v", err),
 		})
 		return
 	}
 
+	logger.Debug("Translation completed: %s -> %s", req.From, req.To)
 	c.JSON(http.StatusOK, gin.H{
 		"result": result,
 	})
@@ -100,6 +104,7 @@ func HandleTranslateBatch(c *gin.Context) {
 	}
 
 	// 批量翻译，使用 TranslateWithPivot 处理可能需要中转的翻译（支持 auto 模式）
+	logger.Debug("Batch translation request: %s -> %s, count: %d", req.From, req.To, len(req.Texts))
 	results := make([]string, len(req.Texts))
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 	defer cancel()
@@ -107,6 +112,7 @@ func HandleTranslateBatch(c *gin.Context) {
 	for i, text := range req.Texts {
 		result, err := services.TranslateWithPivot(ctx, req.From, req.To, text, req.HTML)
 		if err != nil {
+			logger.Error("Batch translation failed at index %d (%s -> %s): %v", i, req.From, req.To, err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Translation failed at index %d: %v", i, err),
 			})
@@ -115,6 +121,7 @@ func HandleTranslateBatch(c *gin.Context) {
 		results[i] = result
 	}
 
+	logger.Debug("Batch translation completed: %s -> %s, count: %d", req.From, req.To, len(req.Texts))
 	c.JSON(http.StatusOK, gin.H{
 		"results": results,
 	})

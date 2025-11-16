@@ -50,4 +50,4 @@ build: generate-docs
 
 dev: generate-docs
 	@echo "Building version $(VERSION)..."
-	@go run -ldflags "$(LDFLAGS)" ./cmd/mtranserver/main.go
+	MT_LOG_LEVEL=debug go run -ldflags "$(LDFLAGS)" ./cmd/mtranserver/main.go

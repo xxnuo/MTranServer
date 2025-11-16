@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/server"
 	"github.com/xxnuo/MTranServer/internal/services"
 	"github.com/xxnuo/MTranServer/internal/version"
@@ -66,10 +66,13 @@ func main() {
 	}
 
 	// 加载配置（会注册其他标志）
-	config.GetConfig()
+	cfg := config.GetConfig()
 
 	// 解析命令行参数
 	flag.Parse()
+
+	// 设置日志级别
+	logger.SetLevel(cfg.LogLevel)
 
 	// 处理 version 标志
 	if *versionFlag || *versionShortFlag {
@@ -79,7 +82,7 @@ func main() {
 
 	// 启动服务器
 	if err := server.Run(); err != nil {
-		log.Fatalf("Server error: %v", err)
+		logger.Fatal("Server error: %v", err)
 	}
 
 	services.CleanupAllEngines()

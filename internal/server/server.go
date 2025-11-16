@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,12 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/manager"
+	"github.com/xxnuo/MTranServer/internal/middleware"
 	"github.com/xxnuo/MTranServer/internal/models"
 	"github.com/xxnuo/MTranServer/internal/routes"
 	"github.com/xxnuo/MTranServer/internal/services"
 	"github.com/xxnuo/MTranServer/internal/utils"
-	"github.com/xxnuo/MTranServer/internal/version"
 )
 
 // Run 启动服务器
@@ -45,14 +45,15 @@ func Run() error {
 	apiToken := utils.GetEnv("API_TOKEN", utils.GetEnv("CORE_API_TOKEN", ""))
 
 	// 设置 Gin 模式
-	if cfg.LogLevel == "debug" {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	// 始终使用 ReleaseMode，我们使用自定义的日志中间件
+	gin.SetMode(gin.ReleaseMode)
 
-	// 创建 Gin 路由
-	r := gin.Default()
+	// 创建 Gin 引擎（不使用默认中间件）
+	r := gin.New()
+
+	// 添加自定义中间件
+	r.Use(middleware.Recovery())
+	r.Use(middleware.Logger())
 
 	// 注册路由
 	routes.Setup(r, apiToken)
@@ -73,7 +74,7 @@ func Run() error {
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 		<-sigChan
 
-		log.Println("Shutting down server...")
+		logger.Info("Shutting down server...")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -82,14 +83,21 @@ func Run() error {
 		services.CleanupAllEngines()
 
 		if err := srv.Shutdown(ctx); err != nil {
-			log.Printf("Server forced to shutdown: %v", err)
+			logger.Error("Server forced to shutdown: %v", err)
 		}
 
 		close(shutdownDone)
 	}()
 
-	log.Printf("HTTP Service URL: http://%s", addr)
-	log.Printf("Swagger UI: http://%s/docs/index.html", addr)
+	// 总是输出服务启动信息（即使在 warn/error 模式下）
+	fmt.Fprintf(os.Stderr, "[INFO] %s HTTP Service URL: http://%s\n",
+		time.Now().Format("2006/01/02 15:04:05"), addr)
+	fmt.Fprintf(os.Stderr, "[INFO] %s Swagger UI: http://%s/docs/index.html\n",
+		time.Now().Format("2006/01/02 15:04:05"), addr)
+
+	// 总是输出日志级别信息（即使在 warn/error 模式下）
+	fmt.Fprintf(os.Stderr, "[INFO] %s Log level set to: %s\n",
+		time.Now().Format("2006/01/02 15:04:05"), cfg.LogLevel)
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		// 服务器启动失败，确保清理资源
@@ -99,12 +107,7 @@ func Run() error {
 
 	// 等待优雅关闭完成
 	<-shutdownDone
-	log.Println("Server shutdown complete")
+	logger.Info("Server shutdown complete")
 
 	return nil
-}
-
-// GetVersion 获取版本号
-func GetVersion() string {
-	return version.GetVersion()
 }

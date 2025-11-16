@@ -3,12 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/xxnuo/MTranServer/internal/config"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/manager"
 	"github.com/xxnuo/MTranServer/internal/models"
 	"github.com/xxnuo/MTranServer/internal/utils"
@@ -49,17 +49,17 @@ func (ei *EngineInfo) resetIdleTimer() {
 	// 创建新的计时器
 	ei.stopTimer = time.AfterFunc(timeout, func() {
 		key := fmt.Sprintf("%s-%s", ei.FromLang, ei.ToLang)
-		log.Printf("Engine %s idle timeout, stopping...", key)
+		logger.Info("Engine %s idle timeout, stopping...", key)
 
 		engMu.Lock()
 		defer engMu.Unlock()
 
 		if info, ok := engines[key]; ok {
 			if err := info.Manager.Cleanup(); err != nil {
-				log.Printf("Failed to cleanup engine %s: %v", key, err)
+				logger.Error("Failed to cleanup engine %s: %v", key, err)
 			}
 			delete(engines, key)
-			log.Printf("Engine %s stopped due to idle timeout", key)
+			logger.Info("Engine %s stopped due to idle timeout", key)
 		}
 	})
 }
@@ -93,14 +93,14 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 		}
 	}
 
-	log.Printf("Creating new engine for %s -> %s", fromLang, toLang)
+	logger.Info("Creating new engine for %s -> %s", fromLang, toLang)
 
 	// 下载模型（如果需要）
 	cfg := config.GetConfig()
 	if cfg.EnableOfflineMode {
-		log.Printf("Offline mode enabled, skipping model download")
+		logger.Info("Offline mode enabled, skipping model download")
 	} else {
-		log.Printf("Downloading model for %s -> %s", fromLang, toLang)
+		logger.Info("Downloading model for %s -> %s", fromLang, toLang)
 		if err := models.DownloadModel(toLang, fromLang, ""); err != nil {
 			return nil, fmt.Errorf("failed to download model: %w", err)
 		}
@@ -166,7 +166,7 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 	info.resetIdleTimer()
 
 	engines[key] = info
-	log.Printf("Engine created successfully for %s -> %s on port %d", fromLang, toLang, port)
+	logger.Info("Engine created successfully for %s -> %s on port %d", fromLang, toLang, port)
 
 	return m, nil
 }
@@ -197,7 +197,7 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 	}
 
 	// 需要中转，返回第一步的引擎
-	log.Printf("Translation %s -> %s requires pivot through English", fromLang, toLang)
+	logger.Debug("Translation %s -> %s requires pivot through English", fromLang, toLang)
 	return getOrCreateSingleEngine(fromLang, "en")
 }
 
@@ -211,13 +211,13 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 		if detected == "" {
 			return "", fmt.Errorf("failed to detect source language")
 		}
-		log.Printf("Auto-detected source language: %s", detected)
+		logger.Debug("Auto-detected source language: %s", detected)
 		fromLang = detected
 	}
 
 	// 如果源语言和目标语言相同，直接返回原文
 	if fromLang == toLang {
-		log.Printf("Source and target languages are the same (%s), returning original text", fromLang)
+		logger.Debug("Source and target languages are the same (%s), returning original text", fromLang)
 		return text, nil
 	}
 
@@ -234,7 +234,7 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 	}
 
 	// 需要中转：第一步 fromLang -> en
-	log.Printf("Step 1: Translating %s -> en", fromLang)
+	logger.Debug("Step 1: Translating %s -> en", fromLang)
 	m1, err := getOrCreateSingleEngine(fromLang, "en")
 	if err != nil {
 		return "", fmt.Errorf("failed to create first engine (%s -> en): %w", fromLang, err)
@@ -251,7 +251,7 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 	}
 
 	// 第二步 en -> toLang
-	log.Printf("Step 2: Translating en -> %s", toLang)
+	logger.Debug("Step 2: Translating en -> %s", toLang)
 	m2, err := getOrCreateSingleEngine("en", toLang)
 	if err != nil {
 		return "", fmt.Errorf("failed to create second engine (en -> %s): %w", toLang, err)
@@ -276,11 +276,11 @@ func CleanupAllEngines() {
 	defer engMu.Unlock()
 
 	if len(engines) == 0 {
-		log.Println("No engines to cleanup")
+		logger.Debug("No engines to cleanup")
 		return
 	}
 
-	log.Printf("Cleaning up %d engine(s)...", len(engines))
+	logger.Info("Cleaning up %d engine(s)...", len(engines))
 
 	// 使用 WaitGroup 并发清理所有引擎以加快关闭速度
 	var wg sync.WaitGroup
@@ -290,11 +290,11 @@ func CleanupAllEngines() {
 			defer wg.Done()
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("Panic while cleaning up engine %s: %v", k, r)
+					logger.Error("Panic while cleaning up engine %s: %v", k, r)
 				}
 			}()
 
-			log.Printf("Stopping engine: %s", k)
+			logger.Debug("Stopping engine: %s", k)
 
 			// 停止空闲计时器
 			ei.mu.Lock()
@@ -305,9 +305,9 @@ func CleanupAllEngines() {
 
 			// 清理 Manager
 			if err := ei.Manager.Cleanup(); err != nil {
-				log.Printf("Failed to cleanup engine %s: %v", k, err)
+				logger.Error("Failed to cleanup engine %s: %v", k, err)
 			} else {
-				log.Printf("Engine %s cleaned up successfully", k)
+				logger.Debug("Engine %s cleaned up successfully", k)
 			}
 		}(key, info)
 	}
@@ -321,9 +321,9 @@ func CleanupAllEngines() {
 
 	select {
 	case <-done:
-		log.Println("All engines cleaned up successfully")
+		logger.Info("All engines cleaned up successfully")
 	case <-time.After(15 * time.Second):
-		log.Println("Warning: Engine cleanup timeout after 15 seconds")
+		logger.Warn("Engine cleanup timeout after 15 seconds")
 	}
 
 	// 清空 engines map
