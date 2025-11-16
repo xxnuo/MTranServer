@@ -9,7 +9,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/xxnuo/MTranServer/internal/utils/downloader"
+	"github.com/xxnuo/MTranServer/internal/downloader"
 )
 
 const (

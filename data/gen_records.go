@@ -6,8 +6,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/xxnuo/MTranServer/internal/downloader"
 	"github.com/xxnuo/MTranServer/internal/models"
-	"github.com/xxnuo/MTranServer/internal/utils/downloader"
 )
 
 func main() {
