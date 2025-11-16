@@ -43,7 +43,7 @@ Options:
   -host string          Server host address (default "0.0.0.0")
   -port string          Server port (default "8989")
   -ui                   Enable Web UI (default false)
-  -offline              Enable offline mode (default false)
+  -offline              Enable offline mode, disable automatic model download (default false)
   -worker-idle-timeout int  Worker idle timeout in seconds (default 300)
 
 Examples:
@@ -62,7 +62,7 @@ Examples:
 | MT_HOST               | Server host address                      | 0.0.0.0 | Any IP address              |
 | MT_PORT               | Server port                              | 8989    | 1-65535                     |
 | MT_UI                 | Enable Web UI                            | false   | true, false                 |
-| MT_OFFLINE            | Offline mode (no auto model download)    | false   | true, false                 |
+| MT_OFFLINE            | Offline mode, disable automatic download of new language models, only use downloaded models | false   | true, false                 |
 | MT_WORKER_IDLE_TIMEOUT| Worker idle timeout (seconds)            | 300     | Any positive integer        |
 | API_TOKEN             | API access token                         | empty   | Any string                  |
 | CORE_API_TOKEN        | API access token (alternative)           | empty   | Any string                  |
@@ -148,7 +148,9 @@ The server provides compatible endpoints for multiple translation plugins:
 >
 > - [Kiss Translator](https://github.com/fishjar/kiss-translator) - Scroll down in `Settings` page to find the custom interface `Custom`. Similarly, set `Maximum Concurrent Requests` and `Request Interval Time` to fully utilize server performance. I set `Maximum Concurrent Requests` to `100` and `Request Interval Time` to `1`. You can adjust based on your server configuration.
 >
-> Configure the plugin's custom interface address according to the table below. Note: The first request will be slower because it needs to load the model. Subsequent requests will be faster.
+> **Important Note:** When translating a language pair for the first time, the server will automatically download the corresponding translation model (unless offline mode is enabled). This process may take some time depending on your network speed and model size. After the model is downloaded, the engine startup also requires a few seconds. Once ready, subsequent translation requests will enjoy millisecond-level response times. It's recommended to test a translation before actual use to allow the server to pre-download and load the models.
+>
+> Configure the plugin's custom interface address according to the table below.
 
 | Name                                  | URL                                           | Plugin Setting                                                                   |
 | ------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
