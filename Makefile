@@ -1,4 +1,4 @@
-.PHONY: download download-core download-records generate-docs
+.PHONY: download download-core download-records generate-docs build-ui
 
 # Detect OS and architecture
 GOOS ?= $(shell go env GOOS)
@@ -39,11 +39,16 @@ generate-docs:
 	@GOOS= GOARCH= go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
 	@echo "Docs generated successfully"
 
+build-ui:
+	@echo "Building UI..."
+	@cd ui && pnpm install && pnpm build
+	@echo "UI built successfully"
+
 # Get version from git tag
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0-dev")
 LDFLAGS := -X github.com/xxnuo/MTranServer/internal/version.Version=$(VERSION)
 
-build: generate-docs
+build: generate-docs build-ui
 	@echo "Building version $(VERSION)..."
 	@go build -ldflags "$(LDFLAGS)" -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
 	@echo "Built successfully"

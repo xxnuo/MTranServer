@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -8,6 +10,7 @@ import (
 	"github.com/xxnuo/MTranServer/internal/docs"
 	"github.com/xxnuo/MTranServer/internal/handlers"
 	"github.com/xxnuo/MTranServer/internal/middleware"
+	"github.com/xxnuo/MTranServer/ui"
 )
 
 // Setup 设置所有路由
@@ -43,4 +46,14 @@ func Setup(r *gin.Engine, apiToken string) {
 	r.POST("/google/language/translate/v2", handlers.HandleGoogleCompatTranslate(apiToken))
 	r.GET("/google/translate_a/single", handlers.HandleGoogleTranslateSingle(apiToken))
 	r.POST("/hcfy", handlers.HandleHcfyTranslate(apiToken))
+
+	// 前端静态文件服务
+	distFS, err := ui.GetDistFS()
+	if err == nil {
+		r.StaticFS("/ui", http.FS(distFS))
+		// 根路径重定向到 /ui
+		r.GET("/", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/ui/")
+		})
+	}
 }
