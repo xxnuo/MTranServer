@@ -35,13 +35,13 @@ definitions:
     type: object
   handlers.ImmeTranslateRequest:
     properties:
-      from:
+      source_lang:
         example: en
         type: string
-      to:
-        example: zh-Hans
+      target_lang:
+        example: zh-CN
         type: string
-      trans:
+      text_list:
         example:
         - Hello
         - ' world!'
@@ -50,19 +50,25 @@ definitions:
           type: string
         type: array
     required:
-    - from
-    - to
-    - trans
+    - source_lang
+    - target_lang
+    - text_list
     type: object
   handlers.ImmeTranslateResponse:
     properties:
-      trans:
-        example:
-        - 你好，世界！
-        - 早上好！
+      translations:
         items:
-          type: string
+          $ref: '#/definitions/handlers.ImmeTranslation'
         type: array
+    type: object
+  handlers.ImmeTranslation:
+    properties:
+      detected_source_lang:
+        example: en
+        type: string
+      text:
+        example: 你好，世界！
+        type: string
     type: object
   handlers.KissTranslateRequest:
     properties:

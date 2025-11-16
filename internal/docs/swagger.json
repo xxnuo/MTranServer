@@ -514,20 +514,20 @@
         "handlers.ImmeTranslateRequest": {
             "type": "object",
             "required": [
-                "from",
-                "to",
-                "trans"
+                "source_lang",
+                "target_lang",
+                "text_list"
             ],
             "properties": {
-                "from": {
+                "source_lang": {
                     "type": "string",
                     "example": "en"
                 },
-                "to": {
+                "target_lang": {
                     "type": "string",
-                    "example": "zh-Hans"
+                    "example": "zh-CN"
                 },
-                "trans": {
+                "text_list": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -543,15 +543,24 @@
         "handlers.ImmeTranslateResponse": {
             "type": "object",
             "properties": {
-                "trans": {
+                "translations": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "你好，世界！",
-                        "早上好！"
-                    ]
+                        "$ref": "#/definitions/handlers.ImmeTranslation"
+                    }
+                }
+            }
+        },
+        "handlers.ImmeTranslation": {
+            "type": "object",
+            "properties": {
+                "detected_source_lang": {
+                    "type": "string",
+                    "example": "en"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "你好，世界！"
                 }
             }
         },
