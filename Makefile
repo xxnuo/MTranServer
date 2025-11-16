@@ -48,7 +48,7 @@ build-ui:
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.0.0-dev")
 LDFLAGS := -X github.com/xxnuo/MTranServer/internal/version.Version=$(VERSION)
 
-build: generate-docs build-ui
+build: generate-docs
 	@echo "Building version $(VERSION)..."
 	@go build -ldflags "$(LDFLAGS)" -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
 	@echo "Built successfully"
