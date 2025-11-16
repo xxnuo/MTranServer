@@ -118,18 +118,45 @@ func HandleKissTranslate(apiToken string) gin.HandlerFunc {
 			}
 		}
 
-		// 尝试解析为批量请求
-		var batchReq KissBatchTranslateRequest
-		if err := c.ShouldBindJSON(&batchReq); err == nil && len(batchReq.Texts) > 0 {
+		// 解析请求体为通用 map 以判断类型
+		var rawReq map[string]interface{}
+		if err := c.ShouldBindJSON(&rawReq); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		// 判断是批量请求还是单个请求
+		if texts, ok := rawReq["texts"].([]interface{}); ok && len(texts) > 0 {
+			// 批量请求
+			var batchReq KissBatchTranslateRequest
+			batchReq.From, _ = rawReq["from"].(string)
+			batchReq.To, _ = rawReq["to"].(string)
+			for _, t := range texts {
+				if str, ok := t.(string); ok {
+					batchReq.Texts = append(batchReq.Texts, str)
+				}
+			}
+			if batchReq.From == "" || batchReq.To == "" || len(batchReq.Texts) == 0 {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Invalid batch request",
+				})
+				return
+			}
 			handleBatchTranslate(c, batchReq)
 			return
 		}
 
-		// 解析为单个请求
+		// 单个请求
 		var req KissTranslateRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
+		req.From, _ = rawReq["from"].(string)
+		req.To, _ = rawReq["to"].(string)
+		req.Text, _ = rawReq["text"].(string)
+
+		if req.From == "" || req.To == "" || req.Text == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+				"error": "Missing required fields: from, to, text",
 			})
 			return
 		}
