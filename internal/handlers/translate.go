@@ -46,26 +46,11 @@ func HandleTranslate(c *gin.Context) {
 		return
 	}
 
-	// 获取或创建翻译引擎
-	m, err := services.GetOrCreateEngine(req.From, req.To)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("Failed to get engine: %v", err),
-		})
-		return
-	}
-
-	// 翻译
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	// 使用 TranslateWithPivot 处理可能需要中转的翻译
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
 
-	var result string
-	if req.HTML {
-		result, err = m.TranslateHTML(ctx, req.Text)
-	} else {
-		result, err = m.Translate(ctx, req.Text)
-	}
-
+	result, err := services.TranslateWithPivot(ctx, req.From, req.To, req.Text, req.HTML)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": fmt.Sprintf("Translation failed: %v", err),
@@ -114,28 +99,13 @@ func HandleTranslateBatch(c *gin.Context) {
 		return
 	}
 
-	// 获取或创建翻译引擎
-	m, err := services.GetOrCreateEngine(req.From, req.To)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("Failed to get engine: %v", err),
-		})
-		return
-	}
-
-	// 批量翻译
+	// 批量翻译，使用 TranslateWithPivot 处理可能需要中转的翻译
 	results := make([]string, len(req.Texts))
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 	defer cancel()
 
 	for i, text := range req.Texts {
-		var result string
-		if req.HTML {
-			result, err = m.TranslateHTML(ctx, text)
-		} else {
-			result, err = m.Translate(ctx, text)
-		}
-
+		result, err := services.TranslateWithPivot(ctx, req.From, req.To, text, req.HTML)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Translation failed at index %d: %v", i, err),

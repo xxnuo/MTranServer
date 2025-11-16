@@ -134,31 +134,16 @@ func HandleDeeplTranslate(apiToken string) gin.HandlerFunc {
 		}
 		targetLang := convertDeeplLangToBCP47(req.TargetLang)
 
-		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(sourceLang, targetLang)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to get engine: %v", err),
-			})
-			return
-		}
-
 		// 批量翻译
 		translations := make([]DeeplTranslation, len(req.Text))
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 		defer cancel()
 
 		// 确定是否需要 HTML 处理
 		isHTML := req.TagHandling == "html" || req.TagHandling == "xml"
 
 		for i, text := range req.Text {
-			var result string
-			if isHTML {
-				result, err = m.TranslateHTML(ctx, text)
-			} else {
-				result, err = m.Translate(ctx, text)
-			}
-
+			result, err := services.TranslateWithPivot(ctx, sourceLang, targetLang, text, isHTML)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": fmt.Sprintf("Translation failed at index %d: %v", i, err),

@@ -129,20 +129,11 @@ func HandleKissTranslate(apiToken string) gin.HandlerFunc {
 		fromLang := convertKissToBCP47(req.From)
 		toLang := convertKissToBCP47(req.To)
 
-		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(fromLang, toLang)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to get engine: %v", err),
-			})
-			return
-		}
-
 		// 翻译
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
-		result, err := m.Translate(ctx, req.Text)
+		result, err := services.TranslateWithPivot(ctx, fromLang, toLang, req.Text, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Translation failed: %v", err),
@@ -163,22 +154,13 @@ func handleBatchTranslate(c *gin.Context, req KissBatchTranslateRequest) {
 	fromLang := convertKissToBCP47(req.From)
 	toLang := convertKissToBCP47(req.To)
 
-	// 获取或创建翻译引擎
-	m, err := services.GetOrCreateEngine(fromLang, toLang)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("Failed to get engine: %v", err),
-		})
-		return
-	}
-
 	// 翻译所有文本
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 	defer cancel()
 
 	translations := make([]KissBatchTranslateItem, 0, len(req.Texts))
 	for _, text := range req.Texts {
-		result, err := m.Translate(ctx, text)
+		result, err := services.TranslateWithPivot(ctx, fromLang, toLang, text, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Translation failed: %v", err),

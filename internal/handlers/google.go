@@ -118,27 +118,12 @@ func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 		sourceBCP47 := convertGoogleLangToBCP47(req.Source)
 		targetBCP47 := convertGoogleLangToBCP47(req.Target)
 
-		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(sourceBCP47, targetBCP47)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to get engine: %v", err),
-			})
-			return
-		}
-
 		// 翻译
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
 		isHTML := req.Format == "html"
-		var result string
-		if isHTML {
-			result, err = m.TranslateHTML(ctx, req.Q)
-		} else {
-			result, err = m.Translate(ctx, req.Q)
-		}
-
+		result, err := services.TranslateWithPivot(ctx, sourceBCP47, targetBCP47, req.Q, isHTML)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Translation failed: %v", err),
@@ -226,20 +211,11 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 		sourceBCP47 := convertGoogleLangToBCP47(sl)
 		targetBCP47 := convertGoogleLangToBCP47(tl)
 
-		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(sourceBCP47, targetBCP47)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to get engine: %v", err),
-			})
-			return
-		}
-
 		// 翻译
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
-		result, err := m.Translate(ctx, text)
+		result, err := services.TranslateWithPivot(ctx, sourceBCP47, targetBCP47, text, false)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Translation failed: %v", err),

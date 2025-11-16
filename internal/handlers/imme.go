@@ -85,22 +85,13 @@ func HandleImmeTranslate(apiToken string) gin.HandlerFunc {
 		sourceLang := convertImmeLangToBCP47(req.SourceLang)
 		targetLang := convertImmeLangToBCP47(req.TargetLang)
 
-		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(sourceLang, targetLang)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to get engine: %v", err),
-			})
-			return
-		}
-
 		// 批量翻译
 		translations := make([]ImmeTranslation, len(req.TextList))
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 		defer cancel()
 
 		for i, text := range req.TextList {
-			result, err := m.Translate(ctx, text)
+			result, err := services.TranslateWithPivot(ctx, sourceLang, targetLang, text, false)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": fmt.Sprintf("Translation failed at index %d: %v", i, err),

@@ -364,17 +364,8 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 			targetLang = convertHcfyLangToBCP47(targetLangName)
 		}
 
-		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(detectedSourceLang, targetLang)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": fmt.Sprintf("Failed to get engine: %v", err),
-			})
-			return
-		}
-
 		// 翻译
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
 		// 将文本按段落分割
@@ -387,7 +378,7 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 				continue
 			}
 
-			result, err := m.Translate(ctx, paragraph)
+			result, err := services.TranslateWithPivot(ctx, detectedSourceLang, targetLang, paragraph, false)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": fmt.Sprintf("Translation failed at paragraph %d: %v", i, err),

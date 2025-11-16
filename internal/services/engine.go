@@ -64,9 +64,9 @@ func (ei *EngineInfo) resetIdleTimer() {
 	})
 }
 
-// GetOrCreateEngine 获取或创建翻译引擎
+// getOrCreateSingleEngine 获取或创建单个翻译引擎（内部函数）
 // 一个 worker 只对应一个语言方向的翻译（fromLang -> toLang）
-func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
+func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) {
 	key := fmt.Sprintf("%s-%s", fromLang, toLang)
 
 	// 检查是否已存在
@@ -169,6 +169,88 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 	log.Printf("Engine created successfully for %s -> %s on port %d", fromLang, toLang, port)
 
 	return m, nil
+}
+
+// needsPivotTranslation 检查是否需要通过英语中转
+func needsPivotTranslation(fromLang, toLang string) bool {
+	// 如果源语言或目标语言是英语，不需要中转
+	if fromLang == "en" || toLang == "en" {
+		return false
+	}
+
+	// 检查是否存在直接的语言对
+	if models.GlobalRecords != nil && models.GlobalRecords.HasLanguagePair(fromLang, toLang) {
+		return false
+	}
+
+	// 需要通过英语中转
+	return true
+}
+
+// GetOrCreateEngine 获取或创建翻译引擎
+// 如果需要跨英语翻译（如 zh-Hans -> ja），返回第一步的引擎（zh-Hans -> en）
+// 调用者需要使用 TranslateWithPivot 来完成完整的翻译
+func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
+	// 如果不需要中转，直接创建单个引擎
+	if !needsPivotTranslation(fromLang, toLang) {
+		return getOrCreateSingleEngine(fromLang, toLang)
+	}
+
+	// 需要中转，返回第一步的引擎
+	log.Printf("Translation %s -> %s requires pivot through English", fromLang, toLang)
+	return getOrCreateSingleEngine(fromLang, "en")
+}
+
+// TranslateWithPivot 处理可能需要中转的翻译
+// 如果需要中转（如 zh-Hans -> ja），会自动创建两个引擎并执行两步翻译
+func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	// 如果不需要中转，直接翻译
+	if !needsPivotTranslation(fromLang, toLang) {
+		m, err := getOrCreateSingleEngine(fromLang, toLang)
+		if err != nil {
+			return "", err
+		}
+		if isHTML {
+			return m.TranslateHTML(ctx, text)
+		}
+		return m.Translate(ctx, text)
+	}
+
+	// 需要中转：第一步 fromLang -> en
+	log.Printf("Step 1: Translating %s -> en", fromLang)
+	m1, err := getOrCreateSingleEngine(fromLang, "en")
+	if err != nil {
+		return "", fmt.Errorf("failed to create first engine (%s -> en): %w", fromLang, err)
+	}
+
+	var intermediateText string
+	if isHTML {
+		intermediateText, err = m1.TranslateHTML(ctx, text)
+	} else {
+		intermediateText, err = m1.Translate(ctx, text)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed in first step (%s -> en): %w", fromLang, err)
+	}
+
+	// 第二步 en -> toLang
+	log.Printf("Step 2: Translating en -> %s", toLang)
+	m2, err := getOrCreateSingleEngine("en", toLang)
+	if err != nil {
+		return "", fmt.Errorf("failed to create second engine (en -> %s): %w", toLang, err)
+	}
+
+	var finalText string
+	if isHTML {
+		finalText, err = m2.TranslateHTML(ctx, intermediateText)
+	} else {
+		finalText, err = m2.Translate(ctx, intermediateText)
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed in second step (en -> %s): %w", toLang, err)
+	}
+
+	return finalText, nil
 }
 
 // CleanupAllEngines 清理所有翻译引擎
