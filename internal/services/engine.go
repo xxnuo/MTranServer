@@ -203,7 +203,24 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 
 // TranslateWithPivot 处理可能需要中转的翻译
 // 如果需要中转（如 zh-Hans -> ja），会自动创建两个引擎并执行两步翻译
+// 支持 auto 模式：自动检测源语言
 func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	// 处理 auto 模式：自动检测源语言
+	if fromLang == "auto" {
+		detected := DetectLanguage(text)
+		if detected == "" {
+			return "", fmt.Errorf("failed to detect source language")
+		}
+		log.Printf("Auto-detected source language: %s", detected)
+		fromLang = detected
+	}
+
+	// 如果源语言和目标语言相同，直接返回原文
+	if fromLang == toLang {
+		log.Printf("Source and target languages are the same (%s), returning original text", fromLang)
+		return text, nil
+	}
+
 	// 如果不需要中转，直接翻译
 	if !needsPivotTranslation(fromLang, toLang) {
 		m, err := getOrCreateSingleEngine(fromLang, toLang)

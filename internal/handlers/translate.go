@@ -46,7 +46,7 @@ func HandleTranslate(c *gin.Context) {
 		return
 	}
 
-	// 使用 TranslateWithPivot 处理可能需要中转的翻译
+	// 使用 TranslateWithPivot 处理可能需要中转的翻译（支持 auto 模式）
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
 
@@ -99,7 +99,7 @@ func HandleTranslateBatch(c *gin.Context) {
 		return
 	}
 
-	// 批量翻译，使用 TranslateWithPivot 处理可能需要中转的翻译
+	// 批量翻译，使用 TranslateWithPivot 处理可能需要中转的翻译（支持 auto 模式）
 	results := make([]string, len(req.Texts))
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 	defer cancel()
