@@ -15,5 +15,4 @@ pnpm-lock.yaml
 
 bin/worker
 bin/bin_hash.go
-data/records.json
 /dist
