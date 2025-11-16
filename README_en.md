@@ -28,19 +28,119 @@ For high-quality translation, consider using online large language model APIs.
 >
 > Table data is for reference only, not strict testing, non-quantized version comparison.
 
-### API Usage
+## Usage Guide
 
-In the following tables, `localhost` can be replaced with your server address or Docker container name.
+### Command Line Options
 
-The port `8989` can be replaced with the port value you set in `compose.yml`.
+```bash
+./mtranserver [options]
 
-If `API_TOKEN` or `CORE_API_TOKEN` is not set or empty, translation plugins use the API without password.
+Options:
+  -version, -v          Show version information
+  -log-level string     Log level (debug, info, warn, error) (default "warn")
+  -config-dir string    Configuration directory (default "~/.config/mtran/server")
+  -model-dir string     Model directory (default "~/.config/mtran/models")
+  -host string          Server host address (default "0.0.0.0")
+  -port string          Server port (default "8989")
+  -ui                   Enable Web UI (default false)
+  -offline              Enable offline mode (default false)
+  -worker-idle-timeout int  Worker idle timeout in seconds (default 300)
 
-If `API_TOKEN` or `CORE_API_TOKEN` is set, translation plugins use the API with password.
+Examples:
+  ./mtranserver --host 127.0.0.1 --port 8080
+  ./mtranserver --ui --offline
+  ./mtranserver -v
+```
 
-Replace `your_token` in the following tables with your `API_TOKEN` or `CORE_API_TOKEN` value from environment variables.
+### Environment Variables
 
-#### Translation Plugin Interfaces
+| Environment Variable  | Description                              | Default | Options                     |
+| --------------------- | ---------------------------------------- | ------- | --------------------------- |
+| MT_LOG_LEVEL          | Log level                                | warn    | debug, info, warn, error    |
+| MT_CONFIG_DIR         | Configuration directory                  | ~/.config/mtran/server | Any path                    |
+| MT_MODEL_DIR          | Model directory                          | ~/.config/mtran/models | Any path                    |
+| MT_HOST               | Server host address                      | 0.0.0.0 | Any IP address              |
+| MT_PORT               | Server port                              | 8989    | 1-65535                     |
+| MT_UI                 | Enable Web UI                            | false   | true, false                 |
+| MT_OFFLINE            | Offline mode (no auto model download)    | false   | true, false                 |
+| MT_WORKER_IDLE_TIMEOUT| Worker idle timeout (seconds)            | 300     | Any positive integer        |
+| API_TOKEN             | API access token                         | empty   | Any string                  |
+| CORE_API_TOKEN        | API access token (alternative)           | empty   | Any string                  |
+
+Example:
+
+```bash
+# Set log level to debug
+export MT_LOG_LEVEL=debug
+
+# Set port to 9000
+export MT_PORT=9000
+
+# Start the server
+./mtranserver
+```
+
+### API Documentation
+
+#### System Endpoints
+
+| Endpoint | Method | Description | Auth Required |
+| -------- | ------ | ----------- | ------------- |
+| `/version` | GET | Get service version | No |
+| `/health` | GET | Health check | No |
+| `/__heartbeat__` | GET | Heartbeat check | No |
+| `/__lbheartbeat__` | GET | Load balancer heartbeat check | No |
+| `/docs/*` | GET | Swagger API documentation | No |
+
+#### Translation Endpoints
+
+| Endpoint | Method | Description | Auth Required |
+| -------- | ------ | ----------- | ------------- |
+| `/languages` | GET | Get supported language list | Yes |
+| `/translate` | POST | Single text translation | Yes |
+| `/translate/batch` | POST | Batch translation | Yes |
+
+**Single Text Translation Request Example:**
+
+```json
+{
+  "from": "en",
+  "to": "zh-Hans",
+  "text": "Hello, world!",
+  "html": false
+}
+```
+
+**Batch Translation Request Example:**
+
+```json
+{
+  "from": "en",
+  "to": "zh-Hans",
+  "texts": ["Hello, world!", "Good morning!"],
+  "html": false
+}
+```
+
+**Authentication Methods:**
+
+- Header: `Authorization: Bearer <token>`
+- Query: `?token=<token>`
+
+#### Translation Plugin Compatible Endpoints
+
+The server provides compatible endpoints for multiple translation plugins:
+
+| Endpoint | Method | Description | Supported Plugins |
+| -------- | ------ | ----------- | ----------------- |
+| `/imme` | POST | Immersive Translation plugin endpoint | [Immersive Translation](https://immersivetranslate.com/) |
+| `/kiss` | POST | Kiss Translator plugin endpoint | [Kiss Translator](https://github.com/fishjar/kiss-translator) |
+| `/deepl` | POST | DeepL API v2 compatible endpoint | Clients supporting DeepL API |
+| `/google/language/translate/v2` | POST | Google Translate API v2 compatible endpoint | Clients supporting Google Translate API |
+| `/google/translate_a/single` | GET | Google translate_a/single compatible endpoint | Clients supporting Google web translation |
+| `/hcfy` | POST | Selection Translator compatible endpoint | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
+
+**Plugin Configuration Guide:**
 
 > Note:
 >
@@ -56,6 +156,9 @@ Replace `your_token` in the following tables with your `API_TOKEN` or `CORE_API_
 | Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `API_TOKEN` or `CORE_API_TOKEN` value |
 | Kiss Translator (No Password)         | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                                          |
 | Kiss Translator (With Password)       | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                                      |
+| DeepL Compatible                      | `http://localhost:8989/deepl`                 | Use `DeepL-Auth-Key` or `Bearer` authentication                                  |
+| Google Compatible                     | `http://localhost:8989/google/language/translate/v2` | Use `key` parameter or `Bearer` authentication                            |
+| Selection Translator                  | `http://localhost:8989/hcfy`                  | Support `token` parameter or `Bearer` authentication                             |
 
 **Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
