@@ -68,31 +68,108 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - name: Download all artifacts
+      - uses: actions/checkout@v3
+
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: mtranserver-*
+
+      - name: Organize Release Assets
+        run: |
+          mkdir -p release-assets
+
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
+          VERSION=${VERSION#v}
+
+          # Copy and rename binaries with version
+          find artifacts/mtranserver-linux-amd64 -name "mtranserver-linux-amd64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-linux-amd64 \;
+          find artifacts/mtranserver-linux-arm64 -name "mtranserver-linux-arm64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-linux-arm64 \;
+          find artifacts/mtranserver-linux-386 -name "mtranserver-linux-386" -type f -exec cp {} release-assets/mtranserver-${VERSION}-linux-386 \;
+          find artifacts/mtranserver-darwin-amd64 -name "mtranserver-darwin-amd64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-darwin-amd64 \;
+          find artifacts/mtranserver-darwin-arm64 -name "mtranserver-darwin-arm64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-darwin-arm64 \;
+          find artifacts/mtranserver-windows-amd64 -name "mtranserver-windows-amd64.exe" -type f -exec cp {} release-assets/mtranserver-${VERSION}-windows-amd64.exe \;
+
+          ls -lh release-assets/
+
+      - name: Generate Checksums
+        run: |
+          cd release-assets
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Determine Release Type
+        id: release_info
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+            echo "tag_name=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Release Body
+        id: generate_body
+        run: |
+          TAG="${{ steps.release_info.outputs.tag_name }}"
+          REPO="${{ github.repository }}"
+          IS_RELEASE="${{ steps.release_info.outputs.is_release }}"
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
+          VERSION=${VERSION#v}
+
+          if [ "$IS_RELEASE" == "true" ]; then
+            WARNING=""
+          else
+            WARNING="**⚠️ Development build - may be unstable**"$'\n\n'
+          fi
+
+          cat > release_body.md << 'EOF'
+          ${WARNING}## MTranServer
+
+          | Platform | Architecture | Binary |
+          |----------|-------------|--------|
+          | Linux | x64 | [mtranserver-${VERSION}-linux-amd64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-amd64) |
+          | Linux | ARM64 | [mtranserver-${VERSION}-linux-arm64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-arm64) |
+          | Linux | x86 | [mtranserver-${VERSION}-linux-386](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-386) |
+          | macOS | Intel | [mtranserver-${VERSION}-darwin-amd64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-amd64) |
+          | macOS | Apple Silicon | [mtranserver-${VERSION}-darwin-arm64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-arm64) |
+          | Windows | x64 | [mtranserver-${VERSION}-windows-amd64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64.exe) |
+
+          ### Checksums
+
+          See [SHA256SUMS](https://github.com/${REPO}/releases/download/${TAG}/SHA256SUMS) for file verification.
+          EOF
+
+          # Replace variables
+          sed -i "s|\${WARNING}|${WARNING}|g" release_body.md
+          sed -i "s|\${REPO}|${REPO}|g" release_body.md
+          sed -i "s|\${TAG}|${TAG}|g" release_body.md
+          sed -i "s|\${VERSION}|${VERSION}|g" release_body.md
+
+          {
+            echo "body<<EOFMARKER"
+            cat release_body.md
+            echo "EOFMARKER"
+          } >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          tag_name: ${{ steps.release_info.outputs.tag_name }}
+          name: ${{ steps.release_info.outputs.is_release == 'true' && format('Release {0}', steps.release_info.outputs.tag_name) || format('Development Build ({0})', steps.release_info.outputs.tag_name) }}
+          body: ${{ steps.generate_body.outputs.body }}
+          files: release-assets/*
+          prerelease: ${{ steps.release_info.outputs.prerelease }}
           draft: false
-          prerelease: false
-          make_latest: true
-          body: |
-            ## MTranServer ${{ github.ref_name }}
-            
-            ### Download
-            
-            - **Linux x86_64**: `mtranserver-linux-amd64`
-            - **Linux ARM64**: `mtranserver-linux-arm64`
-            - **Linux x86**: `mtranserver-linux-386`
-            - **macOS Intel**: `mtranserver-darwin-amd64`
-            - **macOS Apple Silicon**: `mtranserver-darwin-arm64`
-            - **Windows x86_64**: `mtranserver-windows-amd64.exe`
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
