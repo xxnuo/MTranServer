@@ -12,25 +12,19 @@ import (
 )
 
 // googleLangToBCP47 Google 语言代码转 BCP47
+// 只列出与 BCP47 不同的映射，其他直接返回原值
 var googleLangToBCP47 = map[string]string{
 	"zh-CN": "zh-Hans",
 	"zh-TW": "zh-Hant",
 	"zh-HK": "zh-Hant",
 	"zh-SG": "zh-Hans",
-	"pt-BR": "pt-BR",
-	"pt-PT": "pt-PT",
-	"en-US": "en-US",
-	"en-GB": "en-GB",
 }
 
 // bcp47ToGoogleLang BCP47 转 Google 语言代码
+// 只列出与 BCP47 不同的映射，其他直接返回原值
 var bcp47ToGoogleLang = map[string]string{
 	"zh-Hans": "zh-CN",
 	"zh-Hant": "zh-TW",
-	"pt-BR":   "pt-BR",
-	"pt-PT":   "pt-PT",
-	"en-US":   "en-US",
-	"en-GB":   "en-GB",
 }
 
 // convertGoogleLangToBCP47 将 Google 语言代码转换为 BCP47

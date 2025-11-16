@@ -11,46 +11,10 @@ import (
 )
 
 // kissToBCP47 将 Kiss Translator 语言代码转换为 BCP 47 标准
+// 只列出与 BCP47 不同的映射，其他直接返回原值
 var kissToBCP47 = map[string]string{
-	"en":    "en",
 	"zh-CN": "zh-Hans",
 	"zh-TW": "zh-Hant",
-	"ar":    "ar",
-	"bg":    "bg",
-	"ca":    "ca",
-	"hr":    "hr",
-	"cs":    "cs",
-	"da":    "da",
-	"nl":    "nl",
-	"fa":    "fa",
-	"fi":    "fi",
-	"fr":    "fr",
-	"de":    "de",
-	"el":    "el",
-	"hi":    "hi",
-	"hu":    "hu",
-	"id":    "id",
-	"it":    "it",
-	"ja":    "ja",
-	"ko":    "ko",
-	"ms":    "ms",
-	"mt":    "mt",
-	"nb":    "nb",
-	"pl":    "pl",
-	"pt":    "pt",
-	"ro":    "ro",
-	"ru":    "ru",
-	"sk":    "sk",
-	"sl":    "sl",
-	"es":    "es",
-	"sv":    "sv",
-	"ta":    "ta",
-	"te":    "te",
-	"th":    "th",
-	"tr":    "tr",
-	"uk":    "uk",
-	"vi":    "vi",
-	"auto":  "auto",
 }
 
 // convertKissToBCP47 转换 Kiss 语言代码到 BCP 47

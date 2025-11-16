@@ -1,5 +1,76 @@
 basePath: /
 definitions:
+  handlers.DeeplTranslateRequest:
+    properties:
+      context:
+        type: string
+      enable_beta_languages:
+        type: boolean
+      formality:
+        example: default
+        type: string
+      glossary_id:
+        type: string
+      ignore_tags:
+        items:
+          type: string
+        type: array
+      model_type:
+        example: quality_optimized
+        type: string
+      non_splitting_tags:
+        items:
+          type: string
+        type: array
+      outline_detection:
+        example: "1"
+        type: string
+      preserve_formatting:
+        example: "0"
+        type: string
+      source_lang:
+        example: EN
+        type: string
+      split_sentences:
+        example: "1"
+        type: string
+      splitting_tags:
+        items:
+          type: string
+        type: array
+      tag_handling:
+        example: xml
+        type: string
+      target_lang:
+        example: DE
+        type: string
+      text:
+        example:
+        - Hello
+        - ' world!'
+        items:
+          type: string
+        type: array
+    required:
+    - target_lang
+    - text
+    type: object
+  handlers.DeeplTranslateResponse:
+    properties:
+      translations:
+        items:
+          $ref: '#/definitions/handlers.DeeplTranslation'
+        type: array
+    type: object
+  handlers.DeeplTranslation:
+    properties:
+      detected_source_language:
+        example: EN
+        type: string
+      text:
+        example: Hallo, Welt!
+        type: string
+    type: object
   handlers.GoogleTranslateRequest:
     properties:
       format:
@@ -32,6 +103,86 @@ definitions:
               type: object
             type: array
         type: object
+    type: object
+  handlers.HcfyDict:
+    properties:
+      pos:
+        example: n.
+        type: string
+      terms:
+        example:
+        - 你好
+        - 问候
+        items:
+          type: string
+        type: array
+    type: object
+  handlers.HcfyPhonetic:
+    properties:
+      name:
+        example: 美
+        type: string
+      ttsURI:
+        example: https://...
+        type: string
+      value:
+        example: həˈloʊ
+        type: string
+    type: object
+  handlers.HcfyTranslateRequest:
+    properties:
+      destination:
+        example:
+        - 中文(简体)
+        - 英语
+        items:
+          type: string
+        type: array
+      name:
+        example: 翻译一
+        type: string
+      source:
+        example: 英语
+        type: string
+      text:
+        example: Hello, word translation.
+        type: string
+    required:
+    - destination
+    - name
+    - text
+    type: object
+  handlers.HcfyTranslateResponse:
+    properties:
+      dict:
+        items:
+          $ref: '#/definitions/handlers.HcfyDict'
+        type: array
+      from:
+        example: 英语
+        type: string
+      link:
+        example: https://...
+        type: string
+      phonetic:
+        items:
+          $ref: '#/definitions/handlers.HcfyPhonetic'
+        type: array
+      result:
+        example:
+        - 你好，划词翻译。
+        items:
+          type: string
+        type: array
+      text:
+        example: Hello, word translation.
+        type: string
+      to:
+        example: 中文(简体)
+        type: string
+      ttsURI:
+        example: https://...
+        type: string
     type: object
   handlers.ImmeTranslateRequest:
     properties:
@@ -79,7 +230,7 @@ definitions:
         example: Hello, world!
         type: string
       to:
-        example: zh-Hans
+        example: zh-CN
         type: string
     required:
     - from
@@ -88,6 +239,9 @@ definitions:
     type: object
   handlers.KissTranslateResponse:
     properties:
+      src:
+        example: en
+        type: string
       text:
         example: 你好，世界！
         type: string
@@ -191,6 +345,205 @@ paths:
       summary: 负载均衡心跳检查
       tags:
       - 系统
+  /deepl:
+    post:
+      consumes:
+      - application/json
+      description: 兼容 DeepL API v2 的翻译接口
+      parameters:
+      - description: API Token
+        in: query
+        name: token
+        type: string
+      - description: DeepL 翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.DeeplTranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.DeeplTranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: DeepL 翻译兼容接口
+      tags:
+      - 插件
+  /google/language/translate/v2:
+    post:
+      consumes:
+      - application/json
+      description: 兼容 Google Translate API v2 的翻译接口
+      parameters:
+      - description: API Key
+        in: query
+        name: key
+        type: string
+      - description: Google 翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.GoogleTranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.GoogleTranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Google 翻译兼容接口
+      tags:
+      - 插件
+  /google/translate_a/single:
+    get:
+      consumes:
+      - application/json
+      description: 兼容 Google translate_a/single 的翻译接口
+      parameters:
+      - default: gtx
+        description: 客户端类型
+        in: query
+        name: client
+        type: string
+      - description: 源语言代码
+        example: en
+        in: query
+        name: sl
+        required: true
+        type: string
+      - description: 目标语言代码
+        example: zh-CN
+        in: query
+        name: tl
+        required: true
+        type: string
+      - default: t
+        description: 数据类型
+        in: query
+        name: dt
+        type: string
+      - description: 待翻译文本
+        example: Hello, world!
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: API Key
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items: {}
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Google translate_a/single 兼容接口
+      tags:
+      - 插件
+  /hcfy:
+    post:
+      consumes:
+      - application/json
+      description: 兼容划词翻译自定义翻译源接口
+      parameters:
+      - description: API Token
+        in: query
+        name: token
+        type: string
+      - description: 划词翻译请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.HcfyTranslateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.HcfyTranslateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 划词翻译兼容接口
+      tags:
+      - 插件
   /health:
     get:
       description: 检查服务是否正常运行
@@ -254,7 +607,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 为简约翻译插件提供的翻译接口
+      description: 为简约翻译插件提供的单文本翻译接口
       parameters:
       - description: API Token
         in: header
@@ -291,46 +644,9 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: 简约翻译插件接口
+      summary: 简约翻译插件接口（非聚合）
       tags:
       - 插件
-  /language/translate/v2:
-    post:
-      consumes:
-      - application/json
-      description: 兼容 Google Translate API v2 的翻译接口
-      parameters:
-      - description: Google 翻译请求
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.GoogleTranslateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.GoogleTranslateResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      - ApiKeyQuery: []
-      summary: Google 翻译兼容接口
-      tags:
-      - 翻译
   /languages:
     get:
       description: 返回所有支持的翻译语言代码

@@ -64,6 +64,304 @@ const docTemplate = `{
                 }
             }
         },
+        "/deepl": {
+            "post": {
+                "description": "兼容 DeepL API v2 的翻译接口",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "插件"
+                ],
+                "summary": "DeepL 翻译兼容接口",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Token",
+                        "name": "token",
+                        "in": "query"
+                    },
+                    {
+                        "description": "DeepL 翻译请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.DeeplTranslateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.DeeplTranslateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/google/language/translate/v2": {
+            "post": {
+                "description": "兼容 Google Translate API v2 的翻译接口",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "插件"
+                ],
+                "summary": "Google 翻译兼容接口",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key",
+                        "name": "key",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Google 翻译请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.GoogleTranslateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.GoogleTranslateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/google/translate_a/single": {
+            "get": {
+                "description": "兼容 Google translate_a/single 的翻译接口",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "插件"
+                ],
+                "summary": "Google translate_a/single 兼容接口",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "gtx",
+                        "description": "客户端类型",
+                        "name": "client",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "en",
+                        "description": "源语言代码",
+                        "name": "sl",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "zh-CN",
+                        "description": "目标语言代码",
+                        "name": "tl",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "t",
+                        "description": "数据类型",
+                        "name": "dt",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Hello, world!",
+                        "description": "待翻译文本",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "API Key",
+                        "name": "key",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {}
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hcfy": {
+            "post": {
+                "description": "兼容划词翻译自定义翻译源接口",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "插件"
+                ],
+                "summary": "划词翻译兼容接口",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Token",
+                        "name": "token",
+                        "in": "query"
+                    },
+                    {
+                        "description": "划词翻译请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HcfyTranslateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HcfyTranslateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "检查服务是否正常运行",
@@ -156,7 +454,7 @@ const docTemplate = `{
         },
         "/kiss": {
             "post": {
-                "description": "为简约翻译插件提供的翻译接口",
+                "description": "为简约翻译插件提供的单文本翻译接口",
                 "consumes": [
                     "application/json"
                 ],
@@ -166,7 +464,7 @@ const docTemplate = `{
                 "tags": [
                     "插件"
                 ],
-                "summary": "简约翻译插件接口",
+                "summary": "简约翻译插件接口（非聚合）",
                 "parameters": [
                     {
                         "type": "string",
@@ -202,66 +500,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/language/translate/v2": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyQuery": []
-                    }
-                ],
-                "description": "兼容 Google Translate API v2 的翻译接口",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "翻译"
-                ],
-                "summary": "Google 翻译兼容接口",
-                "parameters": [
-                    {
-                        "description": "Google 翻译请求",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.GoogleTranslateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.GoogleTranslateResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -469,6 +707,108 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.DeeplTranslateRequest": {
+            "type": "object",
+            "required": [
+                "target_lang",
+                "text"
+            ],
+            "properties": {
+                "context": {
+                    "type": "string"
+                },
+                "enable_beta_languages": {
+                    "type": "boolean"
+                },
+                "formality": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "glossary_id": {
+                    "type": "string"
+                },
+                "ignore_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "model_type": {
+                    "type": "string",
+                    "example": "quality_optimized"
+                },
+                "non_splitting_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "outline_detection": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "preserve_formatting": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "source_lang": {
+                    "type": "string",
+                    "example": "EN"
+                },
+                "split_sentences": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "splitting_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tag_handling": {
+                    "type": "string",
+                    "example": "xml"
+                },
+                "target_lang": {
+                    "type": "string",
+                    "example": "DE"
+                },
+                "text": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Hello",
+                        " world!"
+                    ]
+                }
+            }
+        },
+        "handlers.DeeplTranslateResponse": {
+            "type": "object",
+            "properties": {
+                "translations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.DeeplTranslation"
+                    }
+                }
+            }
+        },
+        "handlers.DeeplTranslation": {
+            "type": "object",
+            "properties": {
+                "detected_source_language": {
+                    "type": "string",
+                    "example": "EN"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hallo, Welt!"
+                }
+            }
+        },
         "handlers.GoogleTranslateRequest": {
             "type": "object",
             "required": [
@@ -514,6 +854,120 @@ const docTemplate = `{
                             }
                         }
                     }
+                }
+            }
+        },
+        "handlers.HcfyDict": {
+            "type": "object",
+            "properties": {
+                "pos": {
+                    "type": "string",
+                    "example": "n."
+                },
+                "terms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "你好",
+                        "问候"
+                    ]
+                }
+            }
+        },
+        "handlers.HcfyPhonetic": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "美"
+                },
+                "ttsURI": {
+                    "type": "string",
+                    "example": "https://..."
+                },
+                "value": {
+                    "type": "string",
+                    "example": "həˈloʊ"
+                }
+            }
+        },
+        "handlers.HcfyTranslateRequest": {
+            "type": "object",
+            "required": [
+                "destination",
+                "name",
+                "text"
+            ],
+            "properties": {
+                "destination": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "中文(简体)",
+                        "英语"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "example": "翻译一"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "英语"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hello, word translation."
+                }
+            }
+        },
+        "handlers.HcfyTranslateResponse": {
+            "type": "object",
+            "properties": {
+                "dict": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.HcfyDict"
+                    }
+                },
+                "from": {
+                    "type": "string",
+                    "example": "英语"
+                },
+                "link": {
+                    "type": "string",
+                    "example": "https://..."
+                },
+                "phonetic": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.HcfyPhonetic"
+                    }
+                },
+                "result": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "你好，划词翻译。"
+                    ]
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hello, word translation."
+                },
+                "to": {
+                    "type": "string",
+                    "example": "中文(简体)"
+                },
+                "ttsURI": {
+                    "type": "string",
+                    "example": "https://..."
                 }
             }
         },
@@ -588,13 +1042,17 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "zh-Hans"
+                    "example": "zh-CN"
                 }
             }
         },
         "handlers.KissTranslateResponse": {
             "type": "object",
             "properties": {
+                "src": {
+                    "type": "string",
+                    "example": "en"
+                },
                 "text": {
                     "type": "string",
                     "example": "你好，世界！"
