@@ -31,12 +31,16 @@ func Setup(r *gin.Engine, apiToken string) {
 		auth.Use(middleware.Auth(apiToken))
 	}
 
+	// 内置接口
 	auth.GET("/languages", handlers.HandleLanguages)
 	auth.POST("/translate", handlers.HandleTranslate)
 	auth.POST("/translate/batch", handlers.HandleTranslateBatch)
-	auth.POST("/language/translate/v2", handlers.HandleGoogleCompatTranslate)
 
 	// 插件兼容接口
 	r.POST("/imme", handlers.HandleImmeTranslate(apiToken))
 	r.POST("/kiss", handlers.HandleKissTranslate(apiToken))
+	r.POST("/deepl", handlers.HandleDeeplTranslate(apiToken))
+	r.POST("/google/language/translate/v2", handlers.HandleGoogleCompatTranslate(apiToken))
+	r.GET("/google/translate_a/single", handlers.HandleGoogleTranslateSingle(apiToken))
+	r.POST("/hcfy", handlers.HandleHcfyTranslate(apiToken))
 }
