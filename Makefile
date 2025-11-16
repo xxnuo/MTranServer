@@ -47,3 +47,7 @@ build: generate-docs
 	@echo "Building version $(VERSION)..."
 	@go build -ldflags "$(LDFLAGS)" -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
 	@echo "Built successfully"
+
+dev: generate-docs
+	@echo "Building version $(VERSION)..."
+	@go run -ldflags "$(LDFLAGS)" ./cmd/mtranserver/main.go
