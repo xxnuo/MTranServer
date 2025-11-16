@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/xxnuo/MTranServer/internal/models"
 	"github.com/xxnuo/MTranServer/internal/routes"
+	"github.com/xxnuo/MTranServer/internal/version"
 )
 
 func TestMain(m *testing.M) {
@@ -26,8 +27,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetVersion(t *testing.T) {
-	version := GetVersion()
-	assert.NotEmpty(t, version)
+	v := version.GetVersion()
+	assert.NotEmpty(t, v)
 }
 
 func TestServerRoutes(t *testing.T) {
