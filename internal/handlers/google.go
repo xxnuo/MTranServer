@@ -11,6 +11,46 @@ import (
 	"github.com/xxnuo/MTranServer/internal/services"
 )
 
+// googleLangToBCP47 Google 语言代码转 BCP47
+var googleLangToBCP47 = map[string]string{
+	"zh-CN": "zh-Hans",
+	"zh-TW": "zh-Hant",
+	"zh-HK": "zh-Hant",
+	"zh-SG": "zh-Hans",
+	"pt-BR": "pt-BR",
+	"pt-PT": "pt-PT",
+	"en-US": "en-US",
+	"en-GB": "en-GB",
+}
+
+// bcp47ToGoogleLang BCP47 转 Google 语言代码
+var bcp47ToGoogleLang = map[string]string{
+	"zh-Hans": "zh-CN",
+	"zh-Hant": "zh-TW",
+	"pt-BR":   "pt-BR",
+	"pt-PT":   "pt-PT",
+	"en-US":   "en-US",
+	"en-GB":   "en-GB",
+}
+
+// convertGoogleLangToBCP47 将 Google 语言代码转换为 BCP47
+func convertGoogleLangToBCP47(googleLang string) string {
+	if bcp47, ok := googleLangToBCP47[googleLang]; ok {
+		return bcp47
+	}
+	// 如果不在映射表中，直接返回（大部分语言代码相同）
+	return googleLang
+}
+
+// convertBCP47ToGoogleLang 将 BCP47 语言代码转换为 Google
+func convertBCP47ToGoogleLang(bcp47Lang string) string {
+	if googleLang, ok := bcp47ToGoogleLang[bcp47Lang]; ok {
+		return googleLang
+	}
+	// 如果不在映射表中，直接返回
+	return bcp47Lang
+}
+
 // GoogleTranslateRequest Google 翻译兼容请求
 type GoogleTranslateRequest struct {
 	Q      string `json:"q" binding:"required" example:"The Great Pyramid of Giza"`
@@ -80,8 +120,12 @@ func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
+		// 转换 Google 语言代码到 BCP47
+		sourceBCP47 := convertGoogleLangToBCP47(req.Source)
+		targetBCP47 := convertGoogleLangToBCP47(req.Target)
+
 		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(req.Source, req.Target)
+		m, err := services.GetOrCreateEngine(sourceBCP47, targetBCP47)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Failed to get engine: %v", err),
@@ -184,8 +228,12 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 		// q 参数已经由 Gin 自动进行了 URL 解码
 		text := q
 
+		// 转换 Google 语言代码到 BCP47
+		sourceBCP47 := convertGoogleLangToBCP47(sl)
+		targetBCP47 := convertGoogleLangToBCP47(tl)
+
 		// 获取或创建翻译引擎
-		m, err := services.GetOrCreateEngine(sl, tl)
+		m, err := services.GetOrCreateEngine(sourceBCP47, targetBCP47)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("Failed to get engine: %v", err),
@@ -208,13 +256,14 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 		// 返回 translate_a/single 格式的响应
 		// 格式: [[["翻译结果","原文",null,null,1]],null,"检测到的源语言",null,null,null,null,[]]
 		// response[0][0][0] 是翻译结果
-		// response[2] 是检测到的源语言
+		// response[2] 是检测到的源语言（返回 Google 格式）
+		detectedLang := convertBCP47ToGoogleLang(sourceBCP47)
 		response := []interface{}{
 			[]interface{}{
 				[]interface{}{result, text, nil, nil, 1},
 			},
 			nil,
-			sl,
+			detectedLang,
 			nil,
 			nil,
 			nil,
