@@ -1,0 +1,42 @@
+# Build artifacts
+/dist
+/bin/worker
+/bin/bin_hash.go
+
+# Dependencies
+/node_modules
+
+# Models and data
+/models
+/.bin
+*.bin
+*.spm
+
+# Logs
+*.log
+
+# Archives
+*.tar
+*.zip
+
+# Development files
+.env
+*.psd
+core
+
+# Git
+.git
+.gitignore
+
+# Documentation build
+/docs/node_modules
+/docs/dist
+
+# UI build artifacts (will be rebuilt in Docker)
+/ui/node_modules
+/ui/dist
+
+# Keep these files for Docker build:
+# - pnpm-lock.yaml (needed for frozen-lockfile install)
+# - go.mod, go.sum (needed for go mod download)
+
