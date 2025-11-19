@@ -2,7 +2,9 @@
 FROM golang:1.25.3-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git make nodejs npm
+RUN apk add --no-cache git make nodejs npm && \
+    npm install -g corepack && \
+    corepack enable
 
 WORKDIR /build
 
