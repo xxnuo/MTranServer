@@ -88,8 +88,7 @@ docker compose up -d
 | MT_ENABLE_UI          | Enable Web UI                            | true    | true, false                 |
 | MT_OFFLINE            | Offline mode, disable automatic download of new language models, only use downloaded models | false   | true, false                 |
 | MT_WORKER_IDLE_TIMEOUT| Worker idle timeout (seconds)            | 300     | Any positive integer        |
-| API_TOKEN             | API access token                         | empty   | Any string                  |
-| CORE_API_TOKEN        | API access token (alternative)           | empty   | Any string                  |
+| MT_API_TOKEN          | API access token                         | empty   | Any string                  |
 
 Example:
 

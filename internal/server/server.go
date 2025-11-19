@@ -18,7 +18,6 @@ import (
 	"github.com/xxnuo/MTranServer/internal/models"
 	"github.com/xxnuo/MTranServer/internal/routes"
 	"github.com/xxnuo/MTranServer/internal/services"
-	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
 // Run 启动服务器
@@ -41,9 +40,6 @@ func Run() error {
 		return fmt.Errorf("failed to initialize worker binary: %w", err)
 	}
 
-	// 获取 API Token
-	apiToken := utils.GetEnv("API_TOKEN", utils.GetEnv("CORE_API_TOKEN", ""))
-
 	// 设置 Gin 模式
 	// 始终使用 ReleaseMode，我们使用自定义的日志中间件
 	gin.SetMode(gin.ReleaseMode)
@@ -56,7 +52,7 @@ func Run() error {
 	r.Use(middleware.Logger())
 
 	// 注册路由
-	routes.Setup(r, apiToken)
+	routes.Setup(r, cfg.APIToken)
 
 	// 启动服务器
 	addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
