@@ -25,10 +25,6 @@ jobs:
           echo "tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
           echo "Latest tag: ${LATEST_TAG}"
 
-      - name: Checkout latest tag
-        run: |
-          git checkout ${{ steps.latest_tag.outputs.tag }}
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
