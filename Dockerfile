@@ -7,32 +7,24 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Node.js and pnpm (skip on unsupported architectures)
-RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-        apt-get install -y --no-install-recommends nodejs && \
-        npm install -g corepack && \
-        corepack enable && \
-        apt-get clean && \
-        rm -rf /var/lib/apt/lists/*; \
-    else \
-        echo "Skipping Node.js installation on unsupported architecture: $ARCH"; \
-    fi
-
 WORKDIR /build
 
 # Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
+# Copy source code (UI dist should be pre-built and copied)
 COPY . .
 
-# Build UI (skip on unsupported platforms like linux/386)
-RUN cd ui && \
-    (corepack enable && pnpm install --frozen-lockfile && pnpm build || \
-     (echo "UI build failed or unsupported platform, creating empty dist" && mkdir -p dist && echo '<!DOCTYPE html><html><body>UI not available</body></html>' > dist/index.html))
+# Verify UI dist exists (should be built before docker build)
+RUN if [ ! -f "ui/dist/index.html" ]; then \
+        echo "ERROR: ui/dist/index.html not found!"; \
+        echo "Please build UI before docker build:"; \
+        echo "  cd ui && pnpm install && pnpm build"; \
+        exit 1; \
+    fi && \
+    echo "✓ UI dist verified" && \
+    ls -lh ui/dist/
 
 # Download resources
 RUN make download

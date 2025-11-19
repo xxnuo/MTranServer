@@ -67,6 +67,24 @@ jobs:
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Build UI
+        run: |
+          cd ui
+          pnpm install --frozen-lockfile
+          pnpm build
+          echo "UI build complete"
+          ls -lh dist/
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:

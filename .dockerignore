@@ -32,11 +32,11 @@ core
 /docs/node_modules
 /docs/dist
 
-# UI build artifacts (will be rebuilt in Docker)
+# UI dependencies (dist should be pre-built before docker build)
 /ui/node_modules
-/ui/dist
 
 # Keep these files for Docker build:
-# - pnpm-lock.yaml (needed for frozen-lockfile install)
+# - ui/dist (pre-built UI files, required!)
+# - ui/pnpm-lock.yaml
 # - go.mod, go.sum (needed for go mod download)
 
