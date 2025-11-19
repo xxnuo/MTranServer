@@ -16,21 +16,21 @@ RUN go mod download
 # Copy source code (UI dist should be pre-built and copied)
 COPY . .
 
-# Verify UI dist exists (should be built before docker build)
-RUN if [ ! -f "ui/dist/index.html" ]; then \
+# Verify required files exist (should be prepared before docker build)
+RUN echo "Verifying build prerequisites..." && \
+    if [ ! -f "ui/dist/index.html" ]; then \
         echo "ERROR: ui/dist/index.html not found!"; \
-        echo "Please build UI before docker build:"; \
-        echo "  cd ui && pnpm install && pnpm build"; \
         exit 1; \
     fi && \
-    echo "✓ UI dist verified" && \
-    ls -lh ui/dist/
-
-# Download resources
-RUN make download
-
-# Generate docs
-RUN make generate-docs
+    if [ ! -f "bin/worker" ]; then \
+        echo "ERROR: bin/worker not found!"; \
+        exit 1; \
+    fi && \
+    if [ ! -f "internal/docs/swagger.json" ]; then \
+        echo "ERROR: internal/docs/swagger.json not found!"; \
+        exit 1; \
+    fi && \
+    echo "✓ All prerequisites verified"
 
 # Build binary
 ARG VERSION=dev
