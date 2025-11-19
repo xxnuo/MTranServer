@@ -9,7 +9,7 @@ RUN apt-get update && \
 
 # Install Node.js and pnpm (skip on unsupported architectures)
 RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
+    if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "i386" ]; then \
         curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
         apt-get install -y --no-install-recommends nodejs && \
         npm install -g corepack && \
