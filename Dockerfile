@@ -1,10 +1,15 @@
 # Build stage
-FROM golang:1.25.3-alpine AS builder
+FROM golang:1.25.3-bookworm AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git make nodejs npm && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git make curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
     npm install -g corepack && \
-    corepack enable
+    corepack enable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
