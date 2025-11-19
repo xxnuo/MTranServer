@@ -1,0 +1,21 @@
+services:
+  mtranserver:
+    image: xxnuo/mtranserver:latest
+    container_name: mtranserver
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    environment:
+      - MT_HOST=0.0.0.0
+      - MT_PORT=8989
+      - MT_ENABLE_UI=true
+      - MT_OFFLINE=false
+      # - API_TOKEN=your_secret_token_here  # 取消注释以启用 API 认证
+    volumes:
+      - ./models:/app/models    # 翻译模型目录
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8989/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
