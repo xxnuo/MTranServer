@@ -110,7 +110,7 @@ services:
     volumes:
       - ./models:/app/models
     environment:
-      - CORE_API_TOKEN=your_token
+      - MT_API_TOKEN=your_token
 ```
 
 #### 1.3 可选步骤
@@ -208,11 +208,11 @@ docker compose up -d
 
 下面表格内的 `8989` 端口可以替换为你在 `compose.yml` 文件中设置的端口值。
 
-如果未设置 `CORE_API_TOKEN` 或者设置为空，翻译插件使用`无密码`的 API。
+如果未设置 `MT_API_TOKEN` 或者设置为空，翻译插件使用`无密码`的 API。
 
-如果设置了 `CORE_API_TOKEN`，翻译插件使用`有密码`的 API。
+如果设置了 `MT_API_TOKEN`，翻译插件使用`有密码`的 API。
 
-下面表格中的 `your_token` 替换为你在 `config.ini` 文件中设置的 `CORE_API_TOKEN` 值。
+下面表格中的 `your_token` 替换为你在 `compose.yml` 文件中设置的 `MT_API_TOKEN` 值。
 
 #### 翻译插件接口：
 
@@ -227,7 +227,7 @@ docker compose up -d
 | 名称                       | URL                                           | 插件设置                                                          |
 | -------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
 | 沉浸式翻译无密码           | `http://localhost:8989/imme`                  | `自定义API 设置` - `API URL`                                      |
-| 沉浸式翻译有密码           | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `CORE_API_TOKEN` 值 |
+| 沉浸式翻译有密码           | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `MT_API_TOKEN` 值 |
 | 简约翻译无密码             | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                     |
 | 简约翻译有密码             | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                  |
 | 划词翻译自定义翻译源无密码 | `http://localhost:8989/hcfy`                  | `设置`-`其他`-`自定义翻译源`-`接口地址`                           |

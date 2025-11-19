@@ -63,7 +63,7 @@ services:
       - MT_PORT=8989
       - MT_ENABLE_UI=true
       - MT_OFFLINE=false
-      # - API_TOKEN=your_secret_token_here
+      # - MT_API_TOKEN=your_secret_token_here
     volumes:
       - ./models:/app/models
 ```
@@ -174,7 +174,7 @@ export MT_PORT=9000
 | 名称             | URL                                           | 插件设置                                                                         |
 | ---------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
 | 沉浸式翻译无密码 | `http://localhost:8989/imme`                  | `自定义API 设置` - `API URL`                                                     |
-| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `API_TOKEN` 或 `CORE_API_TOKEN` 值 |
+| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `MT_API_TOKEN` 值 |
 | 简约翻译无密码   | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                                    |
 | 简约翻译有密码   | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                                 |
 | DeepL 兼容       | `http://localhost:8989/deepl`                 | 使用 `DeepL-Auth-Key` 或 `Bearer` 认证                                           |

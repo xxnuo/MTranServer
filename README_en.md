@@ -67,7 +67,7 @@ services:
       - MT_PORT=8989
       - MT_ENABLE_UI=true
       - MT_OFFLINE=false
-      # - API_TOKEN=your_secret_token_here
+      # - MT_API_TOKEN=your_secret_token_here
     volumes:
       - ./models:/app/models
 ```
@@ -178,7 +178,7 @@ The server provides compatible endpoints for multiple translation plugins:
 | Name                                  | URL                                           | Plugin Setting                                                                   |
 | ------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
 | Immersive Translation (No Password)   | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                                |
-| Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `API_TOKEN` or `CORE_API_TOKEN` value |
+| Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `MT_API_TOKEN` value |
 | Kiss Translator (No Password)         | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                                          |
 | Kiss Translator (With Password)       | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                                      |
 | DeepL Compatible                      | `http://localhost:8989/deepl`                 | Use `DeepL-Auth-Key` or `Bearer` authentication                                  |

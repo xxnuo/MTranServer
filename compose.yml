@@ -10,7 +10,7 @@ services:
       - MT_PORT=8989
       - MT_ENABLE_UI=true
       - MT_OFFLINE=false
-      # - API_TOKEN=your_secret_token_here  # 取消注释以启用 API 认证
+      # - MT_API_TOKEN=your_secret_token_here  # 取消注释以启用 API 认证
     volumes:
       - ./models:/app/models    # 翻译模型目录
     healthcheck:
