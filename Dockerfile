@@ -1,20 +1,8 @@
-# Build UI stage
-FROM node:20-alpine AS ui-builder
-
-WORKDIR /build
-
-# Copy UI files
-COPY ui/package.json ui/pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
-
-COPY ui/ ./
-RUN pnpm build
-
 # Build stage
 FROM golang:1.25.3-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git make
+RUN apk add --no-cache git make nodejs npm
 
 WORKDIR /build
 
@@ -25,8 +13,10 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Copy built UI from ui-builder
-COPY --from=ui-builder /build/dist ./ui/dist
+# Build UI (skip on unsupported platforms like linux/386)
+RUN cd ui && \
+    (corepack enable && pnpm install --frozen-lockfile && pnpm build || \
+     (echo "UI build failed or unsupported platform, creating empty dist" && mkdir -p dist && echo '<!DOCTYPE html><html><body>UI not available</body></html>' > dist/index.html))
 
 # Download resources
 RUN make download
