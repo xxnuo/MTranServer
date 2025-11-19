@@ -4,12 +4,21 @@ FROM golang:1.25.3-bookworm AS builder
 # Install build dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git make curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
-    npm install -g corepack && \
-    corepack enable && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Node.js and pnpm (skip on unsupported architectures)
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "arm64" ]; then \
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+        apt-get install -y --no-install-recommends nodejs && \
+        npm install -g corepack && \
+        corepack enable && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        echo "Skipping Node.js installation on unsupported architecture: $ARCH"; \
+    fi
 
 WORKDIR /build
 
