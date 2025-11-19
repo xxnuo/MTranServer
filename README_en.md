@@ -52,6 +52,30 @@ Examples:
   ./mtranserver -v
 ```
 
+### Docker Compose 部署
+
+```yml
+services:
+  mtranserver:
+    image: xxnuo/mtranserver:latest
+    container_name: mtranserver
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    environment:
+      - MT_HOST=0.0.0.0
+      - MT_PORT=8989
+      - MT_ENABLE_UI=true
+      - MT_OFFLINE=false
+      # - API_TOKEN=your_secret_token_here
+    volumes:
+      - ./models:/app/models
+```
+
+```bash
+docker compose up -d
+```
+
 ### Environment Variables
 
 | Environment Variable  | Description                              | Default | Options                     |
