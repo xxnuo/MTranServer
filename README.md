@@ -69,6 +69,7 @@ services:
 ```
 
 ```bash
+docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
