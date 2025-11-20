@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import { ArrowRightLeft } from 'lucide-react'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface TranslateRequest {
   from: string
@@ -24,6 +25,7 @@ interface TranslateResponse {
 
 function App() {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   const [languages, setLanguages] = useState<string[]>([])
   const [sourceLang, setSourceLang] = useState('auto')
   const [targetLang, setTargetLang] = useState('zh-Hans')
@@ -32,14 +34,29 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [loadingLanguages, setLoadingLanguages] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(false)
+  const [showTokenDialog, setShowTokenDialog] = useState(false)
   const translateTimeoutRef = useRef<number | null>(null)
 
   const fetchLanguages = useCallback(async () => {
     try {
-      const response = await fetch('/languages')
-      if (!response.ok) throw new Error('Failed to fetch languages')
-      const data = await response.json()
-      setLanguages(['auto', ...(data.languages || [])])
+      const headers: HeadersInit = {}
+      const apiToken = localStorage.getItem('apiToken')
+      if (apiToken) {
+        headers['Authorization'] = `Bearer ${apiToken}`
+      }
+
+      const response = await fetch('/languages', { headers })
+      if (!response.ok) {
+        if (response.status === 401) {
+          setShowTokenDialog(true)
+          toast.error(t('apiTokenPlaceholder'))
+        } else {
+          throw new Error('Failed to fetch languages')
+        }
+      } else {
+        const data = await response.json()
+        setLanguages(['auto', ...(data.languages || [])])
+      }
     } catch (error) {
       console.error('Error fetching languages:', error)
       toast.error(t('failedToLoadLanguages'))
@@ -72,15 +89,25 @@ function App() {
         html: false
       }
 
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      }
+
+      const apiToken = localStorage.getItem('apiToken')
+      if (apiToken) {
+        headers['Authorization'] = `Bearer ${apiToken}`
+      }
+
       const response = await fetch('/translate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(request)
       })
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error(t('apiTokenPlaceholder'))
+        }
         const error = await response.json()
         throw new Error(error.error || t('translationFailed'))
       }
@@ -102,12 +129,12 @@ function App() {
 
   const handleSourceTextChange = (text: string) => {
     setSourceText(text)
-    
+
     if (autoTranslate && text.trim()) {
       if (translateTimeoutRef.current) {
         clearTimeout(translateTimeoutRef.current)
       }
-      
+
       translateTimeoutRef.current = window.setTimeout(() => {
         handleTranslate(text, false)
       }, 800)
@@ -130,25 +157,29 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-foreground">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
             {t('title')}
           </h1>
-          <SettingsMenu />
+          <SettingsMenu 
+            showTokenDialog={showTokenDialog}
+            setShowTokenDialog={setShowTokenDialog}
+            onTokenSaved={fetchLanguages}
+          />
         </div>
 
         <Card className="shadow-lg">
-          <CardContent className="pt-6 space-y-4">
-            <div className="flex items-center gap-2 justify-between">
+          <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 justify-between">
               <div className="flex items-center gap-2 flex-1">
                 <Select
                   value={sourceLang}
                   onValueChange={setSourceLang}
                   disabled={loadingLanguages}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className={isMobile ? "flex-1" : "w-[140px]"}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,7 +196,7 @@ function App() {
                   size="icon"
                   onClick={handleSwapLanguages}
                   disabled={loadingLanguages || sourceLang === 'auto'}
-                  className="h-9 w-9"
+                  className="h-9 w-9 flex-shrink-0"
                 >
                   <ArrowRightLeft className="h-4 w-4" />
                 </Button>
@@ -175,7 +206,7 @@ function App() {
                   onValueChange={setTargetLang}
                   disabled={loadingLanguages}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className={isMobile ? "flex-1" : "w-[140px]"}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -188,7 +219,7 @@ function App() {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end sm:justify-start">
                 <Switch
                   id="auto-translate"
                   checked={autoTranslate}
@@ -200,13 +231,13 @@ function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <Textarea
                 id="source-text"
                 placeholder={t('enterText')}
                 value={sourceText}
                 onChange={(e) => handleSourceTextChange(e.target.value)}
-                className="min-h-[300px] resize-none text-base"
+                className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} resize-none text-base`}
                 disabled={loading}
               />
 
@@ -215,7 +246,7 @@ function App() {
                 placeholder={t('translationWillAppear')}
                 value={translatedText}
                 readOnly
-                className="min-h-[300px] resize-none text-base bg-muted"
+                className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} resize-none text-base bg-muted`}
               />
             </div>
 
@@ -224,7 +255,7 @@ function App() {
                 <Button
                   onClick={() => handleTranslate()}
                   disabled={loading || loadingLanguages || !sourceText.trim()}
-                  className="min-w-[200px]"
+                  className={isMobile ? "w-full" : "min-w-[200px]"}
                   size="lg"
                 >
                   {loading ? (

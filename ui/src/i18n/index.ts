@@ -27,7 +27,13 @@ const resources = {
       dark: 'Dark',
       system: 'System',
       autoTranslate: 'Auto Translate',
-      autoTranslateDesc: 'Automatically translate as you type'
+      autoTranslateDesc: 'Automatically translate as you type',
+      apiToken: 'API Token',
+      apiTokenPlaceholder: 'Please enter API token',
+      apiTokenSaved: 'API token saved',
+      apiTokenCleared: 'API token cleared',
+      save: 'Save',
+      apiTokenRequired: 'API token is required to access this service'
     }
   },
   zh: {
@@ -54,7 +60,13 @@ const resources = {
       dark: '深色',
       system: '跟随系统',
       autoTranslate: '自动翻译',
-      autoTranslateDesc: '输入时自动翻译'
+      autoTranslateDesc: '输入时自动翻译',
+      apiToken: 'API Token',
+      apiTokenPlaceholder: '请输入 API token',
+      apiTokenSaved: 'API token 已保存',
+      apiTokenCleared: 'API token 已清除',
+      save: '保存',
+      apiTokenRequired: '访问此服务需要 API token'
     }
   },
   ja: {
@@ -81,7 +93,13 @@ const resources = {
       dark: 'ダーク',
       system: 'システム',
       autoTranslate: '自動翻訳',
-      autoTranslateDesc: '入力時に自動翻訳'
+      autoTranslateDesc: '入力時に自動翻訳',
+      apiToken: 'APIトークン',
+      apiTokenPlaceholder: 'APIトークンを入力してください',
+      apiTokenSaved: 'APIトークンが保存されました',
+      apiTokenCleared: 'APIトークンがクリアされました',
+      save: '保存',
+      apiTokenRequired: 'このサービスにアクセスするにはAPIトークンが必要です'
     }
   }
 }

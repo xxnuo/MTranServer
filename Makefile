@@ -53,6 +53,6 @@ build: generate-docs
 	@go build -ldflags "$(LDFLAGS)" -o ./dist/mtranserver-$(GOOS)-$(GOARCH)$(SUFFIX) ./cmd/mtranserver
 	@echo "Built successfully"
 
-dev: generate-docs
+dev: build-ui generate-docs
 	@echo "Building version $(VERSION)..."
-	MT_LOG_LEVEL=debug go run -ldflags "$(LDFLAGS)" ./cmd/mtranserver/main.go
+	MT_LOG_LEVEL=debug MT_ENABLE_UI=true MT_API_TOKEN=test go run -ldflags "$(LDFLAGS)" ./cmd/mtranserver/main.go

@@ -20,12 +20,8 @@ func Auth(apiToken string) gin.HandlerFunc {
 		// 从 Authorization header 获取 token
 		token := c.GetHeader("Authorization")
 		if token != "" {
-			// 支持 Bearer token 格式
-			if strings.HasPrefix(token, "Bearer ") {
-				token = strings.TrimPrefix(token, "Bearer ")
-			}
+			token = strings.TrimPrefix(token, "Bearer ")
 		} else {
-			// 从 query 参数获取 token
 			token = c.Query("token")
 		}
 

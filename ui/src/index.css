@@ -117,4 +117,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    @apply overflow-x-hidden;
+  }
+  @media (max-width: 767px) {
+    body {
+      @apply text-sm;
+    }
+  }
 }
