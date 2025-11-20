@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
@@ -68,12 +69,14 @@ type Worker struct {
 
 // NewWorker 创建一个新的 Worker 实例
 func NewWorker(args *WorkerArgs) *Worker {
-	// 确定二进制文件路径
 	binaryPath := args.BinaryPath
 	if binaryPath == "" {
-		// 默认使用配置目录下的 bin/mtrancore
 		cfg := config.GetConfig()
-		binaryPath = filepath.Join(cfg.ConfigDir, "bin", "mtrancore")
+		binaryName := "mtrancore"
+		if runtime.GOOS == "windows" {
+			binaryName += ".exe"
+		}
+		binaryPath = filepath.Join(cfg.ConfigDir, "bin", binaryName)
 	}
 
 	// 根据二进制文件路径和端口生成唯一的 worker ID
@@ -112,8 +115,11 @@ func EnsureWorkerBinary(cfg *config.Config) error {
 		return nil
 	}
 
-	// 从配置获取二进制文件路径
-	binaryPath := filepath.Join(cfg.ConfigDir, "bin", "mtrancore")
+	binaryName := "mtrancore"
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+	binaryPath := filepath.Join(cfg.ConfigDir, "bin", binaryName)
 
 	// 检查二进制文件是否已存在并且匹配哈希
 	if data, err := os.ReadFile(binaryPath); err == nil {

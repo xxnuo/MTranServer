@@ -43,8 +43,7 @@ func main() {
 		log.Fatalf("Failed to create bin directory: %v", err)
 	}
 
-	// Remove old worker binary
-	targetFile := "worker" + suffix
+	targetFile := "worker"
 	os.Remove(targetFile)
 
 	// Download
