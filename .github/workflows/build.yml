@@ -161,10 +161,10 @@ jobs:
           if [ "$IS_RELEASE" == "true" ]; then
             WARNING=""
           else
-            WARNING="**⚠️ Development build - may be unstable**"$'\n\n'
+            WARNING="**Development build - may be unstable**"$'\n\n'
           fi
 
-          cat > release_body.md << 'EOF'
+          cat > release_body.md << EOF
           ${WARNING}## MTranServer
 
           | Platform | Architecture | Binary |
@@ -180,12 +180,6 @@ jobs:
 
           See [SHA256SUMS](https://github.com/${REPO}/releases/download/${TAG}/SHA256SUMS) for file verification.
           EOF
-
-          # Replace variables
-          sed -i "s|\${WARNING}|${WARNING}|g" release_body.md
-          sed -i "s|\${REPO}|${REPO}|g" release_body.md
-          sed -i "s|\${TAG}|${TAG}|g" release_body.md
-          sed -i "s|\${VERSION}|${VERSION}|g" release_body.md
 
           {
             echo "body<<EOFMARKER"
