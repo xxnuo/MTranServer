@@ -4,7 +4,7 @@
 
 [中文](README.md) | English
 
-A high-performance offline translation server with minimal resource requirements - runs on CPU with just 1GB memory, no GPU needed. Average response time of 50ms per request. Supports translation of major languages worldwide.
+A high-performance offline translation server with minimal resource requirements - no GPU needed. Average response time of 50ms per request. Supports translation of major languages worldwide.
 
 Translation quality comparable to Google Translate.
 
