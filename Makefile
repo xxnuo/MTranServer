@@ -24,7 +24,7 @@ DOWNLOAD_URL := https://github.com/$(GITHUB_REPO)/releases/latest/download/$(WOR
 # Extra: js-wasm
 download-core:
 	touch ./bin/worker
-	@GOOS= GOARCH= go generate ./bin
+	@go generate ./bin
 	@echo "Downloaded core binary from repository successfully"
 
 download-records:
