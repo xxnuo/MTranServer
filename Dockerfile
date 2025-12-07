@@ -54,7 +54,7 @@ WORKDIR /app
 COPY --from=builder /build/mtranserver /app/mtranserver
 
 # Create directories for data and models
-RUN mkdir -p /app/data /app/models && \
+RUN mkdir -p /app/data /app/models
 
 # Expose port
 EXPOSE 8989
