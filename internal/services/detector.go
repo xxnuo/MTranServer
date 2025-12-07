@@ -74,22 +74,3 @@ func DetectLanguageWithConfidence(text string, minConfidence float64) (string, f
 	return linguaToBCP47(topResult.Language()), confidence
 }
 
-func NormalizeLanguageCode(code string) string {
-	if code == "" {
-		return ""
-	}
-
-	code = strings.ToLower(strings.ReplaceAll(code, "_", "-"))
-
-	switch code {
-	case "zh", "zh-cn", "zh-hans", "chinese", "cmn":
-		return "zh-Hans"
-	case "zh-tw", "zh-hk", "zh-hant":
-		return "zh-Hant"
-	}
-
-	parts := strings.Split(code, "-")
-	mainCode := parts[0]
-
-	return mainCode
-}

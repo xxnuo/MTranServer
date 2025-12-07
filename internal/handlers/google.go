@@ -9,26 +9,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xxnuo/MTranServer/internal/services"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
-
-var googleLangToBCP47 = map[string]string{
-	"zh-CN": "zh-Hans",
-	"zh-TW": "zh-Hant",
-	"zh-HK": "zh-Hant",
-	"zh-SG": "zh-Hans",
-}
 
 var bcp47ToGoogleLang = map[string]string{
 	"zh-Hans": "zh-CN",
 	"zh-Hant": "zh-TW",
-}
-
-func convertGoogleLangToBCP47(googleLang string) string {
-	if bcp47, ok := googleLangToBCP47[googleLang]; ok {
-		return bcp47
-	}
-
-	return googleLang
 }
 
 func convertBCP47ToGoogleLang(bcp47Lang string) string {
@@ -104,8 +90,8 @@ func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		sourceBCP47 := convertGoogleLangToBCP47(req.Source)
-		targetBCP47 := convertGoogleLangToBCP47(req.Target)
+		sourceBCP47 := utils.NormalizeLanguageCode(req.Source)
+		targetBCP47 := utils.NormalizeLanguageCode(req.Target)
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
@@ -192,8 +178,8 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 
 		text := q
 
-		sourceBCP47 := convertGoogleLangToBCP47(sl)
-		targetBCP47 := convertGoogleLangToBCP47(tl)
+		sourceBCP47 := utils.NormalizeLanguageCode(sl)
+		targetBCP47 := utils.NormalizeLanguageCode(tl)
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()

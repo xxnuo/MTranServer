@@ -9,14 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xxnuo/MTranServer/internal/services"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
-
-var deeplLangToBCP47 = map[string]string{
-	"NB":    "no",
-	"ZH":    "zh-Hans",
-	"ZH-CN": "zh-Hans",
-	"ZH-TW": "zh-Hant",
-}
 
 var bcp47ToDeeplLang = map[string]string{
 	"no":      "NB",
@@ -24,16 +18,6 @@ var bcp47ToDeeplLang = map[string]string{
 	"zh-CN":   "ZH-CN",
 	"zh-Hant": "ZH-TW",
 	"zh-TW":   "ZH-TW",
-}
-
-func convertDeeplLangToBCP47(deeplLang string) string {
-
-	upperLang := strings.ToUpper(deeplLang)
-	if bcp47, ok := deeplLangToBCP47[upperLang]; ok {
-		return bcp47
-	}
-
-	return strings.ToLower(deeplLang)
 }
 
 func convertBCP47ToDeeplLang(bcp47Lang string) string {
@@ -120,9 +104,9 @@ func HandleDeeplTranslate(apiToken string) gin.HandlerFunc {
 
 		sourceLang := "auto"
 		if req.SourceLang != "" {
-			sourceLang = convertDeeplLangToBCP47(req.SourceLang)
+			sourceLang = utils.NormalizeLanguageCode(req.SourceLang)
 		}
-		targetLang := convertDeeplLangToBCP47(req.TargetLang)
+		targetLang := utils.NormalizeLanguageCode(req.TargetLang)
 
 		translations := make([]DeeplTranslation, len(req.Text))
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)

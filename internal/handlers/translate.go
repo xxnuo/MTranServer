@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/services"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
 // TranslateRequest 翻译请求
@@ -46,6 +47,10 @@ func HandleTranslate(c *gin.Context) {
 		})
 		return
 	}
+
+	// Normalize language codes
+	req.From = utils.NormalizeLanguageCode(req.From)
+	req.To = utils.NormalizeLanguageCode(req.To)
 
 	logger.Debug("Translation request: %s -> %s, text length: %d", req.From, req.To, len(req.Text))
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
@@ -99,6 +104,10 @@ func HandleTranslateBatch(c *gin.Context) {
 		})
 		return
 	}
+
+	// Normalize language codes
+	req.From = utils.NormalizeLanguageCode(req.From)
+	req.To = utils.NormalizeLanguageCode(req.To)
 
 	logger.Debug("Batch translation request: %s -> %s, count: %d", req.From, req.To, len(req.Texts))
 	results := make([]string, len(req.Texts))

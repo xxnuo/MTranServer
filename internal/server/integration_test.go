@@ -86,9 +86,9 @@ func TestIntegrationPluginEndpoints(t *testing.T) {
 
 	t.Run("ImmeEndpoint", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"from":  "en",
-			"to":    "zh-Hans",
-			"trans": []string{"Hello"},
+			"source_lang": "en",
+			"target_lang": "zh-Hans",
+			"text_list":   []string{"Hello"},
 		}
 		body, _ := json.Marshal(reqBody)
 

@@ -8,21 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xxnuo/MTranServer/internal/services"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
-
-var immeLangToBCP47 = map[string]string{
-	"zh-CN": "zh-Hans",
-	"zh-TW": "zh-Hant",
-}
-
-func convertImmeLangToBCP47(immeLang string) string {
-
-	if bcp47, ok := immeLangToBCP47[immeLang]; ok {
-		return bcp47
-	}
-
-	return immeLang
-}
 
 type ImmeTranslateRequest struct {
 	SourceLang string   `json:"source_lang" binding:"required" example:"en"`
@@ -74,8 +61,8 @@ func HandleImmeTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		sourceLang := convertImmeLangToBCP47(req.SourceLang)
-		targetLang := convertImmeLangToBCP47(req.TargetLang)
+		sourceLang := utils.NormalizeLanguageCode(req.SourceLang)
+		targetLang := utils.NormalizeLanguageCode(req.TargetLang)
 
 		translations := make([]ImmeTranslation, len(req.TextList))
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)

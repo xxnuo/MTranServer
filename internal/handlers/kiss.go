@@ -8,19 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xxnuo/MTranServer/internal/services"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
-
-var kissToBCP47 = map[string]string{
-	"zh-CN": "zh-Hans",
-	"zh-TW": "zh-Hant",
-}
-
-func convertKissToBCP47(kissLang string) string {
-	if bcp47, ok := kissToBCP47[kissLang]; ok {
-		return bcp47
-	}
-	return kissLang
-}
 
 type KissTranslateRequest struct {
 	From string `json:"from" binding:"required" example:"en"`
@@ -114,8 +103,8 @@ func HandleKissTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		fromLang := convertKissToBCP47(req.From)
-		toLang := convertKissToBCP47(req.To)
+		fromLang := utils.NormalizeLanguageCode(req.From)
+		toLang := utils.NormalizeLanguageCode(req.To)
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
@@ -137,8 +126,8 @@ func HandleKissTranslate(apiToken string) gin.HandlerFunc {
 
 func handleBatchTranslate(c *gin.Context, req KissBatchTranslateRequest) {
 
-	fromLang := convertKissToBCP47(req.From)
-	toLang := convertKissToBCP47(req.To)
+	fromLang := utils.NormalizeLanguageCode(req.From)
+	toLang := utils.NormalizeLanguageCode(req.To)
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 	defer cancel()
