@@ -29,14 +29,14 @@ download-core:
 
 download-records:
 	touch ./data/records.json
-	@GOOS= GOARCH= go generate ./data
+	@go generate ./data
 
 download: download-core download-records
 	@echo "Downloaded successfully"
 
 generate-docs:
 	@echo "Generating docs..."
-	@GOOS= GOARCH= go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
+	@go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
 	@echo "Docs generated successfully"
 
 build-ui:

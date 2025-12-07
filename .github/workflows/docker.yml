@@ -104,16 +104,6 @@ jobs:
           echo "✓ UI build complete"
           ls -lh dist/
 
-      - name: Download resources
-        run: |
-          make download
-          echo "✓ Resources downloaded"
-
-      - name: Generate docs
-        run: |
-          make generate-docs
-          echo "✓ Docs generated"
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:

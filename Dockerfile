@@ -16,6 +16,9 @@ RUN go mod download
 # Copy source code (UI dist should be pre-built and copied)
 COPY . .
 
+# Download resources
+RUN make download
+
 # Verify required files exist (should be prepared before docker build)
 RUN echo "Verifying build prerequisites..." && \
     if [ ! -f "ui/dist/index.html" ]; then \
