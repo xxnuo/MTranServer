@@ -138,15 +138,19 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 		VocabularyPaths:      []string{filepath.Base(modelFiles["vocab_src"]), filepath.Base(modelFiles["vocab_trg"])},
 	}
 
-	if _, err := m.Poweron(ctx, poweronReq); err != nil {
+	logger.Debug("Poweron request: %+v", poweronReq)
+	resp, err := m.Poweron(ctx, poweronReq)
+	if err != nil {
 		m.Cleanup()
 		return nil, fmt.Errorf("failed to load model: %w", err)
 	}
+	logger.Debug("Poweron response: %+v", resp)
 
 	ready := false
 	for i := 0; i < 30; i++ {
 		var err error
 		ready, err = m.Ready(ctx)
+		logger.Debug("Ready check %d: ready=%v, err=%v", i+1, ready, err)
 		if err == nil && ready {
 			break
 		}

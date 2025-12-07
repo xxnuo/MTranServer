@@ -71,7 +71,7 @@ func HandleImmeTranslate(apiToken string) gin.HandlerFunc {
 
 		logger.Debug("Imme request: %s -> %s, count: %d", sourceLang, targetLang, len(req.TextList))
 		for i, text := range req.TextList {
-			logger.Debug("Imme translating [%d/%d]: %s -> %s, text length: %d", i+1, len(req.TextList), sourceLang, targetLang, len(text))
+			logger.Debug("Imme translating [%d/%d]: %s -> %s, text length: %d, text: %q", i+1, len(req.TextList), sourceLang, targetLang, len(text), text)
 			result, err := services.TranslateWithPivot(ctx, sourceLang, targetLang, text, false)
 			if err != nil {
 				logger.Error("Imme translation failed at index %d (%s -> %s): %v", i, sourceLang, targetLang, err)

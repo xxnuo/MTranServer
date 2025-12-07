@@ -283,7 +283,7 @@ func (c *Client) Ready(ctx context.Context) (bool, error) {
 }
 
 func (c *Client) Compute(ctx context.Context, req ComputeRequest) (string, error) {
-	logger.Debug("Client.Compute: sending request, text length: %d, isHTML: %v", len(req.Text), req.HTML)
+	logger.Debug("Client.Compute: sending request, text length: %d, isHTML: %v, text: %q", len(req.Text), req.HTML, req.Text)
 	resp, err := c.sendRequest(ctx, "compute", req)
 	if err != nil {
 		logger.Debug("Client.Compute: sendRequest error: %v", err)
