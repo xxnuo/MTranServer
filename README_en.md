@@ -21,14 +21,23 @@ For high-quality translation, consider using online large language model APIs.
 | [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | Very High      | Poor        | Average             | Slow       | Android port [RTranslator](https://github.com/niedev/RTranslator) has many optimizations, but still has high resource usage and is not fast                       |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | Very High      | Average     | Average             | Medium     | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)           | High           | Average     | Below Average       | Fast       | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                            |
-| Any LLM                                                                | Extremely High | Dynamic     | Very Good           | Very Slow  | 32B+ parameter models work well but have high hardware requirements                                                                                               |
+| Any LLM                                                                | Extremely High | Dynamic     | Very Good           | Very Slow  | high hardware requirements                                                                                               |
 | MTranServer (This Project)                                             | Low            | High        | Average             | Ultra Fast | 50ms average response time per request                                                                                                                    |
 
-> Existing small-parameter quantized versions of Transformer architecture large models are not considered, as actual research and usage have shown that translation quality is very unstable with random translations, severe hallucinations, and slow speeds. We will test Diffusion architecture language models when they are released.
->
 > Table data is for reference only, not strict testing, non-quantized version comparison.
 
 ## Usage Guide
+
+Download the latest version from [Releases](https://github.com/xxnuo/MTranServer/releases) and start the program in the command line.
+
+> [MTranServer](https://github.com/xxnuo/MTranServer) is mainly for server use, so currently only command line service and Docker deployment are available. I will improve [MTranDesktop](https://github.com/xxnuo/MTranDesktop) for desktop use in the future.
+
+Console output the address of the simple UI and the online documentation address, below is a preview
+
+![UI](./images/ui.png)
+
+![Documentation](./images/swagger.png)
+
 
 ### Command Line Options
 
@@ -52,7 +61,9 @@ Examples:
   ./mtranserver -v
 ```
 
-### Docker Compose 部署
+### Docker Compose Deployment
+
+Create a `compose.yml` file in an empty directory, with the following content:
 
 ```yml
 services:
@@ -73,8 +84,16 @@ services:
 ```
 
 ```bash
+docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+>
+> **Important Note:** 
+> 
+> When translating a language pair for the first time, the server will automatically download the corresponding translation model (unless offline mode is enabled). This process may take some time depending on your network speed and model size. After the model is downloaded, the engine startup also requires a few seconds. Once ready, subsequent translation requests will enjoy millisecond-level response times. It's recommended to test a translation before actual use to allow the server to pre-download and load the models.
+>
+> The program is often updated, if you encounter problems, you can try to update to the latest version.
 
 ### Environment Variables
 
@@ -199,6 +218,6 @@ The server provides compatible endpoints for multiple translation plugins:
 
 ## Thanks
 
-[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
-
 [Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).
+
+[Bergamot Project](https://browser.mt/) for awesome idea of local translation.

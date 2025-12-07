@@ -17,14 +17,25 @@
 | 项目名称                                                               | 内存占用 | 并发性能 | 翻译效果 | 速度 | 其他信息                                                                                                                          |
 | ---------------------------------------------------------------------- | -------- | -------- | -------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
 | [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 很高     | 差       | 一般     | 慢   | Android 移植版的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快                        |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | 很高     | 一般     | 一般     | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句。[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | 很高     | 一般     | 一般     | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句，[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)           | 高       | 一般     | 略差     | 快   | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                     |
-| 其他大模型                                                             | 超高     | 动态     | 非常好   | 很慢 | 32B 及以上参数的模型效果不错，但是对硬件要求很高                                                                                  |
-| MTranServer(本项目)                                                    | 低       | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms |
+| 其他大模型                                                             | 超高     | 动态     | 非常好   | 很慢 | 对硬件要求很高                                                                                  |
+| 本项目                                                    | 低       | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms |
 
 > 表中数据仅供参考，非严格测试，非量化版本对比。
 
 ## 使用说明
+
+前往 [Releases](https://github.com/xxnuo/MTranServer/releases) 下载对应平台最新版本，直接在命令行启动程序，即可使用。
+
+> [MTranServer](https://github.com/xxnuo/MTranServer) 主要是面向服务器使用环境，所以目前只有命令行服务和 Docker 部署，之后有空会完善 [MTranDesktop](https://github.com/xxnuo/MTranDesktop) 供桌面端使用。
+
+日志会输出程序自带的一个简单 UI 的地址和在线调试文档的地址，下面是预览
+
+![UI](./images/ui.png)
+
+![文档](./images/swagger.png)
+
 
 ### 命令行参数
 
@@ -50,6 +61,8 @@
 
 ### Docker Compose 部署
 
+找一个空目录，编写 `compose.yml` 文件，内容如下：
+
 ```yml
 services:
   mtranserver:
@@ -74,8 +87,11 @@ docker compose up -d
 ```
 
 >
-> **重要提示：** 首次翻译某个语言对时，服务器会自动下载对应的翻译模型（除非启用了离线模式），这个过程可能需要等待一段时间（取决于网络速度和模型大小）。模型下载完成后，引擎启动也需要几秒钟时间。之后的翻译请求将享受毫秒级的响应速度。建议在正式使用前先测试一次翻译，让服务器预先下载和加载模型。
-
+> **重要提示：** 
+> 
+> 首次翻译某个语言对时，服务器会自动下载对应的翻译模型（除非启用了离线模式），这个过程可能需要等待一段时间（取决于网络速度和模型大小）。模型下载完成后，引擎启动也需要几秒钟时间。之后的翻译请求将享受毫秒级的响应速度。建议在正式使用前先测试一次翻译，让服务器预先下载和加载模型。
+>
+> 程序经常更新，如果遇到问题，可以尝试更新到最新版本。
 
 ### 环境变量配置
 
@@ -192,6 +208,6 @@ export MT_PORT=9000
 
 ## Thanks
 
-[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
-
 [Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).
+
+[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
