@@ -12,11 +12,10 @@ const docTemplate = `{
         "termsOfService": "https://github.com/xxnuo/MTranServer",
         "contact": {
             "name": "API Support",
-            "url": "https://github.com/xxnuo/MTranServer/issues",
-            "email": "support@example.com"
+            "url": "https://github.com/xxnuo/MTranServer/issues"
         },
         "license": {
-            "name": "MIT",
+            "name": "Apache 2.0",
             "url": "https://github.com/xxnuo/MTranServer/blob/main/LICENSE"
         },
         "version": "{{.Version}}"
