@@ -27,15 +27,12 @@ func TestManager_StartStop(t *testing.T) {
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
 
-	// 启动 Manager
 	err = mgr.Start()
 	require.NoError(t, err)
 
-	// 检查状态
 	assert.True(t, mgr.IsRunning())
 	assert.Equal(t, "running", mgr.Status())
 
-	// 停止 Manager
 	err = mgr.Stop()
 	require.NoError(t, err)
 
@@ -57,17 +54,14 @@ func TestManager_Restart(t *testing.T) {
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
 
-	// 启动
 	err = mgr.Start()
 	require.NoError(t, err)
 	assert.True(t, mgr.IsRunning())
 
-	// 重启
 	err = mgr.Restart()
 	require.NoError(t, err)
 	assert.True(t, mgr.IsRunning())
 
-	// 停止
 	err = mgr.Stop()
 	require.NoError(t, err)
 }
@@ -122,7 +116,7 @@ func TestManager_Ready(t *testing.T) {
 	ctx := context.Background()
 	ready, err := mgr.Ready(ctx)
 	require.NoError(t, err)
-	assert.False(t, ready) // 未加载模型，应该返回 false
+	assert.False(t, ready)
 }
 
 func TestManager_PoweronPoweroff(t *testing.T) {
@@ -136,7 +130,7 @@ func TestManager_PoweronPoweroff(t *testing.T) {
 	args.Port = port
 	args.Host = "127.0.0.1"
 	args.EnableWebSocket = true
-	args.WorkDir = "../../testdata" // 假设有测试数据目录
+	args.WorkDir = "../../testdata"
 
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
@@ -149,18 +143,16 @@ func TestManager_PoweronPoweroff(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 测试 Poweron（这里会失败，因为没有真实的模型文件）
 	_, err = mgr.Poweron(ctx, manager.PoweronRequest{
 		Path: "nonexistent",
 	})
-	assert.Error(t, err) // 预期失败
+	assert.Error(t, err)
 
-	// 测试 Poweroff
 	_, err = mgr.Poweroff(ctx, manager.PoweroffRequest{
 		Time:  0,
 		Force: true,
 	})
-	// Poweroff 可能成功也可能失败，取决于引擎状态
+
 	t.Logf("Poweroff result: %v", err)
 }
 
@@ -187,12 +179,11 @@ func TestManager_Reboot(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 测试 Reboot（未加载引擎时会失败）
 	_, err = mgr.Reboot(ctx, manager.RebootRequest{
 		Time:  0,
 		Force: false,
 	})
-	assert.Error(t, err) // 预期失败
+	assert.Error(t, err)
 }
 
 func TestManager_Compute(t *testing.T) {
@@ -218,12 +209,11 @@ func TestManager_Compute(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 测试 Compute（未加载引擎时会失败）
 	_, err = mgr.Compute(ctx, manager.ComputeRequest{
 		Text: "Hello",
 		HTML: false,
 	})
-	assert.Error(t, err) // 预期失败，因为引擎未加载
+	assert.Error(t, err)
 }
 
 func TestManager_Translate(t *testing.T) {
@@ -249,9 +239,8 @@ func TestManager_Translate(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 测试 Translate（未加载引擎时会失败）
 	_, err = mgr.Translate(ctx, "Hello")
-	assert.Error(t, err) // 预期失败
+	assert.Error(t, err)
 }
 
 func TestManager_TranslateHTML(t *testing.T) {
@@ -277,9 +266,8 @@ func TestManager_TranslateHTML(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 测试 TranslateHTML（未加载引擎时会失败）
 	_, err = mgr.TranslateHTML(ctx, "<p>Hello</p>")
-	assert.Error(t, err) // 预期失败
+	assert.Error(t, err)
 }
 
 func TestManager_MultipleManagers(t *testing.T) {
@@ -308,12 +296,10 @@ func TestManager_MultipleManagers(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	// 验证所有 Manager 都在运行
 	for i, mgr := range managers {
 		assert.True(t, mgr.IsRunning(), "Manager %d should be running", i)
 	}
 
-	// 停止所有 Manager
 	for i, mgr := range managers {
 		err := mgr.Stop()
 		assert.NoError(t, err)
@@ -327,7 +313,6 @@ func TestManager_NotStarted(t *testing.T) {
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
 
-	// 未启动时调用方法应该返回错误
 	ctx := context.Background()
 
 	_, err := mgr.Ready(ctx)
@@ -344,8 +329,6 @@ func TestManager_FullWorkflow(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	// 这是一个完整的工作流测试
-	// 需要真实的模型文件才能完全通过
 	t.Skip("Requires real model files")
 
 	args := manager.NewWorkerArgs()
@@ -359,7 +342,6 @@ func TestManager_FullWorkflow(t *testing.T) {
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
 
-	// 1. 启动
 	err = mgr.Start()
 	require.NoError(t, err)
 	defer mgr.Stop()
@@ -368,38 +350,32 @@ func TestManager_FullWorkflow(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 2. 检查就绪状态
 	ready, err := mgr.Ready(ctx)
 	require.NoError(t, err)
 	assert.False(t, ready)
 
-	// 3. 加载模型
 	resp, err := mgr.Poweron(ctx, manager.PoweronRequest{
 		Path: "path/to/model",
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
 
-	// 4. 等待引擎就绪
 	time.Sleep(2 * time.Second)
 
 	ready, err = mgr.Ready(ctx)
 	require.NoError(t, err)
 	assert.True(t, ready)
 
-	// 5. 翻译文本
 	result, err := mgr.Translate(ctx, "Hello, world!")
 	require.NoError(t, err)
 	assert.NotEmpty(t, result)
 	t.Logf("Translation result: %s", result)
 
-	// 6. 翻译 HTML
 	htmlResult, err := mgr.TranslateHTML(ctx, "<p>Hello, world!</p>")
 	require.NoError(t, err)
 	assert.NotEmpty(t, htmlResult)
 	t.Logf("HTML translation result: %s", htmlResult)
 
-	// 7. 重启引擎
 	rebootResp, err := mgr.Reboot(ctx, manager.RebootRequest{
 		Time:  0,
 		Force: false,
@@ -407,7 +383,6 @@ func TestManager_FullWorkflow(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, rebootResp)
 
-	// 8. 关闭引擎
 	poweroffResp, err := mgr.Poweroff(ctx, manager.PoweroffRequest{
 		Time:  0,
 		Force: true,

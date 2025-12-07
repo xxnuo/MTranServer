@@ -47,7 +47,6 @@ func HandleTranslate(c *gin.Context) {
 		return
 	}
 
-	// 使用 TranslateWithPivot 处理可能需要中转的翻译（支持 auto 模式）
 	logger.Debug("Translation request: %s -> %s, text length: %d", req.From, req.To, len(req.Text))
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
@@ -67,7 +66,6 @@ func HandleTranslate(c *gin.Context) {
 	})
 }
 
-// TranslateBatchRequest 批量翻译请求
 type TranslateBatchRequest struct {
 	From  string   `json:"from" binding:"required" example:"en"`
 	To    string   `json:"to" binding:"required" example:"zh-Hans"`
@@ -75,7 +73,6 @@ type TranslateBatchRequest struct {
 	HTML  bool     `json:"html" example:"false"`
 }
 
-// TranslateBatchResponse 批量翻译响应
 type TranslateBatchResponse struct {
 	Results []string `json:"results" example:"你好，世界！,早上好！"`
 }
@@ -103,7 +100,6 @@ func HandleTranslateBatch(c *gin.Context) {
 		return
 	}
 
-	// 批量翻译，使用 TranslateWithPivot 处理可能需要中转的翻译（支持 auto 模式）
 	logger.Debug("Batch translation request: %s -> %s, count: %d", req.From, req.To, len(req.Texts))
 	results := make([]string, len(req.Texts))
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)

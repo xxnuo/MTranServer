@@ -11,7 +11,6 @@ import (
 	"github.com/xxnuo/MTranServer/internal/services"
 )
 
-// 划词翻译语言名称到 BCP47 的映射
 var hcfyLangToBCP47 = map[string]string{
 	"中文(简体)": "zh-Hans",
 	"中文(繁体)": "zh-Hant",
@@ -119,7 +118,6 @@ var hcfyLangToBCP47 = map[string]string{
 	"博多语":    "brx",
 }
 
-// bcp47ToHcfyLang BCP47 到划词翻译语言名称的映射
 var bcp47ToHcfyLang = map[string]string{
 	"zh-Hans": "中文(简体)",
 	"zh-CN":   "中文(简体)",
@@ -229,25 +227,22 @@ var bcp47ToHcfyLang = map[string]string{
 	"brx":     "博多语",
 }
 
-// convertHcfyLangToBCP47 将划词翻译语言名称转换为 BCP47
 func convertHcfyLangToBCP47(hcfyLang string) string {
 	if bcp47, ok := hcfyLangToBCP47[hcfyLang]; ok {
 		return bcp47
 	}
-	// 如果不在映射表中，尝试直接返回（可能已经是 BCP47）
+
 	return hcfyLang
 }
 
-// convertBCP47ToHcfyLang 将 BCP47 语言代码转换为划词翻译语言名称
 func convertBCP47ToHcfyLang(bcp47Lang string) string {
 	if hcfyLang, ok := bcp47ToHcfyLang[bcp47Lang]; ok {
 		return hcfyLang
 	}
-	// 如果不在映射表中，返回原值
+
 	return bcp47Lang
 }
 
-// HcfyTranslateRequest 划词翻译请求
 type HcfyTranslateRequest struct {
 	Name        string   `json:"name" binding:"required" example:"翻译一"`
 	Text        string   `json:"text" binding:"required" example:"Hello, word translation."`
@@ -255,20 +250,17 @@ type HcfyTranslateRequest struct {
 	Source      string   `json:"source" example:"英语"`
 }
 
-// HcfyPhonetic 音标
 type HcfyPhonetic struct {
 	Name   string `json:"name,omitempty" example:"美"`
 	TtsURI string `json:"ttsURI,omitempty" example:"https://..."`
 	Value  string `json:"value,omitempty" example:"həˈloʊ"`
 }
 
-// HcfyDict 词典释义
 type HcfyDict struct {
 	Pos   string   `json:"pos,omitempty" example:"n."`
 	Terms []string `json:"terms" example:"你好,问候"`
 }
 
-// HcfyTranslateResponse 划词翻译响应
 type HcfyTranslateResponse struct {
 	Text     string         `json:"text" example:"Hello, word translation."`
 	From     string         `json:"from" example:"英语"`
@@ -295,7 +287,7 @@ type HcfyTranslateResponse struct {
 // @Router       /hcfy [post]
 func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 检查 token
+
 		if apiToken != "" {
 			token := c.Query("token")
 			if token == "" {
@@ -324,15 +316,11 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		// 转换语言代码：划词翻译语言名称 -> BCP47
 		sourceLang := "auto"
 		if req.Source != "" {
 			sourceLang = convertHcfyLangToBCP47(req.Source)
 		}
 
-		// 确定目标语种
-		// destination 是一个数组，首要目标语种是第一个元素
-		// 如果源语种与首要目标语种相同，则使用次要目标语种
 		if len(req.Destination) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "destination is required",
@@ -343,10 +331,9 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 		targetLangName := req.Destination[0]
 		targetLang := convertHcfyLangToBCP47(targetLangName)
 
-		// 检测源文本语种（简单判断）
 		detectedSourceLang := sourceLang
 		if sourceLang == "auto" {
-			// 简单的语种检测逻辑
+
 			if containsChinese(req.Text) {
 				detectedSourceLang = "zh-Hans"
 			} else if containsJapanese(req.Text) {
@@ -358,17 +345,14 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 			}
 		}
 
-		// 如果检测到的源语种与目标语种相同，且有次要目标语种，则使用次要目标语种
 		if detectedSourceLang == targetLang && len(req.Destination) > 1 {
 			targetLangName = req.Destination[1]
 			targetLang = convertHcfyLangToBCP47(targetLangName)
 		}
 
-		// 翻译
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
-		// 将文本按段落分割
 		paragraphs := strings.Split(req.Text, "\n")
 		results := make([]string, len(paragraphs))
 
@@ -388,7 +372,6 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 			results[i] = result
 		}
 
-		// 构造响应
 		response := HcfyTranslateResponse{
 			Text:   req.Text,
 			From:   convertBCP47ToHcfyLang(detectedSourceLang),
@@ -400,7 +383,6 @@ func HandleHcfyTranslate(apiToken string) gin.HandlerFunc {
 	}
 }
 
-// containsChinese 检查文本是否包含中文字符
 func containsChinese(text string) bool {
 	for _, r := range text {
 		if r >= 0x4E00 && r <= 0x9FFF {
@@ -410,18 +392,16 @@ func containsChinese(text string) bool {
 	return false
 }
 
-// containsJapanese 检查文本是否包含日文字符
 func containsJapanese(text string) bool {
 	for _, r := range text {
-		if (r >= 0x3040 && r <= 0x309F) || // 平假名
-			(r >= 0x30A0 && r <= 0x30FF) { // 片假名
+		if (r >= 0x3040 && r <= 0x309F) ||
+			(r >= 0x30A0 && r <= 0x30FF) {
 			return true
 		}
 	}
 	return false
 }
 
-// containsKorean 检查文本是否包含韩文字符
 func containsKorean(text string) bool {
 	for _, r := range text {
 		if r >= 0xAC00 && r <= 0xD7AF {

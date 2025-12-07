@@ -25,7 +25,6 @@ func HandleLanguages(c *gin.Context) {
 		return
 	}
 
-	// 从 records 中提取所有支持的语言
 	langMap := make(map[string]bool)
 	for _, record := range models.GlobalRecords.Data {
 		langMap[record.FromLang] = true

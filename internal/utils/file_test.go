@@ -7,7 +7,7 @@ import (
 )
 
 func TestCalculateSHA256(t *testing.T) {
-	// 创建临时文件
+
 	tempDir, err := os.MkdirTemp("", "file-test-*")
 	if err != nil {
 		t.Fatal(err)
@@ -22,7 +22,6 @@ func TestCalculateSHA256(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 计算 SHA256
 	hash, err := ComputeSHA256(filePath)
 	if err != nil {
 		t.Fatalf("计算 SHA256 失败: %v", err)

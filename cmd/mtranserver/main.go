@@ -19,9 +19,8 @@ import (
 
 // @contact.name   API Support
 // @contact.url    https://github.com/xxnuo/MTranServer/issues
-// @contact.email  support@example.com
 
-// @license.name  MIT
+// @license.name  Apache 2.0
 // @license.url   https://github.com/xxnuo/MTranServer/blob/main/LICENSE
 
 // @host      localhost:8989
@@ -36,11 +35,10 @@ import (
 // @name token
 
 func main() {
-	// 定义 version 和 help 标志
+
 	versionFlag := flag.Bool("version", false, "Show version information")
 	versionShortFlag := flag.Bool("v", false, "Show version information (shorthand)")
 
-	// 自定义 Usage 函数
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "MTranServer %s - Ultra-low resource consumption, ultra-fast offline translation server\n\n", version.GetVersion())
 		fmt.Fprintf(os.Stderr, "Usage:\n")
@@ -64,22 +62,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "\nMore information: https://github.com/xxnuo/MTranServer\n")
 	}
 
-	// 加载配置（会注册其他标志）
 	cfg := config.GetConfig()
 
-	// 解析命令行参数
 	flag.Parse()
 
-	// 设置日志级别
 	logger.SetLevel(cfg.LogLevel)
 
-	// 处理 version 标志
 	if *versionFlag || *versionShortFlag {
 		fmt.Printf("MTranServer %s\n", version.GetVersion())
 		os.Exit(0)
 	}
 
-	// 启动服务器
 	if err := server.Run(); err != nil {
 		logger.Fatal("Server error: %v", err)
 	}

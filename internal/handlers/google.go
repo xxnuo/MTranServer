@@ -11,8 +11,6 @@ import (
 	"github.com/xxnuo/MTranServer/internal/services"
 )
 
-// googleLangToBCP47 Google 语言代码转 BCP47
-// 只列出与 BCP47 不同的映射，其他直接返回原值
 var googleLangToBCP47 = map[string]string{
 	"zh-CN": "zh-Hans",
 	"zh-TW": "zh-Hant",
@@ -20,32 +18,27 @@ var googleLangToBCP47 = map[string]string{
 	"zh-SG": "zh-Hans",
 }
 
-// bcp47ToGoogleLang BCP47 转 Google 语言代码
-// 只列出与 BCP47 不同的映射，其他直接返回原值
 var bcp47ToGoogleLang = map[string]string{
 	"zh-Hans": "zh-CN",
 	"zh-Hant": "zh-TW",
 }
 
-// convertGoogleLangToBCP47 将 Google 语言代码转换为 BCP47
 func convertGoogleLangToBCP47(googleLang string) string {
 	if bcp47, ok := googleLangToBCP47[googleLang]; ok {
 		return bcp47
 	}
-	// 如果不在映射表中，直接返回（大部分语言代码相同）
+
 	return googleLang
 }
 
-// convertBCP47ToGoogleLang 将 BCP47 语言代码转换为 Google
 func convertBCP47ToGoogleLang(bcp47Lang string) string {
 	if googleLang, ok := bcp47ToGoogleLang[bcp47Lang]; ok {
 		return googleLang
 	}
-	// 如果不在映射表中，直接返回
+
 	return bcp47Lang
 }
 
-// GoogleTranslateRequest Google 翻译兼容请求
 type GoogleTranslateRequest struct {
 	Q      string `json:"q" binding:"required" example:"The Great Pyramid of Giza"`
 	Source string `json:"source" binding:"required" example:"en"`
@@ -53,7 +46,6 @@ type GoogleTranslateRequest struct {
 	Format string `json:"format" example:"text"`
 }
 
-// GoogleTranslateResponse Google 翻译兼容响应
 type GoogleTranslateResponse struct {
 	Data struct {
 		Translations []struct {
@@ -77,12 +69,11 @@ type GoogleTranslateResponse struct {
 // @Router       /google/language/translate/v2 [post]
 func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 检查 token - 兼容 Google API 认证方式
+
 		if apiToken != "" {
-			// 支持 Google API 标准认证: ?key=xxx
+
 			token := c.Query("key")
 
-			// 也支持标准 Authorization header
 			if token == "" {
 				authHeader := c.GetHeader("Authorization")
 				if strings.HasPrefix(authHeader, "Bearer ") {
@@ -92,7 +83,6 @@ func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 				}
 			}
 
-			// 兼容通用 token 参数
 			if token == "" {
 				token = c.Query("token")
 			}
@@ -114,11 +104,9 @@ func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		// 转换 Google 语言代码到 BCP47
 		sourceBCP47 := convertGoogleLangToBCP47(req.Source)
 		targetBCP47 := convertGoogleLangToBCP47(req.Target)
 
-		// 翻译
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
@@ -162,7 +150,7 @@ func HandleGoogleCompatTranslate(apiToken string) gin.HandlerFunc {
 // @Router       /google/translate_a/single [get]
 func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 检查 token
+
 		if apiToken != "" {
 			token := c.Query("key")
 
@@ -187,7 +175,6 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 			}
 		}
 
-		// 获取参数
 		sl := c.Query("sl")
 		tl := c.Query("tl")
 		q := c.Query("q")
@@ -199,19 +186,15 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		// 支持 auto 自动检测源语言
 		if sl == "" {
 			sl = "auto"
 		}
 
-		// q 参数已经由 Gin 自动进行了 URL 解码
 		text := q
 
-		// 转换 Google 语言代码到 BCP47
 		sourceBCP47 := convertGoogleLangToBCP47(sl)
 		targetBCP47 := convertGoogleLangToBCP47(tl)
 
-		// 翻译
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 		defer cancel()
 
@@ -223,10 +206,6 @@ func HandleGoogleTranslateSingle(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		// 返回 translate_a/single 格式的响应
-		// 格式: [[["翻译结果","原文",null,null,1]],null,"检测到的源语言",null,null,null,null,[]]
-		// response[0][0][0] 是翻译结果
-		// response[2] 是检测到的源语言（返回 Google 格式）
 		detectedLang := convertBCP47ToGoogleLang(sourceBCP47)
 		response := []interface{}{
 			[]interface{}{

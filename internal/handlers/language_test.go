@@ -13,7 +13,6 @@ import (
 func TestHandleLanguages(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// 初始化测试数据
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
 			{FromLang: "en", ToLang: "zh-Hans"},
@@ -37,7 +36,6 @@ func TestHandleLanguages(t *testing.T) {
 func TestHandleLanguagesNotInitialized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// 设置为 nil 模拟未初始化
 	originalRecords := models.GlobalRecords
 	models.GlobalRecords = nil
 	defer func() {

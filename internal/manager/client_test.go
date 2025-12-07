@@ -20,7 +20,6 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// mockWSServer 创建一个模拟的 WebSocket 服务器
 func mockWSServer(t *testing.T, handler func(*websocket.Conn)) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -31,7 +30,6 @@ func mockWSServer(t *testing.T, handler func(*websocket.Conn)) *httptest.Server 
 	return server
 }
 
-// handleEcho 回显处理器，用于测试基本连接
 func handleEcho(conn *websocket.Conn) {
 	for {
 		var msg manager.WSMessage
@@ -52,7 +50,6 @@ func handleEcho(conn *websocket.Conn) {
 	}
 }
 
-// handlePoweron 模拟 poweron 处理
 func handlePoweron(conn *websocket.Conn) {
 	var msg manager.WSMessage
 	if err := conn.ReadJSON(&msg); err != nil {
@@ -68,7 +65,6 @@ func handlePoweron(conn *websocket.Conn) {
 		Msg:  "success",
 	}
 
-	// 检查参数
 	if req.Path == "" && req.ModelPath == "" {
 		resp.Code = 1000
 		resp.Msg = "path is required"
@@ -80,7 +76,6 @@ func handlePoweron(conn *websocket.Conn) {
 	conn.WriteJSON(resp)
 }
 
-// handleReady 模拟 ready 处理
 func handleReady(conn *websocket.Conn, ready bool) {
 	var msg manager.WSMessage
 	if err := conn.ReadJSON(&msg); err != nil {
@@ -100,7 +95,6 @@ func handleReady(conn *websocket.Conn, ready bool) {
 	conn.WriteJSON(resp)
 }
 
-// handleCompute 模拟 compute 处理
 func handleCompute(conn *websocket.Conn) {
 	var msg manager.WSMessage
 	if err := conn.ReadJSON(&msg); err != nil {
@@ -131,7 +125,7 @@ func TestClient_Connect(t *testing.T) {
 	server := mockWSServer(t, handleEcho)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:] // 将 http:// 替换为 ws://
+	wsURL := "ws" + server.URL[4:]
 
 	client := manager.NewClient(wsURL)
 	defer client.Close()
@@ -153,7 +147,6 @@ func TestClient_ConnectTwice(t *testing.T) {
 	err := client.Connect()
 	require.NoError(t, err)
 
-	// 第二次连接应该直接返回
 	err = client.Connect()
 	assert.NoError(t, err)
 	assert.True(t, client.IsConnected())
@@ -287,7 +280,7 @@ func TestClient_Compute_EmptyText(t *testing.T) {
 
 func TestClient_Timeout(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
-		// 不响应，让客户端超时
+
 		time.Sleep(5 * time.Second)
 	})
 	defer server.Close()
@@ -400,7 +393,7 @@ func TestClient_Reboot(t *testing.T) {
 
 func TestClient_MultipleRequests(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
-		// 处理多个请求
+
 		for i := 0; i < 3; i++ {
 			var msg manager.WSMessage
 			if err := conn.ReadJSON(&msg); err != nil {
@@ -437,7 +430,6 @@ func TestClient_MultipleRequests(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 发送多个请求
 	for i := 1; i <= 3; i++ {
 		result, err := client.Compute(ctx, manager.ComputeRequest{
 			Text: "Test " + string(rune('0'+i)),

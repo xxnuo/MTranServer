@@ -11,8 +11,6 @@ import (
 	"github.com/xxnuo/MTranServer/internal/services"
 )
 
-// deeplLangToBCP47 DeepL 语言代码转 BCP47
-// 只列出与 BCP47 不同的映射（DeepL 使用大写和特殊代码）
 var deeplLangToBCP47 = map[string]string{
 	"NB":    "no",
 	"ZH":    "zh-Hans",
@@ -20,8 +18,6 @@ var deeplLangToBCP47 = map[string]string{
 	"ZH-TW": "zh-Hant",
 }
 
-// bcp47ToDeeplLang BCP47 转 DeepL 语言代码
-// 只列出与 BCP47 不同的映射（DeepL 使用大写和特殊代码）
 var bcp47ToDeeplLang = map[string]string{
 	"no":      "NB",
 	"zh-Hans": "ZH",
@@ -30,27 +26,24 @@ var bcp47ToDeeplLang = map[string]string{
 	"zh-TW":   "ZH-TW",
 }
 
-// convertDeeplLangToBCP47 将 DeepL 语言代码转换为 BCP47
 func convertDeeplLangToBCP47(deeplLang string) string {
-	// 转换为大写进行匹配
+
 	upperLang := strings.ToUpper(deeplLang)
 	if bcp47, ok := deeplLangToBCP47[upperLang]; ok {
 		return bcp47
 	}
-	// 如果不在映射表中，返回小写版本
+
 	return strings.ToLower(deeplLang)
 }
 
-// convertBCP47ToDeeplLang 将 BCP47 语言代码转换为 DeepL
 func convertBCP47ToDeeplLang(bcp47Lang string) string {
 	if deeplLang, ok := bcp47ToDeeplLang[bcp47Lang]; ok {
 		return deeplLang
 	}
-	// 如果不在映射表中，返回大写版本
+
 	return strings.ToUpper(bcp47Lang)
 }
 
-// DeeplTranslateRequest DeepL 翻译请求
 type DeeplTranslateRequest struct {
 	Text                []string `json:"text" binding:"required" example:"Hello, world!"`
 	SourceLang          string   `json:"source_lang,omitempty" example:"EN"`
@@ -69,13 +62,11 @@ type DeeplTranslateRequest struct {
 	EnableBetaLanguages bool     `json:"enable_beta_languages,omitempty"`
 }
 
-// DeeplTranslation 翻译结果
 type DeeplTranslation struct {
 	DetectedSourceLanguage string `json:"detected_source_language" example:"EN"`
 	Text                   string `json:"text" example:"Hallo, Welt!"`
 }
 
-// DeeplTranslateResponse DeepL 翻译响应
 type DeeplTranslateResponse struct {
 	Translations []DeeplTranslation `json:"translations"`
 }
@@ -95,19 +86,19 @@ type DeeplTranslateResponse struct {
 // @Router       /deepl [post]
 func HandleDeeplTranslate(apiToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 检查 token - 兼容 DeepL API 认证方式
+
 		if apiToken != "" {
-			// 支持 DeepL 标准认证: Authorization: DeepL-Auth-Key [key]
+
 			authHeader := c.GetHeader("Authorization")
 			token := ""
 
 			if strings.HasPrefix(authHeader, "DeepL-Auth-Key ") {
 				token = strings.TrimPrefix(authHeader, "DeepL-Auth-Key ")
 			} else if authHeader != "" {
-				// 也支持标准 Bearer token
+
 				token = strings.TrimPrefix(authHeader, "Bearer ")
 			} else {
-				// 兼容 query 参数方式
+
 				token = c.Query("token")
 			}
 
@@ -127,19 +118,16 @@ func HandleDeeplTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		// 转换语言代码：DeepL -> BCP47
 		sourceLang := "auto"
 		if req.SourceLang != "" {
 			sourceLang = convertDeeplLangToBCP47(req.SourceLang)
 		}
 		targetLang := convertDeeplLangToBCP47(req.TargetLang)
 
-		// 批量翻译
 		translations := make([]DeeplTranslation, len(req.Text))
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 		defer cancel()
 
-		// 确定是否需要 HTML 处理
 		isHTML := req.TagHandling == "html" || req.TagHandling == "xml"
 
 		for i, text := range req.Text {
@@ -151,7 +139,6 @@ func HandleDeeplTranslate(apiToken string) gin.HandlerFunc {
 				return
 			}
 
-			// 返回 DeepL 格式的语言代码
 			detectedLang := req.SourceLang
 			if detectedLang == "" {
 				detectedLang = convertBCP47ToDeeplLang(sourceLang)

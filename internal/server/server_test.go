@@ -16,7 +16,6 @@ import (
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 
-	// 初始化测试数据
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
 			{FromLang: "en", ToLang: "zh-Hans"},

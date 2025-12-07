@@ -19,12 +19,10 @@ const (
 	AttachmentsBaseUrl = "https://firefox-settings-attachments.cdn.mozilla.net"
 )
 
-// RecordsData records.json 的结构
 type RecordsData struct {
 	Data []RecordItem `json:"data"`
 }
 
-// RecordItem 单个记录项
 type RecordItem struct {
 	Hash       string     `json:"hash,omitempty"`
 	Name       string     `json:"name"`
@@ -37,7 +35,6 @@ type RecordItem struct {
 	ID         string     `json:"id"`
 }
 
-// Attachment 附件信息
 type Attachment struct {
 	Hash     string `json:"hash"`
 	Size     int64  `json:"size"`
@@ -50,7 +47,6 @@ var (
 	GlobalRecords *RecordsData
 )
 
-// GetLanguagePairs 获取所有可用的语言对
 func (r *RecordsData) GetLanguagePairs() []string {
 	pairMap := make(map[string]bool)
 	for _, record := range r.Data {
@@ -65,7 +61,6 @@ func (r *RecordsData) GetLanguagePairs() []string {
 	return pairs
 }
 
-// HasLanguagePair 检查是否支持指定的语言对
 func (r *RecordsData) HasLanguagePair(fromLang, toLang string) bool {
 	for _, record := range r.Data {
 		if record.FromLang == fromLang && record.ToLang == toLang {
@@ -75,7 +70,6 @@ func (r *RecordsData) HasLanguagePair(fromLang, toLang string) bool {
 	return false
 }
 
-// GetVersions 获取指定语言对的所有可用版本
 func (r *RecordsData) GetVersions(fromLang, toLang string) []string {
 	versionMap := make(map[string]bool)
 	for _, record := range r.Data {
@@ -91,16 +85,12 @@ func (r *RecordsData) GetVersions(fromLang, toLang string) []string {
 	return versions
 }
 
-// InitRecords 检测默认配置目录下是否存在 records.json
-// 存在则解析本地 records.json
-// 不存在则写出默认内嵌的 records.json 到配置目录然后解析
 func InitRecords() error {
 	cfg := config.GetConfig()
 	recordsPath := filepath.Join(cfg.ConfigDir, "records.json")
 
-	// 检查文件是否存在
 	if _, err := os.Stat(recordsPath); os.IsNotExist(err) {
-		// 不存在，写出内嵌的 records.json
+
 		logger.Info("Initializing records.json from embedded data")
 		if err := os.MkdirAll(cfg.ConfigDir, 0755); err != nil {
 			return fmt.Errorf("Failed to create config directory: %w", err)
@@ -110,7 +100,6 @@ func InitRecords() error {
 		}
 	}
 
-	// 解析本地 records.json
 	logger.Debug("Loading records.json from %s", recordsPath)
 	fileData, err := os.ReadFile(recordsPath)
 	if err != nil {
@@ -127,13 +116,11 @@ func InitRecords() error {
 	return nil
 }
 
-// DownloadRecords 更新 records.json，从远程下载 records.json 到配置目录
-// 然后解析本地 records.json
 func DownloadRecords() error {
 	cfg := config.GetConfig()
 
 	logger.Info("Updating records.json from remote")
-	// 下载 records.json
+
 	d := downloader.New(cfg.ConfigDir)
 	if err := d.Download(RecordsUrl, RecordsFileName, &downloader.DownloadOptions{
 		Overwrite: true,
@@ -141,25 +128,17 @@ func DownloadRecords() error {
 		return fmt.Errorf("Failed to download records.json: %w", err)
 	}
 
-	// 解析本地 records.json
 	return InitRecords()
 }
 
-// DownloadModel 解析 records.json，找到对应的模型属性
-// 检查配置目录下是否存在对应的模型文件，可通过 sha256 校验
-// 不存在则下载到语言对子目录
-// 参数：toLang 目标语言，fromLang 源语言，version 模型版本
-// records 里同一个 fromLang 和 toLang 会存在多个 version 的模型
-// 需要根据 version 下载对应的模型，未指定 version 则下载最新版本
 func DownloadModel(toLang string, fromLang string, version string) error {
-	// 确保 records 已加载
+
 	if GlobalRecords == nil {
 		if err := InitRecords(); err != nil {
 			return err
 		}
 	}
 
-	// 找到匹配的模型记录
 	var matchedRecords []RecordItem
 	for _, record := range GlobalRecords.Data {
 		if record.ToLang == toLang && record.FromLang == fromLang {
@@ -173,10 +152,9 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 		return fmt.Errorf("No model found for %s -> %s (version: %s)", fromLang, toLang, version)
 	}
 
-	// 如果未指定版本，找最新版本
 	targetRecords := matchedRecords
 	if version == "" {
-		// 按 fileType 分组，每组找最新版本
+
 		fileTypeMap := make(map[string][]RecordItem)
 		for _, record := range matchedRecords {
 			fileTypeMap[record.FileType] = append(fileTypeMap[record.FileType], record)
@@ -195,17 +173,15 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 		}
 	}
 
-	// 构建语言对子目录
 	cfg := config.GetConfig()
 	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
 
-	// 创建语言对子目录
 	if err := os.MkdirAll(langPairDir, 0755); err != nil {
 		return fmt.Errorf("Failed to create language pair directory: %w", err)
 	}
 
 	logger.Info("Downloading model files for %s -> %s", fromLang, toLang)
-	// 下载所有需要的文件到语言对子目录
+
 	d := downloader.New(langPairDir)
 
 	for _, record := range targetRecords {
@@ -226,37 +202,30 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 	return nil
 }
 
-// GetModelFiles 根据语言对查找模型文件路径
-// 返回 map[string]string，key 为文件类型：model, lex, vocab_src, vocab_trg
-// 支持单个词表文件同时用于源语言和目标语言
 func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error) {
-	// 确保 records 已加载
+
 	if GlobalRecords == nil {
 		if err := InitRecords(); err != nil {
 			return nil, fmt.Errorf("failed to init records: %w", err)
 		}
 	}
 
-	// 构建语言对子目录
 	langPairDir := filepath.Join(modelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
 
 	files := make(map[string]string)
-	fileTypeMap := make(map[string]string) // fileType -> fullPath
+	fileTypeMap := make(map[string]string)
 
-	// 从 records 中查找匹配的文件
 	for _, record := range GlobalRecords.Data {
 		if record.FromLang == fromLang && record.ToLang == toLang {
 			filename := record.Attachment.Filename
 			fullPath := filepath.Join(langPairDir, filename)
 
-			// 检查文件是否存在
 			if _, err := os.Stat(fullPath); err == nil {
 				fileTypeMap[record.FileType] = fullPath
 			}
 		}
 	}
 
-	// 映射 fileType 到所需的 key
 	if modelPath, ok := fileTypeMap["model"]; ok {
 		files["model"] = modelPath
 	} else {
@@ -269,14 +238,12 @@ func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error)
 		return nil, fmt.Errorf("lex file not found for %s -> %s", fromLang, toLang)
 	}
 
-	// 处理词表文件：可能是单个 vocab 文件或分开的 srcvocab/trgvocab
-	// 优先查找 vocab（单个词表文件）
 	if vocabPath, ok := fileTypeMap["vocab"]; ok {
-		// 单个词表文件同时用于源语言和目标语言
+
 		files["vocab_src"] = vocabPath
 		files["vocab_trg"] = vocabPath
 	} else {
-		// 查找分开的词表文件
+
 		if srcvocabPath, ok := fileTypeMap["srcvocab"]; ok {
 			files["vocab_src"] = srcvocabPath
 		} else {
@@ -293,13 +260,11 @@ func GetModelFiles(modelDir, fromLang, toLang string) (map[string]string, error)
 	return files, nil
 }
 
-// IsModelDownloaded 检查指定语言对的模型是否已下载
 func IsModelDownloaded(modelDir, fromLang, toLang string) bool {
 	_, err := GetModelFiles(modelDir, fromLang, toLang)
 	return err == nil
 }
 
-// GetSupportedLanguages 获取所有支持的语言列表
 func GetSupportedLanguages() ([]string, error) {
 	if GlobalRecords == nil {
 		if err := InitRecords(); err != nil {
@@ -320,7 +285,6 @@ func GetSupportedLanguages() ([]string, error) {
 	return langs, nil
 }
 
-// ValidateLanguagePair 验证语言对是否有效
 func ValidateLanguagePair(fromLang, toLang string) error {
 	if GlobalRecords == nil {
 		if err := InitRecords(); err != nil {

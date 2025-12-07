@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// VerifySHA256 校验文件的 SHA256
 func VerifySHA256(filepath, expectedHash string) error {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -29,7 +28,6 @@ func VerifySHA256(filepath, expectedHash string) error {
 	return nil
 }
 
-// ComputeSHA256 计算文件的 SHA256
 func ComputeSHA256(filepath string) (string, error) {
 	file, err := os.Open(filepath)
 	if err != nil {

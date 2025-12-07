@@ -8,21 +8,18 @@ import (
 	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
-// Config 包含服务器配置
 type Config struct {
-	// 内部配置
 	LogLevel  string
 	HomeDir   string
 	ConfigDir string
 	ModelDir  string
 
-	// 服务器配置
 	Host              string
 	Port              string
 	EnableWebUI       bool
 	EnableOfflineMode bool
-	WorkerIdleTimeout int    // Worker 空闲超时时间（秒）
-	APIToken          string // API 访问令牌
+	WorkerIdleTimeout int
+	APIToken          string
 }
 
 var (

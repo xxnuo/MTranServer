@@ -14,33 +14,27 @@ import (
 	"github.com/xxnuo/MTranServer/ui"
 )
 
-// Setup 设置所有路由
 func Setup(r *gin.Engine, apiToken string) {
-	// 添加 CORS 中间件
+
 	r.Use(middleware.CORS())
 
-	// 配置 Swagger
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// 无需认证的路由
 	r.GET("/version", handlers.HandleVersion)
 	r.GET("/health", handlers.HandleHealth)
 	r.GET("/__heartbeat__", handlers.HandleHeartbeat)
 	r.GET("/__lbheartbeat__", handlers.HandleLBHeartbeat)
 
-	// 需要认证的路由
 	auth := r.Group("/")
 	if apiToken != "" {
 		auth.Use(middleware.Auth(apiToken))
 	}
 
-	// 内置接口
 	auth.GET("/languages", handlers.HandleLanguages)
 	auth.POST("/translate", handlers.HandleTranslate)
 	auth.POST("/translate/batch", handlers.HandleTranslateBatch)
 
-	// 插件兼容接口
 	r.POST("/imme", handlers.HandleImmeTranslate(apiToken))
 	r.POST("/kiss", handlers.HandleKissTranslate(apiToken))
 	r.POST("/deepl", handlers.HandleDeeplTranslate(apiToken))
@@ -48,13 +42,12 @@ func Setup(r *gin.Engine, apiToken string) {
 	r.GET("/google/translate_a/single", handlers.HandleGoogleTranslateSingle(apiToken))
 	r.POST("/hcfy", handlers.HandleHcfyTranslate(apiToken))
 
-	// 前端静态文件服务
 	cfg := config.GetConfig()
 	if cfg.EnableWebUI {
 		distFS, err := ui.GetDistFS()
 		if err == nil {
 			r.StaticFS("/ui", http.FS(distFS))
-			// 根路径重定向到 /ui
+
 			r.GET("/", func(c *gin.Context) {
 				c.Redirect(http.StatusMovedPermanently, "/ui/")
 			})

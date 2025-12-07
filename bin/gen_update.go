@@ -18,7 +18,7 @@ const (
 )
 
 func main() {
-	// Detect platform
+
 	goos := runtime.GOOS
 	goarch := runtime.GOARCH
 
@@ -38,7 +38,6 @@ func main() {
 	log.Printf("Detecting platform: %s-%s", goos, goarch)
 	log.Printf("Downloading %s from %s...", workerBinary, downloadURL)
 
-	// Ensure bin directory exists
 	if err := os.MkdirAll(".", 0755); err != nil {
 		log.Fatalf("Failed to create bin directory: %v", err)
 	}
@@ -46,7 +45,6 @@ func main() {
 	targetFile := "worker"
 	os.Remove(targetFile)
 
-	// Download
 	d := downloader.New(".")
 	err := d.Download(downloadURL, targetFile, &downloader.DownloadOptions{
 		Context:   context.Background(),
@@ -56,7 +54,6 @@ func main() {
 		log.Fatalf("Failed to download worker binary: %v", err)
 	}
 
-	// Set executable permission
 	if err := os.Chmod(targetFile, 0755); err != nil {
 		log.Printf("Warning: Failed to set executable permission: %v", err)
 	}

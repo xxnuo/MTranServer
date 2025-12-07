@@ -11,7 +11,7 @@ import (
 )
 
 func TestDownload(t *testing.T) {
-	// 创建测试 HTTP 服务器
+
 	testContent := []byte("Hello, World!")
 	expectedSHA256 := "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f"
 
@@ -20,14 +20,12 @@ func TestDownload(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "downloader-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 测试下载
 	d := New(tempDir)
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		SHA256:  expectedSHA256,
@@ -38,13 +36,11 @@ func TestDownload(t *testing.T) {
 		t.Fatalf("下载失败: %v", err)
 	}
 
-	// 验证文件存在
 	filePath := filepath.Join(tempDir, "test.txt")
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		t.Fatal("文件不存在")
 	}
 
-	// 验证文件内容
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +52,7 @@ func TestDownload(t *testing.T) {
 }
 
 func TestDownloadWithWrongSHA256(t *testing.T) {
-	// 创建测试 HTTP 服务器
+
 	testContent := []byte("Hello, World!")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -64,14 +60,12 @@ func TestDownloadWithWrongSHA256(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "downloader-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 测试下载（使用错误的 SHA256）
 	d := New(tempDir)
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		SHA256:  "0000000000000000000000000000000000000000000000000000000000000000",
@@ -84,7 +78,7 @@ func TestDownloadWithWrongSHA256(t *testing.T) {
 }
 
 func TestDownloadSkipExisting(t *testing.T) {
-	// 创建测试 HTTP 服务器
+
 	testContent := []byte("Hello, World!")
 	expectedSHA256 := "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f"
 	requestCount := 0
@@ -95,14 +89,12 @@ func TestDownloadSkipExisting(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "downloader-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 第一次下载
 	d := New(tempDir)
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		SHA256:  expectedSHA256,
@@ -115,7 +107,6 @@ func TestDownloadSkipExisting(t *testing.T) {
 
 	firstRequestCount := requestCount
 
-	// 第二次下载（应该跳过）
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		SHA256:  expectedSHA256,
 		Context: context.Background(),
@@ -131,7 +122,7 @@ func TestDownloadSkipExisting(t *testing.T) {
 }
 
 func TestDownloadWithOverwrite(t *testing.T) {
-	// 创建测试 HTTP 服务器
+
 	testContent := []byte("Hello, World!")
 	expectedSHA256 := "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f"
 	requestCount := 0
@@ -142,14 +133,12 @@ func TestDownloadWithOverwrite(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "downloader-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 第一次下载
 	d := New(tempDir)
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		SHA256:  expectedSHA256,
@@ -162,7 +151,6 @@ func TestDownloadWithOverwrite(t *testing.T) {
 
 	firstRequestCount := requestCount
 
-	// 第二次下载（强制覆盖）
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		SHA256:    expectedSHA256,
 		Overwrite: true,
@@ -179,25 +167,22 @@ func TestDownloadWithOverwrite(t *testing.T) {
 }
 
 func TestDownloadWithContext(t *testing.T) {
-	// 创建测试 HTTP 服务器（延迟响应）
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(2 * time.Second)
 		w.Write([]byte("Hello, World!"))
 	}))
 	defer server.Close()
 
-	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "downloader-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 创建带超时的 context
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	// 测试下载（应该超时）
 	d := New(tempDir)
 	err = d.Download(server.URL, "test.txt", &DownloadOptions{
 		Context: ctx,
@@ -209,7 +194,7 @@ func TestDownloadWithContext(t *testing.T) {
 }
 
 func TestDownloadFile(t *testing.T) {
-	// 创建测试 HTTP 服务器
+
 	testContent := []byte("Hello, World!")
 	expectedSHA256 := "dffd6021bb2bd5b0af676290809ec3a53191dd81c7f70a4b28688a362182986f"
 
@@ -218,14 +203,12 @@ func TestDownloadFile(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "downloader-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 测试快捷方法
 	destPath := filepath.Join(tempDir, "test.txt")
 	err = DownloadFile(server.URL, destPath, expectedSHA256)
 
@@ -233,12 +216,10 @@ func TestDownloadFile(t *testing.T) {
 		t.Fatalf("下载失败: %v", err)
 	}
 
-	// 验证文件存在
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		t.Fatal("文件不存在")
 	}
 
-	// 验证文件内容
 	content, err := os.ReadFile(destPath)
 	if err != nil {
 		t.Fatal(err)

@@ -2,7 +2,6 @@ package utils
 
 import "net"
 
-// GetFreePort 获取一个未被占用的随机端口
 func GetFreePort() (int, error) {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 	if err != nil {
