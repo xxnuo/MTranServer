@@ -45,6 +45,7 @@ func (m *Manager) Start() error {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
+	var connected bool
 	for {
 		select {
 		case <-timeout:
@@ -52,11 +53,26 @@ func (m *Manager) Start() error {
 			return fmt.Errorf("worker start timeout")
 		case <-ticker.C:
 			if m.worker.IsRunning() {
+				if !connected {
+					m.client = NewClient(m.url)
+					if err := m.client.Connect(); err != nil {
+						m.worker.Stop()
+						return fmt.Errorf("failed to connect to worker: %w", err)
+					}
+					connected = true
+					continue
+				}
 
-				m.client = NewClient(m.url)
-				if err := m.client.Connect(); err != nil {
-					m.worker.Stop()
-					return fmt.Errorf("failed to connect to worker: %w", err)
+				stableStart := time.Now()
+				stableDuration := 500 * time.Millisecond
+				for time.Since(stableStart) < stableDuration {
+					if !m.worker.IsRunning() {
+						m.client.Close()
+						m.client = nil
+						m.worker.Stop()
+						return fmt.Errorf("worker exited immediately after connection")
+					}
+					time.Sleep(50 * time.Millisecond)
 				}
 				return nil
 			}

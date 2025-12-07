@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -116,6 +117,9 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 	args.Port = port
 
 	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
+	if err := os.MkdirAll(langPairDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create work directory: %w", err)
+	}
 	args.WorkDir = langPairDir
 
 	m := manager.NewManager(args)
@@ -138,12 +142,19 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 		return nil, fmt.Errorf("failed to load model: %w", err)
 	}
 
+	ready := false
 	for i := 0; i < 30; i++ {
-		ready, err := m.Ready(ctx)
+		var err error
+		ready, err = m.Ready(ctx)
 		if err == nil && ready {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+
+	if !ready {
+		m.Cleanup()
+		return nil, fmt.Errorf("engine failed to become ready after poweron")
 	}
 
 	info := &EngineInfo{
