@@ -150,13 +150,6 @@ func (c *Client) IsConnected() bool {
 }
 
 func (c *Client) sendRequest(ctx context.Context, msgType string, data interface{}) (*WSResponse, error) {
-	c.mu.Lock()
-	if !c.connected {
-		c.mu.Unlock()
-		return nil, fmt.Errorf("not connected")
-	}
-	c.mu.Unlock()
-
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal data: %w", err)
@@ -171,24 +164,24 @@ func (c *Client) sendRequest(ctx context.Context, msgType string, data interface
 	defer cancel()
 
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if !c.connected {
+		return nil, fmt.Errorf("not connected")
+	}
+
 	if err := c.conn.WriteJSON(msg); err != nil {
-		c.mu.Unlock()
 		c.connected = false
 		return nil, fmt.Errorf("failed to send message: %w", err)
 	}
-	c.mu.Unlock()
 
 	responseChan := make(chan *WSResponse, 1)
 	errChan := make(chan error, 1)
 
 	go func() {
-		c.mu.Lock()
-		defer c.mu.Unlock()
-
 		var resp WSResponse
 		if err := c.conn.ReadJSON(&resp); err != nil {
 			errChan <- fmt.Errorf("failed to read response: %w", err)
-			c.connected = false
 			return
 		}
 		responseChan <- &resp
@@ -196,8 +189,10 @@ func (c *Client) sendRequest(ctx context.Context, msgType string, data interface
 
 	select {
 	case <-reqCtx.Done():
+		c.connected = false
 		return nil, fmt.Errorf("request timeout")
 	case err := <-errChan:
+		c.connected = false
 		return nil, err
 	case resp := <-responseChan:
 		return resp, nil
