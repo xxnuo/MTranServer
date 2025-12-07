@@ -18,9 +18,14 @@ const (
 )
 
 func main() {
-
-	goos := runtime.GOOS
-	goarch := runtime.GOARCH
+	goos := os.Getenv("TARGET_GOOS")
+	goarch := os.Getenv("TARGET_GOARCH")
+	if goos == "" {
+		goos = runtime.GOOS
+	}
+	if goarch == "" {
+		goarch = runtime.GOARCH
+	}
 
 	var suffix string
 	switch goos {

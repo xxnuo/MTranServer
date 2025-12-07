@@ -1,4 +1,4 @@
-.PHONY: download download-core download-records generate-docs build-ui
+.PHONY: build-ui download download-core download-records generate-docs
 
 # Detect OS and architecture
 GOOS ?= $(shell go env GOOS)
@@ -24,12 +24,12 @@ DOWNLOAD_URL := https://github.com/$(GITHUB_REPO)/releases/latest/download/$(WOR
 # Extra: js-wasm
 download-core:
 	touch ./bin/worker
-	@go generate ./bin
+	@TARGET_GOOS=$(GOOS) TARGET_GOARCH=$(GOARCH) GOOS= GOARCH= go generate ./bin
 	@echo "Downloaded core binary from repository successfully"
 
 download-records:
 	touch ./data/records.json
-	@go generate ./data
+	@GOOS= GOARCH= go generate ./data
 
 download: download-core download-records
 	@echo "Downloaded successfully"
