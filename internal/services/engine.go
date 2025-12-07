@@ -43,6 +43,12 @@ func (ei *EngineInfo) resetIdleTimer() {
 	timeout := time.Duration(cfg.WorkerIdleTimeout) * time.Second
 
 	ei.stopTimer = time.AfterFunc(timeout, func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("Panic during engine cleanup: %v", r)
+			}
+		}()
+
 		key := fmt.Sprintf("%s-%s", ei.FromLang, ei.ToLang)
 		logger.Info("Engine %s idle timeout, stopping...", key)
 
@@ -50,8 +56,10 @@ func (ei *EngineInfo) resetIdleTimer() {
 		defer engMu.Unlock()
 
 		if info, ok := engines[key]; ok {
-			if err := info.Manager.Cleanup(); err != nil {
-				logger.Error("Failed to cleanup engine %s: %v", key, err)
+			if info.Manager != nil {
+				if err := info.Manager.Cleanup(); err != nil {
+					logger.Error("Failed to cleanup engine %s: %v", key, err)
+				}
 			}
 			delete(engines, key)
 			logger.Info("Engine %s stopped due to idle timeout", key)
