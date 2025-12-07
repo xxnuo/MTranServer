@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/xxnuo/MTranServer/internal/logger"
 )
 
 type WSMessage struct {
@@ -282,21 +283,26 @@ func (c *Client) Ready(ctx context.Context) (bool, error) {
 }
 
 func (c *Client) Compute(ctx context.Context, req ComputeRequest) (string, error) {
+	logger.Debug("Client.Compute: sending request, text length: %d, isHTML: %v", len(req.Text), req.HTML)
 	resp, err := c.sendRequest(ctx, "compute", req)
 	if err != nil {
+		logger.Debug("Client.Compute: sendRequest error: %v", err)
 		return "", err
 	}
 
 	if resp.Code != 200 {
+		logger.Debug("Client.Compute: response code %d: %s", resp.Code, resp.Msg)
 		return "", fmt.Errorf("compute failed (code %d): %s", resp.Code, resp.Msg)
 	}
 
 	var result ComputeResponse
 	if resp.Data != nil {
 		if err := json.Unmarshal(resp.Data, &result); err != nil {
+			logger.Debug("Client.Compute: unmarshal error: %v", err)
 			return "", fmt.Errorf("failed to unmarshal response: %w", err)
 		}
 	}
 
+	logger.Debug("Client.Compute: success, result length: %d", len(result.TranslatedText))
 	return result.TranslatedText, nil
 }

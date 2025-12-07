@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/xxnuo/MTranServer/internal/logger"
 )
 
 type Manager struct {
@@ -217,18 +219,23 @@ func (m *Manager) Ready(ctx context.Context) (bool, error) {
 }
 
 func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, error) {
+	logger.Debug("Manager.Compute: text length: %d, isHTML: %v", len(req.Text), req.HTML)
 	m.mu.RLock()
 	client := m.client
 	m.mu.RUnlock()
 
 	if client == nil {
+		logger.Error("Manager.Compute: client not initialized")
 		return "", fmt.Errorf("client not initialized")
 	}
 
+	logger.Debug("Manager.Compute: calling client.Compute")
 	result, err := client.Compute(ctx, req)
 	if err == nil {
+		logger.Debug("Manager.Compute: success, result length: %d", len(result))
 		return result, nil
 	}
+	logger.Debug("Manager.Compute: client.Compute error: %v", err)
 
 	errMsg := err.Error()
 	isConnectionError := !client.IsConnected() || 

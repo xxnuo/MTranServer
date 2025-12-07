@@ -196,6 +196,7 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 }
 
 func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	logger.Debug("TranslateWithPivot: %s -> %s, text length: %d, isHTML: %v", fromLang, toLang, len(text), isHTML)
 
 	if fromLang == "auto" {
 		detected := DetectLanguage(text)
@@ -212,16 +213,20 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 	}
 
 	if !needsPivotTranslation(fromLang, toLang) {
+		logger.Debug("TranslateWithPivot: direct translation path")
 		m, err := getOrCreateSingleEngine(fromLang, toLang)
 		if err != nil {
+			logger.Error("TranslateWithPivot: failed to get engine: %v", err)
 			return "", err
 		}
+		logger.Debug("TranslateWithPivot: got engine, calling translate")
 		var result string
 		if isHTML {
 			result, err = m.TranslateHTML(ctx, text)
 		} else {
 			result, err = m.Translate(ctx, text)
 		}
+		logger.Debug("TranslateWithPivot: translate returned, err: %v", err)
 		if err != nil && isFatalError(err) {
 			key := fmt.Sprintf("%s-%s", fromLang, toLang)
 			logger.Warn("Fatal error detected for engine %s, recreating...", key)

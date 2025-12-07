@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xxnuo/MTranServer/internal/logger"
 	"github.com/xxnuo/MTranServer/internal/services"
 	"github.com/xxnuo/MTranServer/internal/utils"
 )
@@ -68,14 +69,18 @@ func HandleImmeTranslate(apiToken string) gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
 		defer cancel()
 
+		logger.Debug("Imme request: %s -> %s, count: %d", sourceLang, targetLang, len(req.TextList))
 		for i, text := range req.TextList {
+			logger.Debug("Imme translating [%d/%d]: %s -> %s, text length: %d", i+1, len(req.TextList), sourceLang, targetLang, len(text))
 			result, err := services.TranslateWithPivot(ctx, sourceLang, targetLang, text, false)
 			if err != nil {
+				logger.Error("Imme translation failed at index %d (%s -> %s): %v", i, sourceLang, targetLang, err)
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": fmt.Sprintf("Translation failed at index %d: %v", i, err),
 				})
 				return
 			}
+			logger.Debug("Imme translated [%d/%d] success", i+1, len(req.TextList))
 
 			translations[i] = ImmeTranslation{
 				DetectedSourceLang: req.SourceLang,
