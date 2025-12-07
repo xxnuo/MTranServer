@@ -115,6 +115,7 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 	}
 	args := manager.NewWorkerArgs()
 	args.Port = port
+	args.LogLevel = cfg.LogLevel
 
 	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
 	if err := os.MkdirAll(langPairDir, 0755); err != nil {
