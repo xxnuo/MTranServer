@@ -164,8 +164,18 @@ jobs:
             WARNING="**Development build - may be unstable**"$'\n\n'
           fi
 
+          CHANGELOG=""
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG=$(cat CHANGELOG.md)
+          fi
+
           cat > release_body.md << EOF
           ${WARNING}## MTranServer
+          
+          ## Changelog
+          ${CHANGELOG}
+
+          ## Download
 
           | Platform | Architecture | Binary |
           |----------|-------------|--------|
