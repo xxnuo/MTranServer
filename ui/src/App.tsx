@@ -183,7 +183,7 @@ function App() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {languages.map((lang) => (
+                    {languages.filter(lang => !!lang).map((lang) => (
                       <SelectItem key={lang} value={lang}>
                         {lang === 'auto' ? t('autoDetect') : lang}
                       </SelectItem>
@@ -210,7 +210,7 @@ function App() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {languages.filter(lang => lang !== 'auto').map((lang) => (
+                    {languages.filter(lang => lang && lang !== 'auto').map((lang) => (
                       <SelectItem key={lang} value={lang}>
                         {lang}
                       </SelectItem>

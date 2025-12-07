@@ -27,8 +27,8 @@ func HandleLanguages(c *gin.Context) {
 
 	langMap := make(map[string]bool)
 	for _, record := range models.GlobalRecords.Data {
-		langMap[record.FromLang] = true
-		langMap[record.ToLang] = true
+		langMap[record.SourceLanguage] = true
+		langMap[record.TargetLanguage] = true
 	}
 
 	languages := make([]string, 0, len(langMap))

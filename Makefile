@@ -30,6 +30,7 @@ download-core:
 download-records:
 	touch ./data/records.json
 	@GOOS= GOARCH= go generate ./data
+	@echo "Generated records hash successfully"
 
 download: download-core download-records
 	@echo "Downloaded successfully"
