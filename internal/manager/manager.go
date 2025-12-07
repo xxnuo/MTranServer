@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -201,13 +202,77 @@ func (m *Manager) Ready(ctx context.Context) (bool, error) {
 
 func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, error) {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
+	client := m.client
+	m.mu.RUnlock()
 
-	if m.client == nil {
+	if client == nil {
 		return "", fmt.Errorf("client not initialized")
 	}
 
-	return m.client.Compute(ctx, req)
+	result, err := client.Compute(ctx, req)
+	if err == nil {
+		return result, nil
+	}
+
+	errMsg := err.Error()
+	isConnectionError := !client.IsConnected() || 
+		strings.Contains(errMsg, "not connected") || 
+		strings.Contains(errMsg, "failed to send message") || 
+		strings.Contains(errMsg, "failed to read response") ||
+		strings.Contains(errMsg, "module closed") ||
+		strings.Contains(errMsg, "exit_code")
+
+	if !isConnectionError {
+		return "", err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.client != client {
+		return m.client.Compute(ctx, req)
+	}
+
+	if !m.worker.IsRunning() || !m.client.IsConnected() {
+		if m.client != nil {
+			m.client.Close()
+			m.client = nil
+		}
+
+		if m.worker.IsRunning() {
+			m.worker.Stop()
+		}
+
+		time.Sleep(500 * time.Millisecond)
+
+		if err := m.worker.Start(); err != nil {
+			return "", fmt.Errorf("failed to restart worker: %w", err)
+		}
+
+		timeout := time.After(10 * time.Second)
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-timeout:
+				return "", fmt.Errorf("worker restart timeout")
+			case <-ticker.C:
+				if m.worker.IsRunning() {
+					m.client = NewClient(m.url)
+					if err := m.client.Connect(); err != nil {
+						continue
+					}
+
+					time.Sleep(200 * time.Millisecond)
+
+					return m.client.Compute(ctx, req)
+				}
+			}
+		}
+	}
+
+	return "", err
 }
 
 func (m *Manager) Translate(ctx context.Context, text string) (string, error) {

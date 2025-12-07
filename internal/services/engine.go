@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -62,7 +63,7 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 	key := fmt.Sprintf("%s-%s", fromLang, toLang)
 
 	engMu.RLock()
-	if info, ok := engines[key]; ok {
+	if info, ok := engines[key]; ok && info != nil && info.Manager != nil {
 		if info.Manager.IsRunning() {
 			engMu.RUnlock()
 
@@ -75,7 +76,7 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 	engMu.Lock()
 	defer engMu.Unlock()
 
-	if info, ok := engines[key]; ok {
+	if info, ok := engines[key]; ok && info != nil && info.Manager != nil {
 		if info.Manager.IsRunning() {
 			info.resetIdleTimer()
 			return info.Manager, nil
@@ -195,10 +196,39 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 		if err != nil {
 			return "", err
 		}
+		var result string
 		if isHTML {
-			return m.TranslateHTML(ctx, text)
+			result, err = m.TranslateHTML(ctx, text)
+		} else {
+			result, err = m.Translate(ctx, text)
 		}
-		return m.Translate(ctx, text)
+		if err != nil && isFatalError(err) {
+			key := fmt.Sprintf("%s-%s", fromLang, toLang)
+			logger.Warn("Fatal error detected for engine %s, recreating...", key)
+			engMu.Lock()
+			info, ok := engines[key]
+			if ok && info != nil && info.Manager == m {
+				info.mu.Lock()
+				if info.stopTimer != nil {
+					info.stopTimer.Stop()
+				}
+				info.mu.Unlock()
+				if info.Manager != nil {
+					info.Manager.Cleanup()
+				}
+				delete(engines, key)
+			}
+			engMu.Unlock()
+			m, err = getOrCreateSingleEngine(fromLang, toLang)
+			if err != nil {
+				return "", err
+			}
+			if isHTML {
+				return m.TranslateHTML(ctx, text)
+			}
+			return m.Translate(ctx, text)
+		}
+		return result, err
 	}
 
 	logger.Debug("Step 1: Translating %s -> en", fromLang)
@@ -214,7 +244,36 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 		intermediateText, err = m1.Translate(ctx, text)
 	}
 	if err != nil {
-		return "", fmt.Errorf("failed in first step (%s -> en): %w", fromLang, err)
+		if isFatalError(err) {
+			key := fmt.Sprintf("%s-en", fromLang)
+			logger.Warn("Fatal error detected for engine %s, recreating...", key)
+			engMu.Lock()
+			info, ok := engines[key]
+			if ok && info != nil && info.Manager == m1 {
+				info.mu.Lock()
+				if info.stopTimer != nil {
+					info.stopTimer.Stop()
+				}
+				info.mu.Unlock()
+				if info.Manager != nil {
+					info.Manager.Cleanup()
+				}
+				delete(engines, key)
+			}
+			engMu.Unlock()
+			m1, err = getOrCreateSingleEngine(fromLang, "en")
+			if err != nil {
+				return "", fmt.Errorf("failed to recreate first engine (%s -> en): %w", fromLang, err)
+			}
+			if isHTML {
+				intermediateText, err = m1.TranslateHTML(ctx, text)
+			} else {
+				intermediateText, err = m1.Translate(ctx, text)
+			}
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed in first step (%s -> en): %w", fromLang, err)
+		}
 	}
 
 	logger.Debug("Step 2: Translating en -> %s", toLang)
@@ -230,7 +289,36 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 		finalText, err = m2.Translate(ctx, intermediateText)
 	}
 	if err != nil {
-		return "", fmt.Errorf("failed in second step (en -> %s): %w", toLang, err)
+		if isFatalError(err) {
+			key := fmt.Sprintf("en-%s", toLang)
+			logger.Warn("Fatal error detected for engine %s, recreating...", key)
+			engMu.Lock()
+			info, ok := engines[key]
+			if ok && info != nil && info.Manager == m2 {
+				info.mu.Lock()
+				if info.stopTimer != nil {
+					info.stopTimer.Stop()
+				}
+				info.mu.Unlock()
+				if info.Manager != nil {
+					info.Manager.Cleanup()
+				}
+				delete(engines, key)
+			}
+			engMu.Unlock()
+			m2, err = getOrCreateSingleEngine("en", toLang)
+			if err != nil {
+				return "", fmt.Errorf("failed to recreate second engine (en -> %s): %w", toLang, err)
+			}
+			if isHTML {
+				finalText, err = m2.TranslateHTML(ctx, intermediateText)
+			} else {
+				finalText, err = m2.Translate(ctx, intermediateText)
+			}
+		}
+		if err != nil {
+			return "", fmt.Errorf("failed in second step (en -> %s): %w", toLang, err)
+		}
 	}
 
 	return finalText, nil
@@ -288,4 +376,18 @@ func CleanupAllEngines() {
 	}
 
 	engines = make(map[string]*EngineInfo)
+}
+
+func isFatalError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errMsg := err.Error()
+	return strings.Contains(errMsg, "module closed") || 
+		strings.Contains(errMsg, "exit_code") ||
+		strings.Contains(errMsg, "not connected") ||
+		strings.Contains(errMsg, "failed to send message") ||
+		strings.Contains(errMsg, "failed to read response") ||
+		strings.Contains(errMsg, "wasm error") ||
+		strings.Contains(errMsg, "invalid table access")
 }
