@@ -1,6 +1,10 @@
-v3.1.13
+v3.1.14
 - 工作时自动下载使用最新版本的模型，无需手动下载（离线模式则不会更新）
 - Auto download the latest version of the model when working, no need to manually download (offline mode will not update)
+
+v3.1.13
+- 添加详细日志，方便调试
+- Add detailed logs for debugging
 
 v3.1.12
 
