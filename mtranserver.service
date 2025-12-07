@@ -5,7 +5,6 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/path/to/mtranserver  # 注意修改路径
 ExecStart=/path/to/mtranserver # 注意修改配置
 Restart=on-failure
 RestartSec=10
