@@ -92,8 +92,12 @@ func InitRecords() error {
 	if _, err := os.Stat(recordsPath); os.IsNotExist(err) {
 
 		logger.Info("Initializing records.json from embedded data")
+		// Ensure parent directories exist
 		if err := os.MkdirAll(cfg.ConfigDir, 0755); err != nil {
 			return fmt.Errorf("Failed to create config directory: %w", err)
+		}
+		if err := os.MkdirAll(cfg.ModelDir, 0755); err != nil {
+			return fmt.Errorf("Failed to create model directory: %w", err)
 		}
 		if err := os.WriteFile(recordsPath, data.RecordsJson, 0644); err != nil {
 			return fmt.Errorf("Failed to write records.json: %w", err)
@@ -176,6 +180,10 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 	cfg := config.GetConfig()
 	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
 
+	// Ensure parent model directory exists with proper permissions
+	if err := os.MkdirAll(cfg.ModelDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create model directory: %w", err)
+	}
 	if err := os.MkdirAll(langPairDir, 0755); err != nil {
 		return fmt.Errorf("Failed to create language pair directory: %w", err)
 	}

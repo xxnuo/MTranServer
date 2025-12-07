@@ -48,10 +48,6 @@ FROM alpine:latest
 # Install runtime dependencies
 RUN apk add --no-cache ca-certificates tzdata curl
 
-# Create non-root user
-RUN addgroup -g 1000 mtran && \
-    adduser -D -u 1000 -G mtran mtran
-
 WORKDIR /app
 
 # Copy binary from builder
@@ -59,10 +55,6 @@ COPY --from=builder /build/mtranserver /app/mtranserver
 
 # Create directories for data and models
 RUN mkdir -p /app/data /app/models && \
-    chown -R mtran:mtran /app
-
-# Switch to non-root user
-USER mtran
 
 # Expose port
 EXPOSE 8989
