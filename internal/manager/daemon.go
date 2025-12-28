@@ -284,6 +284,17 @@ func (w *Worker) Stop() error {
 					logger.Warn("Failed to kill worker: %v", err)
 				}
 			}()
+			time.Sleep(500 * time.Millisecond)
+			for i := 0; i < 10; i++ {
+				if !w.overseer.HasProc(w.id) {
+					break
+				}
+				status := w.overseer.Status(w.id)
+				if status == nil || status.State != "running" {
+					break
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
 			return fmt.Errorf("worker stop timeout, forced kill")
 		case <-ticker.C:
 			if !w.overseer.HasProc(w.id) {
@@ -449,13 +460,15 @@ func (w *Worker) Signal(sig syscall.Signal) error {
 
 func (w *Worker) Cleanup() error {
 	w.mu.Lock()
+
+	var errs []error
+
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("Panic during worker cleanup: %v", r)
+			errs = append(errs, fmt.Errorf("panic during cleanup: %v", r))
 		}
 	}()
-
-	var errs []error
 
 	if w.overseer.HasProc(w.id) {
 		status := w.overseer.Status(w.id)
@@ -508,7 +521,7 @@ func (w *Worker) Cleanup() error {
 								errs = append(errs, fmt.Errorf("failed to kill worker: %w", err))
 							}
 						}()
-						time.Sleep(200 * time.Millisecond)
+						time.Sleep(500 * time.Millisecond)
 						break waitLoop
 					case <-ticker.C:
 						if !w.overseer.HasProc(w.id) {
@@ -523,6 +536,17 @@ func (w *Worker) Cleanup() error {
 			}()
 		}
 
+		for i := 0; i < 20; i++ {
+			if !w.overseer.HasProc(w.id) {
+				break
+			}
+			status := w.overseer.Status(w.id)
+			if status == nil || status.State != "running" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
 		if w.overseer.HasProc(w.id) {
 			w.overseer.Remove(w.id)
 		}
@@ -533,7 +557,6 @@ func (w *Worker) Cleanup() error {
 
 	select {
 	case <-w.done:
-
 	default:
 		close(w.done)
 	}
