@@ -200,6 +200,12 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 }
 
 func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	return utils.ProcessTextWithEmojiHandling(text, func(cleanText string) (string, error) {
+		return translateWithPivotInternal(ctx, fromLang, toLang, cleanText, isHTML)
+	})
+}
+
+func translateWithPivotInternal(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
 	logger.Debug("TranslateWithPivot: %s -> %s, text length: %d, isHTML: %v", fromLang, toLang, len(text), isHTML)
 
 	if fromLang == "auto" {
