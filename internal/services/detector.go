@@ -18,7 +18,6 @@ func initDetector() {
 		logger.Debug("Initializing language detector")
 		detector = lingua.NewLanguageDetectorBuilder().
 			FromAllLanguages().
-			WithPreloadedLanguageModels().
 			Build()
 		logger.Debug("Language detector initialized")
 	})
