@@ -6,13 +6,15 @@ import (
 
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxnuo/MTranServer/internal/logger"
+	"github.com/xxnuo/MTranServer/internal/models"
 )
 
 const defaultConfidenceThreshold = 0.5
 
 var (
-	detector     lingua.LanguageDetector
-	detectorOnce sync.Once
+	detector           lingua.LanguageDetector
+	detectorOnce       sync.Once
+	supportedLanguages map[string]bool
 )
 
 func initDetector() {
@@ -22,8 +24,23 @@ func initDetector() {
 			FromAllLanguages().
 			WithMinimumRelativeDistance(0.99).
 			Build()
-		logger.Debug("Language detector initialized")
+
+		supportedLanguages = make(map[string]bool)
+		langs, err := models.GetSupportedLanguages()
+		if err == nil {
+			for _, lang := range langs {
+				supportedLanguages[lang] = true
+			}
+		}
+		logger.Debug("Language detector initialized, %d supported languages", len(supportedLanguages))
 	})
+}
+
+func isSupportedLanguage(lang string) bool {
+	if len(supportedLanguages) == 0 {
+		return true
+	}
+	return supportedLanguages[lang]
 }
 
 func linguaToBCP47(lang lingua.Language) string {
@@ -97,6 +114,9 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 
 	fallbackLang, _ := detector.DetectLanguageOf(text)
 	fallbackBCP47 := linguaToBCP47(fallbackLang)
+	if !isSupportedLanguage(fallbackBCP47) {
+		fallbackBCP47 = "en"
+	}
 	logger.Debug("DetectMultipleLanguages: fallback=%s, threshold=%.2f, text=%q", fallbackBCP47, threshold, text)
 
 	results := detector.DetectMultipleLanguagesOf(text)
@@ -118,8 +138,9 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 		var usedFallback bool
 		if len(confidenceValues) > 0 {
 			confidence = confidenceValues[0].Value()
-			if confidence >= threshold {
-				lang = linguaToBCP47(confidenceValues[0].Language())
+			detectedLang := linguaToBCP47(confidenceValues[0].Language())
+			if confidence >= threshold && isSupportedLanguage(detectedLang) {
+				lang = detectedLang
 			} else {
 				lang = fallbackBCP47
 				usedFallback = true
