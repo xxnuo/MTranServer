@@ -1,3 +1,7 @@
+v3.1.15
+- 修复下载模型提示校验失败的问题
+- Fix the issue of model download verification failure
+
 v3.1.14
 - 工作时自动下载使用最新版本的模型，无需手动下载（离线模式则不会更新）
 - Auto download the latest version of the model when working, no need to manually download (offline mode will not update)
