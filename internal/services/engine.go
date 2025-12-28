@@ -315,33 +315,44 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 			result, err = m.Translate(ctx, text)
 		}
 		logger.Debug("translateSingleLanguageText: translate returned, err: %v", err)
-		if err != nil && isFatalError(err) {
-			key := fmt.Sprintf("%s-%s", fromLang, toLang)
-			logger.Warn("Fatal error detected for engine %s, recreating...", key)
-			engMu.Lock()
-			info, ok := engines[key]
-			if ok && info != nil && info.Manager == m {
-				info.mu.Lock()
-				if info.stopTimer != nil {
-					info.stopTimer.Stop()
+		if err != nil {
+			if isFatalError(err) {
+				key := fmt.Sprintf("%s-%s", fromLang, toLang)
+				logger.Warn("Fatal error detected for engine %s, recreating...", key)
+				engMu.Lock()
+				info, ok := engines[key]
+				if ok && info != nil && info.Manager == m {
+					info.mu.Lock()
+					if info.stopTimer != nil {
+						info.stopTimer.Stop()
+					}
+					info.mu.Unlock()
+					if info.Manager != nil {
+						info.Manager.Cleanup()
+					}
+					delete(engines, key)
 				}
-				info.mu.Unlock()
-				if info.Manager != nil {
-					info.Manager.Cleanup()
+				engMu.Unlock()
+				m, err = getOrCreateSingleEngine(fromLang, toLang)
+				if err != nil {
+					return "", err
 				}
-				delete(engines, key)
+				if isHTML {
+					result, err = m.TranslateHTML(ctx, text)
+				} else {
+					result, err = m.Translate(ctx, text)
+				}
 			}
-			engMu.Unlock()
-			m, err = getOrCreateSingleEngine(fromLang, toLang)
 			if err != nil {
-				return "", err
+				logger.Warn("Translation failed, trying segmented translation: %v", err)
+				segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
+				if segErr != nil {
+					return "", err
+				}
+				return segResult, nil
 			}
-			if isHTML {
-				return m.TranslateHTML(ctx, text)
-			}
-			return m.Translate(ctx, text)
 		}
-		return result, err
+		return result, nil
 	}
 
 	logger.Debug("Step 1: Translating %s -> en", fromLang)
@@ -385,7 +396,12 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 			}
 		}
 		if err != nil {
-			return "", fmt.Errorf("failed in first step (%s -> en): %w", fromLang, err)
+			logger.Warn("Pivot step 1 failed, trying segmented translation: %v", err)
+			segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
+			if segErr != nil {
+				return "", fmt.Errorf("failed in first step (%s -> en): %w", fromLang, err)
+			}
+			return segResult, nil
 		}
 	}
 
@@ -430,7 +446,12 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 			}
 		}
 		if err != nil {
-			return "", fmt.Errorf("failed in second step (en -> %s): %w", toLang, err)
+			logger.Warn("Pivot step 2 failed, trying segmented translation: %v", err)
+			segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
+			if segErr != nil {
+				return "", fmt.Errorf("failed in second step (en -> %s): %w", toLang, err)
+			}
+			return segResult, nil
 		}
 	}
 
@@ -496,11 +517,49 @@ func isFatalError(err error) bool {
 		return false
 	}
 	errMsg := err.Error()
-	return strings.Contains(errMsg, "module closed") || 
+	return strings.Contains(errMsg, "module closed") ||
 		strings.Contains(errMsg, "exit_code") ||
 		strings.Contains(errMsg, "not connected") ||
 		strings.Contains(errMsg, "failed to send message") ||
 		strings.Contains(errMsg, "failed to read response") ||
 		strings.Contains(errMsg, "wasm error") ||
 		strings.Contains(errMsg, "invalid table access")
+}
+
+func translateWithSegments(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	segments := DetectMultipleLanguages(text)
+	if len(segments) <= 1 {
+		return "", fmt.Errorf("segmented translation not applicable")
+	}
+
+	logger.Debug("Attempting segmented translation with %d segments", len(segments))
+	var result strings.Builder
+	lastEnd := 0
+
+	for _, seg := range segments {
+		if seg.Start > lastEnd {
+			result.WriteString(text[lastEnd:seg.Start])
+		}
+
+		if seg.Language == toLang {
+			result.WriteString(seg.Text)
+		} else {
+			segFromLang := seg.Language
+			if fromLang != "auto" && fromLang != "" {
+				segFromLang = fromLang
+			}
+			translated, err := translateSegment(ctx, segFromLang, toLang, seg.Text, isHTML)
+			if err != nil {
+				return "", fmt.Errorf("segmented translation failed: %w", err)
+			}
+			result.WriteString(translated)
+		}
+		lastEnd = seg.End
+	}
+
+	if lastEnd < len(text) {
+		result.WriteString(text[lastEnd:])
+	}
+
+	return result.String(), nil
 }
