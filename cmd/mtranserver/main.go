@@ -70,6 +70,7 @@ func main() {
 
 	if *versionFlag || *versionShortFlag {
 		fmt.Printf("MTranServer %s\n", version.GetVersion())
+		fmt.Printf("MTranCore v%s\n", version.GetWorkerVersion())
 		os.Exit(0)
 	}
 

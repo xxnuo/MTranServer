@@ -16,7 +16,8 @@ import (
 // @Router       /version [get]
 func HandleVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"version": version.GetVersion(),
+		"server": version.GetVersion(),
+		"worker": version.GetWorkerVersion(),
 	})
 }
 
