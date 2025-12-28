@@ -70,11 +70,11 @@ func TestRecordsDataStructure(t *testing.T) {
 	if firstRecord.Name == "" {
 		t.Error("Record name is empty")
 	}
-	if firstRecord.ToLang == "" {
-		t.Error("Record toLang is empty")
+	if firstRecord.TargetLanguage == "" {
+		t.Error("Record target language is empty")
 	}
-	if firstRecord.FromLang == "" {
-		t.Error("Record fromLang is empty")
+	if firstRecord.SourceLanguage == "" {
+		t.Error("Record source language is empty")
 	}
 	if firstRecord.Version == "" {
 		t.Error("Record version is empty")
@@ -147,7 +147,7 @@ func TestFindModelRecords(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var matchedRecords []models.RecordItem
 			for _, record := range records.Data {
-				if record.ToLang == tt.toLang && record.FromLang == tt.fromLang {
+				if record.TargetLanguage == tt.toLang && record.SourceLanguage == tt.fromLang {
 					if tt.version == "" || record.Version == tt.version {
 						matchedRecords = append(matchedRecords, record)
 					}
@@ -176,7 +176,7 @@ func TestVersionGrouping(t *testing.T) {
 
 	var matchedRecords []models.RecordItem
 	for _, record := range records.Data {
-		if record.ToLang == "pl" && record.FromLang == "en" {
+		if record.TargetLanguage == "pl" && record.SourceLanguage == "en" {
 			matchedRecords = append(matchedRecords, record)
 		}
 	}
@@ -274,7 +274,7 @@ func TestRealDownloadModel(t *testing.T) {
 
 	expectedFileTypes := []string{"model", "vocab", "lex", "trgvocab", "srcvocab"}
 	for _, record := range models.GlobalRecords.Data {
-		if record.ToLang == "ja" && record.FromLang == "en" {
+		if record.TargetLanguage == "ja" && record.SourceLanguage == "en" {
 			if !downloadedFiles[record.Attachment.Filename] {
 				t.Errorf("Expected file %s was not downloaded", record.Attachment.Filename)
 			}

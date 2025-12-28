@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
-			{FromLang: "en", ToLang: "zh-Hans"},
+			{SourceLanguage: "en", TargetLanguage: "zh-Hans"},
 		},
 	}
 

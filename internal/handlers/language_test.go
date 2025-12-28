@@ -15,9 +15,9 @@ func TestHandleLanguages(t *testing.T) {
 
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
-			{FromLang: "en", ToLang: "zh-Hans"},
-			{FromLang: "zh-Hans", ToLang: "en"},
-			{FromLang: "en", ToLang: "ja"},
+			{SourceLanguage: "en", TargetLanguage: "zh-Hans"},
+			{SourceLanguage: "zh-Hans", TargetLanguage: "en"},
+			{SourceLanguage: "en", TargetLanguage: "ja"},
 		},
 	}
 

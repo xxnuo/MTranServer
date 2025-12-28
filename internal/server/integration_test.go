@@ -18,8 +18,8 @@ func TestIntegrationServerSetup(t *testing.T) {
 
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
-			{FromLang: "en", ToLang: "zh-Hans"},
-			{FromLang: "zh-Hans", ToLang: "en"},
+			{SourceLanguage: "en", TargetLanguage: "zh-Hans"},
+			{SourceLanguage: "zh-Hans", TargetLanguage: "en"},
 		},
 	}
 
@@ -77,7 +77,7 @@ func TestIntegrationPluginEndpoints(t *testing.T) {
 
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
-			{FromLang: "en", ToLang: "zh-Hans"},
+			{SourceLanguage: "en", TargetLanguage: "zh-Hans"},
 		},
 	}
 
@@ -125,7 +125,7 @@ func TestIntegrationAPIEndpoints(t *testing.T) {
 
 	models.GlobalRecords = &models.RecordsData{
 		Data: []models.RecordItem{
-			{FromLang: "en", ToLang: "zh-Hans"},
+			{SourceLanguage: "en", TargetLanguage: "zh-Hans"},
 		},
 	}
 
