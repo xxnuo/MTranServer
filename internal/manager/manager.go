@@ -238,12 +238,14 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 	logger.Debug("Manager.Compute: client.Compute error: %v", err)
 
 	errMsg := err.Error()
-	isConnectionError := !client.IsConnected() || 
-		strings.Contains(errMsg, "not connected") || 
-		strings.Contains(errMsg, "failed to send message") || 
+	isConnectionError := !client.IsConnected() ||
+		strings.Contains(errMsg, "not connected") ||
+		strings.Contains(errMsg, "failed to send message") ||
 		strings.Contains(errMsg, "failed to read response") ||
 		strings.Contains(errMsg, "module closed") ||
-		strings.Contains(errMsg, "exit_code")
+		strings.Contains(errMsg, "exit_code") ||
+		strings.Contains(errMsg, "wasm error") ||
+		strings.Contains(errMsg, "invalid table access")
 
 	if !isConnectionError {
 		return "", err
