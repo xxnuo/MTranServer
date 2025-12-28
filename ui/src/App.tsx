@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { ArrowRightLeft } from 'lucide-react'
+import { ArrowRightLeft, Copy, Volume2, X, Upload, History } from 'lucide-react'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { HistorySheet } from '@/components/HistorySheet'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { getSortedLanguages } from '@/lib/languages'
+import { useHistory } from '@/hooks/use-history'
 
 interface TranslateRequest {
   from: string
@@ -36,7 +38,10 @@ function App() {
   const [loadingLanguages, setLoadingLanguages] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(false)
   const [showTokenDialog, setShowTokenDialog] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const translateTimeoutRef = useRef<number | null>(null)
+  
+  const { history, addToHistory, clearHistory, deleteItem } = useHistory()
 
   const sortedLanguages = useMemo(() => {
     return getSortedLanguages(languages, i18n.language)
@@ -119,6 +124,14 @@ function App() {
 
       const data: TranslateResponse = await response.json()
       setTranslatedText(data.result)
+      
+      addToHistory({
+        from: sourceLang,
+        to: targetLang,
+        sourceText: textToTranslate,
+        translatedText: data.result
+      })
+
       if (showToast) {
         toast.success(t('translationCompleted'))
       }
@@ -161,6 +174,42 @@ function App() {
     setTranslatedText(sourceText)
   }
 
+  const handleCopy = async (text: string) => {
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(t('copied'))
+    } catch (err) {
+      toast.error(t('copyFailed'))
+    }
+  }
+
+  const handleSpeak = (text: string, lang: string) => {
+    if (!text) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = lang === 'auto' ? 'en-US' : lang
+    window.speechSynthesis.speak(utterance)
+  }
+
+  const handleClear = () => {
+    setSourceText('')
+    setTranslatedText('')
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const content = e.target?.result
+      if (typeof content === 'string') {
+        setSourceText(content)
+      }
+    }
+    reader.readAsText(file)
+  }
+
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8 flex flex-col">
       <div className="max-w-6xl mx-auto flex-1 w-full">
@@ -168,11 +217,21 @@ function App() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">
             {t('title')}
           </h1>
-          <SettingsMenu 
-            showTokenDialog={showTokenDialog}
-            setShowTokenDialog={setShowTokenDialog}
-            onTokenSaved={fetchLanguages}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowHistory(true)}
+              title={t('history')}
+            >
+              <History className="h-5 w-5" />
+            </Button>
+            <SettingsMenu 
+              showTokenDialog={showTokenDialog}
+              setShowTokenDialog={setShowTokenDialog}
+              onTokenSaved={fetchLanguages}
+            />
+          </div>
         </div>
 
         <Card className="shadow-lg">
@@ -238,22 +297,105 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <Textarea
-                id="source-text"
-                placeholder={t('enterText')}
-                value={sourceText}
-                onChange={(e) => handleSourceTextChange(e.target.value)}
-                className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} resize-none text-base`}
-                disabled={loading}
-              />
+              <div className="relative group h-full">
+                <Textarea
+                  id="source-text"
+                  placeholder={t('enterText')}
+                  value={sourceText}
+                  onChange={(e) => handleSourceTextChange(e.target.value)}
+                  className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} h-full resize-none text-base pr-10 pb-10`}
+                  disabled={loading}
+                />
+                
+                {sourceText && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={handleClear}
+                    title={t('clear')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
 
-              <Textarea
-                id="translated-text"
-                placeholder={t('translationWillAppear')}
-                value={translatedText}
-                readOnly
-                className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} resize-none text-base bg-muted`}
-              />
+                <div className="absolute bottom-2 left-2 text-xs text-muted-foreground pointer-events-none">
+                  {sourceText.length}
+                </div>
+
+                <div className="absolute bottom-2 right-2 flex gap-1">
+                  <input
+                    type="file"
+                    id="file-upload"
+                    className="hidden"
+                    accept=".txt,.md,.json,.js,.ts,.go,.py,.java,.c,.cpp,.h,.hpp"
+                    onChange={handleFileUpload}
+                  />
+                  <Label
+                    htmlFor="file-upload"
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 cursor-pointer"
+                    title="Upload file"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Label>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleSpeak(sourceText, sourceLang)}
+                    disabled={!sourceText}
+                    title="Listen"
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleCopy(sourceText)}
+                    disabled={!sourceText}
+                    title="Copy"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative h-full">
+                <Textarea
+                  id="translated-text"
+                  placeholder={t('translationWillAppear')}
+                  value={translatedText}
+                  readOnly
+                  className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} h-full resize-none text-base bg-muted pb-10`}
+                />
+                
+                <div className="absolute bottom-2 right-2 flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleSpeak(translatedText, targetLang)}
+                    disabled={!translatedText}
+                    title="Listen"
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleCopy(translatedText)}
+                    disabled={!translatedText}
+                    title="Copy"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {!autoTranslate && (
@@ -292,6 +434,20 @@ function App() {
           <span>MTranServer</span>
         </a>
       </footer>
+
+      <HistorySheet
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        history={history}
+        onSelect={(item) => {
+          setSourceLang(item.from)
+          setTargetLang(item.to)
+          setSourceText(item.sourceText)
+          setTranslatedText(item.translatedText)
+        }}
+        onClear={clearHistory}
+        onDelete={deleteItem}
+      />
     </div>
   )
 }

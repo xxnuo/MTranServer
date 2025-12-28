@@ -33,7 +33,16 @@ const resources = {
       apiTokenSaved: 'API token saved',
       apiTokenCleared: 'API token cleared',
       save: 'Save',
-      apiTokenRequired: 'API token is required to access this service'
+      apiTokenRequired: 'API token is required to access this service',
+      copied: 'Copied to clipboard',
+      copyFailed: 'Failed to copy',
+      clear: 'Clear',
+      history: 'History',
+      clearAll: 'Clear All',
+      noHistory: 'No history',
+      historyDesc: 'Recent translations',
+      searchPlaceholder: 'Search history...',
+      noResults: 'No results found'
     }
   },
   zh: {
@@ -66,7 +75,16 @@ const resources = {
       apiTokenSaved: 'API token 已保存',
       apiTokenCleared: 'API token 已清除',
       save: '保存',
-      apiTokenRequired: '访问此服务需要 API token'
+      apiTokenRequired: '访问此服务需要 API token',
+      copied: '已复制到剪贴板',
+      copyFailed: '复制失败',
+      clear: '清空',
+      history: '历史记录',
+      clearAll: '清空全部',
+      noHistory: '暂无历史记录',
+      historyDesc: '最近的翻译记录',
+      searchPlaceholder: '搜索历史记录...',
+      noResults: '未找到结果'
     }
   },
   ja: {
@@ -99,7 +117,16 @@ const resources = {
       apiTokenSaved: 'APIトークンが保存されました',
       apiTokenCleared: 'APIトークンがクリアされました',
       save: '保存',
-      apiTokenRequired: 'このサービスにアクセスするにはAPIトークンが必要です'
+      apiTokenRequired: 'このサービスにアクセスするにはAPIトークンが必要です',
+      copied: 'クリップボードにコピーしました',
+      copyFailed: 'コピーに失敗しました',
+      clear: 'クリア',
+      history: '履歴',
+      clearAll: 'すべてクリア',
+      noHistory: '履歴はありません',
+      historyDesc: '最近の翻訳履歴',
+      searchPlaceholder: '履歴を検索...',
+      noResults: '結果が見つかりません'
     }
   }
 }
