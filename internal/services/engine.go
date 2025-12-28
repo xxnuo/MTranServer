@@ -242,6 +242,13 @@ func translateSegment(ctx context.Context, fromLang, toLang, text string, isHTML
 func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
 	logger.Debug("TranslateWithPivot: %s -> %s, text length: %d, isHTML: %v", fromLang, toLang, len(text), isHTML)
 
+	if fromLang != "auto" && len(text) <= 128 {
+		if fromLang == toLang {
+			return text, nil
+		}
+		return translateSingleLanguageText(ctx, fromLang, toLang, text, isHTML)
+	}
+
 	segments := DetectMultipleLanguages(text)
 	if len(segments) <= 1 {
 		var effectiveFromLang string
