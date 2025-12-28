@@ -16,6 +16,14 @@ const (
 	ERROR
 )
 
+const (
+	colorReset  = "\033[0m"
+	colorCyan   = "\033[36m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorRed    = "\033[31m"
+)
+
 var (
 	currentLevel LogLevel = INFO
 	debugLogger  *log.Logger
@@ -25,11 +33,10 @@ var (
 )
 
 func init() {
-
-	debugLogger = log.New(os.Stdout, "[DEBUG] ", log.Ldate|log.Ltime|log.Lshortfile)
-	infoLogger = log.New(os.Stdout, "[INFO] ", log.Ldate|log.Ltime)
-	warnLogger = log.New(os.Stdout, "[WARN] ", log.Ldate|log.Ltime)
-	errorLogger = log.New(os.Stderr, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile)
+	debugLogger = log.New(os.Stdout, colorCyan+"[DEBUG]"+colorReset+" ", log.Ldate|log.Ltime|log.Lshortfile)
+	infoLogger = log.New(os.Stdout, colorGreen+"[INFO]"+colorReset+" ", log.Ldate|log.Ltime)
+	warnLogger = log.New(os.Stdout, colorYellow+"[WARN]"+colorReset+" ", log.Ldate|log.Ltime)
+	errorLogger = log.New(os.Stderr, colorRed+"[ERROR]"+colorReset+" ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 func SetLevel(level string) {
