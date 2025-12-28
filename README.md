@@ -1,6 +1,6 @@
 # MTranServer
 
-[English](README_en.md) | 中文
+[中文](README.md) | [English](docs/README_en.md) | [日本語](docs/README_ja.md) | [Français](docs/README_fr.md) | [Deutsch](docs/README_de.md)
 
 <!-- <img src="./images/icon.png" width="64px" height="64px" align="right" alt="MTran"> -->
 

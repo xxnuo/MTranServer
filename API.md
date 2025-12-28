@@ -1,5 +1,7 @@
 # MTranServer 高级配置说明
 
+[中文](API.md) | [English](docs/API_en.md) | [日本語](docs/API_ja.md) | [Français](docs/API_fr.md) | [Deutsch](docs/API_de.md)
+
 ### 环境变量配置
 
 | 环境变量              | 说明                                     | 默认值 | 可选值                      |
