@@ -201,36 +201,26 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 		start := r.StartIndex()
 		end := r.EndIndex()
 		segmentText := text[start:end]
-		originalLang := linguaToBCP47(r.Language())
+		detectedLang := linguaToBCP47(r.Language())
 
-		confidenceValues := detector.ComputeLanguageConfidenceValues(segmentText)
-		var confidence float64
 		var lang string
 		var usedFallback bool
-		if len(confidenceValues) > 0 {
-			confidence = confidenceValues[0].Value()
-			detectedLang := linguaToBCP47(confidenceValues[0].Language())
-			if confidence >= threshold && isSupportedLanguage(detectedLang) {
-				lang = detectedLang
-			} else {
-				lang = fallbackBCP47
-				usedFallback = true
-			}
+		if isSupportedLanguage(detectedLang) {
+			lang = detectedLang
 		} else {
 			lang = fallbackBCP47
-			confidence = 0.0
 			usedFallback = true
 		}
 
-		logger.Debug("DetectMultipleLanguages: segment[%d] original=%s, final=%s, conf=%.3f, fallback=%v, text=%q",
-			i, originalLang, lang, confidence, usedFallback, segmentText)
+		logger.Debug("DetectMultipleLanguages: segment[%d] lang=%s, fallback=%v, text=%q",
+			i, lang, usedFallback, segmentText)
 
 		rawSegments = append(rawSegments, TextSegment{
 			Text:       segmentText,
 			Language:   lang,
 			Start:      start,
 			End:        end,
-			Confidence: confidence,
+			Confidence: 1.0,
 		})
 	}
 
