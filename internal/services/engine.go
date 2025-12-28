@@ -2,9 +2,11 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -29,6 +31,51 @@ var (
 	engines = make(map[string]*EngineInfo)
 	engMu   sync.RWMutex
 )
+
+const (
+	workerMemoryMB     = 2048
+	reservedMemoryMB   = 4096
+)
+
+var ErrInsufficientMemory = errors.New("insufficient memory to create new worker")
+
+func getAvailableMemoryMB() uint64 {
+	if runtime.GOOS == "linux" {
+		data, err := os.ReadFile("/proc/meminfo")
+		if err != nil {
+			return 0
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "MemAvailable:") {
+				var val uint64
+				fmt.Sscanf(line, "MemAvailable: %d kB", &val)
+				return val / 1024
+			}
+		}
+	}
+	return 0
+}
+
+func canCreateNewWorker() bool {
+	engMu.RLock()
+	currentWorkers := len(engines)
+	engMu.RUnlock()
+
+	availableMB := getAvailableMemoryMB()
+	if availableMB == 0 {
+		logger.Debug("Cannot determine available memory, allowing worker creation")
+		return true
+	}
+
+	requiredMB := uint64(workerMemoryMB + reservedMemoryMB)
+	canCreate := availableMB >= requiredMB
+
+	logger.Debug("Memory check: available=%dMB, required=%dMB, workers=%d, canCreate=%v",
+		availableMB, requiredMB, currentWorkers, canCreate)
+
+	return canCreate
+}
 
 func (ei *EngineInfo) resetIdleTimer() {
 	ei.mu.Lock()
@@ -90,6 +137,12 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 			info.resetIdleTimer()
 			return info.Manager, nil
 		}
+	}
+
+	if !canCreateNewWorker() {
+		availableMB := getAvailableMemoryMB()
+		return nil, fmt.Errorf("%w: available memory %dMB, need at least %dMB",
+			ErrInsufficientMemory, availableMB, workerMemoryMB+reservedMemoryMB)
 	}
 
 	logger.Info("Creating new engine for %s -> %s", fromLang, toLang)
