@@ -3,6 +3,7 @@ package services
 import (
 	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxnuo/MTranServer/internal/logger"
@@ -148,6 +149,21 @@ func DetectMultipleLanguages(text string) []TextSegment {
 	return DetectMultipleLanguagesWithThreshold(text, defaultConfidenceThreshold)
 }
 
+func hasMixedScripts(text string) bool {
+	var hasCJK, hasLatin bool
+	for _, r := range text {
+		if unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) || unicode.Is(unicode.Katakana, r) || unicode.Is(unicode.Hangul, r) {
+			hasCJK = true
+		} else if unicode.Is(unicode.Latin, r) {
+			hasLatin = true
+		}
+		if hasCJK && hasLatin {
+			return true
+		}
+	}
+	return false
+}
+
 func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []TextSegment {
 	if text == "" {
 		return nil
@@ -160,7 +176,19 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 	if !isSupportedLanguage(fallbackBCP47) {
 		fallbackBCP47 = "en"
 	}
-	logger.Debug("DetectMultipleLanguages: fallback=%s, threshold=%.2f, text=%q", fallbackBCP47, threshold, text)
+
+	if !hasMixedScripts(text) {
+		logger.Debug("DetectMultipleLanguages: no mixed scripts, using single language: %s", fallbackBCP47)
+		return []TextSegment{{
+			Text:       text,
+			Language:   fallbackBCP47,
+			Start:      0,
+			End:        len(text),
+			Confidence: 1.0,
+		}}
+	}
+
+	logger.Debug("DetectMultipleLanguages: mixed scripts detected, fallback=%s, threshold=%.2f", fallbackBCP47, threshold)
 
 	results := detector.DetectMultipleLanguagesOf(text)
 	if len(results) == 0 {
