@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/xxnuo/MTranServer/internal/downloader"
 )
@@ -99,7 +98,7 @@ func main() {
 	log.Printf("Downloaded successfully to %s", targetFile)
 
 	versionFile := "worker.version"
-	if err := os.WriteFile(versionFile, []byte(strings.TrimPrefix(version, "v")), 0644); err != nil {
+	if err := os.WriteFile(versionFile, []byte(version), 0644); err != nil {
 		log.Fatalf("Failed to write version file: %v", err)
 	}
 	log.Printf("Version %s written to %s", version, versionFile)
