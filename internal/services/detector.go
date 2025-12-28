@@ -8,6 +8,8 @@ import (
 	"github.com/xxnuo/MTranServer/internal/logger"
 )
 
+const defaultConfidenceThreshold = 0.5
+
 var (
 	detector     lingua.LanguageDetector
 	detectorOnce sync.Once
@@ -18,6 +20,7 @@ func initDetector() {
 		logger.Debug("Initializing language detector")
 		detector = lingua.NewLanguageDetectorBuilder().
 			FromAllLanguages().
+			WithMinimumRelativeDistance(0.99).
 			Build()
 		logger.Debug("Language detector initialized")
 	})
@@ -74,33 +77,68 @@ func DetectLanguageWithConfidence(text string, minConfidence float64) (string, f
 }
 
 type TextSegment struct {
-	Text     string
-	Language string
-	Start    int
-	End      int
+	Text       string
+	Language   string
+	Start      int
+	End        int
+	Confidence float64
 }
 
 func DetectMultipleLanguages(text string) []TextSegment {
+	return DetectMultipleLanguagesWithThreshold(text, defaultConfidenceThreshold)
+}
+
+func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []TextSegment {
 	if text == "" {
 		return nil
 	}
 
 	initDetector()
 
+	fallbackLang, _ := detector.DetectLanguageOf(text)
+	fallbackBCP47 := linguaToBCP47(fallbackLang)
+	logger.Debug("DetectMultipleLanguages: fallback=%s, threshold=%.2f, text=%q", fallbackBCP47, threshold, text)
+
 	results := detector.DetectMultipleLanguagesOf(text)
 	if len(results) == 0 {
+		logger.Debug("DetectMultipleLanguages: no segments detected")
 		return nil
 	}
 
 	segments := make([]TextSegment, 0, len(results))
-	for _, r := range results {
+	for i, r := range results {
 		start := r.StartIndex()
 		end := r.EndIndex()
+		segmentText := text[start:end]
+		originalLang := linguaToBCP47(r.Language())
+
+		confidenceValues := detector.ComputeLanguageConfidenceValues(segmentText)
+		var confidence float64
+		var lang string
+		var usedFallback bool
+		if len(confidenceValues) > 0 {
+			confidence = confidenceValues[0].Value()
+			if confidence >= threshold {
+				lang = linguaToBCP47(confidenceValues[0].Language())
+			} else {
+				lang = fallbackBCP47
+				usedFallback = true
+			}
+		} else {
+			lang = fallbackBCP47
+			confidence = 0.0
+			usedFallback = true
+		}
+
+		logger.Debug("DetectMultipleLanguages: segment[%d] original=%s, final=%s, conf=%.3f, fallback=%v, text=%q",
+			i, originalLang, lang, confidence, usedFallback, segmentText)
+
 		segments = append(segments, TextSegment{
-			Text:     text[start:end],
-			Language: linguaToBCP47(r.Language()),
-			Start:    start,
-			End:      end,
+			Text:       segmentText,
+			Language:   lang,
+			Start:      start,
+			End:        end,
+			Confidence: confidence,
 		})
 	}
 
