@@ -4,31 +4,23 @@
 
 <!-- <img src="./images/icon.png" width="64px" height="64px" align="right" alt="MTran"> -->
 
-一个超低资源消耗超快的离线翻译模型服务器，无需显卡。单个请求平均响应时间 50 毫秒。支持全世界主要语言的翻译。
+一个超低资源消耗速度超快的离线翻译模型服务器，无需显卡。单个请求平均响应时间 50 毫秒。支持全世界主要语言的翻译。
 
-> 注意本模型专注于速度和多种设备私有部署，所以翻译质量肯定是不如大模型翻译的效果。需要高质量的翻译建议使用在线大模型 API。
+注意本模型服务器专注于`离线翻译`、`响应速度`、`跨平台部署`、`本地运行` 达到 `无限免费翻译` 的设计目标，受限于模型大小和优化程度，所以翻译质量肯定是不如大模型翻译的效果。
+
+> 需要高质量的翻译建议使用在线大模型 API。
 
 <img src="./images/preview.png" width="auto" height="460">
-
-## 同类项目效果(CPU,英译中)
-
-| 项目名称                                                               | 内存占用 | 并发性能 | 翻译效果 | 速度 | 其他信息                                                                                                                          |
-| ---------------------------------------------------------------------- | -------- | -------- | -------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [facebook/nllb](https://github.com/facebookresearch/fairseq/tree/nllb) | 很高     | 差       | 一般     | 慢   | Android 移植版的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快                        |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | 很高     | 一般     | 一般     | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句，[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)           | 高       | 一般     | 略差     | 快   | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                     |
-| 其他大模型                                                             | 超高     | 动态     | 非常好   | 很慢 | 对硬件要求很高                                                                                  |
-| 本项目                                                    | 低       | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms |
-
-> 表中数据仅供参考，非严格测试，非量化版本对比。
 
 ## 使用说明
 
 前往 [Releases](https://github.com/xxnuo/MTranServer/releases) 下载对应平台最新版本，直接在命令行启动程序，即可使用。
 
-> [MTranServer](https://github.com/xxnuo/MTranServer) 主要是面向服务器使用环境，所以目前只有命令行服务和 Docker 部署，之后有空会完善 [MTranDesktop](https://github.com/xxnuo/MTranDesktop) 供桌面端使用。
+> [MTranServer](https://github.com/xxnuo/MTranServer) 主要是面向服务器使用环境，所以目前只有命令行服务和 Docker 部署。
+> 
+> 工作空余时间有空会完善 [MTranDesktop](https://github.com/xxnuo/MTranDesktop) 供桌面端使用，欢迎大佬们参与贡献。
 
-日志会输出程序自带的一个简单 UI 的地址和在线调试文档的地址，下面是预览
+服务器启动后日志会输出程序自带的一个简单 UI 的地址和在线调试文档的地址，下面是预览
 
 ![UI](./images/ui.png)
 
@@ -91,92 +83,18 @@ docker compose up -d
 >
 > 程序经常更新，如果遇到问题，可以尝试更新到最新版本。
 
-### 环境变量配置
-
-| 环境变量              | 说明                                     | 默认值 | 可选值                      |
-| --------------------- | ---------------------------------------- | ------ | --------------------------- |
-| MT_LOG_LEVEL          | 日志级别                                 | warn   | debug, info, warn, error    |
-| MT_CONFIG_DIR         | 配置目录                                 | ~/.config/mtran/server | 任意路径                    |
-| MT_MODEL_DIR          | 模型目录                                 | ~/.config/mtran/models | 任意路径                    |
-| MT_HOST               | 服务器监听地址                           | 0.0.0.0| 任意 IP 地址                |
-| MT_PORT               | 服务器端口                               | 8989   | 1-65535                     |
-| MT_ENABLE_UI          | 启用 Web UI                              | true   | true, false                 |
-| MT_OFFLINE            | 离线模式，不自动下载新语言的模型，仅使用已下载的模型 | false  | true, false                 |
-| MT_WORKER_IDLE_TIMEOUT| Worker 空闲超时时间（秒）                | 300    | 任意正整数                  |
-| MT_API_TOKEN          | API 访问令牌                             | 空     | 任意字符串                  |
-
-示例：
-
-```bash
-# 设置日志级别为 debug
-export MT_LOG_LEVEL=debug
-
-# 设置端口为 9000
-export MT_PORT=9000
-
-# 启动服务
-./mtranserver
-```
-
-### API 接口说明
-
-#### 系统接口
-
-| 接口 | 方法 | 说明 | 认证 |
-| ---- | ---- | ---- | ---- |
-| `/version` | GET | 获取服务版本 | 否 |
-| `/health` | GET | 健康检查 | 否 |
-| `/__heartbeat__` | GET | 心跳检查 | 否 |
-| `/__lbheartbeat__` | GET | 负载均衡心跳检查 | 否 |
-| `/docs/*` | GET | Swagger API 文档 | 否 |
-
-#### 翻译接口
-
-| 接口 | 方法 | 说明 | 认证 |
-| ---- | ---- | ---- | ---- |
-| `/languages` | GET | 获取支持的语言列表 | 是 |
-| `/translate` | POST | 单文本翻译 | 是 |
-| `/translate/batch` | POST | 批量翻译 | 是 |
-
-**单文本翻译请求示例：**
-
-```json
-{
-  "from": "en",
-  "to": "zh-Hans",
-  "text": "Hello, world!",
-  "html": false
-}
-```
-
-**批量翻译请求示例：**
-
-```json
-{
-  "from": "en",
-  "to": "zh-Hans",
-  "texts": ["Hello, world!", "Good morning!"],
-  "html": false
-}
-```
-
-**认证方式：**
-
-- Header: `Authorization: Bearer <token>`
-- Query: `?token=<token>`
-
 #### 翻译插件兼容接口
 
 服务器提供了多个翻译插件的兼容接口：
 
-| 接口 | 方法 | 说明 | 支持的插件 |
-| ---- | ---- | ---- | ---------- |
-| `/imme` | POST | 沉浸式翻译插件接口 | [沉浸式翻译](https://immersivetranslate.com/) |
-| `/kiss` | POST | 简约翻译插件接口 | [简约翻译](https://github.com/fishjar/kiss-translator) |
-| `/deepl` | POST | DeepL API v2 兼容接口 | 支持 DeepL API 的客户端 |
-| `/google/language/translate/v2` | POST | Google Translate API v2 兼容接口 | 支持 Google Translate API 的客户端 |
-| `/google/translate_a/single` | GET | Google translate_a/single 兼容接口 | 支持 Google 网页翻译的客户端 |
-| `/hcfy` | POST | 划词翻译兼容接口 | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
+| 接口                            | 方法 | 说明                               | 支持的插件                                                                  |
+| ------------------------------- | ---- | ---------------------------------- | --------------------------------------------------------------------------- |
+| `/imme`                         | POST | 沉浸式翻译插件接口                 | [沉浸式翻译](https://immersivetranslate.com/)                               |
+| `/kiss`                         | POST | 简约翻译插件接口                   | [简约翻译](https://github.com/fishjar/kiss-translator)                      |
+| `/deepl`                        | POST | DeepL API v2 兼容接口              | 支持 DeepL API 的客户端                                                     |
+| `/google/language/translate/v2` | POST | Google Translate API v2 兼容接口   | 支持 Google Translate API 的客户端                                          |
+| `/google/translate_a/single`    | GET  | Google translate_a/single 兼容接口 | 支持 Google 网页翻译的客户端                                                |
+| `/hcfy`                         | POST | 划词翻译兼容接口                   | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 
 **插件配置说明：**
 
@@ -188,17 +106,35 @@ export MT_PORT=9000
 >
 > 接下来按下表的设置方法设置插件的自定义接口地址。
 
-| 名称             | URL                                           | 插件设置                                                                         |
-| ---------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
-| 沉浸式翻译无密码 | `http://localhost:8989/imme`                  | `自定义API 设置` - `API URL`                                                     |
-| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token` | 同上，需要更改 URL 尾部的 `your_token` 为你的 `MT_API_TOKEN` 值 |
-| 简约翻译无密码   | `http://localhost:8989/kiss`                  | `接口设置` - `Custom` - `URL`                                                    |
-| 简约翻译有密码   | `http://localhost:8989/kiss`                  | 同上，需要 `KEY` 填 `your_token`                                                 |
-| DeepL 兼容       | `http://localhost:8989/deepl`                 | 使用 `DeepL-Auth-Key` 或 `Bearer` 认证                                           |
-| Google 兼容      | `http://localhost:8989/google/language/translate/v2` | 使用 `key` 参数或 `Bearer` 认证                                           |
-| 划词翻译         | `http://localhost:8989/hcfy`                  | 支持 `token` 参数或 `Bearer` 认证                                                |
+| 名称             | URL                                                  | 插件设置                                                        |
+| ---------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
+| 沉浸式翻译无密码 | `http://localhost:8989/imme`                         | `自定义API 设置` - `API URL`                                    |
+| 沉浸式翻译有密码 | `http://localhost:8989/imme?token=your_token`        | 同上，需要更改 URL 尾部的 `your_token` 为你的 `MT_API_TOKEN` 值 |
+| 简约翻译无密码   | `http://localhost:8989/kiss`                         | `接口设置` - `Custom` - `URL`                                   |
+| 简约翻译有密码   | `http://localhost:8989/kiss`                         | 同上，需要 `KEY` 填 `your_token`                                |
+| DeepL 兼容       | `http://localhost:8989/deepl`                        | 使用 `DeepL-Auth-Key` 或 `Bearer` 认证                          |
+| Google 兼容      | `http://localhost:8989/google/language/translate/v2` | 使用 `key` 参数或 `Bearer` 认证                                 |
+| 划词翻译         | `http://localhost:8989/hcfy`                         | 支持 `token` 参数或 `Bearer` 认证                               |
 
 **普通用户参照表格内容设置好插件使用的接口地址就可以使用了。**
+
+## 同类项目
+
+列出一些同类功能的项目，如果有其他需求的用户可以尝试这些项目：
+
+| 项目名称                                                           | 内存占用 | 并发性能 | 翻译效果 | 速度 | 其他信息                                                                                                                          |
+| ------------------------------------------------------------------ | -------- | -------- | -------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | 很高     | 差       | 一般     | 慢   | 大佬移植到了 Android 的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快                 |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高     | 一般     | 一般     | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句，[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
+| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | 高       | 一般     | 略差     | 快   | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                     |
+| 其他大模型                                                         | 超高     | 动态     | 非常好   | 很慢 | 对硬件要求很高，如果需要高并发翻译建议使用 vllm 框架，通过内存占用和显存占用来控制翻译并发量                                      |
+| 本项目                                                             | 中等     | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms，新版模型提升了翻译质量，导致内存占用升高，有时间会着手优化                                             |
+
+> 表中为 CPU、英译中场景下的简单测试，非严格测试，非量化版本对比，仅供参考。
+
+# 高级配置说明
+
+请参考 [API.md](API.md) 文件和启动后的 API 文档。
 
 ## Star History
 
@@ -206,6 +142,6 @@ export MT_PORT=9000
 
 ## Thanks
 
-[Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).
-
 [Bergamot Project](https://browser.mt/) for awesome idea of local translation.
+
+[Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).
