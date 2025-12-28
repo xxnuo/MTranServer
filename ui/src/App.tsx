@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { ArrowRightLeft } from 'lucide-react'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { getSortedLanguages } from '@/lib/languages'
 
 interface TranslateRequest {
   from: string
@@ -24,7 +25,7 @@ interface TranslateResponse {
 }
 
 function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const isMobile = useIsMobile()
   const [languages, setLanguages] = useState<string[]>([])
   const [sourceLang, setSourceLang] = useState('auto')
@@ -36,6 +37,10 @@ function App() {
   const [autoTranslate, setAutoTranslate] = useState(false)
   const [showTokenDialog, setShowTokenDialog] = useState(false)
   const translateTimeoutRef = useRef<number | null>(null)
+
+  const sortedLanguages = useMemo(() => {
+    return getSortedLanguages(languages, i18n.language)
+  }, [languages, i18n.language])
 
   const fetchLanguages = useCallback(async () => {
     try {
@@ -183,9 +188,10 @@ function App() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {languages.filter(lang => !!lang).map((lang) => (
-                      <SelectItem key={lang} value={lang}>
-                        {lang === 'auto' ? t('autoDetect') : lang}
+                    <SelectItem value="auto">{t('autoDetect')}</SelectItem>
+                    {sortedLanguages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -210,9 +216,9 @@ function App() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {languages.filter(lang => lang && lang !== 'auto').map((lang) => (
-                      <SelectItem key={lang} value={lang}>
-                        {lang}
+                    {sortedLanguages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
