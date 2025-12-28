@@ -74,3 +74,36 @@ func DetectLanguageWithConfidence(text string, minConfidence float64) (string, f
 	return linguaToBCP47(topResult.Language()), confidence
 }
 
+type TextSegment struct {
+	Text     string
+	Language string
+	Start    int
+	End      int
+}
+
+func DetectMultipleLanguages(text string) []TextSegment {
+	if text == "" {
+		return nil
+	}
+
+	initDetector()
+
+	results := detector.DetectMultipleLanguagesOf(text)
+	if len(results) == 0 {
+		return nil
+	}
+
+	segments := make([]TextSegment, 0, len(results))
+	for _, r := range results {
+		start := r.StartIndex()
+		end := r.EndIndex()
+		segments = append(segments, TextSegment{
+			Text:     text[start:end],
+			Language: linguaToBCP47(r.Language()),
+			Start:    start,
+			End:      end,
+		})
+	}
+
+	return segments
+}

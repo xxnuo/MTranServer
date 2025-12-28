@@ -199,38 +199,115 @@ func GetOrCreateEngine(fromLang, toLang string) (*manager.Manager, error) {
 	return getOrCreateSingleEngine(fromLang, "en")
 }
 
-func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
-	logger.Debug("TranslateWithPivot: %s -> %s, text length: %d, isHTML: %v", fromLang, toLang, len(text), isHTML)
-
-	if fromLang == "auto" {
-		detected := DetectLanguage(text)
-		if detected == "" {
-			return "", fmt.Errorf("failed to detect source language")
-		}
-		logger.Debug("Auto-detected source language: %s", detected)
-		fromLang = detected
-	}
-
+func translateSegment(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
 	if fromLang == toLang {
-		logger.Debug("Source and target languages are the same (%s), returning original text", fromLang)
 		return text, nil
 	}
 
 	if !needsPivotTranslation(fromLang, toLang) {
-		logger.Debug("TranslateWithPivot: direct translation path")
 		m, err := getOrCreateSingleEngine(fromLang, toLang)
 		if err != nil {
-			logger.Error("TranslateWithPivot: failed to get engine: %v", err)
 			return "", err
 		}
-		logger.Debug("TranslateWithPivot: got engine, calling translate")
+		if isHTML {
+			return m.TranslateHTML(ctx, text)
+		}
+		return m.Translate(ctx, text)
+	}
+
+	m1, err := getOrCreateSingleEngine(fromLang, "en")
+	if err != nil {
+		return "", err
+	}
+	var intermediateText string
+	if isHTML {
+		intermediateText, err = m1.TranslateHTML(ctx, text)
+	} else {
+		intermediateText, err = m1.Translate(ctx, text)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	m2, err := getOrCreateSingleEngine("en", toLang)
+	if err != nil {
+		return "", err
+	}
+	if isHTML {
+		return m2.TranslateHTML(ctx, intermediateText)
+	}
+	return m2.Translate(ctx, intermediateText)
+}
+
+func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	logger.Debug("TranslateWithPivot: %s -> %s, text length: %d, isHTML: %v", fromLang, toLang, len(text), isHTML)
+
+	segments := DetectMultipleLanguages(text)
+	if len(segments) <= 1 {
+		var effectiveFromLang string
+		if len(segments) == 1 {
+			effectiveFromLang = segments[0].Language
+		} else if fromLang == "auto" {
+			detected := DetectLanguage(text)
+			if detected == "" {
+				return "", fmt.Errorf("failed to detect source language")
+			}
+			effectiveFromLang = detected
+		} else {
+			effectiveFromLang = fromLang
+		}
+		if effectiveFromLang == toLang {
+			return text, nil
+		}
+		return translateSingleLanguageText(ctx, effectiveFromLang, toLang, text, isHTML)
+	}
+
+	logger.Debug("Detected %d language segments", len(segments))
+	var result strings.Builder
+	lastEnd := 0
+
+	for _, seg := range segments {
+		if seg.Start > lastEnd {
+			result.WriteString(text[lastEnd:seg.Start])
+		}
+
+		if seg.Language == toLang {
+			result.WriteString(seg.Text)
+		} else {
+			translated, err := translateSegment(ctx, seg.Language, toLang, seg.Text, isHTML)
+			if err != nil {
+				logger.Error("Failed to translate segment: %v", err)
+				result.WriteString(seg.Text)
+			} else {
+				result.WriteString(translated)
+			}
+		}
+		lastEnd = seg.End
+	}
+
+	if lastEnd < len(text) {
+		result.WriteString(text[lastEnd:])
+	}
+
+	return result.String(), nil
+}
+
+func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
+	if !needsPivotTranslation(fromLang, toLang) {
+		logger.Debug("translateSingleLanguageText: direct translation path")
+		m, err := getOrCreateSingleEngine(fromLang, toLang)
+		if err != nil {
+			logger.Error("translateSingleLanguageText: failed to get engine: %v", err)
+			return "", err
+		}
+		logger.Debug("translateSingleLanguageText: got engine, calling translate")
 		var result string
 		if isHTML {
 			result, err = m.TranslateHTML(ctx, text)
 		} else {
 			result, err = m.Translate(ctx, text)
 		}
-		logger.Debug("TranslateWithPivot: translate returned, err: %v", err)
+		logger.Debug("translateSingleLanguageText: translate returned, err: %v", err)
 		if err != nil && isFatalError(err) {
 			key := fmt.Sprintf("%s-%s", fromLang, toLang)
 			logger.Warn("Fatal error detected for engine %s, recreating...", key)
