@@ -9,7 +9,11 @@ import (
 	"github.com/xxnuo/MTranServer/internal/models"
 )
 
-const defaultConfidenceThreshold = 0.5
+const (
+	defaultConfidenceThreshold = 0.5
+	minimumRelativeDistance    = 0.99
+	maximumLanguagesInOneText  = 2
+)
 
 var (
 	detector           lingua.LanguageDetector
@@ -27,7 +31,7 @@ func initDetector() {
 			logger.Warn("Failed to get supported languages: %v, using all languages", err)
 			detector = lingua.NewLanguageDetectorBuilder().
 				FromAllLanguages().
-				WithMinimumRelativeDistance(0.99).
+				WithMinimumRelativeDistance(minimumRelativeDistance).
 				WithLowAccuracyMode().
 				WithPreloadedLanguageModels().
 				Build()
@@ -205,6 +209,8 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 	segments := mergeAdjacentSegments(rawSegments, text)
 	logger.Debug("DetectMultipleLanguages: merged %d -> %d segments", len(rawSegments), len(segments))
 
+	segments = limitLanguages(segments, text, maximumLanguagesInOneText)
+
 	return segments
 }
 
@@ -232,4 +238,53 @@ func mergeAdjacentSegments(segments []TextSegment, originalText string) []TextSe
 	merged = append(merged, current)
 
 	return merged
+}
+
+func limitLanguages(segments []TextSegment, originalText string, maxLangs int) []TextSegment {
+	if len(segments) <= 1 {
+		return segments
+	}
+
+	langBytes := make(map[string]int)
+	for _, seg := range segments {
+		langBytes[seg.Language] += seg.End - seg.Start
+	}
+
+	if len(langBytes) <= maxLangs {
+		return segments
+	}
+
+	type langSize struct {
+		lang string
+		size int
+	}
+	sorted := make([]langSize, 0, len(langBytes))
+	for lang, size := range langBytes {
+		sorted = append(sorted, langSize{lang, size})
+	}
+	for i := 0; i < len(sorted)-1; i++ {
+		for j := i + 1; j < len(sorted); j++ {
+			if sorted[j].size > sorted[i].size {
+				sorted[i], sorted[j] = sorted[j], sorted[i]
+			}
+		}
+	}
+
+	keepLangs := make(map[string]bool)
+	for i := 0; i < maxLangs && i < len(sorted); i++ {
+		keepLangs[sorted[i].lang] = true
+	}
+
+	primaryLang := sorted[0].lang
+
+	for i := range segments {
+		if !keepLangs[segments[i].Language] {
+			segments[i].Language = primaryLang
+		}
+	}
+
+	result := mergeAdjacentSegments(segments, originalText)
+	logger.Debug("limitLanguages: reduced to %d languages, %d segments", maxLangs, len(result))
+
+	return result
 }
