@@ -20,20 +20,59 @@ var (
 func initDetector() {
 	detectorOnce.Do(func() {
 		logger.Debug("Initializing language detector")
-		detector = lingua.NewLanguageDetectorBuilder().
-			FromAllLanguages().
-			WithMinimumRelativeDistance(0.99).
-			Build()
 
 		supportedLanguages = make(map[string]bool)
 		langs, err := models.GetSupportedLanguages()
-		if err == nil {
-			for _, lang := range langs {
-				supportedLanguages[lang] = true
+		if err != nil {
+			logger.Warn("Failed to get supported languages: %v, using all languages", err)
+			detector = lingua.NewLanguageDetectorBuilder().
+				FromAllLanguages().
+				WithMinimumRelativeDistance(0.99).
+				WithLowAccuracyMode().
+				WithPreloadedLanguageModels().
+				Build()
+			return
+		}
+
+		for _, lang := range langs {
+			supportedLanguages[lang] = true
+		}
+
+		linguaLangs := make([]lingua.Language, 0, len(langs))
+		for _, lang := range langs {
+			linguaLang := bcp47ToLingua(lang)
+			if linguaLang != lingua.Unknown {
+				linguaLangs = append(linguaLangs, linguaLang)
 			}
 		}
+
+		if len(linguaLangs) < 2 {
+			logger.Warn("Not enough supported languages (%d), using all languages", len(linguaLangs))
+			detector = lingua.NewLanguageDetectorBuilder().
+				FromAllLanguages().
+				WithLowAccuracyMode().
+				WithPreloadedLanguageModels().
+				Build()
+		} else {
+			detector = lingua.NewLanguageDetectorBuilder().
+				FromLanguages(linguaLangs...).
+				WithLowAccuracyMode().
+				WithPreloadedLanguageModels().
+				Build()
+		}
+
 		logger.Debug("Language detector initialized, %d supported languages", len(supportedLanguages))
 	})
+}
+
+func bcp47ToLingua(code string) lingua.Language {
+	switch code {
+	case "zh-Hans", "zh":
+		return lingua.Chinese
+	default:
+		isoCode := lingua.GetIsoCode639_1FromValue(strings.ToUpper(code))
+		return lingua.GetLanguageFromIsoCode639_1(isoCode)
+	}
 }
 
 func isSupportedLanguage(lang string) bool {
