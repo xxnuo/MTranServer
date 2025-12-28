@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -38,24 +37,6 @@ const (
 )
 
 var ErrInsufficientMemory = errors.New("insufficient memory to create new worker")
-
-func getAvailableMemoryMB() uint64 {
-	if runtime.GOOS == "linux" {
-		data, err := os.ReadFile("/proc/meminfo")
-		if err != nil {
-			return 0
-		}
-		lines := strings.Split(string(data), "\n")
-		for _, line := range lines {
-			if strings.HasPrefix(line, "MemAvailable:") {
-				var val uint64
-				fmt.Sscanf(line, "MemAvailable: %d kB", &val)
-				return val / 1024
-			}
-		}
-	}
-	return 0
-}
 
 func canCreateNewWorker() bool {
 	engMu.RLock()
