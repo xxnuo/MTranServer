@@ -11,5 +11,5 @@ v3.1.12
 - 修复高并发情况下翻译结果错乱的 Bug
 - Fix: High concurrency translation result confusion bug
 
-全部更新内容请参考 [HISTORY.md](HISTORY.md)
-For full update content, please refer to [HISTORY.md](HISTORY.md)
+历史更新内容请参考 [HISTORY.md](HISTORY.md)
+For historical update content, please refer to [HISTORY.md](HISTORY.md)
