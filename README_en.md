@@ -4,9 +4,7 @@
 
 [中文](README.md) | English
 
-A high-performance offline translation server with minimal resource requirements - no GPU needed. Average response time of 50ms per request. Supports translation of major languages worldwide.
-
-Translation quality comparable to Google Translate.
+A high-performance offline translation model server with minimal resource requirements - no GPU needed. Average response time of 50ms per request. Supports translation of major languages worldwide.
 
 Note: This model focuses on speed and private deployment on various devices, so the translation quality will not match that of large language models.
 
