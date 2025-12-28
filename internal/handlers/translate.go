@@ -48,7 +48,6 @@ func HandleTranslate(c *gin.Context) {
 		return
 	}
 
-	// Normalize language codes
 	req.From = utils.NormalizeLanguageCode(req.From)
 	req.To = utils.NormalizeLanguageCode(req.To)
 
@@ -56,7 +55,9 @@ func HandleTranslate(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
 
-	result, err := services.TranslateWithPivot(ctx, req.From, req.To, req.Text, req.HTML)
+	result, err := utils.ProcessTextWithEmojiHandling(req.Text, func(cleanText string) (string, error) {
+		return services.TranslateWithPivot(ctx, req.From, req.To, cleanText, req.HTML)
+	})
 	if err != nil {
 		logger.Error("Translation failed (%s -> %s): %v", req.From, req.To, err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -105,7 +106,6 @@ func HandleTranslateBatch(c *gin.Context) {
 		return
 	}
 
-	// Normalize language codes
 	req.From = utils.NormalizeLanguageCode(req.From)
 	req.To = utils.NormalizeLanguageCode(req.To)
 
@@ -115,7 +115,9 @@ func HandleTranslateBatch(c *gin.Context) {
 	defer cancel()
 
 	for i, text := range req.Texts {
-		result, err := services.TranslateWithPivot(ctx, req.From, req.To, text, req.HTML)
+		result, err := utils.ProcessTextWithEmojiHandling(text, func(cleanText string) (string, error) {
+			return services.TranslateWithPivot(ctx, req.From, req.To, cleanText, req.HTML)
+		})
 		if err != nil {
 			logger.Error("Batch translation failed at index %d (%s -> %s): %v", i, req.From, req.To, err)
 			c.JSON(http.StatusInternalServerError, gin.H{
