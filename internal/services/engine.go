@@ -39,10 +39,6 @@ const (
 var ErrInsufficientMemory = errors.New("insufficient memory to create new worker")
 
 func canCreateNewWorker() bool {
-	engMu.RLock()
-	currentWorkers := len(engines)
-	engMu.RUnlock()
-
 	availableMB := getAvailableMemoryMB()
 	if availableMB == 0 {
 		logger.Debug("Cannot determine available memory, allowing worker creation")
@@ -52,8 +48,8 @@ func canCreateNewWorker() bool {
 	requiredMB := uint64(workerMemoryMB + reservedMemoryMB)
 	canCreate := availableMB >= requiredMB
 
-	logger.Debug("Memory check: available=%dMB, required=%dMB, workers=%d, canCreate=%v",
-		availableMB, requiredMB, currentWorkers, canCreate)
+	logger.Debug("Memory check: available=%dMB, required=%dMB, canCreate=%v",
+		availableMB, requiredMB, canCreate)
 
 	return canCreate
 }
