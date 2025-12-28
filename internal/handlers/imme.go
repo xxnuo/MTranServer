@@ -62,7 +62,7 @@ func HandleImmeTranslate(apiToken string) gin.HandlerFunc {
 			return
 		}
 
-		sourceLang := utils.NormalizeLanguageCode(req.SourceLang)
+		sourceLang := "auto"
 		targetLang := utils.NormalizeLanguageCode(req.TargetLang)
 
 		translations := make([]ImmeTranslation, len(req.TextList))
