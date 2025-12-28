@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, Search } from "lucide-react"
-import { HistoryItem } from "@/hooks/use-history"
+import type { HistoryItem } from "@/hooks/use-history"
 import { useTranslation } from "react-i18next"
 
 interface HistorySheetProps {
