@@ -120,6 +120,7 @@ func (d *Downloader) Download(urlStr, filename string, opts *DownloadOptions) er
 			"http":  httpGetter,
 			"https": httpGetter,
 		}),
+		getter.WithDecompressors(map[string]getter.Decompressor{}),
 	}
 
 	if d.ProgressFunc != nil {

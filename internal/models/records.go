@@ -265,7 +265,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 	for _, record := range targetRecords {
 		filename := record.Attachment.Filename
 		fileUrl := AttachmentsBaseUrl + "/" + record.Attachment.Location
-		sha256sum := record.Attachment.Hash
+		compressedHash := record.Attachment.Hash
 
 		decompressedFilename := strings.TrimSuffix(filename, ".zst")
 		decompressedPath := filepath.Join(langPairDir, decompressedFilename)
@@ -292,7 +292,7 @@ func DownloadModel(toLang string, fromLang string, version string) error {
 
 		logger.Debug("Downloading model file: %s (type: %s)", filename, record.FileType)
 		if err := d.Download(fileUrl, filename, &downloader.DownloadOptions{
-			SHA256:    sha256sum,
+			SHA256:    compressedHash,
 			Overwrite: true,
 		}); err != nil {
 			return fmt.Errorf("Failed to download %s: %w", filename, err)
