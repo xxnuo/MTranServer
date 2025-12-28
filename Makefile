@@ -37,7 +37,7 @@ download: download-core download-records
 
 generate-docs:
 	@echo "Generating docs..."
-	@GOOS= GOARCH= go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/mtranserver/main.go -o ./internal/docs
+	@GOOS= GOARCH= go run github.com/swaggo/swag/cmd/swag@latest init -d ./cmd/mtranserver,./internal/handlers,./internal/models -g main.go -o ./internal/docs
 	@echo "Docs generated successfully"
 
 build-ui:
