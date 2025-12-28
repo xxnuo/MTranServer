@@ -125,7 +125,7 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 		return nil
 	}
 
-	segments := make([]TextSegment, 0, len(results))
+	rawSegments := make([]TextSegment, 0, len(results))
 	for i, r := range results {
 		start := r.StartIndex()
 		end := r.EndIndex()
@@ -154,7 +154,7 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 		logger.Debug("DetectMultipleLanguages: segment[%d] original=%s, final=%s, conf=%.3f, fallback=%v, text=%q",
 			i, originalLang, lang, confidence, usedFallback, segmentText)
 
-		segments = append(segments, TextSegment{
+		rawSegments = append(rawSegments, TextSegment{
 			Text:       segmentText,
 			Language:   lang,
 			Start:      start,
@@ -163,5 +163,34 @@ func DetectMultipleLanguagesWithThreshold(text string, threshold float64) []Text
 		})
 	}
 
+	segments := mergeAdjacentSegments(rawSegments, text)
+	logger.Debug("DetectMultipleLanguages: merged %d -> %d segments", len(rawSegments), len(segments))
+
 	return segments
+}
+
+func mergeAdjacentSegments(segments []TextSegment, originalText string) []TextSegment {
+	if len(segments) <= 1 {
+		return segments
+	}
+
+	merged := make([]TextSegment, 0, len(segments))
+	current := segments[0]
+
+	for i := 1; i < len(segments); i++ {
+		next := segments[i]
+		if current.Language == next.Language {
+			current.Text = originalText[current.Start:next.End]
+			current.End = next.End
+			if next.Confidence > current.Confidence {
+				current.Confidence = next.Confidence
+			}
+		} else {
+			merged = append(merged, current)
+			current = next
+		}
+	}
+	merged = append(merged, current)
+
+	return merged
 }
