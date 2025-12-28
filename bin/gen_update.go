@@ -4,12 +4,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/xxnuo/MTranServer/internal/downloader"
 )
@@ -19,28 +19,37 @@ const (
 	ReleaseTag = "latest"
 )
 
-type GithubRelease struct {
-	TagName string `json:"tag_name"`
-}
-
 func getLatestVersion() (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/%s", GithubRepo, ReleaseTag)
-	resp, err := http.Get(url)
+	url := fmt.Sprintf("https://github.com/%s/releases/%s", GithubRepo, ReleaseTag)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to get release info: %s", resp.Status)
+	if resp.StatusCode != http.StatusFound && resp.StatusCode != http.StatusMovedPermanently {
+		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var release GithubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", err
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return "", fmt.Errorf("no location header found")
 	}
 
-	return release.TagName, nil
+	parts := strings.Split(location, "/")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("invalid location format: %s", location)
+	}
+
+	version := parts[len(parts)-1]
+	return version, nil
 }
 
 func main() {
@@ -83,11 +92,10 @@ func main() {
 	os.Remove(targetFile)
 
 	d := downloader.New(".")
-	err = d.Download(downloadURL, targetFile, &downloader.DownloadOptions{
+	if err := d.Download(downloadURL, targetFile, &downloader.DownloadOptions{
 		Context:   context.Background(),
 		Overwrite: true,
-	})
-	if err != nil {
+	}); err != nil {
 		log.Fatalf("Failed to download worker binary: %v", err)
 	}
 
