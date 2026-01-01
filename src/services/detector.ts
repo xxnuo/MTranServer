@@ -1,10 +1,7 @@
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import loadCLD2 from '../lib/cld2/cld2.js';
+import wasmPath from '../lib/cld2/cld2.wasm' with { type: 'file' };
 import * as logger from '../logger/index.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { readFile } from 'fs/promises';
 
 export interface TextSegment {
   text: string;
@@ -29,40 +26,24 @@ async function initCLD(): Promise<void> {
 
   initPromise = (async () => {
     try {
-      logger.debug('Initializing CLD language detector');
+      logger.debug('Initializing CLD2 language detector');
 
-      const require = createRequire(import.meta.url);
-      const cldWorkerPath = path.resolve(__dirname, '../lib/cld/cld-worker.js');
+      const wasmBuffer = await readFile(wasmPath);
 
-      (global as any).Module = {
-        print: (msg: string) => logger.debug(`[CLD]: ${msg}`),
-        printErr: (msg: string) => logger.error(`[CLD Error]: ${msg}`),
-        locateFile: (filePath: string) => {
-          if (filePath.endsWith('.wasm')) {
-            return path.resolve(__dirname, '../lib/cld', filePath);
-          }
-          return filePath;
-        },
-        noExitRuntime: true
-      };
-
-      const cldModule_ = require(cldWorkerPath);
-
-      await new Promise<void>((resolve) => {
-        if (cldModule_.onRuntimeInitialized) {
-          cldModule_.onRuntimeInitialized = () => {
-            logger.debug('CLD runtime initialized');
-            resolve();
-          };
-        } else {
-          resolve();
-        }
+      const module: any = await loadCLD2({
+        print: (msg: string) => logger.debug(`[CLD2]: ${msg}`),
+        printErr: (msg: string) => logger.error(`[CLD2 Error]: ${msg}`),
+        wasmBinary: wasmBuffer,
       });
 
-      cldModule = cldModule_;
-      logger.debug('CLD language detector initialized');
+      if (module.LanguageInfo && module.LanguageInfo.prototype && module.LanguageInfo.prototype.detectLanguage) {
+        module.LanguageInfo.detectLanguage = module.LanguageInfo.prototype.detectLanguage;
+      }
+
+      cldModule = module;
+      logger.debug('CLD2 language detector initialized');
     } catch (error) {
-      logger.error(`Failed to initialize CLD: ${error}`);
+      logger.error(`Failed to initialize CLD2: ${error}`);
       throw error;
     }
   })();
@@ -72,22 +53,27 @@ async function initCLD(): Promise<void> {
 
 function detectLanguageWithCLD(text: string, isHTML: boolean = false) {
   if (!cldModule) {
-    throw new Error('CLD module not initialized');
+    throw new Error('CLD2 module not initialized');
   }
 
-  const result = cldModule.LanguageInfo.O(text, !isHTML);
+  const LanguageInfo = cldModule.LanguageInfo;
+  if (!LanguageInfo || !LanguageInfo.detectLanguage) {
+    throw new Error('CLD2 LanguageInfo or detectLanguage not available');
+  }
+
+  const result = LanguageInfo.detectLanguage(text, !isHTML);
 
   const languages = Array(3).fill(0).map((_, i) => {
-    const lang = result.U(i);
+    const lang = result.get_languages(i);
     return {
-      languageCode: lang.P(),
-      percent: lang.da()
+      languageCode: lang.getLanguageCode(),
+      percent: lang.getPercent()
     };
   }).filter(l => l.languageCode !== 'un' || l.percent > 0);
 
   const output = {
-    language: result.P(),
-    confident: result.ba(),
+    language: result.getLanguageCode(),
+    confident: result.getIsReliable(),
     languages,
     percentScore: languages[0]?.percent || 0
   };
