@@ -306,6 +306,7 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 			}
 		}()
 
+		// Give a small grace period for any pending operations
 		time.Sleep(100 * time.Millisecond)
 
 		if oldClient != nil {
@@ -316,13 +317,9 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 		}
 
 		if oldWorker != nil {
-			if oldWorker.IsRunning() {
-				logger.Debug("Force killing old worker in background")
-				if oldWorker.cmd != nil && oldWorker.cmd.Process != nil {
-					oldWorker.cmd.Process.Kill()
-				}
-				time.Sleep(500 * time.Millisecond)
-				oldWorker.Cleanup()
+			// Try graceful stop first
+			if err := oldWorker.Stop(); err != nil {
+				logger.Warn("Failed to stop old worker gracefully: %v", err)
 			}
 		}
 		logger.Debug("Old worker cleanup completed")
