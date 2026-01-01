@@ -107,8 +107,12 @@ jobs:
 
           > **Note**:
           >
+          > - **legacy**: 仅适用于使用普通版本会遇到如 'Illegal instruction' 这样问题的旧硬件（无 AVX2 指令集且没有 SIMD 优化的 CPU），大多数人不需要这个，因为它更慢。
           > - **legacy**: Use only if you experience 'Illegal instruction' crashes on very old hardware (non-AVX2 CPUs without SIMD optimizations). Most people don't need this because it's slower.
+          > - **musl**: 仅适用于 Linux 使用 musl libc 的用户，大多数人不需要这个。
           > - **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
+
+          ## Changelog
           EOF
 
           sed -i "s|\${WARNING}|${WARNING}|g" release_body.md
