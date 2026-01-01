@@ -179,40 +179,7 @@ func (m *Manager) Logs() []string {
 	return m.worker.Logs()
 }
 
-func (m *Manager) Poweron(ctx context.Context, req PoweronRequest) (*PoweronResponse, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.client == nil {
-		return nil, fmt.Errorf("client not initialized")
-	}
-
-	return m.client.Poweron(ctx, req)
-}
-
-func (m *Manager) Poweroff(ctx context.Context, req PoweroffRequest) (*PoweroffResponse, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.client == nil {
-		return nil, fmt.Errorf("client not initialized")
-	}
-
-	return m.client.Poweroff(ctx, req)
-}
-
-func (m *Manager) Reboot(ctx context.Context, req RebootRequest) (*RebootResponse, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.client == nil {
-		return nil, fmt.Errorf("client not initialized")
-	}
-
-	return m.client.Reboot(ctx, req)
-}
-
-func (m *Manager) Ready(ctx context.Context) (bool, error) {
+func (m *Manager) Health(ctx context.Context) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -220,28 +187,28 @@ func (m *Manager) Ready(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("client not initialized")
 	}
 
-	return m.client.Ready(ctx)
+	return m.client.Health(ctx)
 }
 
-func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, error) {
-	logger.Debug("Manager.Compute: text length: %d, isHTML: %v", len(req.Text), req.HTML)
+func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
+	logger.Debug("Manager.Trans: text length: %d, isHTML: %v", len(req.Text), req.HTML)
 	m.mu.RLock()
 	client := m.client
 	worker := m.worker
 	m.mu.RUnlock()
 
 	if client == nil || worker == nil {
-		logger.Error("Manager.Compute: client or worker not initialized")
+		logger.Error("Manager.Trans: client or worker not initialized")
 		return "", fmt.Errorf("client not initialized")
 	}
 
-	logger.Debug("Manager.Compute: calling client.Compute")
-	result, err := client.Compute(ctx, req)
+	logger.Debug("Manager.Trans: calling client.Trans")
+	result, err := client.Trans(ctx, req)
 	if err == nil {
-		logger.Debug("Manager.Compute: success, result length: %d", len(result))
+		logger.Debug("Manager.Trans: success, result length: %d", len(result))
 		return result, nil
 	}
-	logger.Debug("Manager.Compute: client.Compute error: %v", err)
+	logger.Debug("Manager.Trans: client.Trans error: %v", err)
 
 	errMsg := err.Error()
 	isConnectionError := !client.IsConnected() ||
@@ -262,13 +229,13 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 	if m.client != client {
 		m.mu.Unlock()
 		if m.client != nil {
-			logger.Debug("Manager.Compute: client changed during reconnection, retrying with new client")
-			return m.client.Compute(ctx, req)
+			logger.Debug("Manager.Trans: client changed during reconnection, retrying with new client")
+			return m.client.Trans(ctx, req)
 		}
 		return "", fmt.Errorf("client changed to nil during reconnection")
 	}
 
-	logger.Debug("Manager.Compute: attempting reconnection")
+	logger.Debug("Manager.Trans: attempting reconnection")
 
 	if m.client != nil {
 		m.client.Close()
@@ -308,21 +275,32 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 				m.client = newClient
 				m.mu.Unlock()
 
-				return newClient.Compute(ctx, req)
+				return newClient.Trans(ctx, req)
 			}
 		}
 	}
 }
 
+func (m *Manager) Exit(ctx context.Context, req ExitRequest) (*ExitResponse, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.client == nil {
+		return nil, fmt.Errorf("client not initialized")
+	}
+
+	return m.client.Exit(ctx, req)
+}
+
 func (m *Manager) Translate(ctx context.Context, text string) (string, error) {
-	return m.Compute(ctx, ComputeRequest{
+	return m.Trans(ctx, TransRequest{
 		Text: text,
 		HTML: false,
 	})
 }
 
 func (m *Manager) TranslateHTML(ctx context.Context, html string) (string, error) {
-	return m.Compute(ctx, ComputeRequest{
+	return m.Trans(ctx, TransRequest{
 		Text: html,
 		HTML: true,
 	})

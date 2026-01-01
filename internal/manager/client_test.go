@@ -50,71 +50,44 @@ func handleEcho(conn *websocket.Conn) {
 	}
 }
 
-func handlePoweron(conn *websocket.Conn) {
+func handleHealth(conn *websocket.Conn, ready bool) {
 	var msg manager.WSMessage
 	if err := conn.ReadJSON(&msg); err != nil {
 		return
 	}
-
-	var req manager.PoweronRequest
-	json.Unmarshal(msg.Data, &req)
 
 	resp := manager.WSResponse{
-		Type: "poweron",
+		Type: "health",
 		Code: 200,
 		Msg:  "success",
-	}
-
-	if req.Path == "" && req.ModelPath == "" {
-		resp.Code = 1000
-		resp.Msg = "path is required"
-	} else {
-		data := map[string]string{"message": "Engine loaded successfully"}
-		resp.Data, _ = json.Marshal(data)
-	}
-
-	conn.WriteJSON(resp)
-}
-
-func handleReady(conn *websocket.Conn, ready bool) {
-	var msg manager.WSMessage
-	if err := conn.ReadJSON(&msg); err != nil {
-		return
 	}
 
 	data := map[string]bool{"ready": ready}
-	dataBytes, _ := json.Marshal(data)
-
-	resp := manager.WSResponse{
-		Type: "ready",
-		Code: 200,
-		Msg:  "success",
-		Data: dataBytes,
-	}
+	resp.Data, _ = json.Marshal(data)
 
 	conn.WriteJSON(resp)
 }
 
-func handleCompute(conn *websocket.Conn) {
+func handleTrans(conn *websocket.Conn) {
 	var msg manager.WSMessage
 	if err := conn.ReadJSON(&msg); err != nil {
 		return
 	}
 
-	var req manager.ComputeRequest
+	var req manager.TransRequest
 	json.Unmarshal(msg.Data, &req)
 
 	resp := manager.WSResponse{
-		Type: "compute",
+		Type: "trans",
 		Code: 200,
 		Msg:  "success",
 	}
 
 	if req.Text == "" {
-		resp.Code = 1200
+		resp.Code = 400
 		resp.Msg = "text is required"
 	} else {
-		data := map[string]string{"translated_text": "翻译结果: " + req.Text}
+		data := map[string]string{"translated_text": "translated: " + req.Text}
 		resp.Data, _ = json.Marshal(data)
 	}
 

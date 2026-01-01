@@ -29,6 +29,10 @@ type WorkerArgs struct {
 	Host            string
 	Port            int
 	WorkDir         string
+	ModelDir        string
+	ModelPath       string
+	LexicalPath     string
+	VocabPaths      []string
 	EnableGRPC      bool
 	EnableHTTP      bool
 	EnableWebSocket bool
@@ -147,14 +151,18 @@ func (w *Worker) buildArgs() []string {
 		"--log-level", w.args.LogLevel,
 	}
 
-	if w.args.WorkDir != "" {
-		absWorkDir, err := filepath.Abs(w.args.WorkDir)
-		if err == nil {
-			args = append(args, "--work-dir", absWorkDir)
-		} else {
-			args = append(args, "--work-dir", w.args.WorkDir)
+	if w.args.ModelDir != "" {
+		args = append(args, "--model-dir", w.args.ModelDir)
+	} else if w.args.ModelPath != "" {
+		args = append(args, "--model-path", w.args.ModelPath)
+		if w.args.LexicalPath != "" {
+			args = append(args, "--lexical-shortlist-path", w.args.LexicalPath)
+		}
+		for _, vocabPath := range w.args.VocabPaths {
+			args = append(args, "--vocabulary-path", vocabPath)
 		}
 	}
+
 	if w.args.EnableGRPC {
 		args = append(args, "--enable-grpc", "true")
 	} else {
@@ -227,7 +235,7 @@ func (w *Worker) Start() error {
 
 	cmd.Dir = w.args.WorkDir
 	cmd.DelayStart = 0
-	cmd.RetryTimes = 999999
+	cmd.RetryTimes = 0
 
 	go w.overseer.Supervise(w.id)
 

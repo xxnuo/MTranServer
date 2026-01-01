@@ -23,46 +23,25 @@ type WSResponse struct {
 	Data json.RawMessage `json:"data,omitempty"`
 }
 
-type PoweronRequest struct {
-	Path                 string   `json:"path,omitempty"`
-	ModelPath            string   `json:"model_path,omitempty"`
-	LexicalShortlistPath string   `json:"lexical_shortlist_path,omitempty"`
-	VocabularyPath       string   `json:"vocabulary_path,omitempty"`
-	VocabularyPaths      []string `json:"vocabulary_paths,omitempty"`
-}
-
-type PoweroffRequest struct {
-	Time  int  `json:"time"`
-	Force bool `json:"force"`
-}
-
-type RebootRequest struct {
-	Time  int  `json:"time"`
-	Force bool `json:"force"`
-}
-
-type ComputeRequest struct {
+type TransRequest struct {
 	Text string `json:"text"`
 	HTML bool   `json:"html"`
 }
 
-type ReadyResponse struct {
+type ExitRequest struct {
+	Time  int  `json:"time"`
+	Force bool `json:"force"`
+}
+
+type HealthResponse struct {
 	Ready bool `json:"ready"`
 }
 
-type ComputeResponse struct {
+type TransResponse struct {
 	TranslatedText string `json:"translated_text"`
 }
 
-type PoweronResponse struct {
-	Message string `json:"message"`
-}
-
-type PoweroffResponse struct {
-	Message string `json:"message"`
-}
-
-type RebootResponse struct {
+type ExitResponse struct {
 	Message string `json:"message"`
 }
 
@@ -200,79 +179,17 @@ func (c *Client) sendRequest(ctx context.Context, msgType string, data interface
 	}
 }
 
-func (c *Client) Poweron(ctx context.Context, req PoweronRequest) (*PoweronResponse, error) {
-	resp, err := c.sendRequest(ctx, "poweron", req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 200 {
-		return nil, fmt.Errorf("poweron failed (code %d): %s", resp.Code, resp.Msg)
-	}
-
-	var result PoweronResponse
-	if resp.Data != nil {
-		if err := json.Unmarshal(resp.Data, &result); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-		}
-	}
-
-	return &result, nil
-}
-
-func (c *Client) Poweroff(ctx context.Context, req PoweroffRequest) (*PoweroffResponse, error) {
-	resp, err := c.sendRequest(ctx, "poweroff", req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 200 && resp.Code != 1101 {
-		return nil, fmt.Errorf("poweroff failed (code %d): %s", resp.Code, resp.Msg)
-	}
-
-	var result PoweroffResponse
-	if resp.Data != nil {
-		if err := json.Unmarshal(resp.Data, &result); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-		}
-	} else {
-		result.Message = resp.Msg
-	}
-
-	return &result, nil
-}
-
-func (c *Client) Reboot(ctx context.Context, req RebootRequest) (*RebootResponse, error) {
-	resp, err := c.sendRequest(ctx, "reboot", req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 200 {
-		return nil, fmt.Errorf("reboot failed (code %d): %s", resp.Code, resp.Msg)
-	}
-
-	var result RebootResponse
-	if resp.Data != nil {
-		if err := json.Unmarshal(resp.Data, &result); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-		}
-	}
-
-	return &result, nil
-}
-
-func (c *Client) Ready(ctx context.Context) (bool, error) {
-	resp, err := c.sendRequest(ctx, "ready", struct{}{})
+func (c *Client) Health(ctx context.Context) (bool, error) {
+	resp, err := c.sendRequest(ctx, "health", struct{}{})
 	if err != nil {
 		return false, err
 	}
 
 	if resp.Code != 200 {
-		return false, fmt.Errorf("ready check failed (code %d): %s", resp.Code, resp.Msg)
+		return false, fmt.Errorf("health check failed (code %d): %s", resp.Code, resp.Msg)
 	}
 
-	var result ReadyResponse
+	var result HealthResponse
 	if resp.Data != nil {
 		if err := json.Unmarshal(resp.Data, &result); err != nil {
 			return false, fmt.Errorf("failed to unmarshal response: %w", err)
@@ -282,27 +199,49 @@ func (c *Client) Ready(ctx context.Context) (bool, error) {
 	return result.Ready, nil
 }
 
-func (c *Client) Compute(ctx context.Context, req ComputeRequest) (string, error) {
-	logger.Debug("Client.Compute: sending request, text length: %d, isHTML: %v, text: %q", len(req.Text), req.HTML, req.Text)
-	resp, err := c.sendRequest(ctx, "compute", req)
+func (c *Client) Trans(ctx context.Context, req TransRequest) (string, error) {
+	logger.Debug("Client.Trans: sending request, text length: %d, isHTML: %v, text: %q", len(req.Text), req.HTML, req.Text)
+	resp, err := c.sendRequest(ctx, "trans", req)
 	if err != nil {
-		logger.Debug("Client.Compute: sendRequest error: %v", err)
+		logger.Debug("Client.Trans: sendRequest error: %v", err)
 		return "", err
 	}
 
 	if resp.Code != 200 {
-		logger.Debug("Client.Compute: response code %d: %s", resp.Code, resp.Msg)
-		return "", fmt.Errorf("compute failed (code %d): %s", resp.Code, resp.Msg)
+		logger.Debug("Client.Trans: response code %d: %s", resp.Code, resp.Msg)
+		return "", fmt.Errorf("trans failed (code %d): %s", resp.Code, resp.Msg)
 	}
 
-	var result ComputeResponse
+	var result TransResponse
 	if resp.Data != nil {
 		if err := json.Unmarshal(resp.Data, &result); err != nil {
-			logger.Debug("Client.Compute: unmarshal error: %v", err)
+			logger.Debug("Client.Trans: unmarshal error: %v", err)
 			return "", fmt.Errorf("failed to unmarshal response: %w", err)
 		}
 	}
 
-	logger.Debug("Client.Compute: success, result length: %d", len(result.TranslatedText))
+	logger.Debug("Client.Trans: success, result length: %d", len(result.TranslatedText))
 	return result.TranslatedText, nil
+}
+
+func (c *Client) Exit(ctx context.Context, req ExitRequest) (*ExitResponse, error) {
+	resp, err := c.sendRequest(ctx, "exit", req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 200 {
+		return nil, fmt.Errorf("exit failed (code %d): %s", resp.Code, resp.Msg)
+	}
+
+	var result ExitResponse
+	if resp.Data != nil {
+		if err := json.Unmarshal(resp.Data, &result); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+		}
+	} else {
+		result.Message = resp.Msg
+	}
+
+	return &result, nil
 }

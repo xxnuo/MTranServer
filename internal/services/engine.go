@@ -18,12 +18,13 @@ import (
 )
 
 type EngineInfo struct {
-	Manager   *manager.Manager
+	Managers  []*manager.Manager
 	LastUsed  time.Time
 	FromLang  string
 	ToLang    string
 	stopTimer *time.Timer
 	mu        sync.Mutex
+	nextIdx   int
 }
 
 var (
@@ -81,9 +82,11 @@ func (ei *EngineInfo) resetIdleTimer() {
 		defer engMu.Unlock()
 
 		if info, ok := engines[key]; ok {
-			if info.Manager != nil {
-				if err := info.Manager.Cleanup(); err != nil {
-					logger.Error("Failed to cleanup engine %s: %v", key, err)
+			for _, m := range info.Managers {
+				if m != nil {
+					if err := m.Cleanup(); err != nil {
+						logger.Error("Failed to cleanup manager: %v", err)
+					}
 				}
 			}
 			delete(engines, key)
@@ -92,16 +95,36 @@ func (ei *EngineInfo) resetIdleTimer() {
 	})
 }
 
+func (ei *EngineInfo) getNextManager() *manager.Manager {
+	ei.mu.Lock()
+	defer ei.mu.Unlock()
+
+	if len(ei.Managers) == 0 {
+		return nil
+	}
+
+	for i := 0; i < len(ei.Managers); i++ {
+		idx := ei.nextIdx % len(ei.Managers)
+		ei.nextIdx++
+		m := ei.Managers[idx]
+		if m != nil && m.IsRunning() {
+			return m
+		}
+	}
+
+	return nil
+}
+
 func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) {
 	key := fmt.Sprintf("%s-%s", fromLang, toLang)
 
 	engMu.RLock()
-	if info, ok := engines[key]; ok && info != nil && info.Manager != nil {
-		if info.Manager.IsRunning() {
+	if info, ok := engines[key]; ok && info != nil {
+		m := info.getNextManager()
+		if m != nil {
 			engMu.RUnlock()
-
 			info.resetIdleTimer()
-			return info.Manager, nil
+			return m, nil
 		}
 	}
 	engMu.RUnlock()
@@ -109,10 +132,11 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 	engMu.Lock()
 	defer engMu.Unlock()
 
-	if info, ok := engines[key]; ok && info != nil && info.Manager != nil {
-		if info.Manager.IsRunning() {
+	if info, ok := engines[key]; ok && info != nil {
+		m := info.getNextManager()
+		if m != nil {
 			info.resetIdleTimer()
-			return info.Manager, nil
+			return m, nil
 		}
 	}
 
@@ -122,7 +146,7 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 			ErrInsufficientMemory, availableMB, workerMemoryMB+reservedMemoryMB)
 	}
 
-	logger.Info("Creating new engine for %s -> %s", fromLang, toLang)
+	logger.Info("Creating new engine pool for %s -> %s", fromLang, toLang)
 
 	cfg := config.GetConfig()
 	if cfg.EnableOfflineMode {
@@ -134,76 +158,79 @@ func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) 
 		}
 	}
 
-	modelFiles, err := models.GetModelFiles(cfg.ModelDir, fromLang, toLang)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find model files: %w", err)
-	}
-
-	port, err := utils.GetFreePort()
-	if err != nil {
-		return nil, fmt.Errorf("failed to allocate port: %w", err)
-	}
-	args := manager.NewWorkerArgs()
-	args.Port = port
-	args.LogLevel = cfg.LogLevel
-
 	langPairDir := filepath.Join(cfg.ModelDir, fmt.Sprintf("%s_%s", fromLang, toLang))
 	if err := os.MkdirAll(langPairDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create work directory: %w", err)
 	}
-	args.WorkDir = langPairDir
 
-	m := manager.NewManager(args)
-
-	if err := m.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start manager: %w", err)
+	numWorkers := cfg.WorkersPerLanguage
+	if numWorkers <= 0 {
+		numWorkers = 1
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	poweronReq := manager.PoweronRequest{
-		ModelPath:            filepath.Base(modelFiles["model"]),
-		LexicalShortlistPath: filepath.Base(modelFiles["lex"]),
-		VocabularyPaths:      []string{filepath.Base(modelFiles["vocab_src"]), filepath.Base(modelFiles["vocab_trg"])},
-	}
-
-	logger.Debug("Poweron request: %+v", poweronReq)
-	resp, err := m.Poweron(ctx, poweronReq)
-	if err != nil {
-		m.Cleanup()
-		return nil, fmt.Errorf("failed to load model: %w", err)
-	}
-	logger.Debug("Poweron response: %+v", resp)
-
-	ready := false
-	for i := 0; i < 30; i++ {
-		var err error
-		ready, err = m.Ready(ctx)
-		logger.Debug("Ready check %d: ready=%v, err=%v", i+1, ready, err)
-		if err == nil && ready {
-			break
+	managers := make([]*manager.Manager, 0, numWorkers)
+	for i := 0; i < numWorkers; i++ {
+		port, err := utils.GetFreePort()
+		if err != nil {
+			for _, m := range managers {
+				m.Cleanup()
+			}
+			return nil, fmt.Errorf("failed to allocate port: %w", err)
 		}
-		time.Sleep(100 * time.Millisecond)
-	}
 
-	if !ready {
-		m.Cleanup()
-		return nil, fmt.Errorf("engine failed to become ready after poweron")
+		args := manager.NewWorkerArgs()
+		args.Port = port
+		args.LogLevel = cfg.LogLevel
+		args.WorkDir = langPairDir
+		args.ModelDir = langPairDir
+
+		m := manager.NewManager(args)
+
+		if err := m.Start(); err != nil {
+			for _, m := range managers {
+				m.Cleanup()
+			}
+			return nil, fmt.Errorf("failed to start manager: %w", err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ready := false
+		for j := 0; j < 30; j++ {
+			var err error
+			ready, err = m.Health(ctx)
+			logger.Debug("Worker %d health check %d: ready=%v, err=%v", i+1, j+1, ready, err)
+			if err == nil && ready {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		cancel()
+
+		if !ready {
+			m.Cleanup()
+			for _, m := range managers {
+				m.Cleanup()
+			}
+			return nil, fmt.Errorf("worker %d failed to become ready", i+1)
+		}
+
+		managers = append(managers, m)
+		logger.Info("Worker %d/%d created for %s -> %s on port %d", i+1, numWorkers, fromLang, toLang, port)
 	}
 
 	info := &EngineInfo{
-		Manager:  m,
+		Managers: managers,
 		LastUsed: time.Now(),
 		FromLang: fromLang,
 		ToLang:   toLang,
+		nextIdx:  0,
 	}
 	info.resetIdleTimer()
 
 	engines[key] = info
-	logger.Info("Engine created successfully for %s -> %s on port %d", fromLang, toLang, port)
+	logger.Info("Engine pool created successfully for %s -> %s with %d workers", fromLang, toLang, numWorkers)
 
-	return m, nil
+	return managers[0], nil
 }
 
 func needsPivotTranslation(fromLang, toLang string) bool {
@@ -348,17 +375,18 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 		if err != nil {
 			if isFatalError(err) {
 				key := fmt.Sprintf("%s-%s", fromLang, toLang)
-				logger.Warn("Fatal error detected for engine %s, recreating...", key)
+				logger.Warn("Fatal error detected for engine %s, recreating pool...", key)
 				engMu.Lock()
-				info, ok := engines[key]
-				if ok && info != nil && info.Manager == m {
+				if info, ok := engines[key]; ok && info != nil {
 					info.mu.Lock()
 					if info.stopTimer != nil {
 						info.stopTimer.Stop()
 					}
 					info.mu.Unlock()
-					if info.Manager != nil {
-						info.Manager.Cleanup()
+					for _, mgr := range info.Managers {
+						if mgr != nil {
+							mgr.Cleanup()
+						}
 					}
 					delete(engines, key)
 				}
@@ -400,17 +428,18 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 	if err != nil {
 		if isFatalError(err) {
 			key := fmt.Sprintf("%s-en", fromLang)
-			logger.Warn("Fatal error detected for engine %s, recreating...", key)
+			logger.Warn("Fatal error detected for engine %s, recreating pool...", key)
 			engMu.Lock()
-			info, ok := engines[key]
-			if ok && info != nil && info.Manager == m1 {
+			if info, ok := engines[key]; ok && info != nil {
 				info.mu.Lock()
 				if info.stopTimer != nil {
 					info.stopTimer.Stop()
 				}
 				info.mu.Unlock()
-				if info.Manager != nil {
-					info.Manager.Cleanup()
+				for _, mgr := range info.Managers {
+					if mgr != nil {
+						mgr.Cleanup()
+					}
 				}
 				delete(engines, key)
 			}
@@ -450,17 +479,18 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 	if err != nil {
 		if isFatalError(err) {
 			key := fmt.Sprintf("en-%s", toLang)
-			logger.Warn("Fatal error detected for engine %s, recreating...", key)
+			logger.Warn("Fatal error detected for engine %s, recreating pool...", key)
 			engMu.Lock()
-			info, ok := engines[key]
-			if ok && info != nil && info.Manager == m2 {
+			if info, ok := engines[key]; ok && info != nil {
 				info.mu.Lock()
 				if info.stopTimer != nil {
 					info.stopTimer.Stop()
 				}
 				info.mu.Unlock()
-				if info.Manager != nil {
-					info.Manager.Cleanup()
+				for _, mgr := range info.Managers {
+					if mgr != nil {
+						mgr.Cleanup()
+					}
 				}
 				delete(engines, key)
 			}
@@ -518,10 +548,14 @@ func CleanupAllEngines() {
 			}
 			ei.mu.Unlock()
 
-			if err := ei.Manager.Cleanup(); err != nil {
-				logger.Error("Failed to cleanup engine %s: %v", k, err)
-			} else {
-				logger.Debug("Engine %s cleaned up successfully", k)
+			for _, m := range ei.Managers {
+				if m != nil {
+					if err := m.Cleanup(); err != nil {
+						logger.Error("Failed to cleanup manager: %v", err)
+					} else {
+						logger.Debug("Manager cleaned up successfully")
+					}
+				}
 			}
 		}(key, info)
 	}
