@@ -4,9 +4,8 @@ import pkg from "../package.json";
 
 const version = pkg.version;
 const args = new Set(Bun.argv.slice(2));
-const isDocker = args.has("--docker");
 const isLib = args.has("--lib");
-const isNode = args.has("--node") || args.has("--dev") || isDocker;
+const isNode = args.has("--node") || args.has("--dev");
 const isSingle = args.has("--single");
 const isAll = args.has("--all") || (!isLib && !isNode && !isSingle);
 
