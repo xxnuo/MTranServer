@@ -6,6 +6,7 @@ import {
   handleHeartbeat,
   handleLBHeartbeat,
   handleLanguages,
+  handleDetectLanguage,
   handleTranslate,
   handleTranslateBatch,
   handleDeeplTranslate,
@@ -27,6 +28,7 @@ export function setupRoutes(app: Express, apiToken: string) {
   const authMiddleware = auth(apiToken);
 
   app.get('/languages', authMiddleware, handleLanguages);
+  app.post('/detect', authMiddleware, handleDetectLanguage);
   app.post('/translate', authMiddleware, handleTranslate);
   app.post('/translate/batch', authMiddleware, handleTranslateBatch);
 

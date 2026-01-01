@@ -16,6 +16,7 @@ export interface Config {
   logDir: string;
   logToFile: boolean;
   logConsole: boolean;
+  maxLengthBreak: number;
 }
 
 let globalConfig: Config | null = null;
@@ -102,21 +103,22 @@ export function getConfig(): Config {
     configDir,
     modelDir,
     logDir,
-    
+
     logLevel: getString('--log-level', 'MT_LOG_LEVEL', 'warn'),
     host: getString('--host', 'MT_HOST', '0.0.0.0'),
     port: getString('--port', 'MT_PORT', '8989'),
-    
+
     enableWebUI: getBool('--ui', 'MT_ENABLE_UI', true),
     enableOfflineMode: getBool('--offline', 'MT_OFFLINE', false),
-    
+
     workerIdleTimeout: getInt('--worker-idle-timeout', 'MT_WORKER_IDLE_TIMEOUT', 60),
     workersPerLanguage: getInt('--workers-per-language', 'MT_WORKERS_PER_LANGUAGE', 1),
-    
+    maxLengthBreak: getInt('--max-length-break', 'MT_MAX_LENGTH_BREAK', 128),
+
     apiToken: getString('--api-token', 'MT_API_TOKEN', ''),
-    
+
     logToFile: getBool('--log-to-file', 'MT_LOG_TO_FILE', false),
-    logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', true), // Use --no-log-console to disable
+    logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', true),
   };
 
   return globalConfig;

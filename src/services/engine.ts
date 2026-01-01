@@ -6,6 +6,7 @@ import loadBergamot from '../lib/bergamot/bergamot-translator.js';
 import wasmPath from '../lib/bergamot/bergamot-translator.wasm' with { type: 'file' };
 import * as logger from '../logger/index.js';
 import * as models from '../models/index.js';
+import { detectLanguage, detectMultipleLanguages } from './detector.js';
 
 interface EngineInfo {
   engine: TranslationEngine;
@@ -190,11 +191,102 @@ export async function translateWithPivot(
     `TranslateWithPivot: ${fromLang} -> ${toLang}, text length: ${text.length}, isHTML: ${isHTML}`
   );
 
-  if (fromLang === toLang) {
+  if (fromLang !== 'auto' && fromLang === toLang) {
     return text;
   }
 
-  return translateSegment(fromLang, toLang, text, isHTML);
+  if (fromLang !== 'auto' && text.length <= 128) {
+    return translateSegment(fromLang, toLang, text, isHTML);
+  }
+
+  const config = getConfig();
+  const segments = await detectMultipleLanguages(text);
+
+  if (segments.length <= 1) {
+    let effectiveFromLang: string;
+    if (segments.length === 1) {
+      effectiveFromLang = segments[0].language;
+    } else if (fromLang === 'auto') {
+      const detected = await detectLanguage(text);
+      if (!detected) {
+        throw new Error('Failed to detect source language');
+      }
+      effectiveFromLang = detected;
+    } else {
+      effectiveFromLang = fromLang;
+    }
+
+    if (effectiveFromLang === toLang) {
+      return text;
+    }
+
+    if (text.length > config.maxLengthBreak && !isHTML) {
+      return translateLongText(effectiveFromLang, toLang, text);
+    }
+
+    return translateSegment(effectiveFromLang, toLang, text, isHTML);
+  }
+
+  logger.debug(`Detected ${segments.length} language segments`);
+  let result = '';
+  let lastEnd = 0;
+
+  for (const seg of segments) {
+    if (seg.start > lastEnd) {
+      result += text.substring(lastEnd, seg.start);
+    }
+
+    if (seg.language === toLang) {
+      result += seg.text;
+    } else {
+      try {
+        const translated = await translateSegment(seg.language, toLang, seg.text, isHTML);
+        result += translated;
+      } catch (error) {
+        logger.error(`Failed to translate segment: ${error}`);
+        result += seg.text;
+      }
+    }
+    lastEnd = seg.end;
+  }
+
+  if (lastEnd < text.length) {
+    result += text.substring(lastEnd);
+  }
+
+  return result;
+}
+
+async function translateLongText(
+  fromLang: string,
+  toLang: string,
+  text: string
+): Promise<string> {
+  logger.debug(`Splitting long text (${text.length} chars) into sentences`);
+
+  const segmenterAny = new (Intl as any).Segmenter(undefined, { granularity: 'sentence' });
+  const sentences = Array.from(segmenterAny.segment(text)) as Array<{segment: string, index: number}>;
+
+  logger.debug(`Split into ${sentences.length} sentences`);
+
+  const results: string[] = [];
+
+  for (let i = 0; i < sentences.length; i++) {
+    const { segment } = sentences[i];
+    try {
+      const translated = await translateSegment(fromLang, toLang, segment, false);
+      results.push(translated);
+
+      if ((i + 1) % 10 === 0) {
+        logger.debug(`Translated ${i + 1}/${sentences.length} sentences`);
+      }
+    } catch (error) {
+      logger.error(`Failed to translate sentence ${i + 1}: ${error}`);
+      results.push(segment);
+    }
+  }
+
+  return results.join('');
 }
 
 export function cleanupAllEngines() {
