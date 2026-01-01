@@ -99,11 +99,11 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "images/icon.png"
+      "icon": "images/icon.icns"
     },
     "win": {
       "target": "nsis",
-      "icon": "images/icon.png"
+      "icon": "images/icon.ico"
     },
     "linux": {
       "target": [
