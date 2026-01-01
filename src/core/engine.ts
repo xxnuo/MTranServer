@@ -287,10 +287,10 @@ export class TranslationEngine {
   }
 
   private _hideEmojis(text: string): { cleanText: string; replacements: Array<{ original: string; placeholder: string }> } {
-    const emojiRegex = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
+    const emojiRegex = /(\p{RI}\p{RI}|\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
     const replacements: Array<{ original: string; placeholder: string }> = [];
     const cleanText = text.replace(emojiRegex, (match) => {
-      const placeholder = `[EE${replacements.length}]`;
+      const placeholder = `<e${replacements.length}>`;
       replacements.push({ original: match, placeholder });
       return placeholder;
     });
