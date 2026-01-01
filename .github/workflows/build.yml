@@ -105,13 +105,28 @@ jobs:
           | Windows | x64 | [mtranserver-${VERSION}-windows-amd64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64.exe) |
           | Windows | x64 (legacy) | [mtranserver-${VERSION}-windows-amd64-legacy.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64-legacy.exe) |
 
-          > **Note**:
-          >
-          > - **legacy**: 仅适用于使用普通版本会遇到如 'Illegal instruction' 这样问题的旧硬件（无 AVX2 指令集且没有 SIMD 优化的 CPU），大多数人不需要这个，因为它更慢。
-          > - **legacy**: Use only if you experience 'Illegal instruction' crashes on very old hardware (non-AVX2 CPUs without SIMD optimizations). Most people don't need this because it's slower.
-          > - **musl**: 仅适用于 Linux 使用 musl libc 的用户，大多数人不需要这个。
-          > - **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
+          ## Note
+          
+          **legacy**: 仅适用于使用普通版本会遇到如 'Illegal instruction' 这样问题的旧硬件（无 AVX2 指令集的 CPU），大多数人不需要这个，因为它更慢。
+          
+          > **legacy**: Use only if you experience 'Illegal instruction' crashes on very old hardware (non-AVX2 CPUs). Most people don't need this because it's slower.
+          
+          **musl**: 仅适用于 Linux 使用 musl libc 的用户，大多数人不需要这个。
+          
+          > **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
 
+          ## Docker
+          
+          Image: `xxnuo/mtranserver:latest`
+
+          可执行文件版本主要面向个人桌面端部署，如果需要更高性能和稳定性，推荐使用 Docker 版本。镜像：`xxnuo/mtranserver:latest`
+          
+          > Executable version is mainly for personal desktop deployment. If you need higher performance and stability, it is recommended to use the Docker version. Image: `xxnuo/mtranserver:latest`
+
+          如果你的 CPU 不支持 AVX 并且使用 legacy 版本也报错，推荐使用 Docker 版本而非可执行文件版本，因为 Docker 版本会自动选择合适的架构运行且速度更快。
+          
+          > If your CPU does not support AVX and using legacy version also crashes, it is recommended to use the Docker version instead of the executable file version, because the Docker version will automatically select the appropriate architecture to run and is faster.
+          
           ## Changelog
           EOF
 
