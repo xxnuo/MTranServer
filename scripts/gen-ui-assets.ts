@@ -20,8 +20,9 @@ const files = Array.from(walkDir(distDir));
 
 const imports = files
   .map((file, i) => {
-    const absolutePath = path.resolve(file);
-    return `import _asset${i} from "${absolutePath}" with { type: "file" };`;
+    const relativePath = path.relative(path.dirname(outputFile), file);
+    const importPath = (relativePath.startsWith(".") ? relativePath : `./${relativePath}`).replace(/\\/g, "/");
+    return `import _asset${i} from "${importPath}" with { type: "file" };`;
   })
   .join("\n");
 
