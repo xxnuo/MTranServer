@@ -44,19 +44,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (Standard)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            xxnuo/mtranserver
-            ghcr.io/xxnuo/mtranserver
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.latest_tag.outputs.tag }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.latest_tag.outputs.tag }}
-            type=semver,pattern={{major}},value=${{ steps.latest_tag.outputs.tag }}
-            type=raw,value=latest
-
       - name: Extract metadata (Legacy)
         id: meta-legacy
         uses: docker/metadata-action@v5
@@ -64,11 +51,28 @@ jobs:
           images: |
             xxnuo/mtranserver
             ghcr.io/xxnuo/mtranserver
+          flavor: |
+            latest=false
           tags: |
             type=semver,pattern={{version}},value=${{ steps.latest_tag.outputs.tag }},suffix=-legacy
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.latest_tag.outputs.tag }},suffix=-legacy
             type=semver,pattern={{major}},value=${{ steps.latest_tag.outputs.tag }},suffix=-legacy
             type=raw,value=legacy
+
+      - name: Extract metadata (Standard)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            xxnuo/mtranserver
+            ghcr.io/xxnuo/mtranserver
+          flavor: |
+            latest=false
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.latest_tag.outputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.latest_tag.outputs.tag }}
+            type=semver,pattern={{major}},value=${{ steps.latest_tag.outputs.tag }}
+            type=raw,value=latest
 
       - name: Get version
         id: version
@@ -79,20 +83,6 @@ jobs:
             VERSION=${{ steps.latest_tag.outputs.tag }}
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Build and push (Standard - AVX2)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VERSION=${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
 
       - name: Build and push (Legacy - No AVX2)
         uses: docker/build-push-action@v5
@@ -105,6 +95,20 @@ jobs:
           build-args: |
             VERSION=${{ steps.version.outputs.version }}
             BUILD_VARIANT=legacy
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Build and push (Standard - AVX2)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
