@@ -12,13 +12,12 @@ import (
 )
 
 type Manager struct {
-	worker       *Worker
-	client       *Client
-	mu           sync.RWMutex
-	url          string
-	reconnecting bool
-	reconnectCh  chan struct{}
-	reconnectMu  sync.Mutex
+	worker    *Worker
+	client    *Client
+	mu        sync.RWMutex
+	url       string
+	taskQueue chan struct{} // Token bucket for serializing tasks
+	closed    bool
 }
 
 type ManagerOption func(*Manager)
@@ -28,10 +27,9 @@ func NewManager(args *WorkerArgs, opts ...ManagerOption) *Manager {
 	url := fmt.Sprintf("ws://%s:%d/ws", args.Host, args.Port)
 
 	m := &Manager{
-		worker:       NewWorker(args),
-		url:          url,
-		reconnecting: false,
-		reconnectCh:  nil,
+		worker:    NewWorker(args),
+		url:       url,
+		taskQueue: make(chan struct{}, 1),
 	}
 
 	for _, opt := range opts {
@@ -197,15 +195,27 @@ func (m *Manager) Health(ctx context.Context) (bool, error) {
 }
 
 func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
+	// Wait for task slot
+	select {
+	case m.taskQueue <- struct{}{}:
+		defer func() { <-m.taskQueue }()
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
+
 	logger.Debug("Manager.Trans: text length: %d, isHTML: %v", len(req.Text), req.HTML)
 	m.mu.RLock()
+	if m.closed {
+		m.mu.RUnlock()
+		return "", fmt.Errorf("manager is closed")
+	}
 	client := m.client
 	worker := m.worker
 	m.mu.RUnlock()
 
 	if client == nil || worker == nil {
 		logger.Error("Manager.Trans: client or worker not initialized")
-		return "", fmt.Errorf("client not initialized")
+		return m.reconnectAndTrans(ctx, req)
 	}
 
 	logger.Debug("Manager.Trans: calling client.Trans")
@@ -224,59 +234,26 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 		strings.Contains(errMsg, "module closed") ||
 		strings.Contains(errMsg, "exit_code") ||
 		strings.Contains(errMsg, "wasm error") ||
-		strings.Contains(errMsg, "invalid table access")
+		strings.Contains(errMsg, "invalid table access") ||
+		strings.Contains(errMsg, "Translation engine not ready") ||
+		strings.Contains(errMsg, "code 503")
 
 	if !isConnectionError {
 		return "", err
 	}
 
-	m.mu.Lock()
-	if m.reconnecting {
-		ch := m.reconnectCh
-		m.mu.Unlock()
-		if ch != nil {
-			logger.Debug("Manager.Trans: another request is reconnecting, waiting...")
-			select {
-			case <-ch:
-				logger.Debug("Manager.Trans: reconnection completed, retrying")
-				m.mu.RLock()
-				newClient := m.client
-				m.mu.RUnlock()
-				if newClient != nil {
-					return newClient.Trans(ctx, req)
-				}
-				return "", fmt.Errorf("reconnection failed")
-			case <-ctx.Done():
-				return "", ctx.Err()
-			}
-		}
-	}
+	return m.reconnectAndTrans(ctx, req)
+}
 
-	if m.client != client {
-		m.mu.Unlock()
-		if m.client != nil {
-			logger.Debug("Manager.Trans: client changed during reconnection, retrying with new client")
-			return m.client.Trans(ctx, req)
-		}
-		return "", fmt.Errorf("client changed to nil during reconnection")
-	}
-
-	m.reconnecting = true
-	m.reconnectCh = make(chan struct{})
-	ch := m.reconnectCh
-	m.mu.Unlock()
-
-	defer func() {
-		m.mu.Lock()
-		m.reconnecting = false
-		m.reconnectCh = nil
-		m.mu.Unlock()
-		close(ch)
-	}()
-
+func (m *Manager) reconnectAndTrans(ctx context.Context, req TransRequest) (string, error) {
 	logger.Debug("Manager.Trans: attempting reconnection")
 
 	m.mu.Lock()
+	if m.closed {
+		m.mu.Unlock()
+		return "", fmt.Errorf("manager is closed")
+	}
+
 	oldClient := m.client
 	oldWorker := m.worker
 
@@ -299,6 +276,7 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 	m.url = newURL
 	m.mu.Unlock()
 
+	// Clean up old resources in background
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -331,22 +309,44 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 
 	maxRetries := 50
 	for i := 0; i < maxRetries; i++ {
+		// Check context before each retry
+		select {
+		case <-ctx.Done():
+			// Cleanup new worker if context canceled during startup
+			go func() {
+				newWorker.Stop()
+			}()
+			return "", ctx.Err()
+		default:
+		}
+
 		if !newWorker.IsRunning() {
 			return "", fmt.Errorf("new worker exited unexpectedly")
 		}
 
 		newClient := NewClient(newURL)
 		if connErr := newClient.Connect(); connErr == nil {
-			m.mu.Lock()
-			m.client = newClient
-			m.mu.Unlock()
+			// Wait for worker to be ready
+			healthCtx, healthCancel := context.WithTimeout(ctx, 2*time.Second)
+			ready, _ := newClient.Health(healthCtx)
+			healthCancel()
 
-			return newClient.Trans(ctx, req)
+			if ready {
+				m.mu.Lock()
+				m.client = newClient
+				m.mu.Unlock()
+
+				return newClient.Trans(ctx, req)
+			}
 		}
 
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	// Cleanup new worker if connection failed
+	go func() {
+		newWorker.Stop()
+	}()
 	return "", fmt.Errorf("failed to connect to new worker after %d retries", maxRetries)
 }
 
