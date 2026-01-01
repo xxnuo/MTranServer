@@ -119,9 +119,9 @@ jobs:
           
           Image: `xxnuo/mtranserver:latest`
 
-          可执行文件版本主要面向个人桌面端部署，如果需要更高性能和稳定性，推荐使用 Docker 版本。镜像：`xxnuo/mtranserver:latest`
+          可执行文件版本主要面向个人桌面端部署，如果需要更高性能和稳定性，推荐使用 Docker 版本。
           
-          > Executable version is mainly for personal desktop deployment. If you need higher performance and stability, it is recommended to use the Docker version. Image: `xxnuo/mtranserver:latest`
+          > Executable version is mainly for personal desktop deployment. If you need higher performance and stability, it is recommended to use the Docker version.
 
           如果你的 CPU 不支持 AVX 并且使用 legacy 版本也报错，推荐使用 Docker 版本而非可执行文件版本，因为 Docker 版本会自动选择合适的架构运行且速度更快。
           
