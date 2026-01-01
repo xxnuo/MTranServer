@@ -1,7 +1,9 @@
 {
   "entryFile": "src/main.ts",
   "noImplicitAdditionalProperties": "throw-on-extras",
-  "controllerPathGlobs": ["src/controllers/**/*.ts"],
+  "controllerPathGlobs": [
+    "src/controllers/**/*.ts"
+  ],
   "spec": {
     "outputDirectory": "src/generated",
     "specVersion": 3,
@@ -9,7 +11,7 @@
     "spec": {
       "info": {
         "title": "MTranServer API",
-        "version": "4.0.0",
+        "version": "4.0.6",
         "description": "Translation server API",
         "license": {
           "name": "Apache-2.0"

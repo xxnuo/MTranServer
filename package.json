@@ -1,6 +1,6 @@
 {
   "name": "mtranserver",
-  "version": "4.0.0",
+  "version": "4.0.6",
   "type": "module",
   "description": "Translation server",
   "bin": {
@@ -20,7 +20,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'No linter configured'",
-    "gen": "tsoa spec-and-routes"
+    "gen": "tsoa spec-and-routes",
+    "bump": "bun scripts/bump.ts"
   },
   "keywords": [
     "translation",
