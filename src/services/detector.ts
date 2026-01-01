@@ -17,6 +17,7 @@ const DEFAULT_CONFIDENCE_THRESHOLD = 0.5;
 const MAXIMUM_LANGUAGES_IN_ONE_TEXT = 2;
 const MAX_DETECTION_BYTES = 512;
 const MAX_FALLBACK_DETECTION_BYTES = 1024;
+const SHORT_TEXT_CJK_THRESHOLD = 3;
 
 let cldModule: any = null;
 let initPromise: Promise<void> | null = null;
@@ -178,9 +179,62 @@ function bcp47Normalize(code: string): string {
   }
 }
 
+function detectShortCjkLanguage(text: string): string | null {
+  if (text.length > SHORT_TEXT_CJK_THRESHOLD) {
+    return null;
+  }
+
+  let hasHan = false;
+  let hasKana = false;
+  let hasHangul = false;
+
+  for (const char of text) {
+    const code = char.charCodeAt(0);
+
+    if (code >= 0x3040 && code <= 0x30ff) {
+      hasKana = true;
+      continue;
+    }
+
+    if (code >= 0xac00 && code <= 0xd7af) {
+      hasHangul = true;
+      continue;
+    }
+
+    if (code >= 0x4e00 && code <= 0x9fff) {
+      hasHan = true;
+      continue;
+    }
+
+    if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)) {
+      return null;
+    }
+
+    if ((code >= 0x0030 && code <= 0x0039) || code <= 0x007f) {
+      continue;
+    }
+
+    if (code >= 0x3000 && code <= 0x303f) {
+      continue;
+    }
+
+    return null;
+  }
+
+  if (hasKana) return 'ja';
+  if (hasHangul) return 'ko';
+  if (hasHan) return 'zh-Hans';
+  return null;
+}
+
 export async function detectLanguage(text: string, maxBytes: number = MAX_DETECTION_BYTES): Promise<string> {
   if (!text) {
     return '';
+  }
+
+  const shortCjk = detectShortCjkLanguage(text);
+  if (shortCjk) {
+    return shortCjk;
   }
 
   await initCLD();
