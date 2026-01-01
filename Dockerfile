@@ -12,7 +12,7 @@ RUN cd ui && bun install --frozen-lockfile
 
 RUN if [ -n "$VERSION" ]; then bun run bump $VERSION; fi
 
-RUN bun run build:node
+RUN bun run build:docker
 
 FROM node:22-alpine
 
