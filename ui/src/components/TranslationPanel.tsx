@@ -55,6 +55,7 @@ export function TranslationPanel({
   const [loading, setLoading] = useState(false)
   const [autoTranslate, setAutoTranslate] = useState(() => localStorage.getItem(storageKey('autoTranslate')) === 'true')
   const firstTranslateTipKey = 'firstTranslateTipShown'
+  const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const translateTimeoutRef = useRef<number | null>(null)
 
@@ -162,6 +163,9 @@ export function TranslationPanel({
       }
     } finally {
       setLoading(false)
+      setTimeout(() => {
+        sourceTextareaRef.current?.focus()
+      }, 0)
     }
   }, [sourceLang, targetLang, sourceText, t, addToHistory])
 
@@ -322,6 +326,7 @@ export function TranslationPanel({
           <div className="relative group h-full flex flex-col">
             <Textarea
               id={`source-text-${id}`}
+              ref={sourceTextareaRef}
               placeholder={t('enterText')}
               value={sourceText}
               onChange={(e) => handleSourceTextChange(e.target.value)}
@@ -333,15 +338,17 @@ export function TranslationPanel({
             {sourceText && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={handleClear}
-                    aria-label={t('clear')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={handleClear}
+                      aria-label={t('clear')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('clear')}</p>
@@ -378,16 +385,18 @@ export function TranslationPanel({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleSpeak(sourceText, sourceLang)}
-                    disabled={!sourceText}
-                    aria-label={t('listen')}
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleSpeak(sourceText, sourceLang)}
+                      disabled={!sourceText}
+                      aria-label={t('listen')}
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('listen')}</p>
@@ -396,16 +405,18 @@ export function TranslationPanel({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleCopy(sourceText)}
-                    disabled={!sourceText}
-                    aria-label={t('copy')}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleCopy(sourceText)}
+                      disabled={!sourceText}
+                      aria-label={t('copy')}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('copy')}</p>
@@ -423,19 +434,25 @@ export function TranslationPanel({
               className={`${isMobile ? 'min-h-[200px]' : 'min-h-[300px]'} h-full resize-none text-base bg-muted pb-10 flex-1`}
             />
 
+            <div className="absolute bottom-2 left-2 text-xs text-muted-foreground pointer-events-none">
+              {translatedText.length}
+            </div>
+
             <div className="absolute bottom-2 right-2 flex gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleSpeak(translatedText, targetLang)}
-                    disabled={!translatedText}
-                    aria-label={t('listen')}
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleSpeak(translatedText, targetLang)}
+                      disabled={!translatedText}
+                      aria-label={t('listen')}
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('listen')}</p>
@@ -444,16 +461,18 @@ export function TranslationPanel({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleCopy(translatedText)}
-                    disabled={!translatedText}
-                    aria-label={t('copy')}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleCopy(translatedText)}
+                      disabled={!translatedText}
+                      aria-label={t('copy')}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('copy')}</p>
@@ -465,21 +484,30 @@ export function TranslationPanel({
 
         {!autoTranslate && (
           <div className="flex justify-center mt-auto pt-2">
-            <Button
-              onClick={() => handleTranslate()}
-              disabled={loading || loadingLanguages || !sourceText.trim()}
-              className={isMobile ? "w-full" : "min-w-[200px]"}
-              size="lg"
-            >
-              {loading ? (
-                <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  {t('translating')}
-                </>
-              ) : (
-                t('translate')
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    onClick={() => handleTranslate()}
+                    disabled={loading || loadingLanguages || !sourceText.trim()}
+                    className={isMobile ? "w-full" : "min-w-[200px]"}
+                    size="lg"
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        {t('translating')}
+                      </>
+                    ) : (
+                      t('translate')
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('translateShortcut')}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
       </CardContent>

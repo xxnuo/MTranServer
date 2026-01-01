@@ -189,7 +189,14 @@ function App() {
 
         <div className="flex flex-wrap gap-4 items-stretch">
           {panels.map((id, index) => (
-            <div key={id} className={`flex-1 min-w-[350px] max-w-full ${panels.length === 1 ? 'w-full' : ''}`}>
+            <div
+              key={id}
+              className={
+                panels.length === 1
+                  ? `w-full ${widescreen ? 'sm:w-[90%]' : 'sm:w-[75%]'} mx-auto`
+                  : 'flex-1 min-w-[350px] max-w-full'
+              }
+            >
               <TranslationPanel
                 id={id}
                 isPrimary={index === 0}

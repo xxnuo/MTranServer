@@ -54,7 +54,8 @@ const resources = {
       copy: 'Copy',
       delete: 'Delete',
       switchLanguage: 'Switch Language',
-      toggleTheme: 'Toggle Theme'
+      toggleTheme: 'Toggle Theme',
+      translateShortcut: 'Ctrl + Enter to translate'
     }
   },
   zh: {
@@ -108,7 +109,8 @@ const resources = {
       copy: '复制',
       delete: '删除',
       switchLanguage: '切换语言',
-      toggleTheme: '切换主题'
+      toggleTheme: '切换主题',
+      translateShortcut: 'Ctrl + Enter 快捷翻译'
     }
   },
   ja: {
@@ -162,7 +164,8 @@ const resources = {
       copy: 'コピー',
       delete: '削除',
       switchLanguage: '言語を切り替え',
-      toggleTheme: 'テーマを切り替え'
+      toggleTheme: 'テーマを切り替え',
+      translateShortcut: 'Ctrl + Enterで翻訳'
     }
   }
 }
