@@ -18,10 +18,6 @@ const allTargets = [
   { bun: "bun-windows-x64-baseline", name: "windows-amd64-legacy" }
 ];
 
-const targets = isDocker
-  ? allTargets.filter(t => t.name.includes("musl"))
-  : allTargets;
-
 console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
@@ -38,11 +34,15 @@ await $`bun run scripts/gen-swagger-assets.ts`;
 console.log("Generating routes and spec...");
 await $`bun run gen`;
 
-for (const target of targets) {
-  const ext = target.bun.includes("windows") ? ".exe" : "";
-  const outfile = `dist/mtranserver-${version}-${target.name}${ext}`;
-  console.log(`Building for ${target.bun} -> ${outfile}...`);
-  await $`bun build src/main.ts --compile --target=${target.bun} --outfile=${outfile} --minify --sourcemap`;
+if (isDocker) {
+  console.log("Building for Docker...");
+  await $`bun run build:node`;
+} else {
+  for (const target of allTargets) {
+    const ext = target.bun.includes("windows") ? ".exe" : "";
+    const outfile = `dist/mtranserver-${version}-${target.name}${ext}`;
+    console.log(`Building for ${target.bun} -> ${outfile}...`);
+    await $`bun build src/main.ts --compile --target=${target.bun} --outfile=${outfile} --minify --sourcemap`;
+  }
 }
-
 console.log("Build complete!");

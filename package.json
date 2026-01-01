@@ -15,6 +15,7 @@
     "build": "rm -rf dist && bun build src/main.ts --compile --outfile ./dist/mtranserver --minify --sourcemap",
     "build:all": "bun scripts/build.ts",
     "build:docker": "bun scripts/build.ts --docker",
+    "build:node": "bun run gen && rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express",
     "build:dev": "bun run gen && rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express",
     "start": "node dist/main.js",
     "test": "bun test",
