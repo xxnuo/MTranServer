@@ -1,6 +1,9 @@
 package manager_test
 
 import (
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -140,13 +143,22 @@ func TestCustomBinaryPath(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
+	customPath := filepath.Join(os.TempDir(), "custom-mtran-worker")
+	if runtime.GOOS == "windows" {
+		customPath += ".exe"
+	}
+	if err := os.WriteFile(customPath, bin.WorkerBinary, 0755); err != nil {
+		t.Fatalf("Failed to create custom binary: %v", err)
+	}
+	defer os.Remove(customPath)
+
 	args := manager.NewWorkerArgs()
 	port, err := utils.GetFreePort()
 	if err != nil {
 		t.Fatalf("Failed to get free port: %v", err)
 	}
 	args.Port = port
-	args.BinaryPath = "/tmp/custom-mtran-worker"
+	args.BinaryPath = customPath
 	worker := manager.NewWorker(args)
 	defer worker.Cleanup()
 

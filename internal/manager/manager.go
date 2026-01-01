@@ -37,27 +37,29 @@ func NewManager(args *WorkerArgs, opts ...ManagerOption) *Manager {
 
 func (m *Manager) Start() error {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	if err := m.worker.Start(); err != nil {
+		m.mu.Unlock()
 		return fmt.Errorf("failed to start worker: %w", err)
 	}
+	m.mu.Unlock()
 
 	timeout := time.After(10 * time.Second)
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
 	var connected bool
+	var client *Client
+
 	for {
 		select {
 		case <-timeout:
-			m.worker.Stop()
+			m.Stop()
 			return fmt.Errorf("worker start timeout")
 		case <-ticker.C:
 			if m.worker.IsRunning() {
 				if !connected {
-					m.client = NewClient(m.url)
-					if err := m.client.Connect(); err != nil {
+					client = NewClient(m.url)
+					if err := client.Connect(); err != nil {
 						m.worker.Stop()
 						return fmt.Errorf("failed to connect to worker: %w", err)
 					}
@@ -69,13 +71,16 @@ func (m *Manager) Start() error {
 				stableDuration := 500 * time.Millisecond
 				for time.Since(stableStart) < stableDuration {
 					if !m.worker.IsRunning() {
-						m.client.Close()
-						m.client = nil
+						client.Close()
 						m.worker.Stop()
 						return fmt.Errorf("worker exited immediately after connection")
 					}
 					time.Sleep(50 * time.Millisecond)
 				}
+
+				m.mu.Lock()
+				m.client = client
+				m.mu.Unlock()
 				return nil
 			}
 		}
@@ -253,9 +258,9 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 	}
 
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	if m.client != client {
+		m.mu.Unlock()
 		if m.client != nil {
 			logger.Debug("Manager.Compute: client changed during reconnection, retrying with new client")
 			return m.client.Compute(ctx, req)
@@ -277,8 +282,10 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 	time.Sleep(500 * time.Millisecond)
 
 	if err := m.worker.Start(); err != nil {
+		m.mu.Unlock()
 		return "", fmt.Errorf("failed to restart worker: %w", err)
 	}
+	m.mu.Unlock()
 
 	timeout := time.After(10 * time.Second)
 	ticker := time.NewTicker(100 * time.Millisecond)
@@ -290,14 +297,18 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 			return "", fmt.Errorf("worker restart timeout")
 		case <-ticker.C:
 			if m.worker.IsRunning() {
-				m.client = NewClient(m.url)
-				if err := m.client.Connect(); err != nil {
+				newClient := NewClient(m.url)
+				if err := newClient.Connect(); err != nil {
 					continue
 				}
 
 				time.Sleep(200 * time.Millisecond)
 
-				return m.client.Compute(ctx, req)
+				m.mu.Lock()
+				m.client = newClient
+				m.mu.Unlock()
+
+				return newClient.Compute(ctx, req)
 			}
 		}
 	}

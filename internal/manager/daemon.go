@@ -56,6 +56,7 @@ type Worker struct {
 	id         string
 	binaryPath string
 	mu         sync.RWMutex
+	logMu      sync.RWMutex
 	logChan    chan *overseer.LogMsg
 	stateChan  chan *overseer.ProcessJSON
 	logs       []string
@@ -404,8 +405,8 @@ func (w *Worker) GetDetailedStatus() *overseer.ProcessJSON {
 }
 
 func (w *Worker) Logs() []string {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
+	w.logMu.RLock()
+	defer w.logMu.RUnlock()
 
 	logsCopy := make([]string, len(w.logs))
 	copy(logsCopy, w.logs)
@@ -424,7 +425,7 @@ func (w *Worker) collectLogs() {
 					if !ok {
 						return
 					}
-					w.mu.Lock()
+					w.logMu.Lock()
 					logType := "INFO"
 					if msg.Type == 1 {
 						logType = "ERROR"
@@ -435,19 +436,19 @@ func (w *Worker) collectLogs() {
 					if len(w.logs) > w.maxLogs {
 						w.logs = w.logs[len(w.logs)-w.maxLogs:]
 					}
-					w.mu.Unlock()
+					w.logMu.Unlock()
 				case state, ok := <-w.stateChan:
 					if !ok {
 						return
 					}
-					w.mu.Lock()
+					w.logMu.Lock()
 					stateLog := fmt.Sprintf("[%s] Worker state: %s (PID: %d)",
 						time.Now().Format("2006-01-02 15:04:05"), state.State, state.PID)
 					w.logs = append(w.logs, stateLog)
 					if len(w.logs) > w.maxLogs {
 						w.logs = w.logs[len(w.logs)-w.maxLogs:]
 					}
-					w.mu.Unlock()
+					w.logMu.Unlock()
 				default:
 					return
 				}
@@ -457,7 +458,7 @@ func (w *Worker) collectLogs() {
 			if !ok {
 				return
 			}
-			w.mu.Lock()
+			w.logMu.Lock()
 
 			logType := "INFO"
 			if msg.Type == 1 {
@@ -470,13 +471,13 @@ func (w *Worker) collectLogs() {
 			if len(w.logs) > w.maxLogs {
 				w.logs = w.logs[len(w.logs)-w.maxLogs:]
 			}
-			w.mu.Unlock()
+			w.logMu.Unlock()
 
 		case state, ok := <-w.stateChan:
 			if !ok {
 				return
 			}
-			w.mu.Lock()
+			w.logMu.Lock()
 
 			stateLog := fmt.Sprintf("[%s] Worker state: %s (PID: %d)",
 				time.Now().Format("2006-01-02 15:04:05"), state.State, state.PID)
@@ -485,7 +486,7 @@ func (w *Worker) collectLogs() {
 			if len(w.logs) > w.maxLogs {
 				w.logs = w.logs[len(w.logs)-w.maxLogs:]
 			}
-			w.mu.Unlock()
+			w.logMu.Unlock()
 		}
 	}
 }
@@ -608,12 +609,11 @@ func (w *Worker) Cleanup() error {
 		logger.Debug("Worker %s process not found in overseer during cleanup", w.id)
 	}
 
-	w.overseer.UnWatchLogs(w.logChan)
-	w.overseer.UnWatchState(w.stateChan)
-
 	select {
 	case <-w.done:
 	default:
+		w.overseer.UnWatchLogs(w.logChan)
+		w.overseer.UnWatchState(w.stateChan)
 		close(w.done)
 	}
 

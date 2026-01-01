@@ -130,7 +130,6 @@ func TestManager_PoweronPoweroff(t *testing.T) {
 	args.Port = port
 	args.Host = "127.0.0.1"
 	args.EnableWebSocket = true
-	args.WorkDir = "../../testdata"
 
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
@@ -183,7 +182,7 @@ func TestManager_Reboot(t *testing.T) {
 		Time:  0,
 		Force: false,
 	})
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }
 
 func TestManager_Compute(t *testing.T) {
@@ -337,7 +336,6 @@ func TestManager_FullWorkflow(t *testing.T) {
 	args.Port = port
 	args.Host = "127.0.0.1"
 	args.EnableWebSocket = true
-	args.WorkDir = "../../testdata"
 
 	mgr := manager.NewManager(args)
 	defer mgr.Cleanup()
