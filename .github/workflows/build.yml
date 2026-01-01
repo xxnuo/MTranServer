@@ -47,6 +47,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     defaults:
       run:
         shell: bash
