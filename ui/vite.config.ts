@@ -25,6 +25,10 @@ export default defineConfig({
         target: 'http://localhost:8989',
         changeOrigin: true,
       },
+      '/version': {
+        target: 'http://localhost:8989',
+        changeOrigin: true,
+      },
     },
   },
 })
