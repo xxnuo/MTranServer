@@ -1,0 +1,44 @@
+{
+  "name": "mtranserver",
+  "version": "4.0.0",
+  "type": "module",
+  "description": "Translation server based on Bergamot WASM",
+  "bin": {
+    "mtranserver": "./dist/main.js"
+  },
+  "files": [
+    "mtranserver",
+    "assets"
+  ],
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "build": "rm -rf dist && bun build src/main.ts --compile --outfile ./dist/mtranserver --minify --sourcemap",
+    "build:dev": "rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express && tsc --emitDeclarationOnly --outDir dist",
+    "start": "node dist/main.js",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'No linter configured'"
+  },
+  "keywords": [
+    "translation",
+    "bergamot",
+    "wasm",
+    "machine-translation",
+    "translation-server"
+  ],
+  "author": "xxnuo",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "zstd-wasm-decoder": "^0.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

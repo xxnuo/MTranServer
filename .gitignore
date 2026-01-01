@@ -1,7 +1,4 @@
-/models
-/.bin
 *.log
-core
 *.tar
 
 *.psd
@@ -11,12 +8,12 @@ core
 .env
 /node_modules
 /packages
-
+/models
+/.bin
 /dist
-
 /.claude
-
 /tests/ff
 /tests/MTranCore
+
 deprecated/go/bin/worker
 deprecated/go/dist/mtranserver-darwin-arm64
