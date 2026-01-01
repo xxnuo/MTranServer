@@ -8,13 +8,16 @@ import (
 	"time"
 
 	"github.com/xxnuo/MTranServer/internal/logger"
+	"github.com/xxnuo/MTranServer/internal/utils"
 )
 
 type Manager struct {
-	worker *Worker
-	client *Client
-	mu     sync.RWMutex
-	url    string
+	worker       *Worker
+	client       *Client
+	mu           sync.RWMutex
+	url          string
+	reconnecting bool
+	reconnectCh  chan struct{}
 }
 
 type ManagerOption func(*Manager)
@@ -24,8 +27,10 @@ func NewManager(args *WorkerArgs, opts ...ManagerOption) *Manager {
 	url := fmt.Sprintf("ws://%s:%d/ws", args.Host, args.Port)
 
 	m := &Manager{
-		worker: NewWorker(args),
-		url:    url,
+		worker:       NewWorker(args),
+		url:          url,
+		reconnecting: false,
+		reconnectCh:  make(chan struct{}, 1),
 	}
 
 	for _, opt := range opts {
@@ -225,6 +230,23 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 	}
 
 	m.mu.Lock()
+	if m.reconnecting {
+		m.mu.Unlock()
+		logger.Debug("Manager.Trans: another request is reconnecting, waiting...")
+		select {
+		case <-m.reconnectCh:
+			logger.Debug("Manager.Trans: reconnection completed, retrying")
+			m.mu.RLock()
+			newClient := m.client
+			m.mu.RUnlock()
+			if newClient != nil {
+				return newClient.Trans(ctx, req)
+			}
+			return "", fmt.Errorf("reconnection failed")
+		case <-ctx.Done():
+			return "", ctx.Err()
+		}
+	}
 
 	if m.client != client {
 		m.mu.Unlock()
@@ -235,24 +257,78 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 		return "", fmt.Errorf("client changed to nil during reconnection")
 	}
 
+	m.reconnecting = true
+	m.mu.Unlock()
+
+	defer func() {
+		m.mu.Lock()
+		m.reconnecting = false
+		select {
+		case m.reconnectCh <- struct{}{}:
+		default:
+		}
+		m.mu.Unlock()
+	}()
+
 	logger.Debug("Manager.Trans: attempting reconnection")
 
-	if m.client != nil {
-		m.client.Close()
+	m.mu.Lock()
+	oldClient := m.client
+	oldWorker := m.worker
+
+	if oldClient != nil {
 		m.client = nil
 	}
 
-	if m.worker != nil && m.worker.IsRunning() {
-		m.worker.Stop()
-	}
-
-	time.Sleep(500 * time.Millisecond)
-
-	if err := m.worker.Start(); err != nil {
+	newPort, err := utils.GetFreePort()
+	if err != nil {
 		m.mu.Unlock()
-		return "", fmt.Errorf("failed to restart worker: %w", err)
+		return "", fmt.Errorf("failed to allocate new port: %w", err)
 	}
+
+	newArgs := *m.worker.args
+	newArgs.Port = newPort
+	newWorker := NewWorker(&newArgs)
+	newURL := fmt.Sprintf("ws://%s:%d/ws", newArgs.Host, newArgs.Port)
+
+	m.worker = newWorker
+	m.url = newURL
 	m.mu.Unlock()
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("Panic during old worker cleanup: %v", r)
+			}
+		}()
+
+		if oldClient != nil {
+			exitCtx, exitCancel := context.WithTimeout(context.Background(), 2*time.Second)
+			_, exitErr := oldClient.Exit(exitCtx, ExitRequest{Time: 0, Force: true})
+			exitCancel()
+			if exitErr != nil {
+				logger.Warn("Failed to send exit command to old worker: %v", exitErr)
+			}
+			oldClient.Close()
+		}
+
+		if oldWorker != nil && oldWorker.IsRunning() {
+			logger.Debug("Cleaning up old worker in background")
+			if stopErr := oldWorker.Stop(); stopErr != nil {
+				logger.Warn("Failed to stop old worker: %v", stopErr)
+			}
+			time.Sleep(1 * time.Second)
+			if oldWorker.IsRunning() {
+				logger.Warn("Old worker still running, forcing cleanup")
+				oldWorker.Cleanup()
+			}
+		}
+		logger.Debug("Old worker cleanup completed")
+	}()
+
+	if startErr := newWorker.Start(); startErr != nil {
+		return "", fmt.Errorf("failed to start new worker: %w", startErr)
+	}
 
 	timeout := time.After(10 * time.Second)
 	ticker := time.NewTicker(100 * time.Millisecond)
@@ -261,11 +337,11 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 	for {
 		select {
 		case <-timeout:
-			return "", fmt.Errorf("worker restart timeout")
+			return "", fmt.Errorf("new worker start timeout")
 		case <-ticker.C:
-			if m.worker.IsRunning() {
-				newClient := NewClient(m.url)
-				if err := newClient.Connect(); err != nil {
+			if newWorker.IsRunning() {
+				newClient := NewClient(newURL)
+				if connErr := newClient.Connect(); connErr != nil {
 					continue
 				}
 

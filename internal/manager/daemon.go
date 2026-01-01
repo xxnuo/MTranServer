@@ -219,19 +219,39 @@ func (w *Worker) Start() error {
 	w.running = true
 	w.pid = cmd.Process.Pid
 
-	w.wg.Add(2)
+	w.wg.Add(3)
 	go w.collectLogs(stdoutPipe, "INFO")
 	go w.collectLogs(stderrPipe, "ERROR")
+	go w.monitorProcess()
 
 	logger.Debug("Worker %s started with PID %d", w.id, w.pid)
 	return nil
 }
 
-func (w *Worker) Stop() error {
+func (w *Worker) monitorProcess() {
+	defer w.wg.Done()
+
+	err := w.cmd.Wait()
+
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
+	if w.running {
+		w.running = false
+		w.pid = 0
+		if err != nil {
+			logger.Warn("Worker %s process exited unexpectedly: %v", w.id, err)
+		} else {
+			logger.Info("Worker %s process exited normally", w.id)
+		}
+	}
+}
+
+func (w *Worker) Stop() error {
+	w.mu.Lock()
+
 	if !w.running || w.cmd == nil || w.cmd.Process == nil {
+		w.mu.Unlock()
 		return fmt.Errorf("worker not running")
 	}
 
@@ -240,32 +260,35 @@ func (w *Worker) Stop() error {
 	if err := w.cmd.Process.Signal(syscall.SIGTERM); err != nil {
 		logger.Warn("Failed to send SIGTERM to worker: %v", err)
 	}
+	w.mu.Unlock()
 
 	timeout := time.After(10 * time.Second)
-	done := make(chan error, 1)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
 
-	go func() {
-		done <- w.cmd.Wait()
-	}()
+	for {
+		select {
+		case <-timeout:
+			w.mu.Lock()
+			if w.running && w.cmd != nil && w.cmd.Process != nil {
+				logger.Warn("Worker %s stop timeout, forcing kill", w.id)
+				if err := w.cmd.Process.Kill(); err != nil {
+					logger.Warn("Failed to kill worker: %v", err)
+				}
+			}
+			w.mu.Unlock()
+			time.Sleep(500 * time.Millisecond)
+			return fmt.Errorf("worker stop timeout, forced kill")
+		case <-ticker.C:
+			w.mu.RLock()
+			stillRunning := w.running
+			w.mu.RUnlock()
 
-	select {
-	case <-timeout:
-		logger.Warn("Worker %s stop timeout, forcing kill", w.id)
-		if err := w.cmd.Process.Kill(); err != nil {
-			logger.Warn("Failed to kill worker: %v", err)
+			if !stillRunning {
+				logger.Debug("Worker %s stopped", w.id)
+				return nil
+			}
 		}
-		<-done
-		w.running = false
-		w.pid = 0
-		return fmt.Errorf("worker stop timeout, forced kill")
-	case err := <-done:
-		w.running = false
-		w.pid = 0
-		logger.Debug("Worker %s stopped", w.id)
-		if err != nil && err.Error() != "signal: terminated" && err.Error() != "signal: killed" {
-			return err
-		}
-		return nil
 	}
 }
 
@@ -345,30 +368,41 @@ func (w *Worker) Cleanup() error {
 		if err := w.cmd.Process.Signal(syscall.SIGTERM); err != nil {
 			logger.Warn("Failed to send SIGTERM during cleanup: %v", err)
 		}
+		w.mu.Unlock()
 
 		timeout := time.After(5 * time.Second)
-		done := make(chan error, 1)
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
 
-		go func() {
-			done <- w.cmd.Wait()
-		}()
+	waitLoop:
+		for {
+			select {
+			case <-timeout:
+				w.mu.Lock()
+				if w.running && w.cmd != nil && w.cmd.Process != nil {
+					logger.Warn("Worker %s cleanup timeout, forcing kill", w.id)
+					if err := w.cmd.Process.Kill(); err != nil {
+						logger.Warn("Failed to kill worker during cleanup: %v", err)
+						errs = append(errs, fmt.Errorf("failed to kill worker: %w", err))
+					}
+				}
+				w.mu.Unlock()
+				time.Sleep(500 * time.Millisecond)
+				break waitLoop
+			case <-ticker.C:
+				w.mu.RLock()
+				stillRunning := w.running
+				w.mu.RUnlock()
 
-		select {
-		case <-timeout:
-			logger.Warn("Worker %s cleanup timeout, forcing kill", w.id)
-			if err := w.cmd.Process.Kill(); err != nil {
-				logger.Warn("Failed to kill worker during cleanup: %v", err)
-				errs = append(errs, fmt.Errorf("failed to kill worker: %w", err))
-			}
-			<-done
-		case err := <-done:
-			if err != nil && err.Error() != "signal: terminated" && err.Error() != "signal: killed" {
-				errs = append(errs, fmt.Errorf("worker exited with error: %w", err))
+				if !stillRunning {
+					break waitLoop
+				}
 			}
 		}
 
-		w.running = false
-		w.pid = 0
+		w.mu.Lock()
+	} else {
+		logger.Debug("Worker %s not running during cleanup", w.id)
 	}
 
 	select {
