@@ -6,9 +6,9 @@
 
 Un serveur de modèle de traduction hors ligne ultra-rapide avec une consommation de ressources minimale. Aucune carte graphique requise. Temps de réponse moyen de 50 ms par requête. Prend en charge la traduction des principales langues du monde.
 
-Notez que ce serveur de modèle se concentre sur la `traduction hors ligne`, la `vitesse de réponse`, le `déploiement multiplateforme` et l'`exécution locale` pour atteindre l'objectif de `traduction gratuite illimitée`. En raison des contraintes de taille et d'optimisation du modèle, la qualité de la traduction ne sera certainement pas aussi bonne que celle des grands modèles de traduction.
+Notez que ce serveur de modèle se concentre sur la `traduction hors ligne`, la `vitesse de réponse`, le `déploiement multiplateforme` et l'`exécution locale` pour atteindre l'objectif de `traduction gratuite illimitée`. En raison des contraintes de taille et d'optimisation du modèle, la qualité de la traduction ne sera certainement pas aussi bonne que celle des grands modèles de traduction. Pour une traduction de haute qualité, il est recommandé d'utiliser les API de grands modèles en ligne.
 
-> Pour une traduction de haute qualité, il est recommandé d'utiliser les API de grands modèles en ligne.
+> v4 a optimisé l'utilisation de la mémoire, amélioré encore la vitesse et renforcé la stabilité. En attente de la version officielle ! La version dev n'est pas recommandée pour la mise à niveau !
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -128,7 +128,7 @@ Voici quelques projets avec des fonctionnalités similaires. Si vous avez d'autr
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Très élevée | Moyenne | Moyenne | Moyenne | Un CPU milieu de gamme traite 3 phrases/s, un CPU haut de gamme 15-20 phrases/s. [Détails](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | Élevée | Moyenne | Assez mauvaise | Rapide | [Tests de performance](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Autres grands modèles | Ultra élevée | Dynamique | Très bonne | Très lente | Exigences matérielles élevées. Si vous avez besoin d'une traduction à haute concurrence, il est recommandé d'utiliser le framework vllm pour contrôler la concurrence via l'utilisation de la mémoire et de la VRAM |
-| Ce projet | Moyenne | Élevée | Moyenne | Ultra rapide | Temps de réponse moyen de 50 ms par requête. Le nouveau modèle a amélioré la qualité de la traduction, entraînant une augmentation de l'utilisation de la mémoire. L'optimisation sera priorisée quand le temps le permettra |
+| Ce projet | Faible | Élevée | Moyenne | Ultra rapide | Temps de réponse moyen de 50 ms par requête. v4 a optimisé l'utilisation de la mémoire. En attente de la version officielle ! |
 
 > Les données du tableau sont pour des tests simples CPU, scénarios anglais vers chinois, pas des tests stricts, comparaison de versions non quantifiées, pour référence seulement.
 

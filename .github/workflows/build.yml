@@ -52,9 +52,17 @@ jobs:
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
 
+      - name: Prepare Release Notes
+        id: release_notes
+        run: |
+          if [[ "${{ github.ref_name }}" == *"dev"* ]]; then
+            echo "notes=⚠️ **THIS IS A DEVELOPMENT RELEASE. NOT RECOMMENDED FOR PRODUCTION USE.** ⚠️" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             release-assets/*
+          body: ${{ steps.release_notes.outputs.notes }}
           generate_release_notes: true
