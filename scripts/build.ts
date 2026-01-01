@@ -50,7 +50,7 @@ console.log("Generating Swagger assets map...");
 await $`bun run scripts/gen-swagger-assets.ts`;
 
 console.log("Generating routes and spec...");
-await $`bun run gen`;
+await $`bun tsoa spec-and-routes`;
 
 if (isLib) {
   console.log("Building library...");
