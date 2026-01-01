@@ -68,7 +68,7 @@ export function HistorySheet({
           </div>
         )}
 
-        <ScrollArea className="flex-1 px-4">
+        <ScrollArea className="flex-1 px-4 min-h-0">
           <div className="flex flex-col gap-4 pb-4">
             {filteredHistory.map((item) => (
               <div
