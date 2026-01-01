@@ -1,6 +1,6 @@
 {
   "name": "mtranserver",
-  "version": "4.0.19",
+  "version": "4.0.20",
   "type": "module",
   "description": "Translation server",
   "main": "./dist/index.js",
@@ -26,7 +26,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "echo 'No linter configured'",
     "gen": "tsoa spec-and-routes",
-    "bump": "bun scripts/bump.ts"
+    "bump": "bun scripts/bump.ts",
+    "publish": "npm publish --registry=https://registry.npmjs.com"
   },
   "keywords": [
     "translation",
