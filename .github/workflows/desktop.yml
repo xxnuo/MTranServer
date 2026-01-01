@@ -37,7 +37,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            VERSION="v$(cat package.json | grep '\"version\"' | head -1 | sed 's/.*\"version\": \"\(.*\)\".*/\1/')"
           fi
           echo "Syncing version to ${VERSION}"
           bun run bump ${VERSION}
