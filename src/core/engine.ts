@@ -296,7 +296,7 @@ export class TranslationEngine {
     const emojiRegex = /(\p{RI}\p{RI}|\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
     const replacements: Array<{ original: string; placeholder: string }> = [];
     const cleanText = text.replace(emojiRegex, (match) => {
-      const placeholder = `<e${replacements.length}>`;
+      const placeholder = `[EE${replacements.length}]`;
       replacements.push({ original: match, placeholder });
       return placeholder;
     });
@@ -305,8 +305,10 @@ export class TranslationEngine {
 
   private _restoreEmojis(text: string, replacements: Array<{ original: string; placeholder: string }>): string {
     let result = text;
-    for (const { original, placeholder } of replacements) {
-      result = result.split(placeholder).join(original);
+    for (let i = 0; i < replacements.length; i++) {
+      const { original } = replacements[i];
+      const pattern = new RegExp(`\\[EE${i}\\]`, 'gi');
+      result = result.replace(pattern, original);
     }
     return result;
   }
