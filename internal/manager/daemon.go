@@ -273,6 +273,13 @@ func (w *Worker) Stop() error {
 				if w.overseer.HasProc(w.id) {
 					logger.Warn("Attempting force kill after panic for %s", w.id)
 					_ = w.overseer.Signal(w.id, syscall.SIGKILL)
+					time.Sleep(500 * time.Millisecond)
+					if w.overseer.HasProc(w.id) {
+						func() {
+							defer func() { recover() }()
+							w.overseer.Remove(w.id)
+						}()
+					}
 				}
 			}
 		}()
@@ -328,6 +335,12 @@ func (w *Worker) Stop() error {
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
+			if w.overseer.HasProc(w.id) {
+				func() {
+					defer func() { recover() }()
+					w.overseer.Remove(w.id)
+				}()
+			}
 			return fmt.Errorf("worker stop timeout, forced kill")
 		case <-ticker.C:
 			if !w.overseer.HasProc(w.id) {
@@ -344,26 +357,33 @@ func (w *Worker) Stop() error {
 }
 
 func (w *Worker) Restart() error {
+	w.mu.Lock()
+	processExists := w.overseer.HasProc(w.id)
+	w.mu.Unlock()
 
-	if w.overseer.HasProc(w.id) {
-		status := w.overseer.Status(w.id)
-		if status != nil && status.State == "running" {
+	if processExists {
+		status := w.Status()
+		if status == "running" {
 			if err := w.Stop(); err != nil {
-				return fmt.Errorf("failed to stop worker: %w", err)
+				logger.Warn("Failed to stop worker during restart: %v", err)
 			}
 		}
 
 		for range 30 {
-			if !w.overseer.HasProc(w.id) {
+			w.mu.Lock()
+			hasProc := w.overseer.HasProc(w.id)
+			w.mu.Unlock()
+			if !hasProc {
 				break
 			}
-			checkStatus := w.overseer.Status(w.id)
-			if checkStatus == nil || checkStatus.State != "running" {
+			checkStatus := w.Status()
+			if checkStatus != "running" && checkStatus != "unknown" {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
+		w.mu.Lock()
 		if w.overseer.HasProc(w.id) {
 			func() {
 				defer func() {
@@ -374,6 +394,7 @@ func (w *Worker) Restart() error {
 				w.overseer.Remove(w.id)
 			}()
 		}
+		w.mu.Unlock()
 	}
 
 	time.Sleep(500 * time.Millisecond)
