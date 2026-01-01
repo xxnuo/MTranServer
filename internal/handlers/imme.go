@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -75,12 +74,10 @@ func HandleImmeTranslate(apiToken string) gin.HandlerFunc {
 			result, err := services.TranslateWithPivot(ctx, sourceLang, targetLang, text, true)
 			if err != nil {
 				logger.Error("Imme translation failed at index %d (%s -> %s): %v", i, sourceLang, targetLang, err)
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": fmt.Sprintf("Translation failed at index %d: %v", i, err),
-				})
-				return
+				result = text // Fallback to original text
+			} else {
+				logger.Debug("Imme translated [%d/%d] success", i+1, len(req.TextList))
 			}
-			logger.Debug("Imme translated [%d/%d] success", i+1, len(req.TextList))
 
 			translations[i] = ImmeTranslation{
 				DetectedSourceLang: req.SourceLang,
