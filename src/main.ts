@@ -24,11 +24,13 @@ Options:
   --log-to-file            Enable logging to file (default: false)
   --log-console            Enable logging to console (default: true)
   --no-log-console         Disable logging to console
+  --check-update / --no-check-update  Enable/Disable update check (default: true)
 
 Environment Variables:
   MT_HOST, MT_PORT, MT_LOG_LEVEL, MT_CONFIG_DIR, MT_MODEL_DIR,
   MT_LOG_DIR, MT_ENABLE_UI, MT_OFFLINE, MT_WORKER_IDLE_TIMEOUT,
-  MT_WORKERS_PER_LANGUAGE, MT_API_TOKEN, MT_LOG_TO_FILE, MT_LOG_CONSOLE
+  MT_WORKERS_PER_LANGUAGE, MT_API_TOKEN, MT_LOG_TO_FILE, MT_LOG_CONSOLE,
+  MT_CHECK_UPDATE
 `);
   process.exit(0);
 }

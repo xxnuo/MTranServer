@@ -18,6 +18,7 @@ export interface Config {
   logToFile: boolean;
   logConsole: boolean;
   maxLengthBreak: number;
+  checkUpdate: boolean;
 }
 
 let globalConfig: Config | null = null;
@@ -122,6 +123,8 @@ export function getConfig(): Config {
 
     logToFile: getBool('--log-to-file', 'MT_LOG_TO_FILE', false),
     logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', true),
+
+    checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', true),
   };
 
   return globalConfig;

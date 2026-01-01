@@ -11,6 +11,7 @@ import { RegisterRoutes } from '@/generated/routes.js';
 import swaggerDocument from '@/generated/swagger.json';
 import { uiStatic } from '@/middleware/ui.js';
 import { swaggerStatic } from '@/middleware/swagger.js';
+import { checkForUpdate } from '@/utils/update-checker.js';
 
 export async function run() {
   const config = getConfig();
@@ -57,6 +58,10 @@ export async function run() {
     logger.important(`Web UI: http://${config.host}:${config.port}/ui/`);
     logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs/`);
     logger.important(`Log level set to: ${config.logLevel}`);
+
+    if (config.checkUpdate) {
+      checkForUpdate();
+    }
   });
 
   const shutdown = async () => {

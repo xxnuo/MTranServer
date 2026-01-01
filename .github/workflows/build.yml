@@ -116,6 +116,11 @@ jobs:
           sed -i "s|\${TAG}|${TAG}|g" release_body.md
           sed -i "s|\${VERSION}|${VERSION}|g" release_body.md
 
+          if [ -f CHANGELOG.md ]; then
+            echo "" >> release_body.md
+            cat CHANGELOG.md >> release_body.md
+          fi
+
           {
             echo "body<<EOFMARKER"
             cat release_body.md
