@@ -123,7 +123,8 @@ export class TranslationEngine {
       processedText = this._sanitizeHTML(text);
     }
 
-    const { cleanText, replacements } = this._hideEmojis(processedText);
+    const { cleanText: placeholderText, replacements: placeholderReplacements } = this._hidePlaceholders(processedText);
+    const { cleanText, replacements } = this._hideEmojis(placeholderText);
 
     let translation: string;
     try {
@@ -141,6 +142,7 @@ export class TranslationEngine {
     }
 
     translation = this._restoreEmojis(translation, replacements);
+    translation = this._restorePlaceholders(translation, placeholderReplacements);
 
     return translation;
   }
@@ -298,6 +300,32 @@ export class TranslationEngine {
   }
 
   private _restoreEmojis(text: string, replacements: Array<{ original: string; placeholder: string }>): string {
+    let result = text;
+    for (const { original, placeholder } of replacements) {
+      result = result.split(placeholder).join(original);
+    }
+    return result;
+  }
+
+  private _hidePlaceholders(text: string): { cleanText: string; replacements: Array<{ original: string; placeholder: string }> } {
+    const replacements: Array<{ original: string; placeholder: string }> = [];
+    const used = new Set<string>();
+    const placeholderRegex = /\{(\d+)\}/g;
+    const cleanText = text.replace(placeholderRegex, (match) => {
+      let placeholder = `__MTRAN_PH_${replacements.length}__`;
+      let salt = 0;
+      while (text.includes(placeholder) || used.has(placeholder)) {
+        salt += 1;
+        placeholder = `__MTRAN_PH_${replacements.length}_${salt}__`;
+      }
+      used.add(placeholder);
+      replacements.push({ original: match, placeholder });
+      return placeholder;
+    });
+    return { cleanText, replacements };
+  }
+
+  private _restorePlaceholders(text: string, replacements: Array<{ original: string; placeholder: string }>): string {
     let result = text;
     for (const { original, placeholder } of replacements) {
       result = result.split(placeholder).join(original);
