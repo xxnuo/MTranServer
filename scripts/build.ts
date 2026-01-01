@@ -20,6 +20,12 @@ console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
 
+console.log("Building UI...");
+await $`cd ui && bun run build`;
+
+console.log("Generating UI assets map...");
+await $`bun run scripts/gen-ui-assets.ts`;
+
 console.log("Generating routes and spec...");
 await $`bun run gen`;
 

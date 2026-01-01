@@ -26,5 +26,5 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "deprecated"]
+  "exclude": ["node_modules", "dist", "tests", "deprecated", "src/assets/ui.ts"]
 }
