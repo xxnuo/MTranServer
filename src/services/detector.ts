@@ -20,6 +20,15 @@ const MAX_DETECTION_LENGTH = 1024;
 let cldModule: any = null;
 let initPromise: Promise<void> | null = null;
 
+function handleCldError(error: any) {
+  const errStr = error.toString();
+  if (errStr.includes('RuntimeError') || errStr.includes('memory access')) {
+    logger.error(`CLD2 crashed (RuntimeError), resetting module: ${error}`);
+    cldModule = null;
+    initPromise = null;
+  }
+}
+
 async function initCLD(): Promise<void> {
   if (cldModule) return;
 
@@ -114,6 +123,7 @@ export async function detectLanguage(text: string): Promise<string> {
     return bcp47Normalize(result.language);
   } catch (error) {
     logger.warn(`Language detection failed: ${error}`);
+    handleCldError(error);
     return 'en';
   }
 }
@@ -146,6 +156,7 @@ export async function detectLanguageWithConfidence(
     };
   } catch (error) {
     logger.warn(`Language detection with confidence failed: ${error}`);
+    handleCldError(error);
     return { language: 'en', confidence: 0 };
   }
 }
@@ -213,6 +224,7 @@ export async function detectMultipleLanguagesWithThreshold(
 
   for (const { segment, index } of sentenceSegments) {
     try {
+      await initCLD();
       const processSegment = segment.length > MAX_DETECTION_LENGTH
         ? segment.slice(0, MAX_DETECTION_LENGTH)
         : segment;
@@ -230,6 +242,7 @@ export async function detectMultipleLanguagesWithThreshold(
       });
     } catch (error) {
       logger.warn(`Failed to detect language for segment: ${error}`);
+      handleCldError(error);
       segments.push({
         text: segment,
         language: effectiveFallback,
