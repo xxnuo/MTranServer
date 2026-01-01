@@ -1,6 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
-import { decompressSync } from 'zstd-wasm-decoder'
+import { decompress } from 'fzstd'
 import { ResourceLoader } from '@/core/loader.js'
 import { FileSystem } from '@/core/interfaces.js'
 
@@ -34,8 +34,8 @@ export class Downloader {
 
   async decompress(inputPath: string, outputPath: string): Promise<void> {
     const compressedData = await fs.readFile(inputPath)
-    const decompressed = decompressSync(new Uint8Array(compressedData))
-    await fs.writeFile(outputPath, Buffer.from(decompressed))
+    const decompressed = decompress(compressedData)
+    await fs.writeFile(outputPath, decompressed)
   }
 
   private async downloadBinary(url: string): Promise<Buffer> {
