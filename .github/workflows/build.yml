@@ -44,11 +44,14 @@ jobs:
 
   build_desktop:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
     defaults:
       run:
         shell: bash
