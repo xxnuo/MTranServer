@@ -1,0 +1,43 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish # Requires manual approval in GitHub Settings
+    permissions:
+      contents: read
+      id-token: write # Required for Trusted Publishing (provenance)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Dependencies
+        run: bun install
+
+      # We run build:lib manually here to ensure it uses the CI environment correctly
+      # although prepublishOnly in package.json handles it too.
+      - name: Build Library
+        run: bun run build:lib
+
+      - name: Publish to NPM
+        # --provenance flag is key for Trusted Publishing to verify the source
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # Only if NOT using Trusted Publishing strictly, but with provenance usually automatic
