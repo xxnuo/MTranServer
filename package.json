@@ -27,7 +27,7 @@
     "lint": "echo 'No linter configured'",
     "gen": "tsoa spec-and-routes",
     "bump": "bun scripts/bump.ts",
-    "push": "npm publish --registry=https://registry.npmjs.com"
+    "push": "npm publish --registry=https://registry.npmjs.org"
   },
   "keywords": [
     "translation",
