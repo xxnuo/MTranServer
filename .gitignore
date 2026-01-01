@@ -6,7 +6,7 @@
 *.spm
 *.zip
 .env
-/node_modules
+*node_modules*
 /packages
 /models
 /.bin
@@ -21,3 +21,4 @@ deprecated/go/dist/mtranserver-darwin-arm64
 src/generated/
 src/assets/ui.ts
 src/assets/swagger.ts
+*.tgz
