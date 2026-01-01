@@ -8,6 +8,7 @@ import wasmPath from '@/lib/bergamot/bergamot-translator.wasm' with { type: 'fil
 import * as logger from '@/logger/index.js';
 import * as models from '@/models/index.js';
 import { detectLanguage, detectMultipleLanguages } from './detector.js';
+import { readCache, writeCache } from '@/utils/cache.js';
 
 interface EngineInfo {
   engine: TranslationEngine;
@@ -128,13 +129,22 @@ async function translateSingleLanguageText(
   text: string,
   isHTML: boolean
 ): Promise<string> {
+  const cacheKey = [fromLang, toLang, text, isHTML];
+  const cached = readCache(cacheKey);
+  if (cached !== null) {
+    logger.debug(`Cache hit: ${fromLang} -> ${toLang}, text length: ${text.length}`);
+    return cached;
+  }
+
   const MAX_RETRIES = 3;
   let lastError: any;
 
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const engine = await getOrCreateSingleEngine(fromLang, toLang);
-      return await engine.translateAsync(text, { html: isHTML });
+      const result = await engine.translateAsync(text, { html: isHTML });
+      writeCache(result, cacheKey);
+      return result;
     } catch (error: any) {
       lastError = error;
       const isSIMDError = error.message && (
@@ -152,7 +162,6 @@ async function translateSingleLanguageText(
       if (isMemoryError) {
         logger.warn(`WASM memory error during translation (${fromLang}->${toLang}), retrying (${i + 1}/${MAX_RETRIES})...`);
 
-        // Remove the crashed engine so next retry gets a fresh one
         const key = `${fromLang}-${toLang}`;
         const info = engines.get(key);
         if (info) {
