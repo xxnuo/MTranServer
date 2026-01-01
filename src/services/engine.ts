@@ -116,6 +116,7 @@ function resetIdleTimer(info: EngineInfo) {
   info.timer = setTimeout(() => {
     const key = `${info.fromLang}-${info.toLang}`;
     logger.info(`Engine ${key} idle timeout, stopping...`);
+    info.engine.destroy();
     engines.delete(key);
     logger.info(`Engine ${key} stopped due to idle timeout`);
   }, timeout);
@@ -300,6 +301,7 @@ export function cleanupAllEngines() {
     if (info.timer) {
       clearTimeout(info.timer);
     }
+    info.engine.destroy();
     logger.debug(`Stopped engine: ${key}`);
   }
 
