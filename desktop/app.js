@@ -54,6 +54,29 @@ function getStatusLabel() {
   return messages.trayServiceStopped;
 }
 
+function getTrayIcon() {
+  if (process.platform === 'darwin') {
+    const iconPath16 = path.join(__dirname, '..', 'images', 'icons', 'icon@16px.png');
+    const iconPath32 = path.join(__dirname, '..', 'images', 'icons', 'icon@32px.png');
+    const icon = nativeImage.createFromPath(iconPath16);
+    if (fsSync.existsSync(iconPath32)) {
+      const icon2x = nativeImage.createFromPath(iconPath32);
+      icon.addRepresentation({
+        scaleFactor: 2,
+        width: 32,
+        height: 32,
+        buffer: icon2x.toPNG()
+      });
+    }
+    icon.setTemplateImage(true);
+    return icon;
+  }
+  const scaleFactor = screen.getPrimaryDisplay().scaleFactor || 1;
+  const size = scaleFactor >= 1.25 ? 32 : 16;
+  const iconPath = path.join(__dirname, '..', 'images', 'icons', `icon@${size}px.png`);
+  return nativeImage.createFromPath(iconPath);
+}
+
 function updateTray() {
   if (!tray) return;
   updateTrayMenu({
@@ -256,8 +279,7 @@ export async function startDesktop() {
   createSettingsWindow({ url: loadingUrl, preload: preloadPath, parent: mainWindow });
   mainWindow.once('ready-to-show', () => mainWindow.show());
 
-  const iconPath = path.join(__dirname, '..', 'images', 'icons', 'icon@16px.png');
-  const trayIcon = nativeImage.createFromPath(iconPath);
+  const trayIcon = getTrayIcon();
   tray = createTray({
     icon: trayIcon,
     tooltip: messages.appName,

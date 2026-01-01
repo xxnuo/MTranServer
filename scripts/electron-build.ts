@@ -76,7 +76,7 @@ async function repackAsar(unpackedDir: string) {
   if (fs.existsSync(asarUnpackDir)) {
     fs.rmSync(asarUnpackDir, { recursive: true })
   }
-  await run('npx', ['@electron/asar', 'pack', appDir, asarFile])
+  await run('npx', ['--yes', '@electron/asar', 'pack', appDir, asarFile])
   fs.rmSync(appDir, { recursive: true })
 }
 
