@@ -153,6 +153,9 @@ export class TranslationEngine {
     text = text.replace(/<([^a-zA-Z/!?][^>]*)>/g, '&lt;$1&gt;');
     const unclosedTags = /<([a-zA-Z]+)(?:\s[^>]*)?>(?![\s\S]*<\/\1>)/g;
     text = text.replace(unclosedTags, (match) => {
+      if (match.endsWith('/>')) {
+        return match;
+      }
       return match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     });
 
@@ -321,7 +324,7 @@ export class TranslationEngine {
     const taggedText = text.replace(placeholderRegex, (match) => {
       const index = replacements.length;
       replacements.push(match);
-      return `<br data-mt="${index}">`;
+      return `<mt${index} />`;
     });
 
     return { taggedText, replacements, forceHtml: !htmlEnabled };
@@ -333,7 +336,8 @@ export class TranslationEngine {
     }
 
     let result = text;
-    result = result.replace(/<br\s+data-mt="(\d+)"\s*\/?>/gi, (_, index) => {
+    result = result.replace(/<\/mt\d+>/gi, '');
+    result = result.replace(/<mt(\d+)\s*\/?>/gi, (_, index) => {
       const idx = Number(index);
       return replacements[idx] ?? _;
     });
