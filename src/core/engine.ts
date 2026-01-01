@@ -123,7 +123,7 @@ export class TranslationEngine {
       processedText = this._sanitizeHTML(text);
     }
 
-    const { cleanText: placeholderText, replacements: placeholderReplacements } = this._hidePlaceholders(processedText);
+    const { cleanText: placeholderText, replacements: placeholderReplacements } = this._hidePlaceholders(processedText, options);
     const { cleanText, replacements } = this._hideEmojis(placeholderText);
 
     let translation: string;
@@ -307,10 +307,13 @@ export class TranslationEngine {
     return result;
   }
 
-  private _hidePlaceholders(text: string): { cleanText: string; replacements: Array<{ original: string; placeholder: string }> } {
+  private _hidePlaceholders(
+    text: string,
+    options: TranslateOptions = {}
+  ): { cleanText: string; replacements: Array<{ original: string; placeholder: string }> } {
     const replacements: Array<{ original: string; placeholder: string }> = [];
     const used = new Set<string>();
-    const placeholderRegex = /\{(\d+)\}/g;
+    const placeholderRegex = /(\{\d+\}|\[\d+\])/g;
     const cleanText = text.replace(placeholderRegex, (match) => {
       let placeholder = `__MTRAN_PH_${replacements.length}__`;
       let salt = 0;
