@@ -6,7 +6,7 @@
 * 内存优化：内存占用回归至 1GB 以内水平。在 Linux x64 环境下翻译《福尔摩斯探案集》时，btop 显示内存占用低于 600MB。
 
 #### 部署与兼容性
-* Docker 修复与支持：修复了 Docker 构建问题，新增标准版（xxnuo/mtranserver:latest）与兼容版（xxnuo/mtranserver:latest-legacy）镜像。
+* Docker 修复与支持：修复了 Docker 构建问题，新增标准版（xxnuo/mtranserver:latest）与兼容版（xxnuo/mtranserver:legacy）镜像。
 * 多环境支持：新增对旧款 CPU (non-AVX2) 以及 Linux musl 的构建支持。
 
 #### 新功能
@@ -23,7 +23,7 @@
 * Memory Efficiency: Memory usage has returned to sub-1GB levels. (Tested on Linux x64 during English-to-Chinese translation of "The Adventures of Sherlock Holmes", btop usage was under 600MB).
 
 #### Deployment & Compatibility
-* Docker Improvements: Fixed Docker build issues and added support for both standard (xxnuo/mtranserver:latest) and legacy-compatible (xxnuo/mtranserver:latest-legacy) images.
+* Docker Improvements: Fixed Docker build issues and added support for both standard (xxnuo/mtranserver:latest) and legacy-compatible (xxnuo/mtranserver:legacy) images.
 * Platform Support: Added legacy build support for non-AVX2 CPUs and Linux musl build support.
 
 #### New Features
