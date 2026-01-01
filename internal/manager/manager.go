@@ -222,10 +222,11 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 	logger.Debug("Manager.Compute: text length: %d, isHTML: %v", len(req.Text), req.HTML)
 	m.mu.RLock()
 	client := m.client
+	worker := m.worker
 	m.mu.RUnlock()
 
-	if client == nil {
-		logger.Error("Manager.Compute: client not initialized")
+	if client == nil || worker == nil {
+		logger.Error("Manager.Compute: client or worker not initialized")
 		return "", fmt.Errorf("client not initialized")
 	}
 
@@ -255,10 +256,13 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 	defer m.mu.Unlock()
 
 	if m.client != client {
-		return m.client.Compute(ctx, req)
+		if m.client != nil {
+			return m.client.Compute(ctx, req)
+		}
+		return "", fmt.Errorf("client changed to nil during reconnection")
 	}
 
-	if !m.worker.IsRunning() || !m.client.IsConnected() {
+	if m.worker == nil || !m.worker.IsRunning() || m.client == nil || !m.client.IsConnected() {
 		if m.client != nil {
 			m.client.Close()
 			m.client = nil

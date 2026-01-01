@@ -189,7 +189,27 @@ func (w *Worker) Start() error {
 			return fmt.Errorf("worker already running")
 		}
 
-		w.overseer.Remove(w.id)
+		for i := 0; i < 30; i++ {
+			if !w.overseer.HasProc(w.id) {
+				break
+			}
+			checkStatus := w.overseer.Status(w.id)
+			if checkStatus == nil || checkStatus.State != "running" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		if w.overseer.HasProc(w.id) {
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						logger.Warn("Panic while removing process: %v", r)
+					}
+				}()
+				w.overseer.Remove(w.id)
+			}()
+		}
 	}
 
 	if _, err := os.Stat(w.binaryPath); err != nil {
@@ -320,7 +340,27 @@ func (w *Worker) Restart() error {
 			}
 		}
 
-		w.overseer.Remove(w.id)
+		for i := 0; i < 30; i++ {
+			if !w.overseer.HasProc(w.id) {
+				break
+			}
+			checkStatus := w.overseer.Status(w.id)
+			if checkStatus == nil || checkStatus.State != "running" {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		if w.overseer.HasProc(w.id) {
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						logger.Warn("Panic while removing process: %v", r)
+					}
+				}()
+				w.overseer.Remove(w.id)
+			}()
+		}
 	}
 
 	time.Sleep(500 * time.Millisecond)
@@ -536,7 +576,7 @@ func (w *Worker) Cleanup() error {
 			}()
 		}
 
-		for i := 0; i < 20; i++ {
+		for i := 0; i < 50; i++ {
 			if !w.overseer.HasProc(w.id) {
 				break
 			}
@@ -548,8 +588,17 @@ func (w *Worker) Cleanup() error {
 		}
 
 		if w.overseer.HasProc(w.id) {
-			w.overseer.Remove(w.id)
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						logger.Warn("Panic while removing process in cleanup: %v", r)
+					}
+				}()
+				w.overseer.Remove(w.id)
+			}()
 		}
+	} else {
+		logger.Debug("Worker %s process not found in overseer during cleanup", w.id)
 	}
 
 	w.overseer.UnWatchLogs(w.logChan)
