@@ -22,3 +22,4 @@ src/generated/
 src/assets/ui.ts
 src/assets/swagger.ts
 *.tgz
+/release

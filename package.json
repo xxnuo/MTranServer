@@ -27,7 +27,9 @@
     "lint": "echo 'No linter configured'",
     "gen": "tsoa spec-and-routes",
     "bump": "bun scripts/bump.ts",
-    "push": "npm publish --registry=https://registry.npmjs.org"
+    "push": "npm publish --registry=https://registry.npmjs.org",
+    "electron": "electron ./electron-main.js",
+    "build:electron": "bun run build:lib && electron-builder"
   },
   "keywords": [
     "translation",
@@ -46,6 +48,8 @@
     "@types/swagger-ui-express": "^4.1.8",
     "tsoa": "^7.0.0-alpha.0",
     "tsx": "^4.21.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.4.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
@@ -57,5 +61,39 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "build": {
+    "appId": "com.github.xxnuo.mtranserver",
+    "productName": "MTranServer",
+    "copyright": "Copyright © 2025",
+    "extraMetadata": {
+      "main": "electron-main.js"
+    },
+    "files": [
+      "electron-main.js",
+      "dist/**/*",
+      "images/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "images/icon.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "images/icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "images/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
