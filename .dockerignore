@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.github
+.vscode
+.idea
+.DS_Store
+ui/node_modules
+ui/dist
+deprecated
+tests
+coverage
+*.log
