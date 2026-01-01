@@ -103,8 +103,8 @@ export async function detectLanguage(text: string): Promise<string> {
     const result = detectLanguageWithCLD(text);
     return bcp47Normalize(result.language);
   } catch (error) {
-    logger.error(`Language detection failed: ${error}`);
-    return '';
+    logger.warn(`Language detection failed: ${error}`);
+    return 'en';
   }
 }
 
@@ -131,8 +131,8 @@ export async function detectLanguageWithConfidence(
       confidence
     };
   } catch (error) {
-    logger.error(`Language detection with confidence failed: ${error}`);
-    return { language: '', confidence: 0 };
+    logger.warn(`Language detection with confidence failed: ${error}`);
+    return { language: 'en', confidence: 0 };
   }
 }
 
