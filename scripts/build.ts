@@ -28,8 +28,13 @@ console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
 
-if (isLib) {
-  await $`rm -f ui/dist/assets/*.d.ts`;
+if (isLib && fs.existsSync("ui/dist/assets")) {
+  const entries = fs.readdirSync("ui/dist/assets");
+  for (const entry of entries) {
+    if (entry.endsWith(".d.ts")) {
+      fs.rmSync(`ui/dist/assets/${entry}`);
+    }
+  }
 }
 
 console.log("Building UI...");
