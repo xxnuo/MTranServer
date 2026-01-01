@@ -23,6 +23,16 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Sync version from tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          fi
+          echo "Syncing version to ${VERSION}"
+          bun run bump ${VERSION}
+
       - name: Build All Targets
         run: bun run build:all
 
@@ -97,8 +107,8 @@ jobs:
 
           > **Note**:
           >
-          > - **legacy**: Legacy build (non-AVX2): Use only if you experience 'Illegal instruction' crashes on very old hardware. Most people don't need this because it's slower.
-          > - **musl**: Musl build is built for Linux with musl libc. Most people don't need this.
+          > - **legacy**: Use only if you experience 'Illegal instruction' crashes on very old hardware (non-AVX2 CPUs without SIMD optimizations). Most people don't need this because it's slower.
+          > - **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
           EOF
 
           sed -i "s|\${WARNING}|${WARNING}|g" release_body.md

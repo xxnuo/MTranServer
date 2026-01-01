@@ -10,9 +10,7 @@ COPY . .
 RUN bun install --frozen-lockfile
 RUN cd ui && bun install --frozen-lockfile
 
-RUN if [ -n "$VERSION" ]; then \
-    sed -i "s/export const VERSION = '.*';/export const VERSION = '$VERSION';/" src/version/index.ts; \
-    fi
+RUN if [ -n "$VERSION" ]; then bun run bump $VERSION; fi
 
 RUN bun run build:docker
 
