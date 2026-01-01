@@ -55,7 +55,12 @@ const resources = {
       delete: 'Delete',
       switchLanguage: 'Switch Language',
       toggleTheme: 'Toggle Theme',
-      translateShortcut: 'Ctrl + Enter to translate'
+      translateShortcut: 'Ctrl + Enter to translate',
+      languageSwitcher: 'Language',
+      languageSearchPlaceholder: 'Search languages...',
+      languageRecent: 'Recent',
+      languageAll: 'All Languages',
+      followSystemLanguage: 'Follow System'
     }
   },
   zh: {
@@ -110,7 +115,12 @@ const resources = {
       delete: '删除',
       switchLanguage: '切换语言',
       toggleTheme: '切换主题',
-      translateShortcut: 'Ctrl + Enter 快捷翻译'
+      translateShortcut: 'Ctrl + Enter 快捷翻译',
+      languageSwitcher: '语言',
+      languageSearchPlaceholder: '搜索语言...',
+      languageRecent: '最近使用',
+      languageAll: '全部语言',
+      followSystemLanguage: '跟随系统'
     }
   },
   ja: {
@@ -165,7 +175,12 @@ const resources = {
       delete: '削除',
       switchLanguage: '言語を切り替え',
       toggleTheme: 'テーマを切り替え',
-      translateShortcut: 'Ctrl + Enterで翻訳'
+      translateShortcut: 'Ctrl + Enterで翻訳',
+      languageSwitcher: '言語',
+      languageSearchPlaceholder: '言語を検索...',
+      languageRecent: '最近',
+      languageAll: 'すべての言語',
+      followSystemLanguage: 'システムに従う'
     }
   }
 }
