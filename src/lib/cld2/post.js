@@ -123,49 +123,6 @@ for (let code of Object.keys(Encodings)) {
     Encodings[code.replace(/_/g, "")] = Encodings[code];
 }
 
-addOnPreMain(function() {
+// Expose Encodings on Module for library usage
+Module['Encodings'] = Encodings;
 
-  onmessage = function(aMsg) {
-    let data = aMsg["data"];
-
-    let langInfo;
-    if (data["tld"] == undefined && data["encoding"] == undefined && data["language"] == undefined) {
-      langInfo = LanguageInfo.detectLanguage(data["text"], !data["isHTML"]);
-    } else {
-      // Do our best to find the given encoding in the encodings table.
-      // Otherwise, just fall back to unknown.
-      let enc = String(data["encoding"]).toUpperCase().replace(/[_-]/g, "");
-
-      let encoding;
-      if (Encodings.hasOwnProperty(enc))
-        encoding = Encodings[enc];
-      else
-        encoding = Encodings["UNKNOWN_ENCODING"];
-
-      langInfo = LanguageInfo.detectLanguage(data["text"], !data["isHTML"],
-                                             data["tld"] || null,
-                                             encoding,
-                                             data["language"] || null);
-    }
-
-    postMessage({
-      "language": langInfo.getLanguageCode(),
-      "confident": langInfo.getIsReliable(),
-
-      "languages": new Array(3).fill(0).map((_, index) => {
-        let lang = langInfo.get_languages(index);
-        return {
-          "languageCode": lang.getLanguageCode(),
-          "percent": lang.getPercent(),
-        };
-      }).filter(lang => {
-        // Ignore empty results.
-        return lang["languageCode"] != "un" || lang["percent"] > 0;
-      }),
-    });
-
-    Module.destroy(langInfo);
-  };
-
-  postMessage("ready");
-});

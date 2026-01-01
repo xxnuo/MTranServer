@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-PYTHON2 ?= python2
+PYTHON2 ?= uv run python
 
 EMSCRIPTEN_ROOT := $(shell if which emcc >/dev/null 2>&1; \
                            then dirname `which emcc`; \
@@ -21,9 +21,10 @@ WEBIDL ?= $(PYTHON2) $(EMSCRIPTEN_ROOT)/tools/webidl_binder.py
 # worker.
 FLAGS=-s -O3 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -s NO_EXIT_RUNTIME=1 -s INVOKE_RUN=0 \
       -s TOTAL_STACK=8192 -s TOTAL_MEMORY=2097152 -s ALLOW_MEMORY_GROWTH=1 \
-      --llvm-lto 1 --memory-init-file 1 --closure 1
+      -s MODULARIZE=1 -s EXPORT_NAME=loadCLD2 \
+      --closure 1
 
-export EMCC_CLOSURE_ARGS = --language_in ECMASCRIPT6 --language_out ES5_STRICT
+export EMCC_CLOSURE_ARGS = --language_in UNSTABLE --language_out ES5_STRICT
 
 SOURCES= \
 	internal/cldutil.cc \
@@ -58,17 +59,17 @@ OBJECTS=$(SOURCES:.cc=.o)
 default: all
 
 %.o: %.cc Makefile
-	$(EMCC) -Os -I. -o $@ $<
+	$(EMCC) -Os -I. -Wno-c++11-narrowing -c -o $@ $<
 
 cldapp.o: cld.cpp
 
 %.cpp %.js: %.idl
 	$(WEBIDL) $< $*
 
-all: cld-worker.js
+all: cld2.js cld2.wasm
 
-cld-worker.js: $(OBJECTS) post.js cld.js
-	$(EMCC) $(FLAGS) -I. -o cld-worker.js $(OBJECTS) --post-js cld.js --post-js post.js
+cld2.js: $(OBJECTS) post.js cld.js
+	$(EMCC) $(FLAGS) -I. -o cld2.js $(OBJECTS) --post-js cld.js --post-js post.js
 
 clean:
 	rm -f $(OBJECTS) cld.cpp cld.js before.js

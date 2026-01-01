@@ -17,3 +17,4 @@
 
 deprecated/go/bin/worker
 deprecated/go/dist/mtranserver-darwin-arm64
+*.o
