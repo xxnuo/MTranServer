@@ -1,7 +1,9 @@
 import { app, dialog, nativeImage, shell, Menu } from 'electron';
+import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadDesktopConfig, saveDesktopConfig, resetDesktopConfig } from './config.js';
+import { loadDesktopConfig, saveDesktopConfig, resetDesktopConfig, getDefaultDesktopConfig } from './config.js';
 import { resolveLocale, getMessages } from './i18n.js';
 import { getFreePort, isPortAvailable } from './ports.js';
 import { getServerStatus, startServerWithConfig, stopServerInstance } from './server.js';
@@ -24,6 +26,7 @@ let messages = getMessages(locale);
 let tray = null;
 const repoUrl = 'https://github.com/xxnuo/MTranServer';
 let portCheckPromise = null;
+let desktopLogPath = null;
 
 function getLocalHost(host) {
   if (!host || host === '0.0.0.0') return '127.0.0.1';
@@ -69,6 +72,17 @@ function updateTray() {
   });
 }
 
+async function logDesktop(message, error) {
+  if (!desktopLogPath) return;
+  const timestamp = new Date().toISOString();
+  const details = error ? ` ${error.stack || error.message || error}` : '';
+  try {
+    await fs.appendFile(desktopLogPath, `[${timestamp}] ${message}${details}\n`, 'utf8');
+  } catch {
+    return;
+  }
+}
+
 async function ensurePortAvailable() {
   if (portCheckPromise) return portCheckPromise;
   portCheckPromise = (async () => {
@@ -76,6 +90,7 @@ async function ensurePortAvailable() {
     const available = await isPortAvailable(desktopConfig.server.port, host);
     if (available) return true;
 
+    await logDesktop(`port in use ${desktopConfig.server.port}`);
     const result = await dialog.showMessageBox({
       type: 'warning',
       buttons: [messages.portInUseUseRandom, messages.portInUseQuit],
@@ -87,10 +102,12 @@ async function ensurePortAvailable() {
 
     if (result.response === 0) {
       const newPort = await getFreePort();
+      await logDesktop(`use random port ${newPort}`);
       desktopConfig.server.port = newPort;
       desktopConfig = await saveDesktopConfig(desktopConfig);
       return true;
     }
+    await logDesktop('quit after port in use');
     await quitApp();
     return false;
   })();
@@ -105,9 +122,12 @@ async function startServer() {
   const ok = await ensurePortAvailable();
   if (!ok) return false;
   try {
+    await logDesktop('starting server');
     await startServerWithConfig(desktopConfig.server);
+    await logDesktop('server started');
     return true;
-  } catch {
+  } catch (error) {
+    await logDesktop('server start failed', error);
     dialog.showMessageBox({
       type: 'error',
       message: messages.serverStartFailed,
@@ -119,7 +139,9 @@ async function startServer() {
 
 async function restartServer() {
   try {
+    await logDesktop('restarting server');
     await stopServerInstance();
+    await ensureWritableDirs();
     const ok = await startServer();
     if (!ok) return false;
     updateWindowUrls({
@@ -138,6 +160,7 @@ async function restartServer() {
 }
 
 async function quitApp() {
+  await logDesktop('quit app');
   app.isQuitting = true;
   await stopServerInstance();
   app.quit();
@@ -147,6 +170,40 @@ function updateLocale(nextLocale) {
   locale = resolveLocale(nextLocale, app.getLocale());
   messages = getMessages(locale);
   updateTray();
+}
+
+async function ensureWritableDirs() {
+  const defaults = getDefaultDesktopConfig();
+  const updates = {};
+  const targets = [
+    ['modelDir', defaults.server.modelDir],
+    ['logDir', defaults.server.logDir],
+    ['configDir', defaults.server.configDir]
+  ];
+
+  for (const [key, fallback] of targets) {
+    const target = desktopConfig.server[key];
+    if (!target) {
+      updates[key] = fallback;
+      continue;
+    }
+    try {
+      await fs.mkdir(target, { recursive: true });
+      await fs.access(target, fsSync.constants.W_OK);
+    } catch {
+      updates[key] = fallback;
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    desktopConfig = await saveDesktopConfig({
+      ...desktopConfig,
+      server: {
+        ...desktopConfig.server,
+        ...updates
+      }
+    });
+  }
 }
 
 function getLoadingUrl() {
@@ -185,6 +242,10 @@ export async function startDesktop() {
   Menu.setApplicationMenu(null);
   desktopConfig = await loadDesktopConfig();
   updateLocale(desktopConfig.locale);
+  desktopLogPath = path.join(desktopConfig.server.configDir, 'desktop.log');
+  await fs.mkdir(desktopConfig.server.configDir, { recursive: true });
+  await logDesktop('desktop starting');
+  await ensureWritableDirs();
 
   const preloadPath = path.join(__dirname, 'preload.cjs');
   const loadingUrl = getLoadingUrl();
