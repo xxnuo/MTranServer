@@ -269,6 +269,24 @@ LanguageInfo.prototype.__class__ = LanguageInfo;
 LanguageInfo.__cache__ = {};
 Module['LanguageInfo'] = LanguageInfo;
 /** @suppress {undefinedVars, duplicate} @this{Object} */
+LanguageInfo.prototype['detectLanguageWithLength'] = LanguageInfo.prototype.detectLanguageWithLength = function(buffer, bufferLength, isPlainText, tldHint, encodingHint, languageHint) {
+  ensureCache.prepare();
+  if (buffer && typeof buffer === 'object') buffer = buffer.ptr;
+  else buffer = ensureString(buffer);
+  if (bufferLength && typeof bufferLength === 'object') bufferLength = bufferLength.ptr;
+  if (isPlainText && typeof isPlainText === 'object') isPlainText = isPlainText.ptr;
+  if (tldHint && typeof tldHint === 'object') tldHint = tldHint.ptr;
+  else tldHint = ensureString(tldHint);
+  if (encodingHint && typeof encodingHint === 'object') encodingHint = encodingHint.ptr;
+  if (languageHint && typeof languageHint === 'object') languageHint = languageHint.ptr;
+  else languageHint = ensureString(languageHint);
+  if (tldHint === undefined) { return wrapPointer(_emscripten_bind_LanguageInfo_detectLanguageWithLength_3(buffer, bufferLength, isPlainText), LanguageInfo) }
+  if (encodingHint === undefined) { return wrapPointer(_emscripten_bind_LanguageInfo_detectLanguageWithLength_4(buffer, bufferLength, isPlainText, tldHint), LanguageInfo) }
+  if (languageHint === undefined) { return wrapPointer(_emscripten_bind_LanguageInfo_detectLanguageWithLength_5(buffer, bufferLength, isPlainText, tldHint, encodingHint), LanguageInfo) }
+  return wrapPointer(_emscripten_bind_LanguageInfo_detectLanguageWithLength_6(buffer, bufferLength, isPlainText, tldHint, encodingHint, languageHint), LanguageInfo);
+};
+
+/** @suppress {undefinedVars, duplicate} @this{Object} */
 LanguageInfo.prototype['detectLanguage'] = LanguageInfo.prototype.detectLanguage = function(buffer, isPlainText, tldHint, encodingHint, languageHint) {
   ensureCache.prepare();
   if (buffer && typeof buffer === 'object') buffer = buffer.ptr;

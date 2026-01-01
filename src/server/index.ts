@@ -12,6 +12,7 @@ import swaggerDocument from '@/generated/swagger.json';
 import { uiStatic } from '@/middleware/ui.js';
 import { swaggerStatic } from '@/middleware/swagger.js';
 import { checkForUpdate } from '@/utils/update-checker.js';
+import { VERSION } from '@/version';
 
 export async function run() {
   const config = getConfig();
@@ -32,7 +33,7 @@ export async function run() {
   app.use(express.json());
   app.use(cors());
   if (config.logRequests) {
-	app.use(requestLogger());
+    app.use(requestLogger());
   }
 
   RegisterRoutes(app);
@@ -58,6 +59,7 @@ export async function run() {
   app.use(errorHandler());
 
   const server = app.listen(parseInt(config.port), config.host, () => {
+    logger.important(`MTranServer v${VERSION} is running!`);
     logger.important(`Web UI: http://${config.host}:${config.port}/ui/`);
     logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs/`);
     logger.important(`Log level set to: ${config.logLevel}`);

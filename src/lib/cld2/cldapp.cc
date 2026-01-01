@@ -36,13 +36,50 @@ private:
 
 class LanguageInfo : public Language {
 public:
+  static LanguageInfo* detectLanguageWithLength(const char* buffer, int bufferLength, bool isPlainText)
+  {
+    CLD2::Language languages[MAX_RESULTS] = {};
+    int percentages[MAX_RESULTS] = {};
+    bool isReliable = false;
+
+    int textBytes;
+
+    CLD2::Language bestGuess = DetectLanguageSummary(
+      buffer, bufferLength, isPlainText,
+      languages, percentages, &textBytes,
+      &isReliable);
+
+    return new LanguageInfo(isReliable, bestGuess, languages, percentages);
+  }
+
+  static LanguageInfo* detectLanguageWithLength(const char* buffer, int bufferLength, bool isPlainText,
+                                                const char* tldHint, int encodingHint,
+                                                const char* languageHint)
+  {
+    CLD2::CLDHints hints = {languageHint, tldHint, encodingHint, CLD2::UNKNOWN_LANGUAGE};
+
+    CLD2::Language languages[MAX_RESULTS] = {};
+    int percentages[MAX_RESULTS] = {};
+    bool isReliable = false;
+
+    double scores[MAX_RESULTS];
+    int textBytes;
+
+    CLD2::Language bestGuess = ExtDetectLanguageSummary(
+      buffer, bufferLength, isPlainText,
+      &hints, 0,
+      languages, percentages, scores,
+      nullptr, &textBytes, &isReliable);
+
+    return new LanguageInfo(isReliable, bestGuess, languages, percentages);
+  }
+
   static LanguageInfo* detectLanguage(const char* buffer, bool isPlainText)
   {
     CLD2::Language languages[MAX_RESULTS] = {};
     int percentages[MAX_RESULTS] = {};
     bool isReliable = false;
 
-    // This is ignored.
     int textBytes;
 
     CLD2::Language bestGuess = DetectLanguageSummary(

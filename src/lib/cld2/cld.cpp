@@ -49,6 +49,14 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_LanguageGuess___destroy___0(LanguageGu
 // Interface: LanguageInfo
 
 
+LanguageInfo* EMSCRIPTEN_KEEPALIVE emscripten_bind_LanguageInfo_detectLanguageWithLength_3(char* buffer, int bufferLength, bool isPlainText) {
+  return LanguageInfo::detectLanguageWithLength(buffer, bufferLength, isPlainText);
+}
+
+LanguageInfo* EMSCRIPTEN_KEEPALIVE emscripten_bind_LanguageInfo_detectLanguageWithLength_6(char* buffer, int bufferLength, bool isPlainText, char* tldHint, int encodingHint, char* languageHint) {
+  return LanguageInfo::detectLanguageWithLength(buffer, bufferLength, isPlainText, tldHint, encodingHint, languageHint);
+}
+
 LanguageInfo* EMSCRIPTEN_KEEPALIVE emscripten_bind_LanguageInfo_detectLanguage_2(char* buffer, bool isPlainText) {
   return LanguageInfo::detectLanguage(buffer, isPlainText);
 }

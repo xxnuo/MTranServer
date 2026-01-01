@@ -20,7 +20,7 @@ WEBIDL ?= $(PYTHON2) $(EMSCRIPTEN_ROOT)/tools/webidl_binder.py
 # analyzing one 20MB web page gives us a 30-40MB heap for the life of the
 # worker.
 FLAGS=-s -O3 -s INLINING_LIMIT=1 -s NO_FILESYSTEM=1 -s NO_EXIT_RUNTIME=1 -s INVOKE_RUN=0 \
-      -s TOTAL_STACK=8192 -s TOTAL_MEMORY=2097152 -s ALLOW_MEMORY_GROWTH=1 \
+      -s TOTAL_STACK=65536 -s TOTAL_MEMORY=2097152 -s ALLOW_MEMORY_GROWTH=1 \
       -s MODULARIZE=1 -s EXPORT_NAME=loadCLD2 \
       --closure 1
 

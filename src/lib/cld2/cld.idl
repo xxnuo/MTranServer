@@ -32,6 +32,12 @@ interface LanguageGuess {
 };
 
 interface LanguageInfo {
+  static LanguageInfo detectLanguageWithLength(DOMString buffer, long bufferLength, boolean isPlainText);
+
+  static LanguageInfo detectLanguageWithLength(DOMString buffer, long bufferLength, boolean isPlainText,
+                                               DOMString? tldHint, long encodingHint,
+                                               DOMString? languageHint);
+
   static LanguageInfo detectLanguage(DOMString buffer, boolean isPlainText);
 
   static LanguageInfo detectLanguage(DOMString buffer, boolean isPlainText,

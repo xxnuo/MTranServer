@@ -15,15 +15,69 @@ export interface TextSegment {
 
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.5;
 const MAXIMUM_LANGUAGES_IN_ONE_TEXT = 2;
-const MAX_DETECTION_LENGTH = 1024;
+const MAX_DETECTION_BYTES = 512;
+const MAX_FALLBACK_DETECTION_BYTES = 1024;
 
 let cldModule: any = null;
 let initPromise: Promise<void> | null = null;
 
-function handleCldError(error: any) {
+function sanitizeInput(text: string): string {
+  let sanitized = text.replace(/\0/g, '');
+  sanitized = sanitized.replace(/[\x01-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+  return sanitized;
+}
+
+function truncateByUtf8Bytes(text: string, maxBytes: number): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+
+  if (bytes.length <= maxBytes) {
+    return text;
+  }
+
+  let truncated = bytes.slice(0, maxBytes);
+
+  while (truncated.length > 0) {
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(truncated);
+    } catch {
+      truncated = truncated.slice(0, -1);
+    }
+  }
+
+  return '';
+}
+
+function validateAndSanitizeInput(text: string, maxBytes: number = MAX_DETECTION_BYTES): string {
+  if (!text || text.length === 0) {
+    return text;
+  }
+
+  const sanitized = sanitizeInput(text);
+  const truncated = truncateByUtf8Bytes(sanitized, maxBytes);
+
+  if (truncated !== text) {
+    logger.debug(
+      `Input sanitized/truncated: ${text.length} → ${truncated.length} chars (limit: ${maxBytes})`
+    );
+  }
+
+  return truncated;
+}
+
+function handleCldError(error: any, context?: {
+  text?: string;
+  operation?: string
+}) {
   const errStr = error.toString();
   if (errStr.includes('RuntimeError') || errStr.includes('memory access')) {
-    logger.error(`CLD2 crashed (RuntimeError), resetting module: ${error}`);
+    logger.error('CLD2 crashed (RuntimeError), resetting module', {
+      error: errStr,
+      stack: error.stack,
+      textLength: context?.text?.length,
+      textPreview: context?.text?.substring(0, 100),
+      operation: context?.operation
+    });
     cldModule = null;
     initPromise = null;
   }
@@ -51,8 +105,13 @@ async function initCLD(): Promise<void> {
         wasmBinary: wasmBuffer,
       });
 
-      if (module.LanguageInfo && module.LanguageInfo.prototype && module.LanguageInfo.prototype.detectLanguage) {
-        module.LanguageInfo.detectLanguage = module.LanguageInfo.prototype.detectLanguage;
+      if (module.LanguageInfo && module.LanguageInfo.prototype) {
+        if (module.LanguageInfo.prototype.detectLanguage) {
+          module.LanguageInfo.detectLanguage = module.LanguageInfo.prototype.detectLanguage;
+        }
+        if (module.LanguageInfo.prototype.detectLanguageWithLength) {
+          module.LanguageInfo.detectLanguageWithLength = module.LanguageInfo.prototype.detectLanguageWithLength;
+        }
       }
 
       cldModule = module;
@@ -66,9 +125,21 @@ async function initCLD(): Promise<void> {
   return initPromise;
 }
 
-function detectLanguageWithCLD(text: string, isHTML: boolean = false) {
+function detectLanguageWithCLD(text: string, isHTML: boolean = false, maxBytes: number = MAX_DETECTION_BYTES) {
   if (!cldModule) {
     throw new Error('CLD2 module not initialized');
+  }
+
+  const validatedText = validateAndSanitizeInput(text, maxBytes);
+
+  if (!validatedText) {
+    logger.warn('Input validation resulted in empty text');
+    return {
+      language: 'un',
+      confident: false,
+      languages: [],
+      percentScore: 0
+    };
   }
 
   const LanguageInfo = cldModule.LanguageInfo;
@@ -76,7 +147,7 @@ function detectLanguageWithCLD(text: string, isHTML: boolean = false) {
     throw new Error('CLD2 LanguageInfo or detectLanguage not available');
   }
 
-  const result = LanguageInfo.detectLanguage(text, !isHTML);
+  const result = LanguageInfo.detectLanguage(validatedText, !isHTML);
 
   const languages = Array(3).fill(0).map((_, i) => {
     const lang = result.get_languages(i);
@@ -107,7 +178,7 @@ function bcp47Normalize(code: string): string {
   }
 }
 
-export async function detectLanguage(text: string): Promise<string> {
+export async function detectLanguage(text: string, maxBytes: number = MAX_DETECTION_BYTES): Promise<string> {
   if (!text) {
     return '';
   }
@@ -115,22 +186,19 @@ export async function detectLanguage(text: string): Promise<string> {
   await initCLD();
 
   try {
-    const processText = text.length > MAX_DETECTION_LENGTH 
-      ? text.slice(0, MAX_DETECTION_LENGTH) 
-      : text;
-      
-    const result = detectLanguageWithCLD(processText);
+    const result = detectLanguageWithCLD(text, false, maxBytes);
     return bcp47Normalize(result.language);
   } catch (error) {
     logger.warn(`Language detection failed: ${error}`);
-    handleCldError(error);
+    handleCldError(error, { text, operation: 'detectLanguage' });
     return 'en';
   }
 }
 
 export async function detectLanguageWithConfidence(
   text: string,
-  minConfidence: number = DEFAULT_CONFIDENCE_THRESHOLD
+  minConfidence: number = DEFAULT_CONFIDENCE_THRESHOLD,
+  maxBytes: number = MAX_DETECTION_BYTES
 ): Promise<{ language: string; confidence: number }> {
   if (!text) {
     return { language: '', confidence: 0 };
@@ -139,11 +207,7 @@ export async function detectLanguageWithConfidence(
   await initCLD();
 
   try {
-    const processText = text.length > MAX_DETECTION_LENGTH 
-      ? text.slice(0, MAX_DETECTION_LENGTH) 
-      : text;
-
-    const result = detectLanguageWithCLD(processText);
+    const result = detectLanguageWithCLD(text, false, maxBytes);
     const confidence = result.percentScore / 100;
 
     if (confidence < minConfidence) {
@@ -156,7 +220,7 @@ export async function detectLanguageWithConfidence(
     };
   } catch (error) {
     logger.warn(`Language detection with confidence failed: ${error}`);
-    handleCldError(error);
+    handleCldError(error, { text, operation: 'detectLanguageWithConfidence' });
     return { language: 'en', confidence: 0 };
   }
 }
@@ -187,6 +251,36 @@ function hasMixedScripts(text: string): boolean {
   return false;
 }
 
+function getScriptType(text: string): 'Latin' | 'CJK' | 'Mixed' | 'Other' {
+  let hasCJK = false;
+  let hasLatin = false;
+
+  for (const char of text) {
+    const code = char.charCodeAt(0);
+
+    if (
+      (code >= 0x4e00 && code <= 0x9fff) ||
+      (code >= 0x3040 && code <= 0x309f) ||
+      (code >= 0x30a0 && code <= 0x30ff) ||
+      (code >= 0xac00 && code <= 0xd7af)
+    ) {
+      hasCJK = true;
+    } else if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)) {
+      hasLatin = true;
+    }
+
+    if (hasCJK && hasLatin) return 'Mixed';
+  }
+
+  if (hasCJK) return 'CJK';
+  if (hasLatin) return 'Latin';
+  return 'Other';
+}
+
+function isCJKLanguage(lang: string): boolean {
+  return ['zh', 'zh-Hans', 'zh-Hant', 'ja', 'ko'].includes(lang) || lang.startsWith('zh-');
+}
+
 export async function detectMultipleLanguages(text: string): Promise<TextSegment[]> {
   return detectMultipleLanguagesWithThreshold(text, DEFAULT_CONFIDENCE_THRESHOLD);
 }
@@ -201,7 +295,7 @@ export async function detectMultipleLanguagesWithThreshold(
 
   await initCLD();
 
-  const fallbackLang = await detectLanguage(text);
+  const fallbackLang = await detectLanguage(text, MAX_FALLBACK_DETECTION_BYTES);
   const effectiveFallback = fallbackLang || 'en';
 
   if (!hasMixedScripts(text)) {
@@ -220,29 +314,51 @@ export async function detectMultipleLanguagesWithThreshold(
   const segments: TextSegment[] = [];
 
   const segmenterAny = new (Intl as any).Segmenter(undefined, { granularity: 'sentence' });
-  const sentenceSegments = Array.from(segmenterAny.segment(text)) as Array<{segment: string, index: number}>;
+  const sentenceSegments = Array.from(segmenterAny.segment(text)) as Array<{ segment: string, index: number }>;
 
   for (const { segment, index } of sentenceSegments) {
     try {
       await initCLD();
-      const processSegment = segment.length > MAX_DETECTION_LENGTH
-        ? segment.slice(0, MAX_DETECTION_LENGTH)
-        : segment;
-
-      const result = detectLanguageWithCLD(processSegment);
+      const result = detectLanguageWithCLD(segment);
       const detectedLang = bcp47Normalize(result.language);
       const confidence = result.percentScore / 100;
+      const scriptType = getScriptType(segment);
+
+      let finalLang = effectiveFallback;
+      let usedLogic = 'fallback';
+
+      if (confidence >= threshold) {
+        finalLang = detectedLang;
+        usedLogic = 'confidence';
+      } else {
+        if (scriptType === 'Latin' && isCJKLanguage(effectiveFallback)) {
+          if (detectedLang && detectedLang !== 'un') {
+            finalLang = detectedLang;
+            usedLogic = 'script-override-latin';
+          } else {
+            finalLang = 'en';
+            usedLogic = 'script-override-en';
+          }
+        } else if (scriptType === 'CJK' && !isCJKLanguage(effectiveFallback)) {
+          if (detectedLang && detectedLang !== 'un') {
+            finalLang = detectedLang;
+            usedLogic = 'script-override-cjk';
+          }
+        }
+      }
+
+      logger.debug(`Segment[${segments.length}]: "${segment.replace(/\n/g, '\\n')}" -> lang=${detectedLang}, conf=${confidence.toFixed(2)}, script=${scriptType}, final=${finalLang} (${usedLogic})`);
 
       segments.push({
         text: segment,
-        language: confidence >= threshold ? detectedLang : effectiveFallback,
+        language: finalLang,
         start: index,
         end: index + segment.length,
         confidence
       });
     } catch (error) {
       logger.warn(`Failed to detect language for segment: ${error}`);
-      handleCldError(error);
+      handleCldError(error, { text: segment, operation: 'detectMultipleLanguages' });
       segments.push({
         text: segment,
         language: effectiveFallback,
