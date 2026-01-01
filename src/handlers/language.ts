@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getSupportedLanguages, getLanguagePairs } from '../models/index.js';
-import { detectLanguage, detectLanguageWithConfidence } from '../services/detector.js';
+import { getSupportedLanguages, getLanguagePairs } from '@/models/index.js';
+import { detectLanguage, detectLanguageWithConfidence } from '@/services/detector.js';
 
 export async function handleLanguages(req: Request, res: Response) {
   try {

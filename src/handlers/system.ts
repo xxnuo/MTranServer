@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getVersion } from '../version/index.js';
+import { getVersion } from '@/version/index.js';
 
 export function handleVersion(req: Request, res: Response) {
   res.json({ version: getVersion() });

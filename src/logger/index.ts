@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import util from 'util';
-import { getConfig } from '../config/index.js';
+import { getConfig } from '@/config/index.js';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 

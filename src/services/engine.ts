@@ -1,12 +1,12 @@
 import path from 'path';
 import { readFile } from 'fs/promises';
-import { TranslationEngine } from '../core/engine.js';
-import { createResourceLoader } from '../core/factory.js';
-import { getConfig } from '../config/index.js';
-import loadBergamot from '../lib/bergamot/bergamot-translator.js';
-import wasmPath from '../lib/bergamot/bergamot-translator.wasm' with { type: 'file' };
-import * as logger from '../logger/index.js';
-import * as models from '../models/index.js';
+import { TranslationEngine } from '@/core/engine.js';
+import { createResourceLoader } from '@/core/factory.js';
+import { getConfig } from '@/config/index.js';
+import loadBergamot from '@/lib/bergamot/bergamot-translator.js';
+import wasmPath from '@/lib/bergamot/bergamot-translator.wasm' with { type: 'file' };
+import * as logger from '@/logger/index.js';
+import * as models from '@/models/index.js';
 import { detectLanguage, detectMultipleLanguages } from './detector.js';
 
 interface EngineInfo {

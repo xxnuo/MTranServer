@@ -1,5 +1,5 @@
 import { Express } from 'express';
-import { cors, auth } from '../middleware/index.js';
+import { cors, auth } from '@/middleware/index.js';
 import {
   handleVersion,
   handleHealth,
@@ -15,7 +15,7 @@ import {
   handleGoogleTranslateSingle,
   handleKissTranslate,
   handleHcfyTranslate,
-} from '../handlers/index.js';
+} from '@/handlers/index.js';
 
 export function setupRoutes(app: Express, apiToken: string) {
   app.use(cors());

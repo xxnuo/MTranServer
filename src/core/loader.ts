@@ -1,4 +1,4 @@
-import { FileSystem, BergamotModule } from './interfaces.js';
+import { FileSystem, BergamotModule } from '@/core/interfaces.js';
 
 export interface ModelFileNames {
   model?: string;

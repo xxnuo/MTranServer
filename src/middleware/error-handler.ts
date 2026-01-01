@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as logger from '../logger/index.js';
+import * as logger from '@/logger/index.js';
 
 export function errorHandler() {
   return (err: any, req: Request, res: Response, next: NextFunction) => {

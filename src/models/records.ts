@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import { createDownloader } from '../core/factory.js';
-import { getConfig } from '../config/index.js';
-import * as logger from '../logger/index.js';
-import { getLargestVersion } from '../utils/version.js';
+import { createDownloader } from '@/core/factory.js';
+import { getConfig } from '@/config/index.js';
+import * as logger from '@/logger/index.js';
+import { getLargestVersion } from '@/utils/version.js';
 
 const RECORDS_URL = 'https://firefox.settings.services.mozilla.com/v1/buckets/main-preview/collections/translations-models-v2/records';
 const ATTACHMENTS_BASE_URL = 'https://firefox-settings-attachments.cdn.mozilla.net';

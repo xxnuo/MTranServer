@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { run } from './server/index.js';
-import * as logger from './logger/index.js';
+import { run } from '@/server/index.js';
+import * as logger from '@/logger/index.js';
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`

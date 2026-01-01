@@ -1,8 +1,8 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { decompressSync } from 'zstd-wasm-decoder'
-import { ResourceLoader } from './loader.js'
-import { FileSystem } from './interfaces.js'
+import { ResourceLoader } from '@/core/loader.js'
+import { FileSystem } from '@/core/interfaces.js'
 
 export interface DownloadOptions {
   url: string

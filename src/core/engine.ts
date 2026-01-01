@@ -1,5 +1,5 @@
-import { BergamotModule } from './interfaces.js';
-import { ModelBuffers } from './loader.js';
+import { BergamotModule } from '@/core/interfaces.js';
+import { ModelBuffers } from '@/core/loader.js';
 
 export interface TranslationOptions {
   sourceLang?: string;

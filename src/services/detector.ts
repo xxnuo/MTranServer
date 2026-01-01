@@ -1,6 +1,6 @@
-import loadCLD2 from '../lib/cld2/cld2.js';
-import wasmPath from '../lib/cld2/cld2.wasm' with { type: 'file' };
-import * as logger from '../logger/index.js';
+import loadCLD2 from '@/lib/cld2/cld2.js';
+import wasmPath from '@/lib/cld2/cld2.wasm' with { type: 'file' };
+import * as logger from '@/logger/index.js';
 import { readFile } from 'fs/promises';
 
 export interface TextSegment {

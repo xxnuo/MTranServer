@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import * as services from '../services/index.js'
-import * as logger from '../logger/index.js'
-import { normalizeLanguageCode } from '../utils/lang-alias.js'
+import * as services from '@/services/index.js'
+import * as logger from '@/logger/index.js'
+import { normalizeLanguageCode } from '@/utils/lang-alias.js'
 
 export interface KissTranslateRequest {
   from: string

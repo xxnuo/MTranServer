@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { normalizeLanguageCode } from '../utils/index.js';
-import * as logger from '../logger/index.js';
-import { translateWithPivot } from '../services/index.js';
+import { normalizeLanguageCode } from '@/utils/index.js';
+import * as logger from '@/logger/index.js';
+import { translateWithPivot } from '@/services/index.js';
 
 interface DeeplTranslation {
   detected_source_language: string;

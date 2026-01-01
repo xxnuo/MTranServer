@@ -1,12 +1,12 @@
 import express from 'express';
 import fs from 'fs/promises';
-import { getConfig } from '../config/index.js';
-import * as logger from '../logger/index.js';
-import { setupRoutes } from '../routes/index.js';
-import { initRecords } from '../models/index.js';
-import { cleanupAllEngines } from '../services/index.js';
-import { cleanupLegacyBin } from '../assets/index.js';
-import { requestId, errorHandler } from '../middleware/index.js';
+import { getConfig } from '@/config/index.js';
+import * as logger from '@/logger/index.js';
+import { setupRoutes } from '@/routes/index.js';
+import { initRecords } from '@/models/index.js';
+import { cleanupAllEngines } from '@/services/index.js';
+import { cleanupLegacyBin } from '@/assets/index.js';
+import { requestId, errorHandler } from '@/middleware/index.js';
 
 export async function run() {
   const config = getConfig();

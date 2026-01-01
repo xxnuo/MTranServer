@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-import * as services from '../services/index.js'
-import * as logger from '../logger/index.js'
+import * as services from '@/services/index.js'
+import * as logger from '@/logger/index.js'
 
 const hcfyLangToBCP47: Record<string, string> = {
   '中文(简体)': 'zh-Hans',
