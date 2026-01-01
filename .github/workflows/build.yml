@@ -121,18 +121,12 @@ jobs:
             cat CHANGELOG.md >> release_body.md
           fi
 
-          {
-            echo "body<<EOFMARKER"
-            cat release_body.md
-            echo "EOFMARKER"
-          } >> $GITHUB_OUTPUT
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag_name }}
           name: Release ${{ steps.tag.outputs.tag_name }}
-          body: ${{ steps.generate_body.outputs.body }}
+          body_path: release_body.md
           files: release-assets/*
           draft: false
           fail_on_unmatched_files: false
