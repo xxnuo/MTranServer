@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Input } from "@/components/ui/input"
 import { Trash2, Search } from "lucide-react"
 import type { HistoryItem } from "@/hooks/use-history"
@@ -81,17 +82,25 @@ export function HistorySheet({
               >
                 <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{item.from} → {item.to}</span>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 -mr-1 text-muted-foreground hover:text-destructive z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(item.id)
-                        }}
-                    >
-                        <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 -mr-1 text-muted-foreground hover:text-destructive z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(item.id)
+                            }}
+                            aria-label={t('delete')}
+                        >
+                            <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('delete')}</p>
+                      </TooltipContent>
+                    </Tooltip>
                 </div>
                 <div className="text-sm line-clamp-2 font-medium break-all">{item.sourceText}</div>
                 <div className="text-sm text-muted-foreground line-clamp-2 break-all">{item.translatedText}</div>

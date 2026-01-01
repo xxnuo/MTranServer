@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
@@ -291,15 +292,22 @@ export function TranslationPanel({
               {t('autoTranslate')}
             </Label>
             {canDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onDelete}
-                className="text-muted-foreground hover:text-destructive h-8 w-8 ml-2 shrink-0"
-                title={t('closePanel') || "Close Panel"}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onDelete}
+                    className="text-muted-foreground hover:text-destructive h-8 w-8 ml-2 shrink-0"
+                    aria-label={t('closePanel')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('closePanel')}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -317,15 +325,22 @@ export function TranslationPanel({
             />
 
             {sourceText && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={handleClear}
-                title={t('clear')}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={handleClear}
+                    aria-label={t('clear')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('clear')}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
 
             <div className="absolute bottom-2 left-2 text-xs text-muted-foreground pointer-events-none">
@@ -340,35 +355,56 @@ export function TranslationPanel({
                 accept=".txt,.md,.json,.js,.ts,.go,.py,.java,.c,.cpp,.h,.hpp"
                 onChange={handleFileUpload}
               />
-              <Label
-                htmlFor={`file-upload-${id}`}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 cursor-pointer"
-                title="Upload file"
-              >
-                <Upload className="h-4 w-4" />
-              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label
+                    htmlFor={`file-upload-${id}`}
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 cursor-pointer"
+                    aria-label={t('uploadFile')}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('uploadFile')}</p>
+                </TooltipContent>
+              </Tooltip>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleSpeak(sourceText, sourceLang)}
-                disabled={!sourceText}
-                title="Listen"
-              >
-                <Volume2 className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleSpeak(sourceText, sourceLang)}
+                    disabled={!sourceText}
+                    aria-label={t('listen')}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('listen')}</p>
+                </TooltipContent>
+              </Tooltip>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleCopy(sourceText)}
-                disabled={!sourceText}
-                title="Copy"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleCopy(sourceText)}
+                    disabled={!sourceText}
+                    aria-label={t('copy')}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('copy')}</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -382,27 +418,41 @@ export function TranslationPanel({
             />
 
             <div className="absolute bottom-2 right-2 flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleSpeak(translatedText, targetLang)}
-                disabled={!translatedText}
-                title="Listen"
-              >
-                <Volume2 className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleSpeak(translatedText, targetLang)}
+                    disabled={!translatedText}
+                    aria-label={t('listen')}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('listen')}</p>
+                </TooltipContent>
+              </Tooltip>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleCopy(translatedText)}
-                disabled={!translatedText}
-                title="Copy"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleCopy(translatedText)}
+                    disabled={!translatedText}
+                    aria-label={t('copy')}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('copy')}</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>

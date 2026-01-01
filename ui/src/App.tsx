@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import { History, BookOpen, Maximize2, Minimize2, Plus } from 'lucide-react'
 import { SettingsMenu } from '@/components/SettingsMenu'
@@ -111,45 +112,73 @@ function App() {
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">
               {t('title')}
             </h1>
-            <a
-              href="/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"
-              title="API Documentation"
-            >
-              <BookOpen className="h-5 w-5 text-muted-foreground" />
-            </a>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href="/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"
+                  aria-label={t('apiDocs')}
+                >
+                  <BookOpen className="h-5 w-5 text-muted-foreground" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('apiDocs')}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={addPanel}
-              title={t('addPanel') || "Add Translation Panel"}
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setWidescreen(!widescreen)}
-              title={widescreen ? "Standard View" : "Widescreen View"}
-            >
-              {widescreen ? (
-                <Minimize2 className="h-5 w-5" />
-              ) : (
-                <Maximize2 className="h-5 w-5" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowHistory(true)}
-              title={t('history')}
-            >
-              <History className="h-5 w-5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={addPanel}
+                  aria-label={t('addPanel')}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('addPanel')}</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setWidescreen(!widescreen)}
+                  aria-label={widescreen ? t('standardView') : t('widescreen')}
+                >
+                  {widescreen ? (
+                    <Minimize2 className="h-5 w-5" />
+                  ) : (
+                    <Maximize2 className="h-5 w-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{widescreen ? t('standardView') : t('widescreen')}</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowHistory(true)}
+                  aria-label={t('history')}
+                >
+                  <History className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('history')}</p>
+              </TooltipContent>
+            </Tooltip>
             <SettingsMenu
               showTokenDialog={showTokenDialog}
               setShowTokenDialog={setShowTokenDialog}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Input } from '@/components/ui/input'
 import { Sun, Moon, Globe, Key } from 'lucide-react'
 import {
@@ -80,16 +81,23 @@ export function SettingsMenu({ showTokenDialog, setShowTokenDialog, onTokenSaved
   return (
     <div className="flex gap-1 sm:gap-2">
       <Dialog open={tokenDialogOpen} onOpenChange={handleDialogChange}>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 sm:h-9 sm:w-9"
-            title="API Token"
-          >
-            <Key className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </Button>
-        </DialogTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-9"
+                aria-label={t('apiToken')}
+              >
+                <Key className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('apiToken')}</p>
+          </TooltipContent>
+        </Tooltip>
         <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('apiToken')}</DialogTitle>
@@ -110,29 +118,43 @@ export function SettingsMenu({ showTokenDialog, setShowTokenDialog, onTokenSaved
           </div>
         </DialogContent>
       </Dialog>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={cycleLanguage}
-        className="h-8 w-8 sm:h-9 sm:w-9"
-        title="Switch Language"
-      >
-        <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        <span className="sr-only">{currentLang.name}</span>
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleTheme}
-        className="h-8 w-8 sm:h-9 sm:w-9"
-        title="Toggle Theme"
-      >
-        {actualTheme === 'dark' ? (
-          <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        ) : (
-          <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        )}
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={cycleLanguage}
+            className="h-8 w-8 sm:h-9 sm:w-9"
+            aria-label={t('switchLanguage')}
+          >
+            <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="sr-only">{currentLang.name}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{t('switchLanguage')}</p>
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-8 w-8 sm:h-9 sm:w-9"
+            aria-label={t('toggleTheme')}
+          >
+            {actualTheme === 'dark' ? (
+              <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            ) : (
+              <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{t('toggleTheme')}</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   )
 }

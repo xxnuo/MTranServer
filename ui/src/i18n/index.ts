@@ -42,7 +42,18 @@ const resources = {
       noHistory: 'No history',
       historyDesc: 'Recent translations',
       searchPlaceholder: 'Search history...',
-      noResults: 'No results found'
+      noResults: 'No results found',
+      apiDocs: 'API Documentation',
+      addPanel: 'Add Translation Panel',
+      widescreen: 'Widescreen View',
+      standardView: 'Standard View',
+      closePanel: 'Close Panel',
+      uploadFile: 'Upload file',
+      listen: 'Listen',
+      copy: 'Copy',
+      delete: 'Delete',
+      switchLanguage: 'Switch Language',
+      toggleTheme: 'Toggle Theme'
     }
   },
   zh: {
@@ -84,7 +95,18 @@ const resources = {
       noHistory: '暂无历史记录',
       historyDesc: '最近的翻译记录',
       searchPlaceholder: '搜索历史记录...',
-      noResults: '未找到结果'
+      noResults: '未找到结果',
+      apiDocs: 'API 文档',
+      addPanel: '添加翻译面板',
+      widescreen: '宽屏模式',
+      standardView: '标准视图',
+      closePanel: '关闭面板',
+      uploadFile: '上传文件',
+      listen: '朗读',
+      copy: '复制',
+      delete: '删除',
+      switchLanguage: '切换语言',
+      toggleTheme: '切换主题'
     }
   },
   ja: {
@@ -126,7 +148,18 @@ const resources = {
       noHistory: '履歴はありません',
       historyDesc: '最近の翻訳履歴',
       searchPlaceholder: '履歴を検索...',
-      noResults: '結果が見つかりません'
+      noResults: '結果が見つかりません',
+      apiDocs: 'APIドキュメント',
+      addPanel: '翻訳パネルを追加',
+      widescreen: 'ワイドスクリーン表示',
+      standardView: '標準表示',
+      closePanel: 'パネルを閉じる',
+      uploadFile: 'ファイルをアップロード',
+      listen: '読み上げ',
+      copy: 'コピー',
+      delete: '削除',
+      switchLanguage: '言語を切り替え',
+      toggleTheme: 'テーマを切り替え'
     }
   }
 }
