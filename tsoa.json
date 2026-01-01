@@ -1,0 +1,38 @@
+{
+  "entryFile": "src/main.ts",
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controllerPathGlobs": ["src/controllers/**/*.ts"],
+  "spec": {
+    "outputDirectory": "src/generated",
+    "specVersion": 3,
+    "basePath": "/",
+    "spec": {
+      "info": {
+        "title": "MTranServer API",
+        "version": "4.0.0",
+        "description": "Translation server API",
+        "license": {
+          "name": "Apache-2.0"
+        }
+      },
+      "servers": [
+        {
+          "url": "http://localhost:8989",
+          "description": "Local server"
+        }
+      ],
+      "securityDefinitions": {
+        "api_token": {
+          "type": "apiKey",
+          "name": "Authorization",
+          "in": "header"
+        }
+      }
+    }
+  },
+  "routes": {
+    "routesDir": "src/generated",
+    "middleware": "express",
+    "authenticationModule": "src/middleware/auth.ts"
+  }
+}

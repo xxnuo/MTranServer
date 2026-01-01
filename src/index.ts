@@ -4,7 +4,5 @@ export * from '@/utils/index.js';
 export * from '@/version/index.js';
 export * from '@/models/index.js';
 export * from '@/services/index.js';
-export * from '@/handlers/index.js';
 export * from '@/middleware/index.js';
-export * from '@/routes/index.js';
 export * from '@/server/index.js';

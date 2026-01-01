@@ -2,7 +2,7 @@
   "name": "mtranserver",
   "version": "4.0.0",
   "type": "module",
-  "description": "Translation server based on Bergamot WASM",
+  "description": "Translation server",
   "bin": {
     "mtranserver": "./dist/main.js"
   },
@@ -11,14 +11,15 @@
     "assets"
   ],
   "scripts": {
-    "dev": "bun src/main.ts",
+    "dev": "bun src/main.ts --log-level debug",
     "build": "rm -rf dist && bun build src/main.ts --compile --outfile ./dist/mtranserver --minify --sourcemap",
     "build:all": "bun scripts/build.ts",
-    "build:dev": "rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express && tsc --emitDeclarationOnly --outDir dist",
+    "build:dev": "bun run gen && rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express && tsc --emitDeclarationOnly --outDir dist",
     "start": "node dist/main.js",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'No linter configured'"
+    "lint": "echo 'No linter configured'",
+    "gen": "tsoa spec-and-routes"
   },
   "keywords": [
     "translation",
@@ -30,13 +31,18 @@
   "author": "xxnuo",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@tsoa/runtime": "^7.0.0-alpha.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",
+    "@types/swagger-ui-express": "^4.1.8",
+    "tsoa": "^7.0.0-alpha.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
   "dependencies": {
     "express": "^4.21.2",
+    "express-validator": "^7.3.1",
+    "swagger-ui-express": "^5.0.1",
     "zstd-wasm-decoder": "^0.2.0"
   },
   "engines": {

@@ -1,12 +1,19 @@
 import express from 'express';
 import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
 import { getConfig } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
-import { setupRoutes } from '@/routes/index.js';
 import { initRecords } from '@/models/index.js';
 import { cleanupAllEngines } from '@/services/index.js';
 import { cleanupLegacyBin } from '@/assets/index.js';
-import { requestId, errorHandler } from '@/middleware/index.js';
+import { requestId, errorHandler, cors } from '@/middleware/index.js';
+import { RegisterRoutes } from '@/generated/routes.js';
+import swaggerDocument from '@/generated/swagger.json';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function run() {
   const config = getConfig();
@@ -25,13 +32,25 @@ export async function run() {
 
   app.use(requestId());
   app.use(express.json());
+  app.use(cors());
 
-  setupRoutes(app, config.apiToken);
-  
+  const uiPath = path.resolve(__dirname, '../../ui/dist');
+  app.use('/ui', express.static(uiPath));
+
+  app.get('/', (_req, res) => {
+    res.redirect('/ui');
+  });
+
+  RegisterRoutes(app);
+
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
   app.use(errorHandler());
 
   const server = app.listen(parseInt(config.port), config.host, () => {
     logger.info(`HTTP Service URL: http://${config.host}:${config.port}`);
+    logger.info(`Web UI: http://${config.host}:${config.port}/ui`);
+    logger.info(`Swagger Docs: http://${config.host}:${config.port}/docs`);
     logger.info(`Log level set to: ${config.logLevel}`);
   });
 
