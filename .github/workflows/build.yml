@@ -65,18 +65,59 @@ jobs:
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
 
-      - name: Prepare Release Notes
-        id: release_notes
+      - name: Generate Release Body
+        id: generate_body
         run: |
+          TAG="${{ steps.tag.outputs.tag_name }}"
+          REPO="${{ github.repository }}"
+          VERSION=$(cat package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+
           if [[ "${{ github.ref_name }}" == *"dev"* ]]; then
-            echo "notes=⚠️ **THIS IS A DEVELOPMENT RELEASE. DO NOT USE IT!** ⚠️" >> $GITHUB_OUTPUT
+            WARNING="**This is a development release. DO NOT USE IT!**"$'\n\n'
+          else
+            WARNING=""
           fi
+
+          cat > release_body.md << 'EOF'
+          ${WARNING}## Server Binary
+
+          | Platform | Architecture | Binary |
+          |----------|-------------|--------|
+          | Linux | x64 | [mtranserver-${VERSION}-linux-amd64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-amd64) |
+          | Linux | x64 (legacy) | [mtranserver-${VERSION}-linux-amd64-legacy](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-amd64-legacy) |
+          | Linux | ARM64 | [mtranserver-${VERSION}-linux-arm64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-arm64) |
+          | Linux (musl) | x64 | [mtranserver-${VERSION}-linux-amd64-musl](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-amd64-musl) |
+          | Linux (musl) | x64 (legacy) | [mtranserver-${VERSION}-linux-amd64-musl-legacy](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-amd64-musl-legacy) |
+          | Linux (musl) | ARM64 | [mtranserver-${VERSION}-linux-arm64-musl](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-arm64-musl) |
+          | macOS | Intel | [mtranserver-${VERSION}-darwin-amd64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-amd64) |
+          | macOS | Intel (legacy) | [mtranserver-${VERSION}-darwin-amd64-legacy](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-amd64-legacy) |
+          | macOS | Apple Silicon | [mtranserver-${VERSION}-darwin-arm64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-arm64) |
+          | Windows | x64 | [mtranserver-${VERSION}-windows-amd64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64.exe) |
+          | Windows | x64 (legacy) | [mtranserver-${VERSION}-windows-amd64-legacy.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64-legacy.exe) |
+
+          > **Note**:
+          >
+          > - **legacy**: Legacy build (non-AVX2): Use only if you experience 'Illegal instruction' crashes on very old hardware. Most people don't need this because it's slower.
+          > - **musl**: Musl build is built for Linux with musl libc. Most people don't need this.
+          EOF
+
+          sed -i "s|\${WARNING}|${WARNING}|g" release_body.md
+          sed -i "s|\${REPO}|${REPO}|g" release_body.md
+          sed -i "s|\${TAG}|${TAG}|g" release_body.md
+          sed -i "s|\${VERSION}|${VERSION}|g" release_body.md
+
+          {
+            echo "body<<EOFMARKER"
+            cat release_body.md
+            echo "EOFMARKER"
+          } >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag_name }}
-          files: |
-            release-assets/*
-          body: ${{ steps.release_notes.outputs.notes }}
-          generate_release_notes: true
+          name: Release ${{ steps.tag.outputs.tag_name }}
+          body: ${{ steps.generate_body.outputs.body }}
+          files: release-assets/*
+          draft: false
+          fail_on_unmatched_files: false
