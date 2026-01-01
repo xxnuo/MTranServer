@@ -8,7 +8,7 @@ A high-performance offline translation model server with minimal resource requir
 
 Note: This model server focuses on `offline translation`, `response speed`, `cross-platform deployment`, and `local execution` to achieve `unlimited free translation`. Due to model size and optimization constraints, the translation quality will not match that of large language models. For high-quality translation, consider using online large language model APIs.
 
-> v4 has optimized memory usage, further improved speed, and enhanced stability. Waiting for the official release! The dev version is not recommended for upgrade!
+> v4 has optimized memory usage, further improved speed, and enhanced stability. If you are using an old version, it is recommended to upgrade immediately!
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -128,7 +128,7 @@ Here are some similar projects, you can try them if you have other needs:
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | Very High      | Average     | Average             | Medium     | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)           | High           | Average     | Below Average       | Fast       | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                            |
 | Any LLM                                                                | Extremely High | Dynamic     | Very Good           | Very Slow  | High hardware requirements. If you need high concurrency translation, it is recommended to use vllm framework to control translation concurrency through memory and VRAM usage. |
-| MTranServer (This Project)                                             | Low            | High        | Average             | Ultra Fast | 50ms average response time per request. v4 has optimized memory usage. Waiting for the official release!                                                                   |
+| MTranServer (This Project)                                             | Low            | High        | Average             | Ultra Fast | 50ms average response time per request.                                                                   |
 
 > Table data is for CPU, English to Chinese scenarios simple testing, not strict testing, non-quantized version comparison, for reference only.
 

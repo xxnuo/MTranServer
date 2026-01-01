@@ -8,7 +8,7 @@ Ein ultraschneller Offline-Übersetzungsmodell-Server mit minimalem Ressourcenve
 
 Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung`, `Reaktionsgeschwindigkeit`, `plattformübergreifende Bereitstellung` und `lokale Ausführung` fokussiert ist, um `unbegrenzte kostenlose Übersetzungen` zu erreichen. Aufgrund von Einschränkungen bei der Modellgröße und Optimierung wird die Übersetzungsqualität sicherlich nicht so gut sein wie die von großen Sprachmodellen. Für qualitativ hochwertige Übersetzungen wird die Verwendung von Online-APIs für große Sprachmodelle empfohlen.
 
-> v4 hat den Speicherverbrauch optimiert, die Geschwindigkeit weiter erhöht und die Stabilität verbessert. Warten auf die offizielle Veröffentlichung! Die Dev-Version wird nicht für ein Upgrade empfohlen!
+> v4 hat den Speicherverbrauch optimiert, die Geschwindigkeit weiter erhöht und die Stabilität verbessert. Wenn Sie eine alte Version verwenden, wird ein sofortiges Upgrade empfohlen!
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -128,7 +128,7 @@ Hier sind einige Projekte mit ähnlichen Funktionen. Wenn Sie andere Bedürfniss
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch | Durchschnittlich | Durchschnittlich | Mittel | Mittelklasse-CPU verarbeitet 3 Sätze/s, High-End-CPU 15-20 Sätze/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | Hoch | Durchschnittlich | Eher schlecht | Schnell | [Leistungstests](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Andere große Modelle | Extrem hoch | Dynamisch | Sehr gut | Sehr langsam | Hohe Hardwareanforderungen. Wenn Sie eine Übersetzung mit hoher Nebenläufigkeit benötigen, wird empfohlen, das vllm-Framework zu verwenden, um die Nebenläufigkeit über den Speicher- und VRAM-Verbrauch zu steuern |
-| Dieses Projekt | Niedrig | Hoch | Durchschnittlich | Extrem schnell | Durchschnittliche Antwortzeit von 50 ms pro Anfrage. v4 hat den Speicherverbrauch optimiert. Warten auf die offizielle Veröffentlichung! |
+| Dieses Projekt | Niedrig | Hoch | Durchschnittlich | Extrem schnell | Durchschnittliche Antwortzeit von 50 ms pro Anfrage. |
 
 > Die Daten in der Tabelle beziehen sich auf einfache Tests mit CPU, Englisch-Chinesisch-Szenarien, keine strengen Tests, Vergleich von nicht quantisierten Versionen, nur als Referenz.
 
