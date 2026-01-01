@@ -8,7 +8,8 @@ FROM base AS ui-builder
 WORKDIR /app/ui
 COPY ui/package.json ui/bun.lock ./
 # Install dependencies using bun
-RUN bun installCOPY ui/ .
+RUN bun install
+COPY ui/ .
 # Build UI
 RUN bun run build
 

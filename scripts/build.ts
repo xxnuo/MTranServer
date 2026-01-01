@@ -1,11 +1,16 @@
 import { $ } from "bun";
+import pkg from "../package.json";
+
+const version = pkg.version;
 
 const targets = [
-  "bun-linux-x64",
-  "bun-linux-arm64",
-  "bun-windows-x64",
-  "bun-darwin-x64",
-  "bun-darwin-arm64",
+  { bun: "bun-linux-x64", name: "linux-amd64" },
+  { bun: "bun-linux-arm64", name: "linux-arm64" },
+  { bun: "bun-windows-x64", name: "windows-amd64" },
+  { bun: "bun-darwin-x64", name: "darwin-amd64" },
+  { bun: "bun-darwin-arm64", name: "darwin-arm64" },
+  { bun: "bun-linux-x64-musl", name: "linux-amd64-musl" },
+  { bun: "bun-linux-arm64-musl", name: "linux-arm64-musl" },
 ];
 
 console.log("Cleaning dist...");
@@ -13,10 +18,10 @@ await $`rm -rf dist`;
 await $`mkdir -p dist`;
 
 for (const target of targets) {
-  const ext = target.includes("windows") ? ".exe" : "";
-  const outfile = `dist/mtranserver-${target}${ext}`;
-  console.log(`Building for ${target}...`);
-  await $`bun build src/main.ts --compile --target=${target} --outfile=${outfile} --minify --sourcemap`;
+  const ext = target.bun.includes("windows") ? ".exe" : "";
+  const outfile = `dist/mtranserver-${version}-${target.name}${ext}`;
+  console.log(`Building for ${target.bun} -> ${outfile}...`);
+  await $`bun build src/main.ts --compile --target=${target.bun} --outfile=${outfile} --minify --sourcemap`;
 }
 
 console.log("Build complete!");
