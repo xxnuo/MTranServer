@@ -25,8 +25,6 @@ export interface Config {
 
 let globalConfig: Config | null = null;
 
-// --- Helper Functions for Parsing ---
-
 function getArgValue(flag: string): string | null {
   const index = process.argv.indexOf(flag);
   if (index > -1 && index + 1 < process.argv.length) {
@@ -35,7 +33,6 @@ function getArgValue(flag: string): string | null {
       return nextArg;
     }
   }
-  // Handle case like --flag=value
   for (const arg of process.argv) {
     if (arg.startsWith(`${flag}=`)) {
       return arg.split('=')[1];
@@ -55,16 +52,13 @@ function getString(flag: string, envKey: string, defaultValue: string): string {
 }
 
 function getBool(flag: string, envKey: string, defaultValue: boolean): boolean {
-  // Check for explicit true flags: --ui, --ui=true
   if (process.argv.includes(flag)) return true;
   const val = getArgValue(flag);
   if (val !== null) return val.toLowerCase() === 'true' || val === '1';
 
-  // Check for explicit false flags (common convention): --no-ui
   const noFlag = `--no-${flag.replace(/^--/, '')}`;
   if (process.argv.includes(noFlag)) return false;
 
-  // Fallback to Env
   const envVal = process.env[envKey];
   if (envVal !== undefined) {
     return envVal.toLowerCase() === 'true' || envVal === '1';
@@ -88,8 +82,6 @@ function getInt(flag: string, envKey: string, defaultValue: number): number {
   return defaultValue;
 }
 
-// --- Main Config Logic ---
-
 export function getConfig(): Config {
   if (globalConfig !== null) {
     return globalConfig;
@@ -97,7 +89,6 @@ export function getConfig(): Config {
 
   const homeDir = path.join(os.homedir(), '.config', 'mtran');
 
-  // Resolve directories first as they might depend on defaults or CLI
   const configDir = getString('--config-dir', 'MT_CONFIG_DIR', path.join(homeDir, 'server'));
   const localModelsDir = path.join(process.cwd(), 'models');
   const defaultModelDir = fs.existsSync(localModelsDir) ? localModelsDir : path.join(homeDir, 'models');
