@@ -16,7 +16,7 @@ Notez que ce serveur de modèle se concentre sur la `traduction hors ligne`, la 
 
 | Site Web                         | TOKEN                     | Autre interface                                                                                | Fournisseur |
 | -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
-| `https://MTranServer.ipacel.cc/` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate : `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi     |
+| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate : `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi     |
 
 Merci aux contributeurs de la communauté pour fournir des services d'essai aux utilisateurs !
 

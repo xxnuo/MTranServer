@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { getConfig } from '@/config/index.js';
 
 export function auth(apiToken: string) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -28,7 +29,7 @@ export function expressAuthentication(
   scopes?: string[]
 ): Promise<any> {
   if (securityName === 'api_token') {
-    const apiToken = process.env.MT_API_TOKEN || '';
+    const apiToken = getConfig().apiToken;
 
     if (!apiToken) {
       return Promise.resolve();

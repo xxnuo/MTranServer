@@ -76,6 +76,11 @@ function App() {
   }, [t])
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tokenFromUrl = urlParams.get('token')
+    if (tokenFromUrl) {
+      localStorage.setItem('apiToken', tokenFromUrl)
+    }
     fetchLanguages()
   }, [fetchLanguages])
 
