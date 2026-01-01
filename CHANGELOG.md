@@ -1,6 +1,6 @@
 ## v4.0.19
 
-* 发布到 npm，现在可以通过 `npx run mtranserver@latest` 来运行服务器啦！
+* 发布到 npm，现在可以通过 `npm i -g mtranserver` 安装或者 `npx mtranserver` 来运行服务器啦！
 * 修复语言检测的内存安全问题
 * 修复混合语言检测的逻辑问题，现在能够正常翻译混合语言文本为目标语言了
 * 新增 `--download` 命令，支持通过命令行批量下载语言对模型 (例如 `mtranserver --download en_zh zh_en`)
