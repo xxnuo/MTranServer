@@ -36,9 +36,10 @@ export function expressAuthentication(
 
     const headerToken = request.headers['authorization']?.replace('Bearer ', '');
     const queryToken = request.query.api_token as string;
+    const queryToken2 = request.query.token as string;
     const xApiToken = request.headers['x-api-token'] as string;
 
-    const token = headerToken || queryToken || xApiToken;
+    const token = headerToken || queryToken || queryToken2 || xApiToken;
 
     if (token === apiToken) {
       return Promise.resolve();
