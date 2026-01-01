@@ -8,7 +8,13 @@ import (
 	"time"
 
 	"github.com/xxnuo/MTranServer/internal/logger"
-	"github.com/xxnuo/MTranServer/internal/utils"
+)
+
+const (
+	StateStopped    = 0
+	StateStarting   = 1
+	StateRunning    = 2
+	StateRestarting = 3
 )
 
 type Manager struct {
@@ -18,6 +24,7 @@ type Manager struct {
 	url       string
 	taskQueue chan struct{} // Token bucket for serializing tasks
 	closed    bool
+	state     int
 }
 
 type ManagerOption func(*Manager)
@@ -30,6 +37,7 @@ func NewManager(args *WorkerArgs, opts ...ManagerOption) *Manager {
 		worker:    NewWorker(args),
 		url:       url,
 		taskQueue: make(chan struct{}, 1),
+		state:     StateStopped,
 	}
 
 	for _, opt := range opts {
@@ -41,7 +49,14 @@ func NewManager(args *WorkerArgs, opts ...ManagerOption) *Manager {
 
 func (m *Manager) Start() error {
 	m.mu.Lock()
+	if m.state != StateStopped {
+		m.mu.Unlock()
+		return fmt.Errorf("manager is not in stopped state")
+	}
+	m.state = StateStarting
+
 	if err := m.worker.Start(); err != nil {
+		m.state = StateStopped
 		m.mu.Unlock()
 		return fmt.Errorf("failed to start worker: %w", err)
 	}
@@ -64,26 +79,24 @@ func (m *Manager) Start() error {
 				if !connected {
 					client = NewClient(m.url)
 					if err := client.Connect(); err != nil {
-						m.worker.Stop()
-						return fmt.Errorf("failed to connect to worker: %w", err)
+						// Keep retrying connection
+						continue
 					}
 					connected = true
-					continue
 				}
 
-				stableStart := time.Now()
-				stableDuration := 500 * time.Millisecond
-				for time.Since(stableStart) < stableDuration {
-					if !m.worker.IsRunning() {
-						client.Close()
-						m.worker.Stop()
-						return fmt.Errorf("worker exited immediately after connection")
-					}
-					time.Sleep(50 * time.Millisecond)
+				// Wait for worker to be stable and really ready
+				healthCtx, healthCancel := context.WithTimeout(context.Background(), 1*time.Second)
+				isHealthy, _ := client.Health(healthCtx)
+				healthCancel()
+
+				if !isHealthy {
+					continue
 				}
 
 				m.mu.Lock()
 				m.client = client
+				m.state = StateRunning
 				m.mu.Unlock()
 				return nil
 			}
@@ -95,6 +108,7 @@ func (m *Manager) Stop() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	m.state = StateStopped
 	var errs []error
 
 	if m.client != nil {
@@ -129,6 +143,7 @@ func (m *Manager) Restart() error {
 
 func (m *Manager) Cleanup() error {
 	m.mu.Lock()
+	m.state = StateStopped
 	defer m.mu.Unlock()
 
 	var errs []error
@@ -157,19 +172,37 @@ func (m *Manager) Cleanup() error {
 func (m *Manager) IsRunning() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	return m.state == StateRunning && m.worker != nil && m.worker.IsRunning() && m.client != nil && m.client.IsConnected()
+}
 
-	return m.worker != nil && m.worker.IsRunning() && m.client != nil && m.client.IsConnected()
+func (m *Manager) IsHealthy(ctx context.Context) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.state != StateRunning || m.client == nil {
+		return false
+	}
+
+	healthy, err := m.client.Health(ctx)
+	return err == nil && healthy
 }
 
 func (m *Manager) Status() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	if m.worker == nil {
-		return "not_initialized"
+	switch m.state {
+	case StateStopped:
+		return "stopped"
+	case StateStarting:
+		return "starting"
+	case StateRunning:
+		return "running"
+	case StateRestarting:
+		return "restarting"
+	default:
+		return "unknown"
 	}
-
-	return m.worker.Status()
 }
 
 func (m *Manager) Logs() []string {
@@ -195,7 +228,16 @@ func (m *Manager) Health(ctx context.Context) (bool, error) {
 }
 
 func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
-	// Wait for task slot
+	// 1. Check state immediately
+	m.mu.RLock()
+	if m.state != StateRunning {
+		state := m.state
+		m.mu.RUnlock()
+		return "", fmt.Errorf("manager not running (state: %d)", state)
+	}
+	m.mu.RUnlock()
+
+	// 2. Wait for task slot (concurrency control)
 	select {
 	case m.taskQueue <- struct{}{}:
 		defer func() { <-m.taskQueue }()
@@ -209,13 +251,21 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 		m.mu.RUnlock()
 		return "", fmt.Errorf("manager is closed")
 	}
+
+	// Double check state after acquiring lock
+	if m.state != StateRunning {
+		m.mu.RUnlock()
+		return "", fmt.Errorf("manager not running (state: %d)", m.state)
+	}
+
 	client := m.client
-	worker := m.worker
+	// worker := m.worker
 	m.mu.RUnlock()
 
-	if client == nil || worker == nil {
-		logger.Error("Manager.Trans: client or worker not initialized")
-		return m.reconnectAndTrans(ctx, req)
+	if client == nil {
+		logger.Error("Manager.Trans: client not initialized")
+		m.TriggerRestartAsync()
+		return "", fmt.Errorf("client not initialized")
 	}
 
 	logger.Debug("Manager.Trans: calling client.Trans")
@@ -242,112 +292,108 @@ func (m *Manager) Trans(ctx context.Context, req TransRequest) (string, error) {
 		return "", err
 	}
 
-	return m.reconnectAndTrans(ctx, req)
+	// Trigger async restart and fail this request
+	m.TriggerRestartAsync()
+	return "", fmt.Errorf("worker connection failed, restarting: %w", err)
 }
 
-func (m *Manager) reconnectAndTrans(ctx context.Context, req TransRequest) (string, error) {
-	logger.Debug("Manager.Trans: attempting reconnection")
-
+func (m *Manager) TriggerRestartAsync() {
 	m.mu.Lock()
-	if m.closed {
+	if m.state == StateRestarting || m.state == StateStopped {
 		m.mu.Unlock()
-		return "", fmt.Errorf("manager is closed")
+		return
 	}
+	m.state = StateRestarting
+	m.mu.Unlock()
 
-	oldClient := m.client
+	go func() {
+		logger.Info("Async restart triggered for worker on port %d", m.worker.args.Port)
+		if err := m.RestartWorker(); err != nil {
+			logger.Error("Async restart failed: %v", err)
+			// Ensure we mark as stopped so it can be picked up or retried later if needed?
+			// or maybe we should try again? For now, leave it as stopped/failed.
+			m.mu.Lock()
+			m.state = StateStopped
+			m.mu.Unlock()
+		} else {
+			logger.Info("Async restart completed successfully")
+		}
+	}()
+}
+
+// RestartWorker performs the kill-and-restart logic on the SAME port
+func (m *Manager) RestartWorker() error {
+	// 1. Kill old worker and cleanup resources
+	m.mu.Lock()
 	oldWorker := m.worker
+	oldClient := m.client
 
 	if oldClient != nil {
 		m.client = nil
+		go oldClient.Close() // Close async
 	}
-
-	newPort, err := utils.GetFreePort()
-	if err != nil {
-		m.mu.Unlock()
-		return "", fmt.Errorf("failed to allocate new port: %w", err)
-	}
-
-	newArgs := *m.worker.args
-	newArgs.Port = newPort
-	newWorker := NewWorker(&newArgs)
-	newURL := fmt.Sprintf("ws://%s:%d/ws", newArgs.Host, newArgs.Port)
-
-	m.worker = newWorker
-	m.url = newURL
 	m.mu.Unlock()
 
-	// Clean up old resources in background
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				logger.Error("Panic during old worker cleanup: %v", r)
-			}
-		}()
-
-		// Give a small grace period for any pending operations
-		time.Sleep(100 * time.Millisecond)
-
-		if oldClient != nil {
-			exitCtx, exitCancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-			oldClient.Exit(exitCtx, ExitRequest{Time: 0, Force: true})
-			exitCancel()
-			oldClient.Close()
+	logger.Info("Stopping old worker...")
+	// Force kill if necessary, make sure port is freed
+	if oldWorker != nil {
+		if err := oldWorker.Cleanup(); err != nil {
+			logger.Warn("Failed to cleanup old worker: %v", err)
 		}
-
-		if oldWorker != nil {
-			// Try graceful stop first
-			if err := oldWorker.Stop(); err != nil {
-				logger.Warn("Failed to stop old worker gracefully: %v", err)
-			}
-		}
-		logger.Debug("Old worker cleanup completed")
-	}()
-
-	if startErr := newWorker.Start(); startErr != nil {
-		return "", fmt.Errorf("failed to start new worker: %w", startErr)
 	}
 
-	maxRetries := 50
-	for i := 0; i < maxRetries; i++ {
-		// Check context before each retry
+	// Wait a bit to ensure OS releases port
+	time.Sleep(1 * time.Second)
+
+	// 2. Start new worker on the SAME port (args are reused)
+	// We need to create a NEW worker instance because the old one holds the old cmd/process
+	m.mu.Lock()
+	newWorker := NewWorker(m.worker.args)
+	m.worker = newWorker
+	m.mu.Unlock()
+
+	logger.Info("Starting new worker on port %d...", newWorker.args.Port)
+	if err := newWorker.Start(); err != nil {
+		return fmt.Errorf("failed to start new worker: %w", err)
+	}
+
+	// 3. Wait for readiness
+	timeout := time.After(30 * time.Second)
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
+	var client *Client
+	var connected bool
+
+	for {
 		select {
-		case <-ctx.Done():
-			// Cleanup new worker if context canceled during startup
-			go func() {
-				newWorker.Stop()
-			}()
-			return "", ctx.Err()
-		default:
-		}
+		case <-timeout:
+			newWorker.Stop()
+			return fmt.Errorf("restart timeout waiting for worker readiness")
+		case <-ticker.C:
+			if newWorker.IsRunning() {
+				if !connected {
+					client = NewClient(m.url) // URL is unchanged
+					if err := client.Connect(); err != nil {
+						continue
+					}
+					connected = true
+				}
 
-		if !newWorker.IsRunning() {
-			return "", fmt.Errorf("new worker exited unexpectedly")
-		}
+				healthCtx, healthCancel := context.WithTimeout(context.Background(), 1*time.Second)
+				isHealthy, _ := client.Health(healthCtx)
+				healthCancel()
 
-		newClient := NewClient(newURL)
-		if connErr := newClient.Connect(); connErr == nil {
-			// Wait for worker to be ready
-			healthCtx, healthCancel := context.WithTimeout(ctx, 2*time.Second)
-			ready, _ := newClient.Health(healthCtx)
-			healthCancel()
-
-			if ready {
-				m.mu.Lock()
-				m.client = newClient
-				m.mu.Unlock()
-
-				return newClient.Trans(ctx, req)
+				if isHealthy {
+					m.mu.Lock()
+					m.client = client
+					m.state = StateRunning
+					m.mu.Unlock()
+					return nil
+				}
 			}
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
-
-	// Cleanup new worker if connection failed
-	go func() {
-		newWorker.Stop()
-	}()
-	return "", fmt.Errorf("failed to connect to new worker after %d retries", maxRetries)
 }
 
 func (m *Manager) Exit(ctx context.Context, req ExitRequest) (*ExitResponse, error) {

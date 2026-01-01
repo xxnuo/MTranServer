@@ -103,16 +103,30 @@ func (ei *EngineInfo) getNextManager() *manager.Manager {
 		return nil
 	}
 
+	// Try to find a running manager first
+	startIdx := ei.nextIdx
 	for i := 0; i < len(ei.Managers); i++ {
-		idx := ei.nextIdx % len(ei.Managers)
-		ei.nextIdx++
+		idx := (startIdx + i) % len(ei.Managers)
 		m := ei.Managers[idx]
 		if m != nil && m.IsRunning() {
+			ei.nextIdx = idx + 1 // Start from next one next time
 			return m
 		}
 	}
 
-	return nil
+	// If no running manager found, just return the next one in round-robin fashion
+	// (it will likely fail, but that's expected if all are restarting)
+	idx := ei.nextIdx % len(ei.Managers)
+	ei.nextIdx++
+	return ei.Managers[idx]
+}
+
+// Helper to get engine info without creating one if not exists
+func getEngineInfo(fromLang, toLang string) *EngineInfo {
+	key := fmt.Sprintf("%s-%s", fromLang, toLang)
+	engMu.RLock()
+	defer engMu.RUnlock()
+	return engines[key]
 }
 
 func getOrCreateSingleEngine(fromLang, toLang string) (*manager.Manager, error) {
@@ -262,38 +276,19 @@ func translateSegment(ctx context.Context, fromLang, toLang, text string, isHTML
 	}
 
 	if !needsPivotTranslation(fromLang, toLang) {
-		m, err := getOrCreateSingleEngine(fromLang, toLang)
-		if err != nil {
-			return "", err
-		}
-		if isHTML {
-			return m.TranslateHTML(ctx, text)
-		}
-		return m.Translate(ctx, text)
+		return translateSingleLanguageText(ctx, fromLang, toLang, text, isHTML)
 	}
 
-	m1, err := getOrCreateSingleEngine(fromLang, "en")
-	if err != nil {
-		return "", err
-	}
-	var intermediateText string
-	if isHTML {
-		intermediateText, err = m1.TranslateHTML(ctx, text)
-	} else {
-		intermediateText, err = m1.Translate(ctx, text)
-	}
+	// Pivot Translation
+
+	// Step 1: from -> en
+	intermediateText, err := translateSingleLanguageText(ctx, fromLang, "en", text, isHTML)
 	if err != nil {
 		return "", err
 	}
 
-	m2, err := getOrCreateSingleEngine("en", toLang)
-	if err != nil {
-		return "", err
-	}
-	if isHTML {
-		return m2.TranslateHTML(ctx, intermediateText)
-	}
-	return m2.Translate(ctx, intermediateText)
+	// Step 2: en -> to
+	return translateSingleLanguageText(ctx, "en", toLang, intermediateText, isHTML)
 }
 
 func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
@@ -303,7 +298,7 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 		if fromLang == toLang {
 			return text, nil
 		}
-		return translateSingleLanguageText(ctx, fromLang, toLang, text, isHTML)
+		return translateSegment(ctx, fromLang, toLang, text, isHTML)
 	}
 
 	segments := DetectMultipleLanguages(text)
@@ -323,7 +318,7 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 		if effectiveFromLang == toLang {
 			return text, nil
 		}
-		return translateSingleLanguageText(ctx, effectiveFromLang, toLang, text, isHTML)
+		return translateSegment(ctx, effectiveFromLang, toLang, text, isHTML)
 	}
 
 	logger.Debug("Detected %d language segments", len(segments))
@@ -357,165 +352,72 @@ func TranslateWithPivot(ctx context.Context, fromLang, toLang, text string, isHT
 }
 
 func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
-	if !needsPivotTranslation(fromLang, toLang) {
-		logger.Debug("translateSingleLanguageText: direct translation path")
-		m, err := getOrCreateSingleEngine(fromLang, toLang)
-		if err != nil {
-			logger.Error("translateSingleLanguageText: failed to get engine: %v", err)
-			return "", err
+	// 1. Get initial manager (will ensure pool is created)
+	m, err := getOrCreateSingleEngine(fromLang, toLang)
+	if err != nil {
+		logger.Error("translateSingleLanguageText: failed to get engine: %v", err)
+		return "", err
+	}
+
+	// Get engine info to check concurrency/count
+	info := getEngineInfo(fromLang, toLang)
+	var maxRetries int = 1
+	if info != nil {
+		maxRetries = len(info.Managers) * 2 // Try twice per manager on average
+		if maxRetries < 3 {
+			maxRetries = 3
 		}
-		logger.Debug("translateSingleLanguageText: got engine, calling translate")
+	}
+
+	var lastErr error
+
+	for i := 0; i < maxRetries; i++ {
+		// If retrying, get a potentially new manager (load balanced)
+		if i > 0 && info != nil {
+			m = info.getNextManager()
+			if m == nil {
+				// Should not happen if pool is alive
+				return "", fmt.Errorf("no managers available")
+			}
+		}
+
+		logger.Debug("translateSingleLanguageText: attempting translation (try %d/%d)", i+1, maxRetries)
 		var result string
 		if isHTML {
 			result, err = m.TranslateHTML(ctx, text)
 		} else {
 			result, err = m.Translate(ctx, text)
 		}
-		logger.Debug("translateSingleLanguageText: translate returned, err: %v", err)
-		if err != nil {
-			if isFatalError(err) {
-				key := fmt.Sprintf("%s-%s", fromLang, toLang)
-				logger.Warn("Fatal error detected for engine %s, recreating pool...", key)
-				engMu.Lock()
-				if info, ok := engines[key]; ok && info != nil {
-					info.mu.Lock()
-					if info.stopTimer != nil {
-						info.stopTimer.Stop()
-					}
-					info.mu.Unlock()
-					for _, mgr := range info.Managers {
-						if mgr != nil {
-							mgr.Cleanup()
-						}
-					}
-					delete(engines, key)
-				}
-				engMu.Unlock()
-				m, err = getOrCreateSingleEngine(fromLang, toLang)
-				if err != nil {
-					return "", err
-				}
-				if isHTML {
-					result, err = m.TranslateHTML(ctx, text)
-				} else {
-					result, err = m.Translate(ctx, text)
-				}
-			}
-			if err != nil {
-				logger.Warn("Translation failed, trying segmented translation: %v", err)
-				segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
-				if segErr != nil {
-					return "", err
-				}
-				return segResult, nil
-			}
+
+		if err == nil {
+			return result, nil
 		}
-		return result, nil
+
+		// Check if error is retryable (worker failure)
+		if isConnectionError(err) {
+			logger.Warn("Translation attempt %d failed (connection error): %v. Retrying with next manager...", i+1, err)
+			lastErr = err
+			// Short sleep before retry
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		// If it's not a connection error (e.g. invalid request), return immediately
+		return "", err
 	}
 
-	logger.Debug("Step 1: Translating %s -> en", fromLang)
-	m1, err := getOrCreateSingleEngine(fromLang, "en")
-	if err != nil {
-		return "", fmt.Errorf("failed to create first engine (%s -> en): %w", fromLang, err)
+	// If all retries failed, fallback to segmented translation if applicable?
+	// The original code did that. Let's preserve it if appropriate.
+	if lastErr != nil {
+		logger.Warn("All translation attempts failed. Last error: %v. Trying segmented translation.", lastErr)
+		segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
+		if segErr != nil {
+			return "", lastErr // Return the main error
+		}
+		return segResult, nil
 	}
 
-	var intermediateText string
-	if isHTML {
-		intermediateText, err = m1.TranslateHTML(ctx, text)
-	} else {
-		intermediateText, err = m1.Translate(ctx, text)
-	}
-	if err != nil {
-		if isFatalError(err) {
-			key := fmt.Sprintf("%s-en", fromLang)
-			logger.Warn("Fatal error detected for engine %s, recreating pool...", key)
-			engMu.Lock()
-			if info, ok := engines[key]; ok && info != nil {
-				info.mu.Lock()
-				if info.stopTimer != nil {
-					info.stopTimer.Stop()
-				}
-				info.mu.Unlock()
-				for _, mgr := range info.Managers {
-					if mgr != nil {
-						mgr.Cleanup()
-					}
-				}
-				delete(engines, key)
-			}
-			engMu.Unlock()
-			m1, err = getOrCreateSingleEngine(fromLang, "en")
-			if err != nil {
-				return "", fmt.Errorf("failed to recreate first engine (%s -> en): %w", fromLang, err)
-			}
-			if isHTML {
-				intermediateText, err = m1.TranslateHTML(ctx, text)
-			} else {
-				intermediateText, err = m1.Translate(ctx, text)
-			}
-		}
-		if err != nil {
-			logger.Warn("Pivot step 1 failed, trying segmented translation: %v", err)
-			segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
-			if segErr != nil {
-				return "", fmt.Errorf("failed in first step (%s -> en): %w", fromLang, err)
-			}
-			return segResult, nil
-		}
-	}
-
-	logger.Debug("Step 2: Translating en -> %s", toLang)
-	m2, err := getOrCreateSingleEngine("en", toLang)
-	if err != nil {
-		return "", fmt.Errorf("failed to create second engine (en -> %s): %w", toLang, err)
-	}
-
-	var finalText string
-	if isHTML {
-		finalText, err = m2.TranslateHTML(ctx, intermediateText)
-	} else {
-		finalText, err = m2.Translate(ctx, intermediateText)
-	}
-	if err != nil {
-		if isFatalError(err) {
-			key := fmt.Sprintf("en-%s", toLang)
-			logger.Warn("Fatal error detected for engine %s, recreating pool...", key)
-			engMu.Lock()
-			if info, ok := engines[key]; ok && info != nil {
-				info.mu.Lock()
-				if info.stopTimer != nil {
-					info.stopTimer.Stop()
-				}
-				info.mu.Unlock()
-				for _, mgr := range info.Managers {
-					if mgr != nil {
-						mgr.Cleanup()
-					}
-				}
-				delete(engines, key)
-			}
-			engMu.Unlock()
-			m2, err = getOrCreateSingleEngine("en", toLang)
-			if err != nil {
-				return "", fmt.Errorf("failed to recreate second engine (en -> %s): %w", toLang, err)
-			}
-			if isHTML {
-				finalText, err = m2.TranslateHTML(ctx, intermediateText)
-			} else {
-				finalText, err = m2.Translate(ctx, intermediateText)
-			}
-		}
-		if err != nil {
-			logger.Warn("Pivot step 2 failed, trying segmented translation: %v", err)
-			segResult, segErr := translateWithSegments(ctx, fromLang, toLang, text, isHTML)
-			if segErr != nil {
-				return "", fmt.Errorf("failed in second step (en -> %s): %w", toLang, err)
-			}
-			return segResult, nil
-		}
-	}
-
-	return finalText, nil
+	return "", lastErr
 }
 
 func CleanupAllEngines() {
@@ -576,7 +478,7 @@ func CleanupAllEngines() {
 	engines = make(map[string]*EngineInfo)
 }
 
-func isFatalError(err error) bool {
+func isConnectionError(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -587,7 +489,9 @@ func isFatalError(err error) bool {
 		strings.Contains(errMsg, "failed to send message") ||
 		strings.Contains(errMsg, "failed to read response") ||
 		strings.Contains(errMsg, "wasm error") ||
-		strings.Contains(errMsg, "invalid table access")
+		strings.Contains(errMsg, "invalid table access") ||
+		strings.Contains(errMsg, "manager not running") ||
+		strings.Contains(errMsg, "worker connection failed")
 }
 
 func translateWithSegments(ctx context.Context, fromLang, toLang, text string, isHTML bool) (string, error) {
