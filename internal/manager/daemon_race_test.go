@@ -76,7 +76,7 @@ func TestWorker_ConcurrentStatusCheck(t *testing.T) {
 			for range 10 {
 				_ = worker.Status()
 				_ = worker.IsRunning()
-				_ = worker.GetDetailedStatus()
+				_ = worker.Status()
 				_ = worker.Logs()
 				time.Sleep(10 * time.Millisecond)
 			}

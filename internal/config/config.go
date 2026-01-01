@@ -14,13 +14,13 @@ type Config struct {
 	ConfigDir string
 	ModelDir  string
 
-	Host              string
-	Port              string
-	EnableWebUI       bool
-	EnableOfflineMode bool
-	WorkerIdleTimeout int
+	Host               string
+	Port               string
+	EnableWebUI        bool
+	EnableOfflineMode  bool
+	WorkerIdleTimeout  int
 	WorkersPerLanguage int
-	APIToken          string
+	APIToken           string
 }
 
 var (
@@ -48,8 +48,8 @@ func GetConfig() *Config {
 	flag.StringVar(&cfg.Port, "port", utils.GetEnv("MT_PORT", "8989"), "Server port")
 	flag.BoolVar(&cfg.EnableWebUI, "ui", utils.GetBoolEnv("MT_ENABLE_UI", true), "Enable web UI")
 	flag.BoolVar(&cfg.EnableOfflineMode, "offline", utils.GetBoolEnv("MT_OFFLINE", false), "Enable offline mode")
-	flag.IntVar(&cfg.WorkerIdleTimeout, "worker-idle-timeout", utils.GetIntEnv("MT_WORKER_IDLE_TIMEOUT", 300), "Worker idle timeout in seconds")
-	flag.IntVar(&cfg.WorkersPerLanguage, "workers-per-language", utils.GetIntEnv("MT_WORKERS_PER_LANGUAGE", 2), "Number of workers per language pair")
+	flag.IntVar(&cfg.WorkerIdleTimeout, "worker-idle-timeout", utils.GetIntEnv("MT_WORKER_IDLE_TIMEOUT", 60), "Worker idle timeout in seconds")
+	flag.IntVar(&cfg.WorkersPerLanguage, "workers-per-language", utils.GetIntEnv("MT_WORKERS_PER_LANGUAGE", 1), "Number of workers per language pair")
 	flag.StringVar(&cfg.APIToken, "api-token", utils.GetEnv("MT_API_TOKEN", ""), "API access token")
 
 	GlobalConfig = cfg

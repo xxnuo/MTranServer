@@ -1,8 +1,11 @@
 package manager
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -10,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ShinyTrinkets/overseer"
 	"github.com/xxnuo/MTranServer/bin"
 	"github.com/xxnuo/MTranServer/internal/config"
 	"github.com/xxnuo/MTranServer/internal/logger"
@@ -56,17 +58,17 @@ func NewWorkerArgs() *WorkerArgs {
 
 type Worker struct {
 	args       *WorkerArgs
-	overseer   *overseer.Overseer
+	cmd        *exec.Cmd
 	id         string
 	binaryPath string
 	mu         sync.RWMutex
 	logMu      sync.RWMutex
-	logChan    chan *overseer.LogMsg
-	stateChan  chan *overseer.ProcessJSON
 	logs       []string
 	maxLogs    int
 	done       chan struct{}
 	wg         sync.WaitGroup
+	running    bool
+	pid        int
 }
 
 func NewWorker(args *WorkerArgs) *Worker {
@@ -84,21 +86,14 @@ func NewWorker(args *WorkerArgs) *Worker {
 
 	w := &Worker{
 		args:       args,
-		overseer:   overseer.NewOverseer(),
 		id:         workerID,
 		binaryPath: binaryPath,
-		logChan:    make(chan *overseer.LogMsg, 100),
-		stateChan:  make(chan *overseer.ProcessJSON, 10),
 		logs:       make([]string, 0, maxLogLines),
 		maxLogs:    maxLogLines,
 		done:       make(chan struct{}),
+		running:    false,
+		pid:        0,
 	}
-
-	w.overseer.WatchLogs(w.logChan)
-	w.overseer.WatchState(w.stateChan)
-
-	w.wg.Add(1)
-	go w.collectLogs()
 
 	return w
 }
@@ -192,33 +187,8 @@ func (w *Worker) Start() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.overseer.HasProc(w.id) {
-		status := w.overseer.Status(w.id)
-		if status != nil && status.State == "running" {
-			return fmt.Errorf("worker already running")
-		}
-
-		for range 30 {
-			if !w.overseer.HasProc(w.id) {
-				break
-			}
-			checkStatus := w.overseer.Status(w.id)
-			if checkStatus == nil || checkStatus.State != "running" {
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-
-		if w.overseer.HasProc(w.id) {
-			func() {
-				defer func() {
-					if r := recover(); r != nil {
-						logger.Warn("Panic while removing process: %v", r)
-					}
-				}()
-				w.overseer.Remove(w.id)
-			}()
-		}
+	if w.running && w.cmd != nil && w.cmd.Process != nil {
+		return fmt.Errorf("worker already running")
 	}
 
 	if _, err := os.Stat(w.binaryPath); err != nil {
@@ -228,181 +198,80 @@ func (w *Worker) Start() error {
 	args := w.buildArgs()
 
 	logger.Debug("Starting worker %s on port %d", w.id, w.args.Port)
-	cmd := w.overseer.Add(w.id, w.binaryPath, args)
-	if cmd == nil {
-		return fmt.Errorf("failed to add worker to overseer")
-	}
 
+	cmd := exec.Command(w.binaryPath, args...)
 	cmd.Dir = w.args.WorkDir
-	cmd.DelayStart = 0
-	cmd.RetryTimes = 0
 
-	go w.overseer.Supervise(w.id)
-
-	for i := 0; i < 50; i++ {
-		time.Sleep(50 * time.Millisecond)
-		if w.overseer.HasProc(w.id) {
-			status := w.overseer.Status(w.id)
-			if status != nil && status.State == "running" {
-				logger.Debug("Worker %s started", w.id)
-				return nil
-			}
-		}
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stderr pipe: %w", err)
 	}
 
-	return fmt.Errorf("worker failed to start within timeout")
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start worker: %w", err)
+	}
+
+	w.cmd = cmd
+	w.running = true
+	w.pid = cmd.Process.Pid
+
+	w.wg.Add(2)
+	go w.collectLogs(stdoutPipe, "INFO")
+	go w.collectLogs(stderrPipe, "ERROR")
+
+	logger.Debug("Worker %s started with PID %d", w.id, w.pid)
+	return nil
 }
 
 func (w *Worker) Stop() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("Panic during worker stop: %v", r)
-		}
-	}()
-
-	if !w.overseer.HasProc(w.id) {
-		return fmt.Errorf("worker not found")
-	}
-
-	status := w.overseer.Status(w.id)
-	if status == nil || status.State != "running" {
+	if !w.running || w.cmd == nil || w.cmd.Process == nil {
 		return fmt.Errorf("worker not running")
 	}
 
 	logger.Debug("Stopping worker %s", w.id)
 
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				logger.Warn("Panic while stopping worker (process may have already exited): %v", r)
-				if w.overseer.HasProc(w.id) {
-					logger.Warn("Attempting force kill after panic for %s", w.id)
-					_ = w.overseer.Signal(w.id, syscall.SIGKILL)
-					time.Sleep(500 * time.Millisecond)
-					if w.overseer.HasProc(w.id) {
-						func() {
-							defer func() { recover() }()
-							w.overseer.Remove(w.id)
-						}()
-					}
-				}
-			}
-		}()
-
-		if !w.overseer.HasProc(w.id) {
-			return
-		}
-		currentStatus := w.overseer.Status(w.id)
-		if currentStatus == nil || currentStatus.State != "running" {
-			return
-		}
-
-		if err := w.overseer.Stop(w.id); err != nil {
-			logger.Warn("Failed to stop worker: %v", err)
-		}
-	}()
+	if err := w.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		logger.Warn("Failed to send SIGTERM to worker: %v", err)
+	}
 
 	timeout := time.After(10 * time.Second)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
+	done := make(chan error, 1)
 
-	for {
-		select {
-		case <-timeout:
-			func() {
-				defer func() {
-					if r := recover(); r != nil {
-						logger.Warn("Panic while killing worker (process may have already exited): %v", r)
-					}
-				}()
+	go func() {
+		done <- w.cmd.Wait()
+	}()
 
-				if !w.overseer.HasProc(w.id) {
-					return
-				}
-				killStatus := w.overseer.Status(w.id)
-				if killStatus == nil || killStatus.State != "running" {
-					return
-				}
-
-				logger.Warn("Worker %s stop timeout, forcing kill", w.id)
-				if err := w.overseer.Signal(w.id, syscall.SIGKILL); err != nil {
-					logger.Warn("Failed to kill worker: %v", err)
-				}
-			}()
-			time.Sleep(500 * time.Millisecond)
-			for range 10 {
-				if !w.overseer.HasProc(w.id) {
-					break
-				}
-				status := w.overseer.Status(w.id)
-				if status == nil || status.State != "running" {
-					break
-				}
-				time.Sleep(100 * time.Millisecond)
-			}
-			if w.overseer.HasProc(w.id) {
-				func() {
-					defer func() { recover() }()
-					w.overseer.Remove(w.id)
-				}()
-			}
-			return fmt.Errorf("worker stop timeout, forced kill")
-		case <-ticker.C:
-			if !w.overseer.HasProc(w.id) {
-				logger.Debug("Worker %s stopped", w.id)
-				return nil
-			}
-			status := w.overseer.Status(w.id)
-			if status == nil || status.State != "running" {
-				logger.Debug("Worker %s stopped", w.id)
-				return nil
-			}
+	select {
+	case <-timeout:
+		logger.Warn("Worker %s stop timeout, forcing kill", w.id)
+		if err := w.cmd.Process.Kill(); err != nil {
+			logger.Warn("Failed to kill worker: %v", err)
 		}
+		<-done
+		w.running = false
+		w.pid = 0
+		return fmt.Errorf("worker stop timeout, forced kill")
+	case err := <-done:
+		w.running = false
+		w.pid = 0
+		logger.Debug("Worker %s stopped", w.id)
+		if err != nil && err.Error() != "signal: terminated" && err.Error() != "signal: killed" {
+			return err
+		}
+		return nil
 	}
 }
 
 func (w *Worker) Restart() error {
-	w.mu.Lock()
-	processExists := w.overseer.HasProc(w.id)
-	w.mu.Unlock()
-
-	if processExists {
-		status := w.Status()
-		if status == "running" {
-			if err := w.Stop(); err != nil {
-				logger.Warn("Failed to stop worker during restart: %v", err)
-			}
-		}
-
-		for range 30 {
-			w.mu.Lock()
-			hasProc := w.overseer.HasProc(w.id)
-			w.mu.Unlock()
-			if !hasProc {
-				break
-			}
-			checkStatus := w.Status()
-			if checkStatus != "running" && checkStatus != "unknown" {
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-
-		w.mu.Lock()
-		if w.overseer.HasProc(w.id) {
-			func() {
-				defer func() {
-					if r := recover(); r != nil {
-						logger.Warn("Panic while removing process: %v", r)
-					}
-				}()
-				w.overseer.Remove(w.id)
-			}()
-		}
-		w.mu.Unlock()
+	if err := w.Stop(); err != nil {
+		logger.Warn("Failed to stop worker during restart: %v", err)
 	}
 
 	time.Sleep(500 * time.Millisecond)
@@ -414,27 +283,11 @@ func (w *Worker) Status() string {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
-	if !w.overseer.HasProc(w.id) {
+	if !w.running || w.cmd == nil || w.cmd.Process == nil {
 		return "not_started"
 	}
 
-	status := w.overseer.Status(w.id)
-	if status == nil {
-		return "unknown"
-	}
-
-	return status.State
-}
-
-func (w *Worker) GetDetailedStatus() *overseer.ProcessJSON {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-
-	if !w.overseer.HasProc(w.id) {
-		return nil
-	}
-
-	return w.overseer.Status(w.id)
+	return "running"
 }
 
 func (w *Worker) Logs() []string {
@@ -446,76 +299,20 @@ func (w *Worker) Logs() []string {
 	return logsCopy
 }
 
-func (w *Worker) collectLogs() {
+func (w *Worker) collectLogs(pipe io.ReadCloser, logType string) {
 	defer w.wg.Done()
+	defer pipe.Close()
 
-	for {
+	scanner := bufio.NewScanner(pipe)
+	for scanner.Scan() {
 		select {
 		case <-w.done:
-			for {
-				select {
-				case msg, ok := <-w.logChan:
-					if !ok {
-						return
-					}
-					w.logMu.Lock()
-					logType := "INFO"
-					if msg.Type == 1 {
-						logType = "ERROR"
-					}
-					logLine := fmt.Sprintf("[%s] [%s] %s",
-						time.Now().Format("2006-01-02 15:04:05"), logType, msg.Text)
-					w.logs = append(w.logs, logLine)
-					if len(w.logs) > w.maxLogs {
-						w.logs = w.logs[len(w.logs)-w.maxLogs:]
-					}
-					w.logMu.Unlock()
-				case state, ok := <-w.stateChan:
-					if !ok {
-						return
-					}
-					w.logMu.Lock()
-					stateLog := fmt.Sprintf("[%s] Worker state: %s (PID: %d)",
-						time.Now().Format("2006-01-02 15:04:05"), state.State, state.PID)
-					w.logs = append(w.logs, stateLog)
-					if len(w.logs) > w.maxLogs {
-						w.logs = w.logs[len(w.logs)-w.maxLogs:]
-					}
-					w.logMu.Unlock()
-				default:
-					return
-				}
-			}
-
-		case msg, ok := <-w.logChan:
-			if !ok {
-				return
-			}
+			return
+		default:
 			w.logMu.Lock()
-
-			logType := "INFO"
-			if msg.Type == 1 {
-				logType = "ERROR"
-			}
 			logLine := fmt.Sprintf("[%s] [%s] %s",
-				time.Now().Format("2006-01-02 15:04:05"), logType, msg.Text)
+				time.Now().Format("2006-01-02 15:04:05"), logType, scanner.Text())
 			w.logs = append(w.logs, logLine)
-
-			if len(w.logs) > w.maxLogs {
-				w.logs = w.logs[len(w.logs)-w.maxLogs:]
-			}
-			w.logMu.Unlock()
-
-		case state, ok := <-w.stateChan:
-			if !ok {
-				return
-			}
-			w.logMu.Lock()
-
-			stateLog := fmt.Sprintf("[%s] Worker state: %s (PID: %d)",
-				time.Now().Format("2006-01-02 15:04:05"), state.State, state.PID)
-			w.logs = append(w.logs, stateLog)
-
 			if len(w.logs) > w.maxLogs {
 				w.logs = w.logs[len(w.logs)-w.maxLogs:]
 			}
@@ -532,132 +329,54 @@ func (w *Worker) Signal(sig syscall.Signal) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if !w.overseer.HasProc(w.id) {
+	if !w.running || w.cmd == nil || w.cmd.Process == nil {
 		return fmt.Errorf("worker not found")
 	}
 
-	return w.overseer.Signal(w.id, sig)
+	return w.cmd.Process.Signal(sig)
 }
 
 func (w *Worker) Cleanup() error {
 	var errs []error
 
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("Panic during worker cleanup: %v", r)
-			errs = append(errs, fmt.Errorf("panic during cleanup: %v", r))
+	w.mu.Lock()
+	if w.running && w.cmd != nil && w.cmd.Process != nil {
+		logger.Debug("Stopping worker %s during cleanup", w.id)
+		if err := w.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+			logger.Warn("Failed to send SIGTERM during cleanup: %v", err)
 		}
-	}()
 
-	func() {
-		w.mu.Lock()
-		defer w.mu.Unlock()
+		timeout := time.After(5 * time.Second)
+		done := make(chan error, 1)
 
-		if w.overseer.HasProc(w.id) {
-			status := w.overseer.Status(w.id)
-			if status != nil && status.State == "running" {
-				func() {
-					defer func() {
-						if r := recover(); r != nil {
-							logger.Warn("Panic while stopping worker (process may have already exited): %v", r)
-							errs = append(errs, fmt.Errorf("panic while stopping worker: %v", r))
-							// Try to force kill if panic occurred
-							if w.overseer.HasProc(w.id) {
-								logger.Warn("Attempting force kill after panic for %s", w.id)
-								// Ignore error from signal as we are already in panic handling
-								_ = w.overseer.Signal(w.id, syscall.SIGKILL)
-							}
-						}
-					}()
-
-					if !w.overseer.HasProc(w.id) {
-						return
-					}
-					currentStatus := w.overseer.Status(w.id)
-					if currentStatus == nil || currentStatus.State != "running" {
-						return
-					}
-
-					if err := w.overseer.Stop(w.id); err != nil {
-						errs = append(errs, fmt.Errorf("failed to stop worker gracefully: %w", err))
-					}
-
-					timeout := time.After(5 * time.Second)
-					ticker := time.NewTicker(100 * time.Millisecond)
-					defer ticker.Stop()
-
-				waitLoop:
-					for {
-						select {
-						case <-timeout:
-							func() {
-								defer func() {
-									if r := recover(); r != nil {
-										logger.Warn("Panic while killing worker (process may have already exited): %v", r)
-										errs = append(errs, fmt.Errorf("panic while killing worker: %v", r))
-									}
-								}()
-
-								if !w.overseer.HasProc(w.id) {
-									return
-								}
-								killStatus := w.overseer.Status(w.id)
-								if killStatus == nil || killStatus.State != "running" {
-									return
-								}
-
-								if err := w.overseer.Signal(w.id, syscall.SIGKILL); err != nil {
-									errs = append(errs, fmt.Errorf("failed to kill worker: %w", err))
-								}
-							}()
-							time.Sleep(500 * time.Millisecond)
-							break waitLoop
-						case <-ticker.C:
-							if !w.overseer.HasProc(w.id) {
-								break waitLoop
-							}
-							status := w.overseer.Status(w.id)
-							if status == nil || status.State != "running" {
-								break waitLoop
-							}
-						}
-					}
-				}()
-			}
-
-			for range 50 {
-				if !w.overseer.HasProc(w.id) {
-					break
-				}
-				status := w.overseer.Status(w.id)
-				if status == nil || status.State != "running" {
-					break
-				}
-				time.Sleep(100 * time.Millisecond)
-			}
-
-			if w.overseer.HasProc(w.id) {
-				func() {
-					defer func() {
-						if r := recover(); r != nil {
-							logger.Warn("Panic while removing process in cleanup: %v", r)
-						}
-					}()
-					w.overseer.Remove(w.id)
-				}()
-			}
-		} else {
-			logger.Debug("Worker %s process not found in overseer during cleanup", w.id)
-		}
+		go func() {
+			done <- w.cmd.Wait()
+		}()
 
 		select {
-		case <-w.done:
-		default:
-			w.overseer.UnWatchLogs(w.logChan)
-			w.overseer.UnWatchState(w.stateChan)
-			close(w.done)
+		case <-timeout:
+			logger.Warn("Worker %s cleanup timeout, forcing kill", w.id)
+			if err := w.cmd.Process.Kill(); err != nil {
+				logger.Warn("Failed to kill worker during cleanup: %v", err)
+				errs = append(errs, fmt.Errorf("failed to kill worker: %w", err))
+			}
+			<-done
+		case err := <-done:
+			if err != nil && err.Error() != "signal: terminated" && err.Error() != "signal: killed" {
+				errs = append(errs, fmt.Errorf("worker exited with error: %w", err))
+			}
 		}
-	}()
+
+		w.running = false
+		w.pid = 0
+	}
+
+	select {
+	case <-w.done:
+	default:
+		close(w.done)
+	}
+	w.mu.Unlock()
 
 	w.wg.Wait()
 

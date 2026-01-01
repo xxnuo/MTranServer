@@ -42,12 +42,6 @@ func TestBasicUsage(t *testing.T) {
 	status := worker.Status()
 	t.Logf("Worker status: %s\n", status)
 
-	detailedStatus := worker.GetDetailedStatus()
-	if detailedStatus != nil {
-		t.Logf("Worker PID: %d\n", detailedStatus.PID)
-		t.Logf("Worker state: %s\n", detailedStatus.State)
-	}
-
 	if worker.IsRunning() {
 		t.Log("Worker is running")
 	}
@@ -209,10 +203,7 @@ func TestMultipleWorkers(t *testing.T) {
 		if !worker.IsRunning() {
 			t.Errorf("Worker %d should be running", i)
 		}
-		status := worker.GetDetailedStatus()
-		if status != nil {
-			t.Logf("Worker %d: PID=%d, State=%s", i, status.PID, status.State)
-		}
+		t.Logf("Worker %d: Status=%s", i, worker.Status())
 	}
 
 	for i, worker := range workers {

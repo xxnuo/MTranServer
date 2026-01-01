@@ -94,6 +94,35 @@ func handleTrans(conn *websocket.Conn) {
 	conn.WriteJSON(resp)
 }
 
+func handleCompute(conn *websocket.Conn) {
+	var msg manager.WSMessage
+	if err := conn.ReadJSON(&msg); err != nil {
+		return
+	}
+
+	var req struct {
+		Text string `json:"text"`
+		HTML bool   `json:"html"`
+	}
+	json.Unmarshal(msg.Data, &req)
+
+	resp := manager.WSResponse{
+		Type: "trans",
+		Code: 200,
+		Msg:  "success",
+	}
+
+	if req.Text == "" {
+		resp.Code = 400
+		resp.Msg = "text is required"
+	} else {
+		data := map[string]string{"translated_text": "翻译结果: " + req.Text}
+		resp.Data, _ = json.Marshal(data)
+	}
+
+	conn.WriteJSON(resp)
+}
+
 func TestClient_Connect(t *testing.T) {
 	server := mockWSServer(t, handleEcho)
 	defer server.Close()
@@ -125,50 +154,9 @@ func TestClient_ConnectTwice(t *testing.T) {
 	assert.True(t, client.IsConnected())
 }
 
-func TestClient_Poweron(t *testing.T) {
-	server := mockWSServer(t, handlePoweron)
-	defer server.Close()
-
-	wsURL := "ws" + server.URL[4:]
-
-	client := manager.NewClient(wsURL)
-	defer client.Close()
-
-	err := client.Connect()
-	require.NoError(t, err)
-
-	ctx := context.Background()
-	resp, err := client.Poweron(ctx, manager.PoweronRequest{
-		Path: "/path/to/model",
-	})
-
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-	assert.Equal(t, "Engine loaded successfully", resp.Message)
-}
-
-func TestClient_Poweron_InvalidParams(t *testing.T) {
-	server := mockWSServer(t, handlePoweron)
-	defer server.Close()
-
-	wsURL := "ws" + server.URL[4:]
-
-	client := manager.NewClient(wsURL)
-	defer client.Close()
-
-	err := client.Connect()
-	require.NoError(t, err)
-
-	ctx := context.Background()
-	_, err = client.Poweron(ctx, manager.PoweronRequest{})
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "path is required")
-}
-
-func TestClient_Ready(t *testing.T) {
+func TestClient_Health(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
-		handleReady(conn, true)
+		handleHealth(conn, true)
 	})
 	defer server.Close()
 
@@ -181,15 +169,15 @@ func TestClient_Ready(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	ready, err := client.Ready(ctx)
+	ready, err := client.Health(ctx)
 
 	assert.NoError(t, err)
 	assert.True(t, ready)
 }
 
-func TestClient_Ready_NotReady(t *testing.T) {
+func TestClient_Health_NotReady(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
-		handleReady(conn, false)
+		handleHealth(conn, false)
 	})
 	defer server.Close()
 
@@ -202,14 +190,14 @@ func TestClient_Ready_NotReady(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	ready, err := client.Ready(ctx)
+	ready, err := client.Health(ctx)
 
 	assert.NoError(t, err)
 	assert.False(t, ready)
 }
 
-func TestClient_Compute(t *testing.T) {
-	server := mockWSServer(t, handleCompute)
+func TestClient_Trans(t *testing.T) {
+	server := mockWSServer(t, handleTrans)
 	defer server.Close()
 
 	wsURL := "ws" + server.URL[4:]
@@ -221,17 +209,17 @@ func TestClient_Compute(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	result, err := client.Compute(ctx, manager.ComputeRequest{
+	result, err := client.Trans(ctx, manager.TransRequest{
 		Text: "Hello",
 		HTML: false,
 	})
 
 	assert.NoError(t, err)
-	assert.Equal(t, "翻译结果: Hello", result)
+	assert.Equal(t, "translated: Hello", result)
 }
 
-func TestClient_Compute_EmptyText(t *testing.T) {
-	server := mockWSServer(t, handleCompute)
+func TestClient_Trans_EmptyText(t *testing.T) {
+	server := mockWSServer(t, handleTrans)
 	defer server.Close()
 
 	wsURL := "ws" + server.URL[4:]
@@ -243,7 +231,7 @@ func TestClient_Compute_EmptyText(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	_, err = client.Compute(ctx, manager.ComputeRequest{
+	_, err = client.Trans(ctx, manager.TransRequest{
 		Text: "",
 	})
 
@@ -253,7 +241,6 @@ func TestClient_Compute_EmptyText(t *testing.T) {
 
 func TestClient_Timeout(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
-
 		time.Sleep(5 * time.Second)
 	})
 	defer server.Close()
@@ -267,7 +254,7 @@ func TestClient_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	_, err = client.Ready(ctx)
+	_, err = client.Health(ctx)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "timeout")
@@ -278,24 +265,24 @@ func TestClient_NotConnected(t *testing.T) {
 	defer client.Close()
 
 	ctx := context.Background()
-	_, err := client.Ready(ctx)
+	_, err := client.Health(ctx)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not connected")
 }
 
-func TestClient_Poweroff(t *testing.T) {
+func TestClient_Exit(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
 		var msg manager.WSMessage
 		if err := conn.ReadJSON(&msg); err != nil {
 			return
 		}
 
-		data := map[string]string{"message": "Server is shutting down"}
+		data := map[string]string{"message": "Shutdown initiated"}
 		dataBytes, _ := json.Marshal(data)
 
 		resp := manager.WSResponse{
-			Type: "poweroff",
+			Type: "exit",
 			Code: 200,
 			Msg:  "success",
 			Data: dataBytes,
@@ -314,73 +301,32 @@ func TestClient_Poweroff(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	resp, err := client.Poweroff(ctx, manager.PoweroffRequest{
+	resp, err := client.Exit(ctx, manager.ExitRequest{
 		Time:  0,
 		Force: true,
 	})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Equal(t, "Server is shutting down", resp.Message)
-}
-
-func TestClient_Reboot(t *testing.T) {
-	server := mockWSServer(t, func(conn *websocket.Conn) {
-		var msg manager.WSMessage
-		if err := conn.ReadJSON(&msg); err != nil {
-			return
-		}
-
-		data := map[string]string{"message": "Engine rebooted successfully"}
-		dataBytes, _ := json.Marshal(data)
-
-		resp := manager.WSResponse{
-			Type: "reboot",
-			Code: 200,
-			Msg:  "success",
-			Data: dataBytes,
-		}
-
-		conn.WriteJSON(resp)
-	})
-	defer server.Close()
-
-	wsURL := "ws" + server.URL[4:]
-
-	client := manager.NewClient(wsURL)
-	defer client.Close()
-
-	err := client.Connect()
-	require.NoError(t, err)
-
-	ctx := context.Background()
-	resp, err := client.Reboot(ctx, manager.RebootRequest{
-		Time:  0,
-		Force: false,
-	})
-
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-	assert.Equal(t, "Engine rebooted successfully", resp.Message)
+	assert.Equal(t, "Shutdown initiated", resp.Message)
 }
 
 func TestClient_MultipleRequests(t *testing.T) {
 	server := mockWSServer(t, func(conn *websocket.Conn) {
-
 		for i := 0; i < 3; i++ {
 			var msg manager.WSMessage
 			if err := conn.ReadJSON(&msg); err != nil {
 				break
 			}
 
-			var req manager.ComputeRequest
+			var req manager.TransRequest
 			json.Unmarshal(msg.Data, &req)
 
-			data := map[string]string{"translated_text": "翻译结果: " + req.Text}
+			data := map[string]string{"translated_text": "translated: " + req.Text}
 			dataBytes, _ := json.Marshal(data)
 
 			resp := manager.WSResponse{
-				Type: "compute",
+				Type: "trans",
 				Code: 200,
 				Msg:  "success",
 				Data: dataBytes,
@@ -404,10 +350,10 @@ func TestClient_MultipleRequests(t *testing.T) {
 	ctx := context.Background()
 
 	for i := 1; i <= 3; i++ {
-		result, err := client.Compute(ctx, manager.ComputeRequest{
+		result, err := client.Trans(ctx, manager.TransRequest{
 			Text: "Test " + string(rune('0'+i)),
 		})
 		assert.NoError(t, err)
-		assert.Contains(t, result, "翻译结果:")
+		assert.Contains(t, result, "translated:")
 	}
 }

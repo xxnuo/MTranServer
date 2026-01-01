@@ -300,7 +300,7 @@ func TestWorker_StressConcurrentOperations(t *testing.T) {
 				case <-done:
 					return
 				default:
-					_ = worker.GetDetailedStatus()
+					_ = worker.Status()
 					time.Sleep(30 * time.Millisecond)
 				}
 			}
