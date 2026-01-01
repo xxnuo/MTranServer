@@ -1,8 +1,14 @@
 import { $ } from "bun";
+import fs from "fs";
 import pkg from "../package.json";
 
 const version = pkg.version;
-const isDocker = Bun.argv.includes("--docker");
+const args = new Set(Bun.argv.slice(2));
+const isDocker = args.has("--docker");
+const isLib = args.has("--lib");
+const isNode = args.has("--node") || args.has("--dev") || isDocker;
+const isSingle = args.has("--single");
+const isAll = args.has("--all") || (!isLib && !isNode && !isSingle);
 
 const allTargets = [
   { bun: "bun-darwin-x64", name: "darwin-amd64" },
@@ -22,8 +28,15 @@ console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
 
+if (isLib) {
+  await $`rm -f ui/dist/assets/*.d.ts`;
+}
+
 console.log("Building UI...");
-await $`cd ui && bun install && bun run build`;
+if (!fs.existsSync("ui/node_modules")) {
+  await $`cd ui && bun install`;
+}
+await $`cd ui && bun run build`;
 
 console.log("Generating UI assets map...");
 await $`bun run scripts/gen-ui-assets.ts`;
@@ -34,15 +47,34 @@ await $`bun run scripts/gen-swagger-assets.ts`;
 console.log("Generating routes and spec...");
 await $`bun run gen`;
 
-if (isDocker) {
-  console.log("Building for Docker...");
-  await $`bun run build:node`;
-} else {
+if (isLib) {
+  console.log("Building library...");
+  await $`bun build src/index.ts src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express`;
+  await $`tsc -p tsconfig.lib.json`;
+  console.log("Build complete!");
+  process.exit(0);
+}
+
+if (isNode) {
+  console.log("Building for Node...");
+  await $`bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express`;
+  console.log("Build complete!");
+  process.exit(0);
+}
+
+if (isSingle) {
+  console.log("Building single binary...");
+  await $`bun build src/main.ts --compile --outfile ./dist/mtranserver --minify --sourcemap`;
+  console.log("Build complete!");
+  process.exit(0);
+}
+
+if (isAll) {
   for (const target of allTargets) {
     const ext = target.bun.includes("windows") ? ".exe" : "";
     const outfile = `dist/mtranserver-${version}-${target.name}${ext}`;
     console.log(`Building for ${target.bun} -> ${outfile}...`);
     await $`bun build src/main.ts --compile --target=${target.bun} --outfile=${outfile} --minify --sourcemap`;
   }
+  console.log("Build complete!");
 }
-console.log("Build complete!");
