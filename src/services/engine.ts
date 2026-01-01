@@ -15,6 +15,7 @@ interface EngineInfo {
 }
 
 const engines = new Map<string, EngineInfo>();
+const loadingPromises = new Map<string, Promise<TranslationEngine>>();
 
 function needsPivotTranslation(fromLang: string, toLang: string): boolean {
   if (fromLang === 'en' || toLang === 'en') {
@@ -41,48 +42,63 @@ async function getOrCreateSingleEngine(
     return existing.engine;
   }
 
-  const config = getConfig();
-
-  logger.info(`Creating new engine for ${fromLang} -> ${toLang}`);
-
-  if (!config.enableOfflineMode) {
-    logger.info(`Downloading model for ${fromLang} -> ${toLang}`);
-    await models.downloadModel(toLang, fromLang);
+  // Check if initialization is already in progress
+  if (loadingPromises.has(key)) {
+    logger.debug(`Waiting for existing engine initialization for ${key}...`);
+    return loadingPromises.get(key)!;
   }
 
-  const modelFiles = await models.getModelFiles(config.modelDir, fromLang, toLang);
-  const langPairDir = path.join(config.modelDir, `${fromLang}_${toLang}`);
+  const initPromise = (async () => {
+    try {
+      const config = getConfig();
 
-  const engine = new TranslationEngine();
-  const loader = createResourceLoader();
+      logger.info(`Creating new engine for ${fromLang} -> ${toLang}`);
 
-  const wasmBinaryPath = getEmbeddedAssetPath('bergamot-translator.wasm');
-  const workerScriptPath = getEmbeddedAssetPath('bergamot-translator.js');
-  const wasmBinary = await loader.loadWasmBinary(wasmBinaryPath);
-  const bergamotModule = await loader.loadBergamotModule(wasmBinary, workerScriptPath);
+      if (!config.enableOfflineMode) {
+        logger.info(`Downloading model for ${fromLang} -> ${toLang}`);
+        await models.downloadModel(toLang, fromLang);
+      }
 
-  const modelBuffers = await loader.loadModelFiles(langPairDir, {
-    model: path.basename(modelFiles.model),
-    lex: path.basename(modelFiles.lex),
-    srcvocab: path.basename(modelFiles.vocab_src),
-    trgvocab: path.basename(modelFiles.vocab_trg),
-  });
+      const modelFiles = await models.getModelFiles(config.modelDir, fromLang, toLang);
+      const langPairDir = path.join(config.modelDir, `${fromLang}_${toLang}`);
 
-  await engine.init(bergamotModule, modelBuffers);
+      const engine = new TranslationEngine();
+      const loader = createResourceLoader();
 
-  const info: EngineInfo = {
-    engine,
-    lastUsed: new Date(),
-    fromLang,
-    toLang,
-  };
+      const wasmBinaryPath = getEmbeddedAssetPath('bergamot-translator.wasm');
+      const workerScriptPath = getEmbeddedAssetPath('bergamot-translator.js');
+      const wasmBinary = await loader.loadWasmBinary(wasmBinaryPath);
+      const bergamotModule = await loader.loadBergamotModule(wasmBinary, workerScriptPath);
 
-  resetIdleTimer(info);
-  engines.set(key, info);
+      const modelBuffers = await loader.loadModelFiles(langPairDir, {
+        model: path.basename(modelFiles.model),
+        lex: path.basename(modelFiles.lex),
+        srcvocab: path.basename(modelFiles.vocab_src),
+        trgvocab: path.basename(modelFiles.vocab_trg),
+      });
 
-  logger.info(`Engine created successfully for ${fromLang} -> ${toLang}`);
+      await engine.init(bergamotModule, modelBuffers);
 
-  return engine;
+      const info: EngineInfo = {
+        engine,
+        lastUsed: new Date(),
+        fromLang,
+        toLang,
+      };
+
+      resetIdleTimer(info);
+      engines.set(key, info);
+
+      logger.info(`Engine created successfully for ${fromLang} -> ${toLang}`);
+
+      return engine;
+    } finally {
+      loadingPromises.delete(key);
+    }
+  })();
+
+  loadingPromises.set(key, initPromise);
+  return initPromise;
 }
 
 function resetIdleTimer(info: EngineInfo) {
@@ -107,8 +123,44 @@ async function translateSingleLanguageText(
   text: string,
   isHTML: boolean
 ): Promise<string> {
-  const engine = await getOrCreateSingleEngine(fromLang, toLang);
-  return engine.translate(text, { html: isHTML });
+  const MAX_RETRIES = 3;
+  let lastError: any;
+
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      const engine = await getOrCreateSingleEngine(fromLang, toLang);
+      return await engine.translateAsync(text, { html: isHTML });
+    } catch (error: any) {
+      lastError = error;
+      const isMemoryError = error.message && (
+        error.message.includes('Out of bounds memory access') ||
+        error.message.includes('memory access out of bounds') ||
+        error.message.includes('unreachable') || 
+        error.message.includes('abort')
+      );
+
+      if (isMemoryError) {
+        logger.warn(`WASM memory error during translation (${fromLang}->${toLang}), retrying (${i + 1}/${MAX_RETRIES})...`);
+        
+        // Remove the crashed engine so next retry gets a fresh one
+        const key = `${fromLang}-${toLang}`;
+        const info = engines.get(key);
+        if (info) {
+          logger.warn(`Destroying crashed engine: ${key}`);
+          info.engine.destroy();
+          engines.delete(key);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
+        continue;
+      }
+      
+      throw error;
+    }
+  }
+
+  logger.error(`Failed to translate after ${MAX_RETRIES} retries: ${lastError.message}`);
+  throw lastError;
 }
 
 async function translateSegment(

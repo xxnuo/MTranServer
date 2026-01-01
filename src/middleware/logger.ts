@@ -7,7 +7,10 @@ export function requestLogger() {
 
     res.on('finish', () => {
       const duration = Date.now() - start;
-      logger.info(`${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.get('user-agent') || '-';
+      const requestId = req.id || '-';
+      logger.info(`${req.method} ${req.path} ${res.statusCode} ${duration}ms - ${ip} - "${userAgent}" [${requestId}]`);
     });
 
     next();

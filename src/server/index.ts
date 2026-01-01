@@ -6,6 +6,7 @@ import { setupRoutes } from '../routes/index.js';
 import { initRecords } from '../models/index.js';
 import { cleanupAllEngines } from '../services/index.js';
 import { cleanupLegacyBin } from '../assets/index.js';
+import { requestId, errorHandler } from '../middleware/index.js';
 
 export async function run() {
   const config = getConfig();
@@ -22,9 +23,12 @@ export async function run() {
 
   const app = express();
 
+  app.use(requestId());
   app.use(express.json());
 
   setupRoutes(app, config.apiToken);
+  
+  app.use(errorHandler());
 
   const server = app.listen(parseInt(config.port), config.host, () => {
     logger.info(`HTTP Service URL: http://${config.host}:${config.port}`);

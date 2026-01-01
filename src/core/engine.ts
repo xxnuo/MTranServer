@@ -209,7 +209,11 @@ export class TranslationEngine {
         const result = responses.get(0);
         return result.getTranslatedText();
       } finally {
+        responses.delete();
       }
+    } catch (error: any) {
+      console.error(`WASM Error Context: TextLength=${cleanedText.length}, Options=${JSON.stringify(options)}`);
+      throw error;
     } finally {
       messages.delete();
       responseOptions.delete();
@@ -218,11 +222,9 @@ export class TranslationEngine {
 
   private _isFatalWASMError(error: Error): boolean {
     const fatalPatterns = [
-      'out of memory',
-      'memory access out of bounds',
-      'unreachable',
-      'abort',
-      'stack overflow'
+      'Out of bounds memory access',
+      'Invalid memory access',
+      'Invalid table access',
     ];
     const errorMsg = error.message.toLowerCase();
     return fatalPatterns.some(pattern => errorMsg.includes(pattern));

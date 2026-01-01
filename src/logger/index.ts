@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import util from 'util';
 import { getConfig } from '../config/index.js';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -17,56 +20,106 @@ const colors = {
   red: '\x1b[31m',
 };
 
-let currentLogLevel: LogLevel = 'warn';
+let currentLogLevel: LogLevel | null = null;
+
+// File logging state
+let logStream: fs.WriteStream | null = null;
+let currentLogDate = '';
 
 export function setLogLevel(level: LogLevel) {
   currentLogLevel = level;
 }
 
 export function getLogLevel(): string {
+  if (currentLogLevel === null) {
+    const config = getConfig();
+    currentLogLevel = (config.logLevel as LogLevel) || 'warn';
+  }
   return currentLogLevel;
 }
 
 function shouldLog(level: LogLevel): boolean {
-  const config = getConfig();
-  const configLevel = (config.logLevel as LogLevel) || 'warn';
-  return logLevels[level] >= logLevels[configLevel];
+  const currentLevel = getLogLevel() as LogLevel;
+  return logLevels[level] >= logLevels[currentLevel];
 }
 
-function formatMessage(level: string, color: string, message: string, ...args: any[]): string {
-  const timestamp = new Date().toISOString().replace('T', ' ').replace('Z', '');
-  const formatted = args.length > 0
-    ? message.replace(/%[sdv]/g, () => String(args.shift() ?? ''))
-    : message;
-  return `${color}[${level.toUpperCase()}]${colors.reset} ${timestamp} ${formatted}`;
+function getTimestamp(): string {
+  return new Date().toISOString().replace('T', ' ').replace('Z', '');
+}
+
+function getLogStream() {
+  const config = getConfig();
+  if (!config.logToFile) return null;
+
+  const today = new Date().toISOString().split('T')[0];
+  if (currentLogDate !== today || !logStream) {
+    if (logStream) {
+      logStream.end();
+    }
+    if (!fs.existsSync(config.logDir)) {
+      try {
+        fs.mkdirSync(config.logDir, { recursive: true });
+      } catch (err) {
+        console.error(`Failed to create log directory: ${config.logDir}`, err);
+        return null;
+      }
+    }
+    const logPath = path.join(config.logDir, `mtran-${today}.log`);
+    try {
+      logStream = fs.createWriteStream(logPath, { flags: 'a' });
+      currentLogDate = today;
+    } catch (err) {
+      console.error(`Failed to create log stream: ${logPath}`, err);
+      return null;
+    }
+  }
+  return logStream;
+}
+
+function log(level: LogLevel, color: string, message: string, ...args: any[]) {
+  if (!shouldLog(level)) return;
+
+  const timestamp = getTimestamp();
+  const formattedMessage = util.format(message, ...args);
+  
+  const config = getConfig();
+
+  // Console output (with colors)
+  if (config.logConsole) {
+    const consoleOutput = `${color}[${level.toUpperCase()}]${colors.reset} ${timestamp} ${formattedMessage}`;
+    if (level === 'error' || level === 'warn') {
+      console.error(consoleOutput);
+    } else {
+      console.log(consoleOutput);
+    }
+  }
+
+  // File output (without colors)
+  const stream = getLogStream();
+  if (stream) {
+    const fileOutput = `[${level.toUpperCase()}] ${timestamp} ${formattedMessage}\n`;
+    stream.write(fileOutput);
+  }
 }
 
 export function debug(message: string, ...args: any[]) {
-  if (shouldLog('debug')) {
-    console.log(formatMessage('debug', colors.cyan, message, ...args));
-  }
+  log('debug', colors.cyan, message, ...args);
 }
 
 export function info(message: string, ...args: any[]) {
-  if (shouldLog('info')) {
-    console.log(formatMessage('info', colors.green, message, ...args));
-  }
+  log('info', colors.green, message, ...args);
 }
 
 export function warn(message: string, ...args: any[]) {
-  if (shouldLog('warn')) {
-    console.warn(formatMessage('warn', colors.yellow, message, ...args));
-  }
+  log('warn', colors.yellow, message, ...args);
 }
 
 export function error(message: string, ...args: any[]) {
-  if (shouldLog('error')) {
-    console.error(formatMessage('error', colors.red, message, ...args));
-  }
+  log('error', colors.red, message, ...args);
 }
 
 export function fatal(message: string, ...args: any[]) {
-  console.error(formatMessage('error', colors.red, message, ...args));
+  log('error', colors.red, message, ...args);
   process.exit(1);
 }
 
