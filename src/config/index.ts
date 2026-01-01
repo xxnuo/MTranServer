@@ -1,3 +1,4 @@
+import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
@@ -95,7 +96,9 @@ export function getConfig(): Config {
   
   // Resolve directories first as they might depend on defaults or CLI
   const configDir = getString('--config-dir', 'MT_CONFIG_DIR', path.join(homeDir, 'server'));
-  const modelDir = getString('--model-dir', 'MT_MODEL_DIR', path.join(homeDir, 'models'));
+  const localModelsDir = path.join(process.cwd(), 'models');
+  const defaultModelDir = fs.existsSync(localModelsDir) ? localModelsDir : path.join(homeDir, 'models');
+  const modelDir = getString('--model-dir', 'MT_MODEL_DIR', defaultModelDir);
   const logDir = getString('--log-dir', 'MT_LOG_DIR', path.join(homeDir, 'logs'));
 
   globalConfig = {
