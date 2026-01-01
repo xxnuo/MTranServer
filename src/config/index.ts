@@ -130,3 +130,7 @@ export function setConfig(config: Partial<Config>) {
   const current = getConfig();
   globalConfig = { ...current, ...config };
 }
+
+export function resetConfig() {
+  globalConfig = null;
+}

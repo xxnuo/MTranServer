@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -8,8 +8,15 @@ import { SettingsMenu } from '@/components/SettingsMenu'
 import { HistorySheet } from '@/components/HistorySheet'
 import { TranslationPanel } from '@/components/TranslationPanel'
 import { useHistory } from '@/hooks/use-history'
+import { DesktopSettingsPage } from '@/components/DesktopSettingsPage'
 
-function App() {
+function getRoute(pathname: string) {
+  const normalized = pathname.replace(/\/+$/, '')
+  if (normalized.endsWith('/settings')) return 'settings'
+  return 'main'
+}
+
+function MainPage() {
   const { t } = useTranslation()
   const [languages, setLanguages] = useState<string[]>([])
   const [loadingLanguages, setLoadingLanguages] = useState(true)
@@ -240,6 +247,14 @@ function App() {
       />
     </div>
   )
+}
+
+function App() {
+  const route = useMemo(() => getRoute(window.location.pathname), [])
+  if (route === 'settings') {
+    return <DesktopSettingsPage />
+  }
+  return <MainPage />
 }
 
 export default App

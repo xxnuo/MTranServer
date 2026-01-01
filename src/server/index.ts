@@ -14,7 +14,7 @@ import { swaggerStatic } from '@/middleware/swagger.js';
 import { checkForUpdate } from '@/utils/update-checker.js';
 import { VERSION } from '@/version';
 
-export async function run() {
+export async function startServer({ handleSignals = true } = {}) {
   const config = getConfig();
 
   logger.info('Initializing MTranServer...');
@@ -69,24 +69,35 @@ export async function run() {
     }
   });
 
-  const shutdown = async () => {
+  const stop = async () => {
     logger.info('Shutting down server...');
-
     cleanupAllEngines();
-
-    server.close(() => {
-      logger.info('Server shutdown complete');
-      process.exit(0);
-    });
-
-    setTimeout(() => {
-      logger.error('Forced shutdown after timeout');
-      process.exit(1);
-    }, 10000);
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    logger.info('Server shutdown complete');
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  if (handleSignals) {
+    let shuttingDown = false;
+    const shutdown = async () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      const timeout = setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000);
+      await stop();
+      clearTimeout(timeout);
+      process.exit(0);
+    };
 
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+  }
+
+  return { server, stop };
+}
+
+export async function run() {
+  const { server } = await startServer({ handleSignals: true });
   return server;
 }

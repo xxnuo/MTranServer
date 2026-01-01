@@ -53,7 +53,7 @@ await $`bun tsoa spec-and-routes`;
 
 if (isLib) {
   console.log("Building library...");
-  await $`bun build src/index.ts src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express`;
+  await $`bun build src/index.ts src/main.ts src/desktop-server.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express`;
   await $`tsc -p tsconfig.lib.json`;
   console.log("Build complete!");
   process.exit(0);

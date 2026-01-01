@@ -19,7 +19,8 @@
     "dev": "bun src/main.ts --log-level debug --port 8990 --model-dir ~/.config/mtran/models",
     "dev2": "bun src/main.ts --log-level debug --port 8989 --model-dir ~/.config/mtran/models",
     "bump": "bun scripts/bump.ts",
-    "electron": "electron ./electron-main.js",
+    "electron": "bun run build:lib && electron ./electron-main.js",
+    "electron:dev": "bun run scripts/electron-dev.ts",
     "prepublishOnly": "bun scripts/build.ts --lib",
     "push": "npm publish --registry=https://registry.npmjs.org",
     "build": "bun scripts/build.ts --single",
@@ -56,7 +57,8 @@
     "express-validator": "^7.3.1",
     "fzstd": "^0.1.1",
     "lru-cache": "^11.2.4",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.8.1"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -68,7 +70,9 @@
     "extraMetadata": {
       "main": "electron-main.js"
     },
+    "artifactName": "mtranserver-desktop-${version}-${os}-${arch}.${ext}",
     "files": [
+      "desktop/**/*",
       "electron-main.js",
       "dist/**/*",
       "images/**/*",
@@ -87,7 +91,11 @@
       "icon": "images/icon.png"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
       "icon": "images/icon.png"
     },
     "nsis": {
