@@ -7,128 +7,44 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
-  build-ui:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: "20"
+          bun-version: latest
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: Install dependencies
+        run: bun install
 
-      - name: Build UI
-        run: make build-ui
+      - name: Build All Targets
+        run: bun run build:all
 
-      - name: Upload UI artifact
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ui-dist
-          path: ui/dist/
-
-  build:
-    needs: build-ui
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            goos: linux
-            goarch: amd64
-          - os: ubuntu-latest
-            goos: linux
-            goarch: arm64
-          - os: ubuntu-latest
-            goos: linux
-            goarch: 386
-          - os: macos-latest
-            goos: darwin
-            goarch: amd64
-          - os: macos-latest
-            goos: darwin
-            goarch: arm64
-          - os: windows-latest
-            goos: windows
-            goarch: amd64
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.25.3"
-
-      - name: Download UI artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-dist
-          path: ui/dist/
-
-      - name: Download resources
-        run: make download
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-
-      - name: Build docs
-        run: make generate-docs
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-
-      - name: Build binary
-        run: make build
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mtranserver-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/mtranserver-${{ matrix.goos }}-${{ matrix.goarch }}*
+          name: binaries
+          path: dist/mtranserver-*
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          pattern: mtranserver-*
-
-      - name: Organize Release Assets
-        run: |
-          mkdir -p release-assets
-
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
-          VERSION=${VERSION#v}
-
-          # Copy and rename binaries with version
-          find artifacts/mtranserver-linux-amd64 -name "mtranserver-linux-amd64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-linux-amd64 \;
-          find artifacts/mtranserver-linux-arm64 -name "mtranserver-linux-arm64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-linux-arm64 \;
-          find artifacts/mtranserver-linux-386 -name "mtranserver-linux-386" -type f -exec cp {} release-assets/mtranserver-${VERSION}-linux-386 \;
-          find artifacts/mtranserver-darwin-amd64 -name "mtranserver-darwin-amd64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-darwin-amd64 \;
-          find artifacts/mtranserver-darwin-arm64 -name "mtranserver-darwin-arm64" -type f -exec cp {} release-assets/mtranserver-${VERSION}-darwin-arm64 \;
-          find artifacts/mtranserver-windows-amd64 -name "mtranserver-windows-amd64.exe" -type f -exec cp {} release-assets/mtranserver-${VERSION}-windows-amd64.exe \;
-
-          ls -lh release-assets/
+          name: binaries
+          path: release-assets
 
       - name: Generate Checksums
         run: |
@@ -136,76 +52,9 @@ jobs:
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
 
-      - name: Determine Release Type
-        id: release_info
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "tag_name=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate Release Body
-        id: generate_body
-        run: |
-          TAG="${{ steps.release_info.outputs.tag_name }}"
-          REPO="${{ github.repository }}"
-          IS_RELEASE="${{ steps.release_info.outputs.is_release }}"
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
-          VERSION=${VERSION#v}
-
-          if [ "$IS_RELEASE" == "true" ]; then
-            WARNING=""
-          else
-            WARNING="**Development build - may be unstable**"$'\n\n'
-          fi
-
-          CHANGELOG=""
-          if [ -f "CHANGELOG.md" ]; then
-            CHANGELOG=$(cat CHANGELOG.md)
-          fi
-
-          cat > release_body.md << EOF
-          ${WARNING}## MTranServer
-          
-          ## Changelog
-          ${CHANGELOG}
-
-          ## Download
-
-          | Platform | Architecture | Binary |
-          |----------|-------------|--------|
-          | Linux | x64 | [mtranserver-${VERSION}-linux-amd64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-amd64) |
-          | Linux | ARM64 | [mtranserver-${VERSION}-linux-arm64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-arm64) |
-          | Linux | x86 | [mtranserver-${VERSION}-linux-386](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-linux-386) |
-          | macOS | Intel | [mtranserver-${VERSION}-darwin-amd64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-amd64) |
-          | macOS | Apple Silicon | [mtranserver-${VERSION}-darwin-arm64](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-darwin-arm64) |
-          | Windows | x64 | [mtranserver-${VERSION}-windows-amd64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64.exe) |
-
-          ### Checksums
-
-          See [SHA256SUMS](https://github.com/${REPO}/releases/download/${TAG}/SHA256SUMS) for file verification.
-          EOF
-
-          {
-            echo "body<<EOFMARKER"
-            cat release_body.md
-            echo "EOFMARKER"
-          } >> $GITHUB_OUTPUT
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_info.outputs.tag_name }}
-          name: ${{ steps.release_info.outputs.is_release == 'true' && format('Release {0}', steps.release_info.outputs.tag_name) || format('Development Build ({0})', steps.release_info.outputs.tag_name) }}
-          body: ${{ steps.generate_body.outputs.body }}
-          files: release-assets/*
-          prerelease: ${{ steps.release_info.outputs.prerelease }}
-          draft: false
-          fail_on_unmatched_files: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            release-assets/*
+          generate_release_notes: true

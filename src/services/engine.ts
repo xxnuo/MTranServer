@@ -1,8 +1,9 @@
 import path from 'path';
 import { TranslationEngine } from '../core/engine.js';
 import { createResourceLoader } from '../core/factory.js';
-import { getEmbeddedAssetPath } from '../assets/index.js';
 import { getConfig } from '../config/index.js';
+import loadBergamot from '../lib/bergamot/bergamot-translator.js';
+import wasmPath from '../lib/bergamot/bergamot-translator.wasm' with { type: 'file' };
 import * as logger from '../logger/index.js';
 import * as models from '../models/index.js';
 
@@ -65,10 +66,8 @@ async function getOrCreateSingleEngine(
       const engine = new TranslationEngine();
       const loader = createResourceLoader();
 
-      const wasmBinaryPath = getEmbeddedAssetPath('bergamot-translator.wasm');
-      const workerScriptPath = getEmbeddedAssetPath('bergamot-translator.js');
-      const wasmBinary = await loader.loadWasmBinary(wasmBinaryPath);
-      const bergamotModule = await loader.loadBergamotModule(wasmBinary, workerScriptPath);
+      const wasmBinary = await loader.loadWasmBinary(wasmPath);
+      const bergamotModule = await loader.loadBergamotModule(wasmBinary, loadBergamot);
 
       const modelBuffers = await loader.loadModelFiles(langPairDir, {
         model: path.basename(modelFiles.model),

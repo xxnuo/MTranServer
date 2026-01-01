@@ -11,8 +11,9 @@
     "assets"
   ],
   "scripts": {
-    "dev": "tsx src/main.ts",
+    "dev": "bun src/main.ts",
     "build": "rm -rf dist && bun build src/main.ts --compile --outfile ./dist/mtranserver --minify --sourcemap",
+    "build:all": "bun scripts/build.ts",
     "build:dev": "rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express && tsc --emitDeclarationOnly --outDir dist",
     "start": "node dist/main.js",
     "test": "bun test",

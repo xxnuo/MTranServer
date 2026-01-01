@@ -18,11 +18,7 @@ export interface ModelBuffers {
 export class ResourceLoader {
   constructor(private fileSystem: FileSystem) {}
 
-  async loadBergamotModule(wasmBinary: ArrayBuffer | Buffer, workerScriptPath: string): Promise<BergamotModule> {
-    const { createRequire } = await import('module');
-    const require = createRequire(import.meta.url);
-    const loadBergamot = require(workerScriptPath);
-
+  async loadBergamotModule(wasmBinary: ArrayBuffer | Buffer, loadBergamot: any): Promise<BergamotModule> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('WASM initialization timeout'));
