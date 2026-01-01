@@ -16,7 +16,7 @@
 
 | 网站                             | TOKEN                     | 其他接口                                                                       | 提供者  |
 | -------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | ------- |
-| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | 沉浸式翻译: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi |
+| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | 沉浸式翻译: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi)](https://github.com/ApliNi) |
 
 感谢社区贡献者为用户提供试用服务！
 

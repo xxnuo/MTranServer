@@ -16,7 +16,7 @@ Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung
 
 | Website                          | TOKEN                     | Andere Schnittstelle                                                                           | Anbieter |
 | -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | -------- |
-| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi  |
+| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi)  |
 
 Vielen Dank an die Mitwirkenden der Community für die Bereitstellung von Testdiensten für Benutzer!
 

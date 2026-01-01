@@ -16,7 +16,7 @@
 
 | ウェブサイト                     | TOKEN                     | その他のインターフェース                                                                       | 提供者  |
 | -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | ------- |
-| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | 没入型翻訳: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi |
+| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | 没入型翻訳: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
 
 ユーザーに試用サービスを提供してくださるコミュニティの貢献者に感謝します！
 

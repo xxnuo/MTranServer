@@ -16,7 +16,7 @@ Note: This model server focuses on `offline translation`, `response speed`, `cro
 
 | Website                          | TOKEN                     | Other Interface                                                                | Provider |
 | -------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | -------- |
-| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi  |
+| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi)  |
 
 Thanks to community contributors for providing trial services for users!
 
