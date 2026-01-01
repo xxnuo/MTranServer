@@ -23,3 +23,5 @@ src/assets/ui.ts
 src/assets/swagger.ts
 *.tgz
 /release
+/.electron-node-modules
+/.electron-build-temp

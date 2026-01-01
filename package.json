@@ -22,7 +22,7 @@
     "electron": "bun run build:lib && electron ./electron-main.js",
     "electron:dev": "bun run scripts/electron-dev.ts",
     "electron:build": "bun run scripts/electron-build.ts",
-    "electron:build:all": "bun run build:lib && electron-builder -mwl",
+    "electron:build:all": "bun run scripts/electron-build.ts --all",
     "prepublishOnly": "bun scripts/build.ts --lib",
     "push": "npm publish --registry=https://registry.npmjs.org",
     "build": "bun scripts/build.ts --single",
@@ -73,11 +73,14 @@
     "appId": "com.github.xxnuo.mtranserver",
     "productName": "MTranServer",
     "executableName": "mtranserver",
+    "electronVersion": "39.2.7",
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false,
     "copyright": "Copyright © 2025",
     "extraMetadata": {
       "main": "electron-main.js"
     },
-    "asar": true,
+    "asar": false,
     "asarUnpack": [
       "dist/mtranserver*",
       "dist/*.exe"
