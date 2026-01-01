@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { ArrowRightLeft, Copy, Volume2, X, Upload, ChevronDown } from 'lucide-react'
+import { ArrowRightLeft, Copy, Volume2, X, Upload, ChevronDown, Mic, MicOff } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { getSortedLanguages } from '@/lib/languages'
 
@@ -65,6 +65,8 @@ export function TranslationPanel({
   const [autoTranslate, setAutoTranslate] = useState(() => localStorage.getItem(storageKey('autoTranslate')) === 'true')
   const [sourceOpen, setSourceOpen] = useState(false)
   const [targetOpen, setTargetOpen] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(true)
   const [recentLanguages, setRecentLanguages] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('recentTranslateLanguages')
@@ -77,6 +79,7 @@ export function TranslationPanel({
   })
   const firstTranslateTipKey = 'firstTranslateTipShown'
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const recognitionRef = useRef<any>(null)
 
   const translateTimeoutRef = useRef<number | null>(null)
 
@@ -204,9 +207,7 @@ export function TranslationPanel({
     }
   }, [sourceLang, targetLang, sourceText, t, addToHistory])
 
-  const handleSourceTextChange = (text: string) => {
-    setSourceText(text)
-
+  const scheduleAutoTranslate = useCallback((text: string) => {
     if (autoTranslate && text.trim()) {
       if (translateTimeoutRef.current) {
         clearTimeout(translateTimeoutRef.current)
@@ -216,6 +217,11 @@ export function TranslationPanel({
         handleTranslate(text, false)
       }, 800)
     }
+  }, [autoTranslate, handleTranslate])
+
+  const handleSourceTextChange = (text: string) => {
+    setSourceText(text)
+    scheduleAutoTranslate(text)
   }
 
   useEffect(() => {
@@ -225,6 +231,51 @@ export function TranslationPanel({
       }
     }
   }, [])
+
+  useEffect(() => {
+    const ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!ctor) {
+      setSpeechSupported(false)
+      return
+    }
+
+    const recognition = new ctor()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.onresult = (event: any) => {
+      let finalText = ''
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i]
+        if (result.isFinal) {
+          finalText += result[0].transcript
+        }
+      }
+      if (!finalText.trim()) return
+      setSourceText((prev) => {
+        const normalized = finalText.trim()
+        const next = prev ? `${prev}${prev.endsWith(' ') ? '' : ' '}${normalized}` : normalized
+        scheduleAutoTranslate(next)
+        return next
+      })
+    }
+    recognition.onerror = () => {
+      setIsRecording(false)
+      toast.error(t('speechInputFailed'))
+    }
+    recognition.onend = () => {
+      setIsRecording(false)
+    }
+
+    recognitionRef.current = recognition
+
+    return () => {
+      recognition.onresult = null
+      recognition.onerror = null
+      recognition.onend = null
+      recognition.stop()
+      recognitionRef.current = null
+    }
+  }, [scheduleAutoTranslate, t])
 
   const handleSwapLanguages = () => {
     setSourceLang(targetLang)
@@ -299,6 +350,31 @@ export function TranslationPanel({
       }
     }
     reader.readAsText(file)
+  }
+
+  const handleVoiceInput = () => {
+    if (!speechSupported) {
+      toast.error(t('speechNotSupported'))
+      return
+    }
+    const recognition = recognitionRef.current
+    if (!recognition) {
+      toast.error(t('speechNotSupported'))
+      return
+    }
+    if (isRecording) {
+      recognition.stop()
+      setIsRecording(false)
+      return
+    }
+    recognition.lang = sourceLang === 'auto' ? i18n.language : sourceLang
+    try {
+      recognition.start()
+      setIsRecording(true)
+    } catch {
+      setIsRecording(false)
+      toast.error(t('speechInputFailed'))
+    }
   }
 
   return (
@@ -545,6 +621,26 @@ export function TranslationPanel({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('uploadFile')}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleVoiceInput}
+                      disabled={loading || !speechSupported}
+                      aria-label={isRecording ? t('voiceInputStop') : t('voiceInputStart')}
+                    >
+                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isRecording ? t('voiceInputStop') : t('voiceInputStart')}</p>
                 </TooltipContent>
               </Tooltip>
 
