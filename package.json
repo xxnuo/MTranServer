@@ -19,7 +19,7 @@
     "dev": "bun src/main.ts --log-level debug --port 8990 --model-dir ~/.config/mtran/models",
     "dev2": "bun src/main.ts --log-level debug --port 8989 --model-dir ~/.config/mtran/models",
     "bump": "bun scripts/bump.ts",
-    "electron": "bun run build:lib && electron ./electron-main.js",
+    "electron": "bun run build:lib && electron ./scripts/electron-main.js",
     "electron:dev": "bun run scripts/electron-dev.ts",
     "electron:build": "bun run scripts/electron-build.ts",
     "electron:build:all": "bun run scripts/electron-build.ts --all",
@@ -76,7 +76,7 @@
     "buildDependenciesFromSource": false,
     "copyright": "Copyright © 2025",
     "extraMetadata": {
-      "main": "electron-main.js"
+      "main": "scripts/electron-main.js"
     },
     "asar": false,
     "asarUnpack": [
@@ -86,7 +86,7 @@
     "artifactName": "mtranserver-desktop-${version}-${os}-${arch}.${ext}",
     "files": [
       "desktop/**/*",
-      "electron-main.js",
+      "scripts/electron-main.js",
       "dist/**/*",
       "!dist/mtranserver*",
       "!dist/*.exe",

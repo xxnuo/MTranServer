@@ -29,7 +29,7 @@ function startBuildWatch() {
     'build',
     'src/index.ts',
     'src/main.ts',
-    'src/desktop-server.ts',
+    'src/desktop.ts',
     '--outdir',
     'dist',
     '--target',
@@ -52,7 +52,7 @@ let restarting = false
 
 function startElectron() {
   if (electronProcess) return
-  electronProcess = run(electronBin, ['./electron-main.js'])
+  electronProcess = run(electronBin, ['./scripts/electron-main.js'])
   electronProcess.on('exit', () => {
     electronProcess = null
   })
@@ -94,7 +94,7 @@ function watchPath(target: string) {
 function setupWatchers() {
   watchPath(path.join(root, 'dist'))
   watchPath(path.join(root, 'desktop'))
-  watchPath(path.join(root, 'electron-main.js'))
+  watchPath(path.join(root, 'scripts/electron-main.js'))
 }
 
 async function main() {

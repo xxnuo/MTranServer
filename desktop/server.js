@@ -51,7 +51,7 @@ function stripServerArgs() {
 
 async function loadServerModule() {
   if (!serverModulePromise) {
-    serverModulePromise = import('../dist/desktop-server.js');
+    serverModulePromise = import('../dist/desktop.js');
   }
   return serverModulePromise;
 }

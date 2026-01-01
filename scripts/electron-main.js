@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { focusMainWindow, startDesktop } from './desktop/app.js';
+import { focusMainWindow, startDesktop } from '../desktop/app.js';
 
 const gotTheLock = app.requestSingleInstanceLock();
 
