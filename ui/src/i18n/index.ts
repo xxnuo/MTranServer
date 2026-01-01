@@ -19,6 +19,7 @@ const resources = {
       autoDetect: 'Auto Detect',
       translationCompleted: 'Translation completed',
       translationFailed: 'Translation failed',
+      firstTranslationTip: 'The first translation requires downloading the model. Please wait.',
       enterTextError: 'Please enter text to translate',
       failedToLoadLanguages: 'Failed to load languages',
       theme: 'Theme',
@@ -72,6 +73,7 @@ const resources = {
       autoDetect: '自动检测',
       translationCompleted: '翻译完成',
       translationFailed: '翻译失败',
+      firstTranslationTip: '第一次翻译需要下载模型，请耐心等待。',
       enterTextError: '请输入要翻译的文本',
       failedToLoadLanguages: '加载语言列表失败',
       theme: '主题',
@@ -125,6 +127,7 @@ const resources = {
       autoDetect: '自動検出',
       translationCompleted: '翻訳完了',
       translationFailed: '翻訳失敗',
+      firstTranslationTip: '初回の翻訳ではモデルのダウンロードが必要です。しばらくお待ちください。',
       enterTextError: '翻訳するテキストを入力してください',
       failedToLoadLanguages: '言語の読み込みに失敗しました',
       theme: 'テーマ',
@@ -180,4 +183,3 @@ i18n
   })
 
 export default i18n
-
