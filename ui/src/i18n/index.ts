@@ -181,7 +181,7 @@ const resources = {
       desktopSettings: '桌面端设置',
       desktopSettingsDesc: '管理服务配置与桌面偏好',
       serverStatus: '服务状态',
-      serverStatusRunning: '运行中',
+      serverStatusRunning: '启动中',
       serverStatusStopped: '已停止',
       generalSettings: '常规',
       storageSettings: '存储',
