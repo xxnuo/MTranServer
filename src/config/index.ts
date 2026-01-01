@@ -96,7 +96,7 @@ export function getConfig(): Config {
   }
 
   const homeDir = path.join(os.homedir(), '.config', 'mtran');
-  
+
   // Resolve directories first as they might depend on defaults or CLI
   const configDir = getString('--config-dir', 'MT_CONFIG_DIR', path.join(homeDir, 'server'));
   const localModelsDir = path.join(process.cwd(), 'models');
@@ -129,7 +129,7 @@ export function getConfig(): Config {
 
     checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', true),
 
-    cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', 0),
+    cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', 1000),
   };
 
   return globalConfig;
