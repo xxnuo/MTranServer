@@ -4,12 +4,21 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { ArrowRightLeft, Copy, Volume2, X, Upload } from 'lucide-react'
+import { ArrowRightLeft, Copy, Volume2, X, Upload, ChevronDown } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { getSortedLanguages } from '@/lib/languages'
 
@@ -54,6 +63,18 @@ export function TranslationPanel({
   const [translatedText, setTranslatedText] = useState('')
   const [loading, setLoading] = useState(false)
   const [autoTranslate, setAutoTranslate] = useState(() => localStorage.getItem(storageKey('autoTranslate')) === 'true')
+  const [sourceOpen, setSourceOpen] = useState(false)
+  const [targetOpen, setTargetOpen] = useState(false)
+  const [recentLanguages, setRecentLanguages] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('recentTranslateLanguages')
+      if (!stored) return []
+      const parsed = JSON.parse(stored)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
   const firstTranslateTipKey = 'firstTranslateTipShown'
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -62,6 +83,20 @@ export function TranslationPanel({
   const sortedLanguages = useMemo(() => {
     return getSortedLanguages(languages, i18n.language)
   }, [languages, i18n.language])
+
+  const commonLanguageCodes = useMemo(() => {
+    const candidates = ['en', 'zh-Hans', 'ja']
+    const available = new Set(sortedLanguages.map(lang => lang.code))
+    return candidates.filter(code => available.has(code))
+  }, [sortedLanguages])
+
+  const recentOptions = useMemo(() => {
+    const available = new Map(sortedLanguages.map(lang => [lang.code, lang]))
+    return recentLanguages.flatMap(code => {
+      const found = available.get(code)
+      return found ? [found] : []
+    })
+  }, [recentLanguages, sortedLanguages])
 
   useEffect(() => {
     localStorage.setItem(storageKey('sourceLang'), sourceLang)
@@ -198,6 +233,31 @@ export function TranslationPanel({
     setTranslatedText(sourceText)
   }
 
+  const saveRecentLanguage = (code: string) => {
+    if (code === 'auto') return
+    const next = [code, ...recentLanguages.filter(item => item !== code)].slice(0, 5)
+    setRecentLanguages(next)
+    localStorage.setItem('recentTranslateLanguages', JSON.stringify(next))
+  }
+
+  const getLanguageLabel = (code: string) => {
+    if (code === 'auto') return t('autoDetect')
+    const found = sortedLanguages.find(lang => lang.code === code)
+    return found?.name || code
+  }
+
+  const handleSourceLanguageChange = (code: string) => {
+    setSourceLang(code)
+    saveRecentLanguage(code)
+    setSourceOpen(false)
+  }
+
+  const handleTargetLanguageChange = (code: string) => {
+    setTargetLang(code)
+    saveRecentLanguage(code)
+    setTargetOpen(false)
+  }
+
   const handleCopy = async (text: string) => {
     if (!text) return
     try {
@@ -246,23 +306,79 @@ export function TranslationPanel({
       <CardContent className="pt-1 sm:pt-1 space-y-3 sm:space-y-4 flex-1 flex flex-col">
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div className="flex items-center gap-2 flex-1 min-w-[280px]">
-            <Select
-              value={sourceLang}
-              onValueChange={setSourceLang}
-              disabled={loadingLanguages}
-            >
-              <SelectTrigger className="w-[110px] sm:w-[140px] flex-shrink-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">{t('autoDetect')}</SelectItem>
-                {sortedLanguages.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={sourceOpen} onOpenChange={setSourceOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-[110px] sm:w-[140px] justify-between"
+                  disabled={loadingLanguages}
+                  aria-label={t('sourceLanguage')}
+                >
+                  <span className="truncate">{getLanguageLabel(sourceLang)}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-2" align="start">
+                {commonLanguageCodes.length > 0 && (
+                  <div className="mb-2">
+                    <ToggleGroup
+                      type="single"
+                      value={sourceLang}
+                      onValueChange={(value) => {
+                        if (value) handleSourceLanguageChange(value)
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-between"
+                    >
+                      <ToggleGroupItem value="auto" className="flex-1">
+                        {t('autoDetect')}
+                      </ToggleGroupItem>
+                      {commonLanguageCodes.map((code) => (
+                        <ToggleGroupItem key={code} value={code} className="flex-1">
+                          {getLanguageLabel(code)}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </div>
+                )}
+                <Command>
+                  <CommandInput placeholder={t('languageSearchPlaceholder')} autoFocus />
+                  <CommandList>
+                    <CommandEmpty>{t('noResults')}</CommandEmpty>
+                    <CommandGroup heading={t('autoDetect')}>
+                      <CommandItem value="auto" onSelect={() => handleSourceLanguageChange('auto')}>
+                        {t('autoDetect')}
+                      </CommandItem>
+                    </CommandGroup>
+                    {recentOptions.length > 0 && (
+                      <CommandGroup heading={t('languageRecent')}>
+                        {recentOptions.map((lang) => (
+                          <CommandItem
+                            key={lang.code}
+                            value={`${lang.name} ${lang.code}`}
+                            onSelect={() => handleSourceLanguageChange(lang.code)}
+                          >
+                            {lang.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                    <CommandGroup heading={t('languageAll')}>
+                      {sortedLanguages.map((lang) => (
+                        <CommandItem
+                          key={lang.code}
+                          value={`${lang.name} ${lang.code}`}
+                          onSelect={() => handleSourceLanguageChange(lang.code)}
+                        >
+                          {lang.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
             <Button
               variant="ghost"
@@ -274,22 +390,71 @@ export function TranslationPanel({
               <ArrowRightLeft className="h-4 w-4" />
             </Button>
 
-            <Select
-              value={targetLang}
-              onValueChange={setTargetLang}
-              disabled={loadingLanguages}
-            >
-              <SelectTrigger className="w-[110px] sm:w-[140px] flex-shrink-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sortedLanguages.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={targetOpen} onOpenChange={setTargetOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-[110px] sm:w-[140px] justify-between"
+                  disabled={loadingLanguages}
+                  aria-label={t('targetLanguage')}
+                >
+                  <span className="truncate">{getLanguageLabel(targetLang)}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-2" align="start">
+                {commonLanguageCodes.length > 0 && (
+                  <div className="mb-2">
+                    <ToggleGroup
+                      type="single"
+                      value={targetLang}
+                      onValueChange={(value) => {
+                        if (value) handleTargetLanguageChange(value)
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-between"
+                    >
+                      {commonLanguageCodes.map((code) => (
+                        <ToggleGroupItem key={code} value={code} className="flex-1">
+                          {getLanguageLabel(code)}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </div>
+                )}
+                <Command>
+                  <CommandInput placeholder={t('languageSearchPlaceholder')} autoFocus />
+                  <CommandList>
+                    <CommandEmpty>{t('noResults')}</CommandEmpty>
+                    {recentOptions.length > 0 && (
+                      <CommandGroup heading={t('languageRecent')}>
+                        {recentOptions.map((lang) => (
+                          <CommandItem
+                            key={lang.code}
+                            value={`${lang.name} ${lang.code}`}
+                            onSelect={() => handleTargetLanguageChange(lang.code)}
+                          >
+                            {lang.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                    <CommandGroup heading={t('languageAll')}>
+                      {sortedLanguages.map((lang) => (
+                        <CommandItem
+                          key={lang.code}
+                          value={`${lang.name} ${lang.code}`}
+                          onSelect={() => handleTargetLanguageChange(lang.code)}
+                        >
+                          {lang.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex items-center gap-2 justify-end flex-shrink-0 ml-auto sm:ml-0">
