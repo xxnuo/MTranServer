@@ -92,10 +92,6 @@ func TestManager_Logs(t *testing.T) {
 	t.Logf("Collected %d log lines", len(logs))
 }
 
-
-
-
-
 func TestManager_Translate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -195,7 +191,7 @@ func TestManager_NotStarted(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := mgr.Ready(ctx)
+	_, err := mgr.Health(ctx)
 	assert.Error(t, err)
 
 	_, err = mgr.Translate(ctx, "Hello")
@@ -229,19 +225,7 @@ func TestManager_FullWorkflow(t *testing.T) {
 
 	ctx := context.Background()
 
-	ready, err := mgr.Ready(ctx)
-	require.NoError(t, err)
-	assert.False(t, ready)
-
-	resp, err := mgr.Poweron(ctx, manager.PoweronRequest{
-		Path: "path/to/model",
-	})
-	require.NoError(t, err)
-	assert.NotNil(t, resp)
-
-	time.Sleep(2 * time.Second)
-
-	ready, err = mgr.Ready(ctx)
+	ready, err := mgr.Health(ctx)
 	require.NoError(t, err)
 	assert.True(t, ready)
 
@@ -255,17 +239,9 @@ func TestManager_FullWorkflow(t *testing.T) {
 	assert.NotEmpty(t, htmlResult)
 	t.Logf("HTML translation result: %s", htmlResult)
 
-	rebootResp, err := mgr.Reboot(ctx, manager.RebootRequest{
-		Time:  0,
-		Force: false,
-	})
-	require.NoError(t, err)
-	assert.NotNil(t, rebootResp)
-
-	poweroffResp, err := mgr.Poweroff(ctx, manager.PoweroffRequest{
-		Time:  0,
+	exitResp, err := mgr.Exit(ctx, manager.ExitRequest{
 		Force: true,
 	})
 	require.NoError(t, err)
-	assert.NotNil(t, poweroffResp)
+	assert.NotNil(t, exitResp)
 }

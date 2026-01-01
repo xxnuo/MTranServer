@@ -12,7 +12,11 @@ core
 /node_modules
 /packages
 
-bin/worker
-bin/bin_hash.go
 /dist
+
 /.claude
+
+/tests/ff
+/tests/MTranCore
+deprecated/go/bin/worker
+deprecated/go/dist/mtranserver-darwin-arm64

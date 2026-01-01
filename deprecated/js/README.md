@@ -1,3 +1,3 @@
-# Node.js version (deprecated)
+# Node.js v1 version 
 
-Node.js version is deprecated, continue to develop in [golang version](https://github.com/xxnuo/MTranServer)
+Node.js v1 version is deprecated
