@@ -56,7 +56,7 @@ jobs:
         id: release_notes
         run: |
           if [[ "${{ github.ref_name }}" == *"dev"* ]]; then
-            echo "notes=⚠️ **THIS IS A DEVELOPMENT RELEASE. NOT RECOMMENDED FOR PRODUCTION USE.** ⚠️" >> $GITHUB_OUTPUT
+            echo "notes=⚠️ **THIS IS A DEVELOPMENT RELEASE. DO NOT USE IT!** ⚠️" >> $GITHUB_OUTPUT
           fi
 
       - name: Create Release
