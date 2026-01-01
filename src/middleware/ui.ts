@@ -15,12 +15,8 @@ const mimeTypes: Record<string, string> = {
   '.ico': 'image/x-icon',
 };
 
-export const UI: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const uiStatic: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   let filePath = req.path;
-
-  if (filePath.startsWith('/ui/')) {
-    filePath = filePath.substring(3);
-  }
 
   if (filePath === '/' || filePath === '') {
     filePath = '/index.html';
@@ -31,7 +27,6 @@ export const UI: RequestHandler = async (req: Request, res: Response, next: Next
   if (assetPath) {
     const ext = filePath.substring(filePath.lastIndexOf('.'));
     const mimeType = mimeTypes[ext] || 'application/octet-stream';
-
     res.setHeader('Content-Type', mimeType);
     const buffer = await readFile(assetPath);
     res.send(buffer);

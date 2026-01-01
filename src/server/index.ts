@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import fs from 'fs/promises';
 import swaggerUi from 'swagger-ui-express';
 import { getConfig } from '@/config/index.js';
@@ -9,7 +9,7 @@ import { cleanupLegacyBin } from '@/assets/index.js';
 import { requestId, errorHandler, cors } from '@/middleware/index.js';
 import { RegisterRoutes } from '@/generated/routes.js';
 import swaggerDocument from '@/generated/swagger.json';
-import { UI } from '@/middleware/ui.js';
+import { uiStatic } from '@/middleware/ui.js';
 import { swaggerStatic } from '@/middleware/swagger.js';
 
 export async function run() {
@@ -33,15 +33,29 @@ export async function run() {
 
   RegisterRoutes(app);
 
-  app.use('/docs', swaggerStatic, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  app.use('/ui', (req: Request, res: Response, next: NextFunction) => {
+    if (req.originalUrl === '/ui') {
+      return res.redirect(301, '/ui/');
+    }
+    next();
+  }, uiStatic);
 
-  app.use(UI);
+  app.use('/docs', (req: Request, res: Response, next: NextFunction) => {
+    if (req.originalUrl === '/docs') {
+      return res.redirect(301, '/docs/');
+    }
+    next();
+  }, swaggerStatic, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+  app.get('/', (_, res) => res.redirect(301, '/ui/'));
+
+  app.use((_, res) => res.status(404).send('404'));
 
   app.use(errorHandler());
 
   const server = app.listen(parseInt(config.port), config.host, () => {
-    logger.important(`HTTP Service URL: http://${config.host}:${config.port}`);
-    logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs`);
+    logger.important(`Web UI: http://${config.host}:${config.port}/ui/`);
+    logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs/`);
     logger.important(`Log level set to: ${config.logLevel}`);
   });
 
