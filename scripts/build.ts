@@ -21,7 +21,7 @@ await $`rm -rf dist`;
 await $`mkdir -p dist`;
 
 console.log("Building UI...");
-await $`cd ui && bun run build`;
+await $`cd ui && bun install && bun run build`;
 
 console.log("Generating UI assets map...");
 await $`bun run scripts/gen-ui-assets.ts`;
