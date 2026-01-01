@@ -12,13 +12,27 @@ Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung
 
 <img src="../images/preview.png" width="auto" height="460">
 
+## Online Demo
+
+| Website                          | TOKEN                     | Andere Schnittstelle                                                                           | Anbieter |
+| -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | -------- |
+| `https://MTranServer.ipacel.cc/` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi  |
+
+Vielen Dank an die Mitwirkenden der Community für die Bereitstellung von Testdiensten für Benutzer!
+
 ## Gebrauchsanweisung
 
 Laden Sie die neueste Version für Ihre Plattform von [Releases](https://github.com/xxnuo/MTranServer/releases) herunter und starten Sie das Programm einfach über die Befehlszeile, um es zu verwenden.
 
-> [MTranServer](https://github.com/xxnuo/MTranServer) ist hauptsächlich für Serverumgebungen gedacht, daher sind derzeit nur der Befehlszeilendienst und die Docker-Bereitstellung verfügbar.
-> 
-> In meiner Freizeit werde ich [MTranDesktop](https://github.com/xxnuo/MTranDesktop) für den Desktop-Einsatz verbessern. Beiträge sind willkommen.
+[MTranServer](https://github.com/xxnuo/MTranServer) ist hauptsächlich für Serverumgebungen gedacht, daher sind derzeit nur der Befehlszeilendienst und die Docker-Bereitstellung verfügbar.
+
+Es ist geplant, ein Desktop-Programm und eine Browser-Erweiterung für eine bequemere Nutzung bereitzustellen. Bitte bleiben Sie dran.
+
+> **Wichtiger Hinweis:**
+>
+> Bei der erstmaligen Übersetzung eines Sprachpaares lädt der Server automatisch das entsprechende Übersetzungsmodell herunter (sofern der Offline-Modus nicht aktiviert ist). Dieser Vorgang kann je nach Netzwerkgeschwindigkeit und Modellgröße einige Zeit in Anspruch nehmen. Nach dem Herunterladen des Modells profitieren nachfolgende Übersetzungsanfragen von einer Antwortzeit im Millisekundenbereich. Es wird empfohlen, vor der eigentlichen Verwendung eine Übersetzung zu testen, damit der Server das Modell vorab herunterladen und laden kann.
+>
+> Das Programm wird häufig aktualisiert. Wenn Sie auf Probleme stoßen, versuchen Sie, auf die neueste Version zu aktualisieren.
 
 Nach dem Start des Servers werden die Adresse der im Programm enthaltenen einfachen Benutzeroberfläche und die Adresse der Online-Dokumentation im Protokoll ausgegeben. Hier ist eine Vorschau:
 
@@ -75,13 +89,6 @@ services:
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
-
->
-> **Wichtiger Hinweis:** 
-> 
-> Bei der erstmaligen Übersetzung eines Sprachpaares lädt der Server automatisch das entsprechende Übersetzungsmodell herunter (sofern der Offline-Modus nicht aktiviert ist). Dieser Vorgang kann je nach Netzwerkgeschwindigkeit und Modellgröße einige Zeit in Anspruch nehmen. Nach dem Herunterladen des Modells benötigt der Start der Engine ebenfalls einige Sekunden. Nachfolgende Übersetzungsanfragen profitieren von einer Antwortzeit im Millisekundenbereich. Es wird empfohlen, vor der eigentlichen Verwendung eine Übersetzung zu testen, damit der Server die Modelle vorab herunterladen und laden kann.
->
-> Das Programm wird häufig aktualisiert. Wenn Sie auf Probleme stoßen, versuchen Sie, auf die neueste Version zu aktualisieren.
 
 #### Übersetzung-Plugin kompatible Schnittstellen
 

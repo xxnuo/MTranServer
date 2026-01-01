@@ -12,13 +12,27 @@ Notez que ce serveur de modèle se concentre sur la `traduction hors ligne`, la 
 
 <img src="../images/preview.png" width="auto" height="460">
 
+## Démo en ligne
+
+| Site Web                         | TOKEN                     | Autre interface                                                                                | Fournisseur |
+| -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
+| `https://MTranServer.ipacel.cc/` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate : `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi     |
+
+Merci aux contributeurs de la communauté pour fournir des services d'essai aux utilisateurs !
+
 ## Guide d'utilisation
 
 Téléchargez la dernière version pour votre plateforme depuis les [Releases](https://github.com/xxnuo/MTranServer/releases), et lancez simplement le programme en ligne de commande pour l'utiliser.
 
-> [MTranServer](https://github.com/xxnuo/MTranServer) est principalement destiné à un environnement serveur, c'est pourquoi seuls le service en ligne de commande et le déploiement Docker sont actuellement disponibles.
-> 
-> Pendant mon temps libre, je vais améliorer [MTranDesktop](https://github.com/xxnuo/MTranDesktop) pour une utilisation sur bureau. Les contributions sont les bienvenues.
+[MTranServer](https://github.com/xxnuo/MTranServer) est principalement destiné à un environnement serveur, c'est pourquoi seuls le service en ligne de commande et le déploiement Docker sont actuellement disponibles.
+
+Il est prévu de fournir une application de bureau et une extension de navigateur pour faciliter l'utilisation, restez à l'écoute.
+
+> **Remarque importante :**
+>
+> Lors de la première traduction d'une paire de langues, le serveur téléchargera automatiquement le modèle de traduction correspondant (sauf si le mode hors ligne est activé). Ce processus peut prendre un certain temps en fonction de la vitesse de votre réseau et de la taille du modèle. Une fois le modèle téléchargé, les requêtes de traduction suivantes bénéficieront d'un temps de réponse de l'ordre de la milliseconde. Il est recommandé de tester une traduction avant l'utilisation réelle pour permettre au serveur de pré-télécharger et de charger le modèle.
+>
+> Le programme est souvent mis à jour. Si vous rencontrez des problèmes, essayez de mettre à jour vers la dernière version.
 
 Après le démarrage du serveur, l'adresse de l'interface utilisateur simple incluse dans le programme et l'adresse de la documentation en ligne seront affichées dans les journaux. Voici un aperçu :
 
@@ -75,13 +89,6 @@ services:
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
-
->
-> **Remarque importante :** 
-> 
-> Lors de la première traduction d'une paire de langues, le serveur téléchargera automatiquement le modèle de traduction correspondant (sauf si le mode hors ligne est activé). Ce processus peut prendre un certain temps en fonction de la vitesse de votre réseau et de la taille du modèle. Une fois le modèle téléchargé, le démarrage du moteur prend également quelques secondes. Les requêtes de traduction suivantes bénéficieront d'un temps de réponse de l'ordre de la milliseconde. Il est recommandé de tester une traduction avant l'utilisation réelle pour permettre au serveur de pré-télécharger et de charger les modèles.
->
-> Le programme est souvent mis à jour. Si vous rencontrez des problèmes, essayez de mettre à jour vers la dernière version.
 
 #### Interface compatible avec les plugins de traduction
 
