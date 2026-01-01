@@ -189,7 +189,7 @@ func (w *Worker) Start() error {
 			return fmt.Errorf("worker already running")
 		}
 
-		for i := 0; i < 30; i++ {
+		for range 30 {
 			if !w.overseer.HasProc(w.id) {
 				break
 			}
@@ -226,14 +226,22 @@ func (w *Worker) Start() error {
 
 	cmd.Dir = w.args.WorkDir
 	cmd.DelayStart = 0
-	cmd.RetryTimes = 0
+	cmd.RetryTimes = 999999
 
 	go w.overseer.Supervise(w.id)
 
-	time.Sleep(100 * time.Millisecond)
+	for i := 0; i < 50; i++ {
+		time.Sleep(50 * time.Millisecond)
+		if w.overseer.HasProc(w.id) {
+			status := w.overseer.Status(w.id)
+			if status != nil && status.State == "running" {
+				logger.Debug("Worker %s started", w.id)
+				return nil
+			}
+		}
+	}
 
-	logger.Debug("Worker %s started", w.id)
-	return nil
+	return fmt.Errorf("worker failed to start within timeout")
 }
 
 func (w *Worker) Stop() error {
@@ -305,7 +313,7 @@ func (w *Worker) Stop() error {
 				}
 			}()
 			time.Sleep(500 * time.Millisecond)
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				if !w.overseer.HasProc(w.id) {
 					break
 				}
@@ -340,7 +348,7 @@ func (w *Worker) Restart() error {
 			}
 		}
 
-		for i := 0; i < 30; i++ {
+		for range 30 {
 			if !w.overseer.HasProc(w.id) {
 				break
 			}
@@ -410,7 +418,6 @@ func (w *Worker) collectLogs() {
 	for {
 		select {
 		case <-w.done:
-
 			for {
 				select {
 				case msg, ok := <-w.logChan:
@@ -576,7 +583,7 @@ func (w *Worker) Cleanup() error {
 			}()
 		}
 
-		for i := 0; i < 50; i++ {
+		for range 50 {
 			if !w.overseer.HasProc(w.id) {
 				break
 			}

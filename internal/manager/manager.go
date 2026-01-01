@@ -257,51 +257,50 @@ func (m *Manager) Compute(ctx context.Context, req ComputeRequest) (string, erro
 
 	if m.client != client {
 		if m.client != nil {
+			logger.Debug("Manager.Compute: client changed during reconnection, retrying with new client")
 			return m.client.Compute(ctx, req)
 		}
 		return "", fmt.Errorf("client changed to nil during reconnection")
 	}
 
-	if m.worker == nil || !m.worker.IsRunning() || m.client == nil || !m.client.IsConnected() {
-		if m.client != nil {
-			m.client.Close()
-			m.client = nil
-		}
+	logger.Debug("Manager.Compute: attempting reconnection")
 
-		if m.worker.IsRunning() {
-			m.worker.Stop()
-		}
+	if m.client != nil {
+		m.client.Close()
+		m.client = nil
+	}
 
-		time.Sleep(500 * time.Millisecond)
+	if m.worker != nil && m.worker.IsRunning() {
+		m.worker.Stop()
+	}
 
-		if err := m.worker.Start(); err != nil {
-			return "", fmt.Errorf("failed to restart worker: %w", err)
-		}
+	time.Sleep(500 * time.Millisecond)
 
-		timeout := time.After(10 * time.Second)
-		ticker := time.NewTicker(100 * time.Millisecond)
-		defer ticker.Stop()
+	if err := m.worker.Start(); err != nil {
+		return "", fmt.Errorf("failed to restart worker: %w", err)
+	}
 
-		for {
-			select {
-			case <-timeout:
-				return "", fmt.Errorf("worker restart timeout")
-			case <-ticker.C:
-				if m.worker.IsRunning() {
-					m.client = NewClient(m.url)
-					if err := m.client.Connect(); err != nil {
-						continue
-					}
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
 
-					time.Sleep(200 * time.Millisecond)
-
-					return m.client.Compute(ctx, req)
+	for {
+		select {
+		case <-timeout:
+			return "", fmt.Errorf("worker restart timeout")
+		case <-ticker.C:
+			if m.worker.IsRunning() {
+				m.client = NewClient(m.url)
+				if err := m.client.Connect(); err != nil {
+					continue
 				}
+
+				time.Sleep(200 * time.Millisecond)
+
+				return m.client.Compute(ctx, req)
 			}
 		}
 	}
-
-	return "", err
 }
 
 func (m *Manager) Translate(ctx context.Context, text string) (string, error) {
