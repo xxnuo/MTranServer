@@ -134,3 +134,8 @@ export function getConfig(): Config {
 
   return globalConfig;
 }
+
+export function setConfig(config: Partial<Config>) {
+  const current = getConfig();
+  globalConfig = { ...current, ...config };
+}

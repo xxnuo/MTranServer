@@ -1,4 +1,5 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { readFile } from 'fs/promises';
 import { TranslationEngine } from '@/core/engine.js';
 import { createResourceLoader } from '@/core/factory.js';
@@ -69,8 +70,11 @@ async function getOrCreateSingleEngine(
       const engine = new TranslationEngine();
       const loader = createResourceLoader();
 
-      logger.debug(`Loading WASM from: ${wasmPath}`);
-      const wasmBinary = await readFile(wasmPath);
+      const currentDir = path.dirname(fileURLToPath(import.meta.url));
+      const absoluteWasmPath = path.resolve(currentDir, wasmPath);
+
+      logger.debug(`Loading WASM from: ${absoluteWasmPath}`);
+      const wasmBinary = await readFile(absoluteWasmPath);
       logger.debug(`WASM loaded, size: ${wasmBinary.byteLength} bytes`);
 
       const bergamotModule = await loader.loadBergamotModule(wasmBinary, loadBergamot);

@@ -1,3 +1,5 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import loadCLD2 from '@/lib/cld2/cld2.js';
 import wasmPath from '@/lib/cld2/cld2.wasm' with { type: 'file' };
 import * as logger from '@/logger/index.js';
@@ -28,7 +30,10 @@ async function initCLD(): Promise<void> {
     try {
       logger.debug('Initializing CLD2 language detector');
 
-      const wasmBuffer = await readFile(wasmPath);
+      const currentDir = path.dirname(fileURLToPath(import.meta.url));
+      const absoluteWasmPath = path.resolve(currentDir, wasmPath);
+
+      const wasmBuffer = await readFile(absoluteWasmPath);
 
       const module: any = await loadCLD2({
         print: (msg: string) => logger.debug(`[CLD2]: ${msg}`),

@@ -3,11 +3,13 @@
   "version": "4.0.13",
   "type": "module",
   "description": "Translation server",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "mtranserver": "./dist/main.js"
   },
   "files": [
-    "mtranserver",
+    "dist",
     "assets"
   ],
   "scripts": {
@@ -17,6 +19,8 @@
     "build:docker": "bun scripts/build.ts --docker",
     "build:node": "bun run gen && rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express",
     "build:dev": "bun run gen && rm -rf dist && bun build src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express",
+    "build:lib": "bun run gen && rm -rf dist && rm -f ui/dist/assets/*.d.ts && bun build src/index.ts src/main.ts --outdir dist --target node --format esm --sourcemap --external zstd-wasm-decoder --external express && tsc -p tsconfig.lib.json",
+    "prepublishOnly": "bun run build:lib",
     "start": "node dist/main.js",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
