@@ -39,9 +39,9 @@ export async function run() {
   app.use(errorHandler());
 
   const server = app.listen(parseInt(config.port), config.host, () => {
-    logger.info(`HTTP Service URL: http://${config.host}:${config.port}`);
-    logger.info(`Swagger Docs: http://${config.host}:${config.port}/docs`);
-    logger.info(`Log level set to: ${config.logLevel}`);
+    logger.important(`HTTP Service URL: http://${config.host}:${config.port}`);
+    logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs`);
+    logger.important(`Log level set to: ${config.logLevel}`);
   });
 
   const shutdown = async () => {

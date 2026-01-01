@@ -76,8 +76,8 @@ function getLogStream() {
   return logStream;
 }
 
-function log(level: LogLevel, color: string, message: string, ...args: any[]) {
-  if (!shouldLog(level)) return;
+function logInternal(level: LogLevel, color: string, force: boolean, message: string, ...args: any[]) {
+  if (!force && !shouldLog(level)) return;
 
   const timestamp = getTimestamp();
   const formattedMessage = util.format(message, ...args);
@@ -102,12 +102,20 @@ function log(level: LogLevel, color: string, message: string, ...args: any[]) {
   }
 }
 
+function log(level: LogLevel, color: string, message: string, ...args: any[]) {
+  logInternal(level, color, false, message, ...args);
+}
+
 export function debug(message: string, ...args: any[]) {
   log('debug', colors.cyan, message, ...args);
 }
 
 export function info(message: string, ...args: any[]) {
   log('info', colors.green, message, ...args);
+}
+
+export function important(message: string, ...args: any[]) {
+  logInternal('info', colors.green, true, message, ...args);
 }
 
 export function warn(message: string, ...args: any[]) {
@@ -128,6 +136,7 @@ export default {
   getLogLevel,
   debug,
   info,
+  important,
   warn,
   error,
   fatal,
