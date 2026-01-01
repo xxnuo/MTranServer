@@ -42,50 +42,6 @@ jobs:
           name: binaries
           path: dist/mtranserver-*
 
-  # build_desktop:
-  #   runs-on: ${{ matrix.os }}
-  #   permissions:
-  #     contents: write
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest, windows-latest]
-  #   env:
-  #     GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
-  #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
-  #   defaults:
-  #     run:
-  #       shell: bash
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Bun
-  #       uses: oven-sh/setup-bun@v1
-  #       with:
-  #         bun-version: latest
-  #
-  #     - name: Install dependencies
-  #       run: bun install
-  #
-  #     - name: Sync version from tag
-  #       run: |
-  #         if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-  #           VERSION=${GITHUB_REF#refs/tags/}
-  #         else
-  #           VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-  #         fi
-  #         echo "Syncing version to ${VERSION}"
-  #         bun run bump ${VERSION}
-  #
-  #     - name: Build Desktop
-  #       run: bun run build:electron
-  #
-  #     - name: Upload Desktop Artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: desktop-${{ matrix.os }}
-  #         path: release/mtranserver-desktop-*
-
   release:
     needs: [build]
     runs-on: ubuntu-latest
@@ -100,13 +56,6 @@ jobs:
         with:
           name: binaries
           path: release-assets
-
-      # - name: Download Desktop Artifacts
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     pattern: desktop-*
-      #     path: release-assets
-      #     merge-multiple: true
 
       - name: Determine Release Tag
         id: tag
@@ -156,6 +105,16 @@ jobs:
           | Windows | x64 | [mtranserver-${VERSION}-windows-amd64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64.exe) |
           | Windows | x64 (legacy) | [mtranserver-${VERSION}-windows-amd64-legacy.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-${VERSION}-windows-amd64-legacy.exe) |
 
+          ## Note
+
+          **legacy**: 仅适用于使用普通版本会遇到如 'Illegal instruction' 这样问题的旧硬件（无 AVX2 指令集的 CPU），大多数人不需要这个，因为它更慢。
+
+          > **legacy**: Use only if you experience 'Illegal instruction' crashes on very old hardware (non-AVX2 CPUs). Most people don't need this because it's slower.
+
+          **musl**: 仅适用于 Linux 使用 musl libc 的用户，大多数人不需要这个。
+
+          > **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
+          
           ## Docker
           
           Image: `xxnuo/mtranserver:latest`
@@ -170,34 +129,6 @@ jobs:
           
           ## Changelog
           EOF
-
-          : << 'DESKTOP'
-          ## Desktop Client
-
-          | Platform | Architecture | Binary |
-          |----------|-------------|--------|
-          | Linux | x64 | [mtranserver-desktop-${VERSION}-linux-x64.AppImage](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x64.AppImage) |
-          | Linux | arm64 | [mtranserver-desktop-${VERSION}-linux-arm64.AppImage](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-arm64.AppImage) |
-          | Linux | x64 (deb) | [mtranserver-desktop-${VERSION}-linux-x64.deb](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x64.deb) |
-          | Linux | arm64 (deb) | [mtranserver-desktop-${VERSION}-linux-arm64.deb](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-arm64.deb) |
-          | Linux | x64 (rpm) | [mtranserver-desktop-${VERSION}-linux-x64.rpm](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x64.rpm) |
-          | Linux | arm64 (rpm) | [mtranserver-desktop-${VERSION}-linux-arm64.rpm](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-arm64.rpm) |
-          | macOS | x64 | [mtranserver-desktop-${VERSION}-mac-x64.dmg](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-mac-x64.dmg) |
-          | macOS | arm64 | [mtranserver-desktop-${VERSION}-mac-arm64.dmg](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-mac-arm64.dmg) |
-          | Windows | x64 | [mtranserver-desktop-${VERSION}-win-x64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-win-x64.exe) |
-          DESKTOP
-
-          : << 'NOTE'
-          ## Note
-
-          **legacy**: 仅适用于使用普通版本会遇到如 'Illegal instruction' 这样问题的旧硬件（无 AVX2 指令集的 CPU），大多数人不需要这个，因为它更慢。
-
-          > **legacy**: Use only if you experience 'Illegal instruction' crashes on very old hardware (non-AVX2 CPUs). Most people don't need this because it's slower.
-
-          **musl**: 仅适用于 Linux 使用 musl libc 的用户，大多数人不需要这个。
-
-          > **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
-          NOTE
 
           sed -i "s|\${WARNING}|${WARNING}|g" release_body.md
           sed -i "s|\${REPO}|${REPO}|g" release_body.md
