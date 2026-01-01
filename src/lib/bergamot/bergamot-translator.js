@@ -6,7 +6,7 @@ function loadBergamot(Module) {
   var BERGAMOT_VERSION_FULL = "v0.6.0+1de4a085";
   null;
 
-  var Module = typeof Module != "undefined" ? Module : {};
+  Module = typeof Module != "undefined" ? Module : {};
 
   var moduleOverrides = Object.assign({}, Module);
 
@@ -764,11 +764,18 @@ function loadBergamot(Module) {
       : "_" + x;
   }
 
+  var _malloc, _free, stackSave, stackRestore, stackAlloc;
+
   function exportAsmFunctions(asm) {
-    var global_object = this;
     for (var __exportedFunc in asm) {
       var jsname = asmjsMangle(__exportedFunc);
-      global_object[jsname] = Module[jsname] = asm[__exportedFunc];
+      Module[jsname] = asm[__exportedFunc];
+
+      if (jsname === '_malloc') _malloc = asm[__exportedFunc];
+      else if (jsname === '_free') _free = asm[__exportedFunc];
+      else if (jsname === 'stackSave') stackSave = asm[__exportedFunc];
+      else if (jsname === 'stackRestore') stackRestore = asm[__exportedFunc];
+      else if (jsname === 'stackAlloc') stackAlloc = asm[__exportedFunc];
     }
   }
 

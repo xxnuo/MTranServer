@@ -24,15 +24,19 @@ export class ResourceLoader {
         reject(new Error('WASM initialization timeout'));
       }, 30000);
 
+      console.log('[Bergamot] Loading WASM, binary size:', wasmBinary.byteLength || wasmBinary.length);
+
       loadBergamot({
         wasmBinary: wasmBinary,
-        print: () => null,
+        print: (msg: string) => console.log(`[Bergamot]: ${msg}`),
         printErr: (msg: string) => console.error(`[Bergamot Error]: ${msg}`),
         onRuntimeInitialized: function(this: BergamotModule) {
+          console.log('[Bergamot] Runtime initialized successfully');
           clearTimeout(timeout);
           resolve(this);
         },
         onAbort: (msg: string) => {
+          console.error('[Bergamot] Aborted:', msg);
           clearTimeout(timeout);
           reject(new Error(`WASM aborted: ${msg}`));
         }
