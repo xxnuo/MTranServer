@@ -44,22 +44,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (Legacy)
-        id: meta-legacy
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            xxnuo/mtranserver
-            ghcr.io/xxnuo/mtranserver
-          flavor: |
-            latest=false
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.latest_tag.outputs.tag }},suffix=-legacy
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.latest_tag.outputs.tag }},suffix=-legacy
-            type=semver,pattern={{major}},value=${{ steps.latest_tag.outputs.tag }},suffix=-legacy
-            type=raw,value=legacy
-
-      - name: Extract metadata (Standard)
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -84,22 +69,7 @@ jobs:
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Build and push (Legacy - No AVX2)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta-legacy.outputs.tags }}
-          labels: ${{ steps.meta-legacy.outputs.labels }}
-          build-args: |
-            VERSION=${{ steps.version.outputs.version }}
-            BUILD_VARIANT=legacy
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-
-      - name: Build and push (Standard - AVX2)
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
