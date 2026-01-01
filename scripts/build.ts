@@ -4,13 +4,18 @@ import pkg from "../package.json";
 const version = pkg.version;
 
 const targets = [
-  { bun: "bun-linux-x64", name: "linux-amd64" },
-  { bun: "bun-linux-arm64", name: "linux-arm64" },
-  { bun: "bun-windows-x64", name: "windows-amd64" },
   { bun: "bun-darwin-x64", name: "darwin-amd64" },
+  { bun: "bun-darwin-x64-baseline", name: "darwin-amd64-legacy" },
   { bun: "bun-darwin-arm64", name: "darwin-arm64" },
+  { bun: "bun-linux-x64", name: "linux-amd64" },
+  { bun: "bun-linux-x64-baseline", name: "linux-amd64-legacy" },
+  { bun: "bun-linux-x64-modern", name: "linux-amd64-fast" },
+  { bun: "bun-linux-arm64", name: "linux-arm64" },
   { bun: "bun-linux-x64-musl", name: "linux-amd64-musl" },
   { bun: "bun-linux-arm64-musl", name: "linux-arm64-musl" },
+  { bun: "bun-windows-x64", name: "windows-amd64" },
+  { bun: "bun-windows-x64-baseline", name: "windows-amd64-legacy" },
+  { bun: "bun-windows-x64-modern", name: "windows-amd64-fast" },
 ];
 
 console.log("Cleaning dist...");
