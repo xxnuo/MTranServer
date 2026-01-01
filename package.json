@@ -21,6 +21,8 @@
     "bump": "bun scripts/bump.ts",
     "electron": "bun run build:lib && electron ./electron-main.js",
     "electron:dev": "bun run scripts/electron-dev.ts",
+    "electron:build": "bun run build:lib && electron-builder",
+    "electron:build:all": "bun run build:lib && electron-builder -mwl",
     "prepublishOnly": "bun scripts/build.ts --lib",
     "push": "npm publish --registry=https://registry.npmjs.org",
     "build": "bun scripts/build.ts --single",
@@ -38,7 +40,10 @@
     "machine-translation",
     "translation-server"
   ],
-  "author": "xxnuo",
+  "author": {
+    "name": "xxnuo",
+    "email": "w3xilqryb@mozmail.com"
+  },
   "license": "Apache-2.0",
   "devDependencies": {
     "@tsoa/runtime": "^7.0.0-alpha.0",
