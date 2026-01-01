@@ -1,3 +1,8 @@
+## v4.0.11
+
+* 修复认证功能失效的问题
+* Fix authentication issue
+
 ## v4.0.10
 ### 中文版本
 
