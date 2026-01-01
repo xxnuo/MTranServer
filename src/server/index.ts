@@ -10,6 +10,7 @@ import { requestId, errorHandler, cors } from '@/middleware/index.js';
 import { RegisterRoutes } from '@/generated/routes.js';
 import swaggerDocument from '@/generated/swagger.json';
 import { UI } from '@/middleware/ui.js';
+import { swaggerStatic } from '@/middleware/swagger.js';
 
 export async function run() {
   const config = getConfig();
@@ -32,7 +33,7 @@ export async function run() {
 
   RegisterRoutes(app);
 
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  app.use('/docs', swaggerStatic, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   app.use(UI);
 

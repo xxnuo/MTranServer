@@ -32,6 +32,9 @@ await $`cd ui && bun install && bun run build`;
 console.log("Generating UI assets map...");
 await $`bun run scripts/gen-ui-assets.ts`;
 
+console.log("Generating Swagger assets map...");
+await $`bun run scripts/gen-swagger-assets.ts`;
+
 console.log("Generating routes and spec...");
 await $`bun run gen`;
 

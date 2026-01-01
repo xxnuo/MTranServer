@@ -20,3 +20,4 @@ deprecated/go/dist/mtranserver-darwin-arm64
 *.o
 src/generated/
 src/assets/ui.ts
+src/assets/swagger.ts
