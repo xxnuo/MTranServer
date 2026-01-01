@@ -2,9 +2,9 @@ import { setConfig, getConfig, Config } from '@/config/index.js';
 import { initRecords, downloadModel } from '@/models/index.js';
 import { translateWithPivot, cleanupAllEngines } from '@/services/index.js';
 import { detectLanguage } from '@/services/detector.js';
-import { normalizeLanguageCode } from '@/utils/index.js';
+import { NormalizeLanguageCode } from '@/utils/index.js';
 
-export interface MTranConfig extends Partial<Config> {}
+export interface MTranConfig extends Partial<Config> { }
 
 export class MTran {
   constructor(config?: MTranConfig) {
@@ -28,8 +28,8 @@ export class MTran {
    * @param html Whether the text is HTML (default: false)
    */
   async translate(from: string, to: string, text: string, html: boolean = false): Promise<string> {
-    const normalizedFrom = from === 'auto' ? 'auto' : normalizeLanguageCode(from);
-    const normalizedTo = normalizeLanguageCode(to);
+    const normalizedFrom = from === 'auto' ? 'auto' : NormalizeLanguageCode(from);
+    const normalizedTo = NormalizeLanguageCode(to);
     return translateWithPivot(normalizedFrom, normalizedTo, text, html);
   }
 
@@ -47,8 +47,8 @@ export class MTran {
    * @param to Target language
    */
   async downloadModel(from: string, to: string): Promise<void> {
-    const normalizedFrom = normalizeLanguageCode(from);
-    const normalizedTo = normalizeLanguageCode(to);
+    const normalizedFrom = NormalizeLanguageCode(from);
+    const normalizedTo = NormalizeLanguageCode(to);
     await downloadModel(normalizedTo, normalizedFrom);
   }
 

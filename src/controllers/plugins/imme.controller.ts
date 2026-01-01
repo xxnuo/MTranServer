@@ -24,7 +24,7 @@ export class ImmeController extends Controller {
     @Body() body: ImmeTranslateRequest,
     @Query() token?: string
   ): Promise<ImmeTranslateResponse> {
-    const { normalizeLanguageCode } = await import('@/utils/index.js');
+    const { NormalizeLanguageCode } = await import('@/utils/index.js');
     const { translateWithPivot } = await import('@/services/index.js');
     const { getConfig } = await import('@/config/index.js');
     const logger = await import('@/logger/index.js');
@@ -37,8 +37,8 @@ export class ImmeController extends Controller {
       throw new Error('Unauthorized');
     }
 
-    const sourceLang = normalizeLanguageCode(body.source_lang);
-    const targetLang = normalizeLanguageCode(body.target_lang);
+    const sourceLang = NormalizeLanguageCode(body.source_lang);
+    const targetLang = NormalizeLanguageCode(body.target_lang);
 
     const translations: ImmeTranslation[] = [];
 

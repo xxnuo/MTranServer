@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import { run } from '@/server/index.js';
+import { getConfig } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
+import { DownloadCommand } from './server/download';
+import { LanguagesCommand } from './server/languages';
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`
@@ -26,6 +29,10 @@ Options:
   --no-log-console         Disable logging to console
   --check-update / --no-check-update  Enable/Disable update check (default: true)
 
+Commands:
+  --download <pairs...>    Download models for specified pairs (e.g., --download en-zh zh-en)
+  --language / --languages [filter] List available language pairs
+
 Environment Variables:
   MT_HOST, MT_PORT, MT_LOG_LEVEL, MT_CONFIG_DIR, MT_MODEL_DIR,
   MT_LOG_DIR, MT_ENABLE_UI, MT_OFFLINE, MT_WORKER_IDLE_TIMEOUT,
@@ -33,6 +40,35 @@ Environment Variables:
   MT_CHECK_UPDATE
 `);
   process.exit(0);
+}
+
+if (process.argv.includes('--languages') || process.argv.includes('--language') || process.argv.includes('--download')) {
+  try {
+    const config = getConfig();
+    if (config.enableOfflineMode) {
+      logger.error('This command is not available in offline mode.');
+      logger.error('Please disable offline mode to use this feature.');
+      process.exit(1);
+    }
+    const models = await import('@/models/index.js');
+    await models.initRecords();
+
+    if (!models.globalRecords) {
+      throw new Error('Failed to Initialize records');
+    }
+
+    if (process.argv.includes('--languages') || process.argv.includes('--language')) {
+      LanguagesCommand(models.getLanguagePairs);
+    }
+
+    if (process.argv.includes('--download')) {
+      DownloadCommand(models.globalRecords, models.downloadModel);
+    }
+
+  } catch (error) {
+    logger.fatal('Error:', error);
+    process.exit(1);
+  }
 }
 
 process.on('uncaughtException', (error) => {

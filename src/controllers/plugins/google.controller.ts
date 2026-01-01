@@ -23,12 +23,12 @@ export class GoogleController extends Controller {
   @Security('api_token')
   @SuccessResponse('200', 'Success')
   public async translateCompat(@Body() body: GoogleTranslateRequest): Promise<GoogleTranslateResponse> {
-    const { normalizeLanguageCode } = await import('@/utils/index.js');
+    const { NormalizeLanguageCode } = await import('@/utils/index.js');
     const { translateWithPivot } = await import('@/services/index.js');
 
     const queries = Array.isArray(body.q) ? body.q : [body.q];
-    const sourceBCP47 = normalizeLanguageCode(body.source);
-    const targetBCP47 = normalizeLanguageCode(body.target);
+    const sourceBCP47 = NormalizeLanguageCode(body.source);
+    const targetBCP47 = NormalizeLanguageCode(body.target);
     const isHTML = body.format === 'html';
 
     const translations = [];
@@ -53,7 +53,7 @@ export class GoogleController extends Controller {
     @Query() tl: string,
     @Query() q: string
   ): Promise<any> {
-    const { normalizeLanguageCode } = await import('@/utils/index.js');
+    const { NormalizeLanguageCode } = await import('@/utils/index.js');
     const { translateWithPivot } = await import('@/services/index.js');
 
     const bcp47ToGoogleLang: Record<string, string> = {
@@ -65,8 +65,8 @@ export class GoogleController extends Controller {
       return bcp47ToGoogleLang[bcp47Lang] || bcp47Lang;
     }
 
-    const sourceBCP47 = normalizeLanguageCode(sl);
-    const targetBCP47 = normalizeLanguageCode(tl);
+    const sourceBCP47 = NormalizeLanguageCode(sl);
+    const targetBCP47 = NormalizeLanguageCode(tl);
 
     const result = await translateWithPivot(sourceBCP47, targetBCP47, q, false);
 

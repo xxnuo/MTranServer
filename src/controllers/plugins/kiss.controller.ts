@@ -23,11 +23,11 @@ export class KissController extends Controller {
   @Security('api_token')
   @SuccessResponse('200', 'Success')
   public async translate(@Body() body: KissTranslateRequest): Promise<KissTranslateResponse> {
-    const { normalizeLanguageCode } = await import('@/utils/index.js');
+    const { NormalizeLanguageCode } = await import('@/utils/index.js');
     const { translateWithPivot } = await import('@/services/index.js');
 
-    const fromLang = normalizeLanguageCode(body.from);
-    const toLang = normalizeLanguageCode(body.to);
+    const fromLang = NormalizeLanguageCode(body.from);
+    const toLang = NormalizeLanguageCode(body.to);
 
     if (body.texts && Array.isArray(body.texts) && body.texts.length > 0) {
       const translations = [];

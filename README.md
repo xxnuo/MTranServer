@@ -57,6 +57,10 @@
   -ui                   启用 Web UI (默认 true)
   -offline              启用离线模式，不自动下载新模型 (默认 false)
   -worker-idle-timeout int  Worker 空闲超时时间（秒） (默认 300)
+  --download pairs...   下载指定语言对的模型 (例如 --download en_zh zh_en)
+  --languages           列出所有支持下载的语言对
+
+注意：`--download` 和 `--languages` 命令需要联网，无法在离线模式下工作。
 
 示例：
   ./mtranserver --host 127.0.0.1 --port 8080

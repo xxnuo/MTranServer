@@ -29,11 +29,11 @@ export class TranslateController extends Controller {
   @Security('api_token')
   @SuccessResponse('200', 'Success')
   public async translate(@Body() body: TranslateRequest): Promise<TranslateResponse> {
-    const { normalizeLanguageCode } = await import('@/utils/index.js');
+    const { NormalizeLanguageCode } = await import('@/utils/index.js');
     const { translateWithPivot } = await import('@/services/index.js');
 
-    const normalizedFrom = normalizeLanguageCode(body.from);
-    const normalizedTo = normalizeLanguageCode(body.to);
+    const normalizedFrom = NormalizeLanguageCode(body.from);
+    const normalizedTo = NormalizeLanguageCode(body.to);
 
     const result = await translateWithPivot(
       normalizedFrom,
@@ -51,11 +51,11 @@ export class TranslateController extends Controller {
   public async translateBatch(
     @Body() body: TranslateBatchRequest
   ): Promise<TranslateBatchResponse> {
-    const { normalizeLanguageCode } = await import('@/utils/index.js');
+    const { NormalizeLanguageCode } = await import('@/utils/index.js');
     const { translateWithPivot } = await import('@/services/index.js');
 
-    const normalizedFrom = normalizeLanguageCode(body.from);
-    const normalizedTo = normalizeLanguageCode(body.to);
+    const normalizedFrom = NormalizeLanguageCode(body.from);
+    const normalizedTo = NormalizeLanguageCode(body.to);
 
     const results: string[] = [];
 

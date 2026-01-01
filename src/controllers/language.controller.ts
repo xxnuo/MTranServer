@@ -31,7 +31,7 @@ export class LanguageController extends Controller {
     const languages = getSupportedLanguages();
     const pairStrings = getLanguagePairs();
     const pairs: LanguagePair[] = pairStrings.map((p) => {
-      const [from, to] = p.split('-');
+      const [from, to] = p.split('_');
       return { from, to };
     });
     return { languages, pairs };

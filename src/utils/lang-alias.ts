@@ -46,7 +46,7 @@ const languageAliases: Record<string, string> = {
   'nb': 'no',
 };
 
-export function normalizeLanguageCode(code: string): string {
+export function NormalizeLanguageCode(code: string): string {
   if (!code) return '';
 
   const normalized = code.toLowerCase().replace(/_/g, '-');

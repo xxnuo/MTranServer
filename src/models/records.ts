@@ -50,7 +50,7 @@ export function getLanguagePairs(): string[] {
   if (!globalRecords) return [];
   const pairs = new Set<string>();
   for (const record of globalRecords.data) {
-    pairs.add(`${record.sourceLanguage}-${record.targetLanguage}`);
+    pairs.add(`${record.sourceLanguage}_${record.targetLanguage}`);
   }
   return Array.from(pairs);
 }
