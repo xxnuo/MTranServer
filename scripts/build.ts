@@ -20,6 +20,9 @@ console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
 
+console.log("Generating routes and spec...");
+await $`bun run gen`;
+
 for (const target of targets) {
   const ext = target.bun.includes("windows") ? ".exe" : "";
   const outfile = `dist/mtranserver-${version}-${target.name}${ext}`;
