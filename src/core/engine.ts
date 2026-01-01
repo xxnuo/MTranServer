@@ -123,15 +123,16 @@ export class TranslationEngine {
       processedText = this._sanitizeHTML(text);
     }
 
-    const { cleanText: placeholderText, replacements: placeholderReplacements } = this._hidePlaceholders(processedText, options);
-    const { cleanText, replacements } = this._hideEmojis(placeholderText);
+    const { taggedText, replacements, forceHtml } = this._tagPlaceholders(processedText, options.html);
+    const { cleanText, replacements: emojiReplacements } = this._hideEmojis(taggedText);
+    const effectiveOptions: TranslateOptions = forceHtml ? { ...options, html: true } : options;
 
     let translation: string;
     try {
       if (cleanText.length > this.maxLengthBreak) {
-        translation = this._translateLongText(cleanText, options);
+        translation = this._translateLongText(cleanText, effectiveOptions);
       } else {
-        translation = this._translateInternal(cleanText, options);
+        translation = this._translateInternal(cleanText, effectiveOptions);
       }
     } catch (error: any) {
       if (this._isFatalWASMError(error)) {
@@ -141,8 +142,8 @@ export class TranslationEngine {
       throw error;
     }
 
-    translation = this._restoreEmojis(translation, replacements);
-    translation = this._restorePlaceholders(translation, placeholderReplacements);
+    translation = this._restoreEmojis(translation, emojiReplacements);
+    translation = this._restoreTaggedPlaceholders(translation, replacements);
 
     return translation;
   }
@@ -307,32 +308,36 @@ export class TranslationEngine {
     return result;
   }
 
-  private _hidePlaceholders(
+  private _tagPlaceholders(
     text: string,
-    options: TranslateOptions = {}
-  ): { cleanText: string; replacements: Array<{ original: string; placeholder: string }> } {
-    const replacements: Array<{ original: string; placeholder: string }> = [];
-    const used = new Set<string>();
+    htmlEnabled: boolean = false
+  ): { taggedText: string; replacements: string[]; forceHtml: boolean } {
     const placeholderRegex = /(\{\d+\}|\[\d+\])/g;
-    const cleanText = text.replace(placeholderRegex, (match) => {
-      let placeholder = `__MTRAN_PH_${replacements.length}__`;
-      let salt = 0;
-      while (text.includes(placeholder) || used.has(placeholder)) {
-        salt += 1;
-        placeholder = `__MTRAN_PH_${replacements.length}_${salt}__`;
-      }
-      used.add(placeholder);
-      replacements.push({ original: match, placeholder });
-      return placeholder;
+    if (!placeholderRegex.test(text)) {
+      return { taggedText: text, replacements: [], forceHtml: false };
+    }
+
+    const replacements: string[] = [];
+    const taggedText = text.replace(placeholderRegex, (match) => {
+      const index = replacements.length;
+      replacements.push(match);
+      return `<br data-mt="${index}">`;
     });
-    return { cleanText, replacements };
+
+    return { taggedText, replacements, forceHtml: !htmlEnabled };
   }
 
-  private _restorePlaceholders(text: string, replacements: Array<{ original: string; placeholder: string }>): string {
-    let result = text;
-    for (const { original, placeholder } of replacements) {
-      result = result.split(placeholder).join(original);
+  private _restoreTaggedPlaceholders(text: string, replacements: string[]): string {
+    if (replacements.length === 0) {
+      return text;
     }
+
+    let result = text;
+    result = result.replace(/<br\s+data-mt="(\d+)"\s*\/?>/gi, (_, index) => {
+      const idx = Number(index);
+      return replacements[idx] ?? _;
+    });
+
     return result;
   }
 
