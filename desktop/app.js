@@ -162,8 +162,11 @@ async function restartServer() {
 async function quitApp() {
   await logDesktop('quit app');
   app.isQuitting = true;
-  await stopServerInstance();
+  const stopPromise = stopServerInstance();
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 5000));
+  await Promise.race([stopPromise, timeoutPromise]);
   app.quit();
+  setTimeout(() => app.exit(0), 2000);
 }
 
 function updateLocale(nextLocale) {
