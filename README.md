@@ -12,6 +12,14 @@
 
 <img src="./images/preview.png" width="auto" height="460">
 
+## 在线试用 Demo
+
+| 网站                             | TOKEN                     | 其他接口                                                                       | 提供者  |
+| -------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | ------- |
+| `https://MTranServer.ipacel.cc/` | `__IpacEL_MT_API_TOKEN__` | 沉浸式翻译: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi |
+
+感谢社区贡献者为用户提供试用服务！
+
 ## 使用说明
 
 前往 [Releases](https://github.com/xxnuo/MTranServer/releases) 下载对应平台最新版本，直接在命令行启动程序，即可使用。
@@ -117,14 +125,6 @@ docker compose up -d
 | 划词翻译         | `http://localhost:8989/hcfy`                         | 支持 `token` 参数或 `Bearer` 认证                               |
 
 **普通用户参照表格内容设置好插件使用的接口地址就可以使用了。**
-
-## 在线试用 Demo
-
-| 网站                             | TOKEN                     | 其他接口                                                                       | 提供者  |
-| -------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | ------- |
-| `https://MTranServer.ipacel.cc/` | `__IpacEL_MT_API_TOKEN__` | 沉浸式翻译: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | @ApliNi |
-
-感谢社区贡献者为用户提供试用服务！
 
 ## 同类项目
 
