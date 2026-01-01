@@ -54,6 +54,7 @@ export function TranslationPanel({
   const [translatedText, setTranslatedText] = useState('')
   const [loading, setLoading] = useState(false)
   const [autoTranslate, setAutoTranslate] = useState(() => localStorage.getItem(storageKey('autoTranslate')) === 'true')
+  const firstTranslateTipKey = 'firstTranslateTipShown'
 
   const translateTimeoutRef = useRef<number | null>(null)
 
@@ -100,6 +101,11 @@ export function TranslationPanel({
         toast.error(t('enterTextError'))
       }
       return
+    }
+
+    if (localStorage.getItem(firstTranslateTipKey) !== 'true') {
+      localStorage.setItem(firstTranslateTipKey, 'true')
+      toast(t('firstTranslationTip'), { position: 'bottom-right' })
     }
 
     setLoading(true)
