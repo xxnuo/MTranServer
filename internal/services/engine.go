@@ -395,10 +395,14 @@ func translateSingleLanguageText(ctx context.Context, fromLang, toLang, text str
 
 		// Check if error is retryable (worker failure)
 		if isConnectionError(err) {
-			logger.Warn("Translation attempt %d failed (connection error): %v. Retrying with next manager...", i+1, err)
+			logger.Debug("Translation attempt %d failed (connection error): %v. Retrying with next manager...", i+1, err)
 			lastErr = err
-			// Short sleep before retry
-			time.Sleep(100 * time.Millisecond)
+			// Backoff: 500ms, 1000ms, 2000ms...
+			backoff := time.Duration(500*(1<<i)) * time.Millisecond
+			if backoff > 3*time.Second {
+				backoff = 3 * time.Second
+			}
+			time.Sleep(backoff)
 			continue
 		}
 
