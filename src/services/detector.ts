@@ -15,6 +15,7 @@ export interface TextSegment {
 
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.5;
 const MAXIMUM_LANGUAGES_IN_ONE_TEXT = 2;
+const MAX_DETECTION_LENGTH = 1024;
 
 let cldModule: any = null;
 let initPromise: Promise<void> | null = null;
@@ -105,7 +106,11 @@ export async function detectLanguage(text: string): Promise<string> {
   await initCLD();
 
   try {
-    const result = detectLanguageWithCLD(text);
+    const processText = text.length > MAX_DETECTION_LENGTH 
+      ? text.slice(0, MAX_DETECTION_LENGTH) 
+      : text;
+      
+    const result = detectLanguageWithCLD(processText);
     return bcp47Normalize(result.language);
   } catch (error) {
     logger.warn(`Language detection failed: ${error}`);
@@ -124,7 +129,11 @@ export async function detectLanguageWithConfidence(
   await initCLD();
 
   try {
-    const result = detectLanguageWithCLD(text);
+    const processText = text.length > MAX_DETECTION_LENGTH 
+      ? text.slice(0, MAX_DETECTION_LENGTH) 
+      : text;
+
+    const result = detectLanguageWithCLD(processText);
     const confidence = result.percentScore / 100;
 
     if (confidence < minConfidence) {
@@ -204,7 +213,11 @@ export async function detectMultipleLanguagesWithThreshold(
 
   for (const { segment, index } of sentenceSegments) {
     try {
-      const result = detectLanguageWithCLD(segment);
+      const processSegment = segment.length > MAX_DETECTION_LENGTH
+        ? segment.slice(0, MAX_DETECTION_LENGTH)
+        : segment;
+
+      const result = detectLanguageWithCLD(processSegment);
       const detectedLang = bcp47Normalize(result.language);
       const confidence = result.percentScore / 100;
 
