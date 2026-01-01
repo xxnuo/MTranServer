@@ -4,15 +4,21 @@ WORKDIR /app
 ARG VERSION
 ENV VERSION=${VERSION}
 
-WORKDIR /app
+COPY package.json bun.lock ./
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
+
+COPY ui/package.json ui/bun.lock ./ui/
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    cd ui && bun install --frozen-lockfile
+
 COPY . .
 
-RUN bun install --frozen-lockfile
-RUN cd ui && bun install --frozen-lockfile
+RUN if [ -z "$VERSION" ]; then VERSION=$(bun -p "require('./package.json').version"); fi; \
+    bun run bump "$VERSION"
 
-RUN if [ -n "$VERSION" ]; then bun run bump $VERSION; fi
-
-RUN bun run build:docker
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun run build:node
 
 FROM node:22-alpine
 
