@@ -17,6 +17,7 @@ export interface Config {
   logDir: string;
   logToFile: boolean;
   logConsole: boolean;
+  logRequests: boolean;
   maxLengthBreak: number;
   checkUpdate: boolean;
 }
@@ -123,6 +124,7 @@ export function getConfig(): Config {
 
     logToFile: getBool('--log-to-file', 'MT_LOG_TO_FILE', false),
     logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', true),
+    logRequests: getBool('--log-requests', 'MT_LOG_REQUESTS', false),
 
     checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', true),
   };
