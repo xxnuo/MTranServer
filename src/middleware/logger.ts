@@ -10,8 +10,8 @@ export function requestLogger() {
     res.on('finish', () => {
       if (config.logRequests) {
         const duration = ((Date.now() - start) / 1000).toFixed(2);
-        const ip = req.ip || req.socket.remoteAddress || 'unknown';
-        logger.important(`${req.method} ${req.path} ${res.statusCode} ${duration}s ${res.get('content-length') || 0}bytes ${ip}`);
+        const ip = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.ip;
+        logger.important(`${req.method} ${req.path} ${res.statusCode} ${duration}s ${res.get('content-length') || 0}b - ${ip}`);
       }
     });
 
