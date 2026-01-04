@@ -8,18 +8,10 @@ export function requestLogger() {
     const start = Date.now();
 
     res.on('finish', () => {
-      // Only log requests if the feature is enabled - this should work regardless of log level
       if (config.logRequests) {
         const duration = ((Date.now() - start) / 1000).toFixed(2);
         const ip = req.ip || req.socket.remoteAddress || 'unknown';
-        
-        // Extract path without query string
-        const pathWithoutQuery = req.path || req.url.split('?')[0];
-        
-        // Get content length and accept language
-        const contentLength = res.get('content-length') || '0';
-        
-        logger.important(`${req.method} ${pathWithoutQuery} ${res.statusCode} ${duration}s ${contentLength}bytes ${ip}`);
+        logger.important(`${req.method} ${req.path} ${res.statusCode} ${duration}s ${res.get('content-length') || 0}bytes ${ip}`);
       }
     });
 
