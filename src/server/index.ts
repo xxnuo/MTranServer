@@ -31,7 +31,9 @@ export async function run() {
   app.use(requestId());
   app.use(express.json());
   app.use(cors());
-  app.use(requestLogger());
+  if (config.logRequests) {
+	app.use(requestLogger());
+  }
 
   RegisterRoutes(app);
 
