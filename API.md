@@ -15,7 +15,7 @@
 | MT_OFFLINE            | 离线模式，不自动下载新语言的模型，仅使用已下载的模型 | false  | true, false                 |
 | MT_WORKER_IDLE_TIMEOUT| Worker 空闲超时时间（秒）                | 300    | 任意正整数                  |
 | MT_API_TOKEN          | API 访问令牌                             | 空     | 任意字符串                  |
-| MT_CACHE_SIZE         | 缓存大小（MB）                           | 0      | 任意正整数                  |
+| MT_CACHE_SIZE         | 缓存大小（缓存最近的多少次翻译）              | 0      | 任意正整数                  |
 
 示例：
 
