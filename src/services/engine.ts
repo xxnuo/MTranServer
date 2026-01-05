@@ -8,6 +8,7 @@ import wasmPath from '@/lib/bergamot/bergamot-translator.wasm' with { type: 'fil
 import * as logger from '@/logger/index.js';
 import * as models from '@/models/index.js';
 import { detectLanguage, detectMultipleLanguages } from './detector.js';
+import { readCacheTranslateWithPivot, writeCacheTranslateWithPivot } from '@/utils/cache.js';
 
 interface EngineInfo {
   engine: TranslationEngine;
@@ -187,6 +188,24 @@ async function translateSegment(
 }
 
 export async function translateWithPivot(
+  fromLang: string,
+  toLang: string,
+  text: string,
+  isHTML: boolean = false
+): Promise<string> {
+
+  const cache = readCacheTranslateWithPivot([fromLang, toLang, text, isHTML]);
+  if (cache !== null) {
+	logger.debug(`readCacheTranslateWithPivot: ${fromLang} -> ${toLang}, text length: ${text.length}, isHTML: ${isHTML}`);
+    return cache;
+  }
+
+  const result = await originalTranslateWithPivot(fromLang, toLang, text, isHTML);
+  writeCacheTranslateWithPivot(result, [fromLang, toLang, text, isHTML]);
+  return result;
+}
+
+export async function originalTranslateWithPivot(
   fromLang: string,
   toLang: string,
   text: string,

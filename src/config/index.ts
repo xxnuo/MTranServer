@@ -19,6 +19,7 @@ export interface Config {
   logConsole: boolean;
   maxLengthBreak: number;
   checkUpdate: boolean;
+  cacheSize: number;
 }
 
 let globalConfig: Config | null = null;
@@ -125,6 +126,8 @@ export function getConfig(): Config {
     logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', true),
 
     checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', true),
+
+	cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', 0),
   };
 
   return globalConfig;
