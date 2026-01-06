@@ -110,6 +110,10 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+[data-slot="scroll-area"] {
+  overflow-y: auto;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
