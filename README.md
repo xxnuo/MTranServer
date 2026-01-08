@@ -35,6 +35,26 @@
 >
 > 程序经常更新，如果遇到问题，可以尝试更新到最新版本。
 
+### 提前下载模型（可选）
+
+如需离线部署或提前下载全部模型，可使用下载脚本：
+
+```bash
+# 远程执行（交互式）
+python3 <(curl -s https://raw.githubusercontent.com/xxnuo/MTranServer/refs/heads/main/scripts/download_models.py)
+
+# 指定目录和架构下载
+python3 <(curl -s https://raw.githubusercontent.com/xxnuo/MTranServer/refs/heads/main/scripts/download_models.py) \
+  -m ./models -a base-memory -w 8
+```
+
+**架构说明：**
+- `base-memory`：内存优化版（默认，推荐 amd64 服务器）
+- `base`：基础版（平衡性能和资源）
+- `tiny`：精简版（最小体积，适合资源受限环境）
+
+**依赖：** Python 3.x，解压需 `pip install zstandard` 或系统 zstd 命令，可选 `pip install tqdm` 显示进度条。
+
 服务器启动后日志会输出程序自带的一个简单 UI 的地址和在线调试文档的地址，下面是预览
 
 ![UI](./images/ui.png)
