@@ -78,11 +78,7 @@
     "extraMetadata": {
       "main": "dist/main-bundled.js"
     },
-    "asar": false,
-    "asarUnpack": [
-      "dist/mtranserver*",
-      "dist/*.exe"
-    ],
+    "asar": true,
     "artifactName": "mtranserver-desktop-${version}-${os}-${arch}.${ext}",
     "files": [
       "desktop/**/*",
