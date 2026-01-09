@@ -2,8 +2,6 @@
 
 [中文](../README.md) | [English](README_en.md) | [日本語](README_ja.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
-<!-- <img src="../images/icon.png" width="64px" height="64px" align="right" alt="MTran"> -->
-
 Ein ultraschneller Offline-Übersetzungsmodell-Server mit minimalem Ressourcenverbrauch. Keine Grafikkarte erforderlich. Durchschnittliche Antwortzeit von 50 ms pro Anfrage. Unterstützt die Übersetzung der weltweit wichtigsten Sprachen.
 
 Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung`, `Reaktionsgeschwindigkeit`, `plattformübergreifende Bereitstellung` und `lokale Ausführung` fokussiert ist, um `unbegrenzte kostenlose Übersetzungen` zu erreichen. Aufgrund von Einschränkungen bei der Modellgröße und Optimierung wird die Übersetzungsqualität sicherlich nicht so gut sein wie die von großen Sprachmodellen. Für qualitativ hochwertige Übersetzungen wird die Verwendung von Online-APIs für große Sprachmodelle empfohlen.
@@ -14,54 +12,45 @@ Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung
 
 ## Online Demo
 
-| Website                          | TOKEN                     | Andere Schnittstelle                                                                           | Anbieter |
-| -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | -------- |
-| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi)  |
+| Website                                                                         | TOKEN                     | Andere Schnittstelle                                                                           | Anbieter                               |
+| ------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- |
+| [ipacel.cc](https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__) | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
 
 Vielen Dank an die Mitwirkenden der Community für die Bereitstellung von Testdiensten für Benutzer!
 
 ## Gebrauchsanweisung
 
-Laden Sie die neueste Version für Ihre Plattform von [Releases](https://github.com/xxnuo/MTranServer/releases) herunter und starten Sie das Programm einfach über die Befehlszeile, um es zu verwenden.
+### Schnellstart
 
-[MTranServer](https://github.com/xxnuo/MTranServer) ist hauptsächlich für Serverumgebungen gedacht, daher sind derzeit nur der Befehlszeilendienst und die Docker-Bereitstellung verfügbar.
+```bash
+npx mtranserver@latest
+```
 
-Es ist geplant, ein Desktop-Programm und eine Browser-Erweiterung für eine bequemere Nutzung bereitzustellen. Bitte bleiben Sie dran.
+> `npx` kann durch einen beliebigen Paketmanager ersetzt werden, z. B. `bunx`, `pnpx` usw.
 
 > **Wichtiger Hinweis:**
 >
-> Bei der erstmaligen Übersetzung eines Sprachpaares lädt der Server automatisch das entsprechende Übersetzungsmodell herunter (sofern der Offline-Modus nicht aktiviert ist). Dieser Vorgang kann je nach Netzwerkgeschwindigkeit und Modellgröße einige Zeit in Anspruch nehmen. Nach dem Herunterladen des Modells profitieren nachfolgende Übersetzungsanfragen von einer Antwortzeit im Millisekundenbereich. Es wird empfohlen, vor der eigentlichen Verwendung eine Übersetzung zu testen, damit der Server das Modell vorab herunterladen und laden kann.
->
-> Das Programm wird häufig aktualisiert. Wenn Sie auf Probleme stoßen, versuchen Sie, auf die neueste Version zu aktualisieren.
+> Bei der erstmaligen Übersetzung eines Sprachpaares lädt der Server automatisch das entsprechende Übersetzungsmodell herunter (sofern der Offline-Modus nicht aktiviert ist). Dieser Vorgang kann je nach Netzwerkgeschwindigkeit und Modellgröße einige Zeit in Anspruch nehmen. Nach dem Herunterladen des Modells profitieren nachfolgende Übersetzungsanfragen von einer Antwortzeit im Millisekundenbereich. Es wird empfohlen, vor der eigentlichen Verwendung eine Übersetzung zu testen, damit der Server das Modell vorab herunterladen und laden kann. Das Programm wird häufig aktualisiert. Wenn Sie auf Probleme stoßen, versuchen Sie, auf die neueste Version zu aktualisieren.
+
+### Schnellinstallation
+
+```bash
+npm i -g mtranserver@latest
+```
+
+> `npm` kann durch einen beliebigen Paketmanager ersetzt werden, z. B. `bun`, `pnpm` usw.
+
+Starten Sie anschließend `mtranserver`.
+
+### Manueller Download
+
+Laden Sie die neueste Version für Ihre Plattform von [Releases](https://github.com/xxnuo/MTranServer/releases) herunter und starten Sie das Programm einfach über die Befehlszeile, um es zu verwenden.
 
 Nach dem Start des Servers werden die Adresse der im Programm enthaltenen einfachen Benutzeroberfläche und die Adresse der Online-Dokumentation im Protokoll ausgegeben. Hier ist eine Vorschau:
 
 ![UI](../images/ui.png)
 
 ![Dokumentation](../images/swagger.png)
-
-
-### Befehlszeilenparameter
-
-```bash
-./mtranserver [Optionen]
-
-Optionen:
-  -version, -v          Versionsinformationen anzeigen
-  -log-level string     Protokollierungsgrad (debug, info, warn, error) (Standard "warn")
-  -config-dir string    Konfigurationsverzeichnis (Standard "~/.config/mtran/server")
-  -model-dir string     Modellverzeichnis (Standard "~/.config/mtran/models")
-  -host string          Server-Abhöradresse (Standard "0.0.0.0")
-  -port string          Server-Port (Standard "8989")
-  -ui                   Web-UI aktivieren (Standard true)
-  -offline              Offline-Modus aktivieren, neue Modelle nicht automatisch herunterladen (Standard false)
-  -worker-idle-timeout int  Worker-Leerlauf-Timeout (Sekunden) (Standard 300)
-
-Beispiele:
-  ./mtranserver --host 127.0.0.1 --port 8080
-  ./mtranserver --ui --offline
-  ./mtranserver -v
-```
 
 ### Docker Compose Bereitstellung
 
@@ -78,7 +67,6 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
-      - MT_ENABLE_UI=true
       - MT_OFFLINE=false
       # - MT_API_TOKEN=ihr_geheimer_token_hier
     volumes:
@@ -90,7 +78,33 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-#### Übersetzung-Plugin kompatible Schnittstellen
+### Desktop-App
+
+TODO: Noch in Arbeit. Das Electron-Paket ist etwas zu groß, ich suche noch nach einer besseren Lösung.
+
+## Ökosystem-Projekte
+
+### IDE-Plugins
+
+#### MTranCode Kommentar-Übersetzungs-Plugin
+
+Unterstützt VS Code, Cursor, Augment und andere VS-Code-basierte IDEs.
+
+Suchen Sie im Plugin-Marktplatz nach `MTranCode`, um das Kommentar-Übersetzungs-Plugin zu installieren.
+
+Das Plugin ruft standardmäßig den Server unter `http://localhost:8989` für Kommentar- und Code-Übersetzungen auf. Sie können dies in den Einstellungen anpassen.
+
+Dieses Plugin ist ein Fork von [vscode-comment-translate](https://github.com/intellism/vscode-comment-translate).
+
+### Browser-Erweiterung
+
+#### MTranBrowser
+
+TODO: In aktiver Entwicklung.
+
+> Wenn Sie ein abgeleitetes Projekt entwickeln, können Sie gerne eine PR einreichen. Ich füge Ihr Projekt zur Ökosystem-Liste hinzu.
+
+## Kompatible Schnittstellen
 
 Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 
@@ -99,9 +113,10 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 | `/imme` | POST | Schnittstelle für Immersive Translate Plugin | [Immersive Translate](https://immersivetranslate.com/) |
 | `/kiss` | POST | Schnittstelle für Kiss Translator Plugin | [Kiss Translator](https://github.com/fishjar/kiss-translator) |
 | `/deepl` | POST | DeepL API v2 kompatible Schnittstelle | Clients, die die DeepL API unterstützen |
+| `/hcfy` | POST | Selection Translator kompatible Schnittstelle | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/hcfy` | POST | Selection Translator kompatible Schnittstelle | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST | Google Translate API v2 kompatible Schnittstelle | Clients, die die Google Translate API unterstützen |
 | `/google/translate_a/single` | GET | Google translate_a/single kompatible Schnittstelle | Clients, die Google Web Translate unterstützen |
-| `/hcfy` | POST | Selection Translator kompatible Schnittstelle | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 
 **Plugin-Konfigurationsanleitung:**
 
@@ -125,6 +140,32 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 
 **Normale Benutzer können den Dienst nutzen, indem sie die Schnittstellenadresse des Plugins gemäß dem Tabelleninhalt konfigurieren.**
 
+### Befehlszeilenparameter
+
+```bash
+./mtranserver [Optionen]
+
+Optionen:
+  -version, -v          Versionsinformationen anzeigen
+  -log-level string     Protokollierungsgrad (debug, info, warn, error) (Standard "warn")
+  -config-dir string    Konfigurationsverzeichnis (Standard "~/.config/mtran/server")
+  -model-dir string     Modellverzeichnis (Standard "~/.config/mtran/models")
+  -host string          Server-Abhöradresse (Standard "0.0.0.0")
+  -port string          Server-Port (Standard "8989")
+  -ui                   Web-UI aktivieren (Standard true)
+  -offline              Offline-Modus aktivieren, neue Modelle nicht automatisch herunterladen (Standard false)
+  -worker-idle-timeout int  Worker-Leerlauf-Timeout (Sekunden) (Standard 300)
+  --download pairs...   Modelle für bestimmte Sprachpaare herunterladen (z. B. --download en_zh zh_en)
+  --languages           Alle unterstützten Sprachpaare zum Download auflisten
+
+Hinweis: `--download` und `--languages` benötigen eine Netzwerkverbindung und funktionieren nicht im Offline-Modus.
+
+Beispiele:
+  ./mtranserver --host 127.0.0.1 --port 8080
+  ./mtranserver --ui --offline
+  ./mtranserver -v
+```
+
 ## Ähnliche Projekte
 
 Hier sind einige Projekte mit ähnlichen Funktionen. Wenn Sie andere Bedürfnisse haben, können Sie diese Projekte ausprobieren:
@@ -134,7 +175,7 @@ Hier sind einige Projekte mit ähnlichen Funktionen. Wenn Sie andere Bedürfniss
 | [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb) | Sehr hoch | Schlecht | Durchschnittlich | Langsam | Die Android-Portierung [RTranslator](https://github.com/niedev/RTranslator) hat viele Optimierungen, aber der Ressourcenverbrauch ist immer noch hoch und es ist nicht schnell |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch | Durchschnittlich | Durchschnittlich | Mittel | Mittelklasse-CPU verarbeitet 3 Sätze/s, High-End-CPU 15-20 Sätze/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | Hoch | Durchschnittlich | Eher schlecht | Schnell | [Leistungstests](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| Andere große Modelle | Extrem hoch | Dynamisch | Sehr gut | Sehr langsam | Hohe Hardwareanforderungen. Wenn Sie eine Übersetzung mit hoher Nebenläufigkeit benötigen, wird empfohlen, das vllm-Framework zu verwenden, um die Nebenläufigkeit über den Speicher- und VRAM-Verbrauch zu steuern |
+| Andere große Modelle | Extrem hoch | Dynamisch | Sehr gut | Sehr langsam | Hohe Hardwareanforderungen. Wenn Sie eine Übersetzung mit hoher Nebenläufigkeit benötigen, wird empfohlen, das vllm-Framework zu verwenden. |
 | Dieses Projekt | Niedrig | Hoch | Durchschnittlich | Extrem schnell | Durchschnittliche Antwortzeit von 50 ms pro Anfrage. |
 
 > Die Daten in der Tabelle beziehen sich auf einfache Tests mit CPU, Englisch-Chinesisch-Szenarien, keine strengen Tests, Vergleich von nicht quantisierten Versionen, nur als Referenz.

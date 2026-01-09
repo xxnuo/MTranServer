@@ -2,8 +2,6 @@
 
 [中文](../README.md) | [English](README_en.md) | [日本語](README_ja.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
-<!-- <img src="../images/icon.png" width="64px" height="64px" align="right" alt="MTran"> -->
-
 超低リソース消費、超高速なオフライン翻訳モデルサーバーです。グラフィックカードは不要です。リクエストあたりの平均応答時間は50ミリ秒です。世界の主要言語の翻訳をサポートしています。
 
 注意：このモデルサーバーは、`オフライン翻訳`、`応答速度`、`クロスプラットフォーム展開`、`ローカル実行`による`無制限の無料翻訳`という設計目標に焦点を当てており、モデルサイズと最適化の制限により、翻訳品質は大モデル翻訳の効果には及びません。高品質な翻訳が必要な場合は、オンラインの大規模言語モデルAPIの使用をお勧めします。
@@ -14,54 +12,45 @@
 
 ## オンラインデモ
 
-| ウェブサイト                     | TOKEN                     | その他のインターフェース                                                                       | 提供者  |
-| -------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | ------- |
-| `https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__` | `__IpacEL_MT_API_TOKEN__` | 没入型翻訳: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
+| ウェブサイト                                                                | TOKEN                     | その他のインターフェース                                                                       | 提供者                               |
+| --------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------ |
+| [ipacel.cc](https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__) | `__IpacEL_MT_API_TOKEN__` | 没入型翻訳: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
 
 ユーザーに試用サービスを提供してくださるコミュニティの貢献者に感謝します！
 
 ## 使用方法
 
-[Releases](https://github.com/xxnuo/MTranServer/releases) から対応するプラットフォームの最新バージョンをダウンロードし、コマンドラインでプログラムを起動するだけで使用できます。
+### クイックスタート
 
-[MTranServer](https://github.com/xxnuo/MTranServer) は主にサーバー使用環境向けであるため、現在はコマンドラインサービスと Docker デプロイのみ提供しています。
+```bash
+npx mtranserver@latest
+```
 
-デスクトップアプリケーションとブラウザ拡張機能を提供する予定ですので、ご期待ください。
+> `npx` は `bunx`、`pnpx` など、好きなパッケージマネージャーに置き換え可能です。
 
 > **重要：**
 >
-> 初めて特定の言語ペアを翻訳する場合、サーバーは対応する翻訳モデルを自動的にダウンロードします（オフラインモードが有効でない場合）。このプロセスには、ネットワーク速度とモデルサイズに応じて時間がかかる場合があります。モデルのダウンロード完了後、その後の翻訳リクエストはミリ秒レベルの応答速度になります。正式に使用する前に一度翻訳をテストし、サーバーにモデルを事前にダウンロードしてロードさせることをお勧めします。
->
-> プログラムは頻繁に更新されます。問題が発生した場合は、最新バージョンに更新してみてください。
+> 初めて特定の言語ペアを翻訳する場合、サーバーは対応する翻訳モデルを自動的にダウンロードします（オフラインモードが有効でない場合）。このプロセスには、ネットワーク速度とモデルサイズに応じて時間がかかる場合があります。モデルのダウンロード完了後、その後の翻訳リクエストはミリ秒レベルの応答速度になります。正式に使用する前に一度翻訳をテストし、サーバーにモデルを事前にダウンロードしてロードさせることをお勧めします。プログラムは頻繁に更新されます。問題が発生した場合は、最新バージョンに更新してみてください。
+
+### クイックインストール
+
+```bash
+npm i -g mtranserver@latest
+```
+
+> `npm` は `bun`、`pnpm` など、好きなパッケージマネージャーに置き換え可能です。
+
+その後 `mtranserver` を起動してください。
+
+### 手動ダウンロード
+
+[Releases](https://github.com/xxnuo/MTranServer/releases) から対応するプラットフォームの最新バージョンをダウンロードし、コマンドラインでプログラムを起動するだけで使用できます。
 
 サーバー起動後、ログにプログラム付属の簡易 UI のアドレスとオンラインドキュメントのアドレスが出力されます。以下はプレビューです。
 
 ![UI](../images/ui.png)
 
 ![ドキュメント](../images/swagger.png)
-
-
-### コマンドライン引数
-
-```bash
-./mtranserver [オプション]
-
-オプション：
-  -version, -v          バージョン情報を表示
-  -log-level string     ログレベル (debug, info, warn, error) (デフォルト "warn")
-  -config-dir string    設定ディレクトリ (デフォルト "~/.config/mtran/server")
-  -model-dir string     モデルディレクトリ (デフォルト "~/.config/mtran/models")
-  -host string          サーバーリッスンアドレス (デフォルト "0.0.0.0")
-  -port string          サーバーポート (デフォルト "8989")
-  -ui                   Web UI を有効にする (デフォルト true)
-  -offline              オフラインモードを有効にする（新しいモデルを自動ダウンロードしない） (デフォルト false)
-  -worker-idle-timeout int  Worker アイドルタイムアウト（秒） (デフォルト 300)
-
-例：
-  ./mtranserver --host 127.0.0.1 --port 8080
-  ./mtranserver --ui --offline
-  ./mtranserver -v
-```
 
 ### Docker Compose デプロイ
 
@@ -78,7 +67,6 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
-      - MT_ENABLE_UI=true
       - MT_OFFLINE=false
       # - MT_API_TOKEN=your_secret_token_here
     volumes:
@@ -90,7 +78,33 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-#### 翻訳プラグイン互換インターフェース
+### デスクトップアプリ
+
+TODO: まだ作業中です。Electron のパッケージが少し大きすぎるため、より良い方法を探しています。
+
+## エコシステム
+
+### IDE プラグイン
+
+#### MTranCode コメント翻訳プラグイン
+
+VS Code、Cursor、Augment などの VS Code 系 IDE をサポートしています。
+
+拡張機能マーケットプレイスで `MTranCode` を検索するとコメント翻訳プラグインをインストールできます。
+
+プラグインはデフォルトで `http://localhost:8989` のサーバーを呼び出してコメントやコードの翻訳を行います。設定で変更できます。
+
+このプラグインは [vscode-comment-translate](https://github.com/intellism/vscode-comment-translate) を fork したものです。
+
+### ブラウザ拡張
+
+#### MTranBrowser
+
+TODO: 開発中です。
+
+> 派生プロジェクトを開発した場合は、PR を送ってください。エコシステムのプロジェクトに追加します。
+
+## 互換インターフェース
 
 サーバーは複数の翻訳プラグインの互換インターフェースを提供しています。
 
@@ -99,9 +113,10 @@ docker compose up -d
 | `/imme` | POST | 没入型翻訳（Immersive Translate）プラグインインターフェース | [没入型翻訳](https://immersivetranslate.com/) |
 | `/kiss` | POST | Kiss Translator プラグインインターフェース | [Kiss Translator](https://github.com/fishjar/kiss-translator) |
 | `/deepl` | POST | DeepL API v2 互換インターフェース | DeepL API 対応クライアント |
+| `/hcfy` | POST | 划词翻译（Selection Translator）互換インターフェース | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/hcfy` | POST | 划词翻译（Selection Translator）互換インターフェース | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST | Google Translate API v2 互換インターフェース | Google Translate API 対応クライアント |
 | `/google/translate_a/single` | GET | Google translate_a/single 互換インターフェース | Google ウェブ翻訳対応クライアント |
-| `/hcfy` | POST | 划词翻译（Selection Translator）互換インターフェース | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 
 **プラグイン設定説明：**
 
@@ -125,6 +140,32 @@ docker compose up -d
 
 **一般ユーザーは、表の内容に従ってプラグインの使用インターフェースアドレスを設定すれば使用できます。**
 
+### コマンドライン引数
+
+```bash
+./mtranserver [オプション]
+
+オプション：
+  -version, -v          バージョン情報を表示
+  -log-level string     ログレベル (debug, info, warn, error) (デフォルト "warn")
+  -config-dir string    設定ディレクトリ (デフォルト "~/.config/mtran/server")
+  -model-dir string     モデルディレクトリ (デフォルト "~/.config/mtran/models")
+  -host string          サーバーリッスンアドレス (デフォルト "0.0.0.0")
+  -port string          サーバーポート (デフォルト "8989")
+  -ui                   Web UI を有効にする (デフォルト true)
+  -offline              オフラインモードを有効にする（新しいモデルを自動ダウンロードしない） (デフォルト false)
+  -worker-idle-timeout int  Worker アイドルタイムアウト（秒） (デフォルト 300)
+  --download pairs...   指定した言語ペアのモデルをダウンロード (例: --download en_zh zh_en)
+  --languages           ダウンロード可能な言語ペア一覧を表示
+
+注意：`--download` と `--languages` はネットワーク接続が必要で、オフラインモードでは動作しません。
+
+例：
+  ./mtranserver --host 127.0.0.1 --port 8080
+  ./mtranserver --ui --offline
+  ./mtranserver -v
+```
+
 ## 類似プロジェクト
 
 同様の機能を持つプロジェクトをいくつか挙げます。他のニーズがある場合は、これらのプロジェクトを試してみてください。
@@ -134,7 +175,7 @@ docker compose up -d
 | [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb) | 非常に高い | 悪い | 普通 | 遅い | Android移植版の [RTranslator](https://github.com/niedev/RTranslator) は多くの最適化がありますが、それでもリソース使用量が高く、高速ではありません |
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 普通 | 普通 | 中程度 | ミドルレンジCPUで毎秒3文、ハイエンドCPUで毎秒15-20文処理。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486) |
 | [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高い | 普通 | やや悪い | 速い | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| その他大規模モデル | 超高い | 動的 | 非常に良い | 非常に遅い | ハードウェア要件が高い。高同時実行翻訳が必要な場合は、vllmフレームワークの使用をお勧めします。メモリとVRAM使用量で翻訳同時実行数を制御できます。 |
+| その他大規模モデル | 超高い | 動的 | 非常に良い | 非常に遅い | ハードウェア要件が高い。高同時実行翻訳が必要な場合は、vllmフレームワークの使用をお勧めします。 |
 | 本プロジェクト | 低 | 高い | 普通 | 極めて速い | リクエストあたり平均応答時間50ms。 |
 
 > 表のデータはCPU、英中翻訳シナリオでの簡易テストであり、厳密なテストではなく、非量子化バージョンの比較です。参考程度にしてください。
