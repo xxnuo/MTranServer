@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-server:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -28,53 +28,55 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
-            VERSION="v$(cat package.json | grep '\"version\"' | head -1 | sed 's/.*\"version\": \"\(.*\)\".*/\1/')"
+            VERSION="v$(cat package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')"
           fi
           echo "Syncing version to ${VERSION}"
           bun run bump ${VERSION}
 
-      - name: Build All Targets
+      - name: Build Server
         run: bun run build:all
 
-      - name: Upload Artifacts
+      - name: Upload Server Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: dist/mtranserver-*
 
+  build-desktop:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-  
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-  
+
       - name: Install dependencies
         run: bun install
-  
+
       - name: Sync version from tag
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            VERSION="v$(cat package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')"
           fi
           echo "Syncing version to ${VERSION}"
           bun run bump ${VERSION}
-  
+
       - name: Build Desktop
-        run: bun run build:electron
-  
+        run: bun run build:electron -- --linux --win --mac
+
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os }}
+          name: desktop-artifacts
           path: release/mtranserver-desktop-*
 
   release:
-    needs: [build]
+    needs: [build-server, build-desktop]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -82,7 +84,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Artifacts
+      - name: Download Server Artifacts
         uses: actions/download-artifact@v4
         with:
           name: binaries
@@ -91,9 +93,26 @@ jobs:
       - name: Download Desktop Artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: desktop-*
+          name: desktop-artifacts
           path: release-assets
           merge-multiple: true
+
+      - name: Sync version from tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          fi
+          echo "Syncing version to ${VERSION}"
+          # We need bun to run bump, or just manually update if bun is not setup. 
+          # But we haven't setup bun in release job yet. 
+          # Let's rely on string manipulation for the body generation or setup bun.
+          # The previous release job logic read from package.json.
+          # If we don't bump, package.json has old version.
+          # So we should probably setup bun and bump, or just use the VERSION variable directly in the script below.
+          # But the script below reads package.json again.
+          # Let's just override the VERSION variable in the script below.
 
       - name: Determine Release Tag
         id: tag
@@ -118,10 +137,14 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.tag_name }}"
           REPO="${{ github.repository }}"
-          VERSION=$(cat package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+          # Derive version from TAG to be consistent with artifacts
+          VERSION=${TAG#v} 
+          
+          # Use VERSION derived from tag instead of package.json to ensure consistency with builds
+          echo "Using version: $VERSION"
 
           if [[ "${{ github.ref_name }}" == *"dev"* ]]; then
-            WARNING="**This is a development release. DO NOT USE IT!**"$'\n\n'
+            WARNING="**This is a development release. DO NOT USE IT!**"$ '\n\n'
           else
             WARNING=""
           fi
@@ -145,7 +168,7 @@ jobs:
           
           **macOS**: 拖动安装后，如果打开 MTranServer App 提示 "app is damaged"，需要运行以下命令修复：
 
-          > If you see "app is damaged" error, run this command in Terminal App:
+          > If you see "app is damaged" error, run this command in Terminal App: 
           
           ```bash
           sudo xattr -d com.apple.quarantine "/Applications/MTranServer.app"
