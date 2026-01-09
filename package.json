@@ -76,7 +76,7 @@
     "buildDependenciesFromSource": false,
     "copyright": "Copyright © 2025",
     "extraMetadata": {
-      "main": "scripts/electron-main.js"
+      "main": "dist/main-bundled.js"
     },
     "asar": false,
     "asarUnpack": [
@@ -91,8 +91,7 @@
       "!dist/mtranserver*",
       "!dist/*.exe",
       "images/**/*",
-      "package.json",
-      "node_modules/**/*"
+      "package.json"
     ],
     "directories": {
       "output": "release"
