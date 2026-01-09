@@ -20,7 +20,33 @@ Vielen Dank an die Mitwirkenden der Community für die Bereitstellung von Testdi
 
 ## Gebrauchsanweisung
 
-### Schnellstart
+Unterstützt jetzt Desktop-Ein-Klick-Start! Unterstützt Windows, Mac und Linux.
+
+### Desktop-App
+
+#### Manueller Download
+
+Laden Sie die neueste Desktop-Version für Ihre Plattform von [Releases](https://github.com/xxnuo/MTranServer/releases) herunter, installieren und starten Sie direkt.
+
+Nach dem Start der Desktop-App wird ein Tray-Menü erstellt, über das Sie den Dienst bequem verwalten können.
+
+Das Programm enthält eine einfache Benutzeroberfläche und Online-Debug-Dokumentation.
+
+Detaillierte Gebrauchsanweisungen finden Sie unter [Ökosystem-Projekte](#ökosystem-projekte)
+
+Vorschau (in der neuesten Version aktualisiert):
+
+![UI](../images/ui.png)
+
+![Dokumentation](../images/swagger.png)
+
+### Server
+
+Es wird empfohlen, die Desktop-App oder Docker-Bereitstellung zu verwenden, da diese bessere Leistung und einfachere Bedienung bieten. Die manuelle Server-Bereitstellung ist für fortgeschrittene Benutzer gedacht.
+
+#### Schnellstart
+
+Programmierer können den Server direkt über die Befehlszeile starten:
 
 ```bash
 npx mtranserver@latest
@@ -32,7 +58,7 @@ npx mtranserver@latest
 >
 > Bei der erstmaligen Übersetzung eines Sprachpaares lädt der Server automatisch das entsprechende Übersetzungsmodell herunter (sofern der Offline-Modus nicht aktiviert ist). Dieser Vorgang kann je nach Netzwerkgeschwindigkeit und Modellgröße einige Zeit in Anspruch nehmen. Nach dem Herunterladen des Modells profitieren nachfolgende Übersetzungsanfragen von einer Antwortzeit im Millisekundenbereich. Es wird empfohlen, vor der eigentlichen Verwendung eine Übersetzung zu testen, damit der Server das Modell vorab herunterladen und laden kann. Das Programm wird häufig aktualisiert. Wenn Sie auf Probleme stoßen, versuchen Sie, auf die neueste Version zu aktualisieren.
 
-### Schnellinstallation
+#### Schnellinstallation
 
 ```bash
 npm i -g mtranserver@latest
@@ -42,17 +68,7 @@ npm i -g mtranserver@latest
 
 Starten Sie anschließend `mtranserver`.
 
-### Manueller Download
-
-Laden Sie die neueste Version für Ihre Plattform von [Releases](https://github.com/xxnuo/MTranServer/releases) herunter und starten Sie das Programm einfach über die Befehlszeile, um es zu verwenden.
-
-Nach dem Start des Servers werden die Adresse der im Programm enthaltenen einfachen Benutzeroberfläche und die Adresse der Online-Dokumentation im Protokoll ausgegeben. Hier ist eine Vorschau:
-
-![UI](../images/ui.png)
-
-![Dokumentation](../images/swagger.png)
-
-### Docker Compose Bereitstellung
+#### Docker Compose Bereitstellung
 
 Erstellen Sie ein leeres Verzeichnis und darin eine `compose.yml` Datei mit folgendem Inhalt:
 
@@ -78,10 +94,6 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-### Desktop-App
-
-TODO: Noch in Arbeit. Das Electron-Paket ist etwas zu groß, ich suche noch nach einer besseren Lösung.
-
 ## Ökosystem-Projekte
 
 ### IDE-Plugins
@@ -103,6 +115,8 @@ Dieses Plugin ist ein Fork von [vscode-comment-translate](https://github.com/int
 TODO: In aktiver Entwicklung.
 
 > Wenn Sie ein abgeleitetes Projekt entwickeln, können Sie gerne eine PR einreichen. Ich füge Ihr Projekt zur Ökosystem-Liste hinzu.
+>
+> Übrigens wurde das Projekt auf npm veröffentlicht. Sie können die einfache Bibliotheksschnittstelle direkt in anderen Programmen aufrufen, um Übersetzungsfunktionen zu implementieren. Weitere Informationen finden Sie in den TypeScript-Typdefinitionen.
 
 ## Kompatible Schnittstellen
 

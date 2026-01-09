@@ -20,7 +20,33 @@ Thanks to community contributors for providing trial services for users!
 
 ## Usage Guide
 
-### Quick Start
+Now supports desktop one-click launch! Supports Windows, Mac, Linux.
+
+### Desktop
+
+#### Manual Download
+
+Download the latest desktop version for your platform from [Releases](https://github.com/xxnuo/MTranServer/releases), install and launch directly.
+
+After the desktop app launches, it will create a tray menu to conveniently manage the service.
+
+The program includes a simple UI and online debug documentation.
+
+For detailed usage instructions, jump to [Ecosystem Projects](#ecosystem-projects)
+
+Preview (latest version has updates):
+
+![UI](../images/ui.png)
+
+![Documentation](../images/swagger.png)
+
+### Server
+
+It is recommended to use the desktop app or Docker deployment for better performance and convenience. Manual server deployment is for advanced users.
+
+#### Quick Start
+
+Programmers can start the server directly via command line:
 
 ```bash
 npx mtranserver@latest
@@ -32,7 +58,7 @@ npx mtranserver@latest
 >
 > When translating a language pair for the first time, the server will automatically download the corresponding translation model (unless offline mode is enabled). This process may take some time depending on your network speed and model size. After the model is downloaded, subsequent translation requests will enjoy millisecond-level response speeds. It is recommended to test a translation once before formal use to allow the server to pre-download and load the model. The program is frequently updated. If you encounter problems, please try updating to the latest version.
 
-### Quick Install
+#### Quick Install
 
 ```bash
 npm i -g mtranserver@latest
@@ -42,17 +68,7 @@ npm i -g mtranserver@latest
 
 Then run `mtranserver`.
 
-### Manual Download
-
-Download the latest version from [Releases](https://github.com/xxnuo/MTranServer/releases) and start the program in the command line.
-
-After the server starts, the console will output the address of the simple UI and the online documentation address. Below is a preview:
-
-![UI](../images/ui.png)
-
-![Documentation](../images/swagger.png)
-
-### Docker Compose Deployment
+#### Docker Compose Deployment
 
 Create a `compose.yml` file in an empty directory, with the following content:
 
@@ -78,10 +94,6 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-### Desktop App
-
-TODO: Still working on it. The Electron package is a bit too large, and I am still looking for a better solution.
-
 ## Ecosystem Projects
 
 ### IDE Plugins
@@ -103,6 +115,8 @@ This plugin is forked from [vscode-comment-translate](https://github.com/intelli
 TODO: Under active development.
 
 > If you develop a derivative project, feel free to submit a PR. I will add your project to the ecosystem list.
+>
+> By the way, the project has been published to npm. You can directly call the simple library interface in other programs to implement translation functionality. For specific information, check the TypeScript type definitions.
 
 ## Compatible Interfaces
 
