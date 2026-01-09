@@ -25,7 +25,6 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY --from=builder /app/dist ./
-COPY --from=builder /app/node_modules ./node_modules
 
 ENV MT_HOST=0.0.0.0 \
     MT_PORT=8989 \

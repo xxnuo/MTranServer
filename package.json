@@ -19,7 +19,7 @@
     "dev": "bun src/main.ts --log-level debug --port 8990 --model-dir ~/.config/mtran/models",
     "dev2": "bun src/main.ts --log-level debug --port 8989 --model-dir ~/.config/mtran/models",
     "bump": "bun scripts/bump.ts",
-    "electron": "bun run build:lib && electron ./scripts/electron-main.js",
+    "electron": "bun run build:node && electron ./scripts/electron-main.js",
     "electron:dev": "bun run scripts/electron-dev.ts",
     "electron:build": "bun run scripts/electron-build.ts",
     "electron:build:all": "bun run scripts/electron-build.ts --all",
@@ -31,7 +31,7 @@
     "build:node": "bun scripts/build.ts --node",
     "build:dev": "bun scripts/build.ts --dev",
     "build:lib": "bun scripts/build.ts --lib",
-    "build:electron": "bun run build:lib && electron-builder"
+    "build:electron": "bun run build:node && electron-builder"
   },
   "keywords": [
     "translation",
