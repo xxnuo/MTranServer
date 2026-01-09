@@ -61,14 +61,14 @@ if (isLib) {
 
 if (isNode) {
   console.log("Building for Node...");
-  await $`bun build src/main.ts src/desktop.ts --outdir dist --target node --format esm --sourcemap`;
+  await $`bun build src/main.ts src/desktop.ts --outdir dist --target node --format esm --minify`;
   console.log("Build complete!");
   process.exit(0);
 }
 
 if (isSingle) {
   console.log("Building single binary...");
-  await $`bun build src/main.ts --compile --outfile ./dist/mtranserver --minify --sourcemap`;
+  await $`bun build src/main.ts --compile --outfile ./dist/mtranserver --minify`;
   console.log("Build complete!");
   process.exit(0);
 }
@@ -78,7 +78,7 @@ if (isAll) {
     const ext = target.bun.includes("windows") ? ".exe" : "";
     const outfile = `dist/mtranserver-${version}-${target.name}${ext}`;
     console.log(`Building for ${target.bun} -> ${outfile}...`);
-    await $`bun build src/main.ts --compile --target=${target.bun} --outfile=${outfile} --minify --sourcemap`;
+    await $`bun build src/main.ts --compile --target=${target.bun} --outfile=${outfile} --minify`;
   }
   console.log("Build complete!");
 }
