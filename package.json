@@ -31,7 +31,7 @@
     "build:node": "bun scripts/build.ts --node",
     "build:dev": "bun scripts/build.ts --dev",
     "build:lib": "bun scripts/build.ts --lib",
-    "build:electron": "bun run build:node && electron-builder"
+    "build:electron": "bun run scripts/electron-build.ts"
   },
   "keywords": [
     "translation",
@@ -68,6 +68,7 @@
     "node": ">=18.0.0"
   },
   "build": {
+    "publish": null,
     "appId": "com.github.xxnuo.mtranserver",
     "productName": "MTranServer",
     "executableName": "mtranserver",
@@ -76,17 +77,17 @@
     "buildDependenciesFromSource": false,
     "copyright": "Copyright © 2025",
     "extraMetadata": {
-      "main": "dist/main-bundled.js"
+      "main": "dist/desktop-bundled.js"
     },
-    "asar": true,
+    "asar": false,
     "artifactName": "mtranserver-desktop-${version}-${os}-${arch}.${ext}",
     "files": [
-      "desktop/**/*",
-      "scripts/electron-main.js",
       "dist/**/*",
       "!dist/mtranserver*",
       "!dist/*.exe",
-      "images/**/*",
+      "!dist/main.js",
+      "!dist/desktop.js",
+      "images/icons/**/*",
       "package.json"
     ],
     "directories": {

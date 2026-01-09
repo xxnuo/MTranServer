@@ -24,7 +24,7 @@ async function main() {
   console.log('Building for Node with Bun...')
   await run(bunBin, ['run', 'build:node'])
 
-  const outfile = path.join(root, 'dist', 'main-bundled.js')
+  const outfile = path.join(root, 'dist', 'desktop-bundled.js')
   console.log(`Building Electron main process to ${outfile}...`)
   
   await run(bunBin, [
@@ -33,12 +33,12 @@ async function main() {
     '--target', 'node',
     '--external', 'electron',
     '--format', 'esm',
-    '--sourcemap'
+    '--minify', '--bundle'
   ])
 
   // Verify and fix location if Bun misbehaved
   if (!fs.existsSync(outfile)) {
-    const wrongLoc = path.join(root, 'scripts', 'main-bundled.js')
+    const wrongLoc = path.join(root, 'scripts', 'desktop-bundled.js')
     if (fs.existsSync(wrongLoc)) {
       console.log(`Moving build output from ${wrongLoc} to ${outfile}...`)
       fs.renameSync(wrongLoc, outfile)

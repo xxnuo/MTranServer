@@ -46,6 +46,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
@@ -135,14 +138,12 @@ jobs:
           REPO="${{ github.repository }}"
           # Derive version from TAG to be consistent with artifacts
           VERSION=${TAG#v} 
-          
+
           # Use VERSION derived from tag instead of package.json to ensure consistency with builds
           echo "Using version: $VERSION"
 
           if [[ "${{ github.ref_name }}" == *"dev"* ]]; then
-            WARNING="**This is a development release. DO NOT USE IT!**"$'
-
-'
+            WARNING=$(printf "**This is a development release. DO NOT USE IT!**\n\n")
           else
             WARNING=""
           fi
@@ -163,11 +164,11 @@ jobs:
           | Windows | x64 | [mtranserver-desktop-${VERSION}-win-x64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-win-x64.exe) |
 
           > 桌面端启动后会创建一个托盘菜单，通过菜单可以方便的管理服务。
-          
+
           **macOS**: 拖动安装后，如果打开 MTranServer App 提示 "app is damaged"，需要运行以下命令修复：
 
           > If you see "app is damaged" error, run this command in Terminal App: 
-          
+
           ```bash
           sudo xattr -d com.apple.quarantine "/Applications/MTranServer.app"
           ```
@@ -197,19 +198,19 @@ jobs:
           **musl**: 仅适用于 Linux 使用 musl libc 的用户，大多数人不需要这个。
 
           > **musl**: Use only if you are on Linux with musl libc. Most people don't need this.
-          
+
           ## Docker
-          
+
           Image: `xxnuo/mtranserver:latest`
 
           可执行文件版本主要面向个人桌面端部署，如果需要更高性能和稳定性，推荐使用 Docker 版本。
-          
+
           > Executable version is mainly for personal desktop deployment. If you need higher performance and stability, it is recommended to use the Docker version.
 
           如果你的 CPU 不支持 AVX 并且使用 legacy 版本也报错，推荐使用 Docker 版本而非可执行文件版本，因为 Docker 版本会自动选择合适的架构运行且速度更快。
-          
+
           > If your CPU does not support AVX and using legacy version also crashes, it is recommended to use the Docker version instead of the executable file version, because the Docker version will automatically select the appropriate architecture to run and is faster.
-          
+
           ## Changelog
           EOF
 
