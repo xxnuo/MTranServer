@@ -32,7 +32,7 @@ const messages = {
     trayOpenDocs: 'API 文档',
     trayOpenRepo: '仓库地址',
     trayServiceStatus: '服务状态',
-    trayServiceRunning: '启动中',
+    trayServiceRunning: '运行中',
     trayServiceStopped: '已停止',
     trayServiceManagement: '服务管理',
     trayOpenSettings: '设置',
