@@ -22,7 +22,33 @@
 
 ## 使用说明
 
-### 快速开始
+现在支持桌面端一键启动！支持 Windows、Mac、Linux。
+
+### 桌面端
+
+#### 手动下载
+
+前往 [Releases](https://github.com/xxnuo/MTranServer/releases) 下载对应平台最新桌面端，直接安装启动，即可使用。
+
+桌面端启动后会创建一个托盘菜单，通过菜单可以方便的管理服务。
+
+程序自带的一个简单 UI 的地址和在线调试文档。
+
+具体使用说明可以直接跳转到 [生态项目](#使用说明)
+
+预览（最新版有更新）：
+
+![UI](./images/ui.png)
+
+![文档](./images/swagger.png)
+
+### 服务端
+
+推荐使用桌面端或者 Docker 部署，性能更佳使用方便。服务端手动部署供专业用户使用。
+
+#### 快速开始
+
+程序员朋友可以通过命令行直接启动服务器端：
 
 ```bash
 npx mtranserver@latest
@@ -35,7 +61,7 @@ npx mtranserver@latest
 > 首次翻译某个语言对时，服务器会自动下载对应的翻译模型（除非启用了离线模式），这个过程可能需要等待一段时间（取决于网络速度和模型大小）。
 > 模型下载完成后，翻译请求将享受毫秒级的响应速度。建议在正式使用前先测试一次翻译，让服务器预先下载和加载模型。程序经常更新，如果遇到问题，可以尝试更新到最新版本。
 
-### 快速安装
+#### 快速安装
 
 ```bash
 npm i -g mtranserver@latest
@@ -45,17 +71,7 @@ npm i -g mtranserver@latest
 
 然后启动 `mtranserver` 即可。
 
-### 手动下载
-
-前往 [Releases](https://github.com/xxnuo/MTranServer/releases) 下载对应平台最新版本，直接在命令行启动程序，即可使用。
-
-服务器启动后日志会输出程序自带的一个简单 UI 的地址和在线调试文档的地址，下面是预览
-
-![UI](./images/ui.png)
-
-![文档](./images/swagger.png)
-
-### Docker Compose 部署
+#### Docker Compose 部署
 
 找一个空目录，编写 `compose.yml` 文件，内容如下：
 
@@ -81,10 +97,6 @@ docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
 
-### 桌面端程序
-
-TODO: 还在做，electron 打包出来的体积有些太大了，还在寻找更好的方案。
-
 ## 生态项目
 
 ### IDE 插件
@@ -106,6 +118,8 @@ TODO: 还在做，electron 打包出来的体积有些太大了，还在寻找�
 TODO: 火热开发中
 
 > 如果你开发了衍生项目，欢迎提交 PR，我会在生态项目中添加你的项目。
+>
+> 对了项目已经发布到 npm 包，可以直接在其他程序中调用简单的库接口实现翻译功能，具体信息查看 ts 类型说明。
 
 ## 兼容接口
 
