@@ -43,7 +43,10 @@ jobs:
           path: dist/mtranserver-*
 
   build-desktop:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,22 +60,32 @@ jobs:
         run: bun install
 
       - name: Sync version from tag
+        shell: bash
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
-            VERSION="v$(cat package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')"
+            VERSION="v$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')"
           fi
           echo "Syncing version to ${VERSION}"
           bun run bump ${VERSION}
 
-      - name: Build Desktop
-        run: bun run build:electron -- --linux --win --mac
+      - name: Build Desktop (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: bun run build:electron -- --linux
+
+      - name: Build Desktop (Windows)
+        if: matrix.os == 'windows-latest'
+        run: bun run build:electron -- --win
+
+      - name: Build Desktop (macOS)
+        if: matrix.os == 'macos-latest'
+        run: bun run build:electron -- --mac
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-artifacts
+          name: desktop-${{ matrix.os }}
           path: release/mtranserver-desktop-*
 
   release:
@@ -93,26 +106,9 @@ jobs:
       - name: Download Desktop Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: desktop-artifacts
+          pattern: desktop-*
           path: release-assets
           merge-multiple: true
-
-      - name: Sync version from tag
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          else
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          fi
-          echo "Syncing version to ${VERSION}"
-          # We need bun to run bump, or just manually update if bun is not setup. 
-          # But we haven't setup bun in release job yet. 
-          # Let's rely on string manipulation for the body generation or setup bun.
-          # The previous release job logic read from package.json.
-          # If we don't bump, package.json has old version.
-          # So we should probably setup bun and bump, or just use the VERSION variable directly in the script below.
-          # But the script below reads package.json again.
-          # Let's just override the VERSION variable in the script below.
 
       - name: Determine Release Tag
         id: tag
@@ -144,7 +140,9 @@ jobs:
           echo "Using version: $VERSION"
 
           if [[ "${{ github.ref_name }}" == *"dev"* ]]; then
-            WARNING="**This is a development release. DO NOT USE IT!**"$ '\n\n'
+            WARNING="**This is a development release. DO NOT USE IT!**"$'
+
+'
           else
             WARNING=""
           fi

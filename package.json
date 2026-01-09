@@ -93,7 +93,10 @@
       "output": "release"
     },
     "mac": {
-      "target": "dmg",
+      "target": {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      },
       "icon": "images/icon.icns"
     },
     "win": {
@@ -102,9 +105,18 @@
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb",
-        "rpm"
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64", "arm64"]
+        }
       ],
       "icon": "images/icon.png"
     },
