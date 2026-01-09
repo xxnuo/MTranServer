@@ -24,6 +24,27 @@ export interface Config {
 }
 
 let globalConfig: Config | null = null;
+let fileConfigCache: Partial<Config> | null = null;
+
+function getConfigFilePath(homeDir: string) {
+  return path.join(homeDir, 'server.json');
+}
+
+function readConfigFile(homeDir: string): Partial<Config> {
+  if (fileConfigCache) return fileConfigCache;
+  const configPath = getConfigFilePath(homeDir);
+  try {
+    const raw = fs.readFileSync(configPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      fileConfigCache = parsed as Partial<Config>;
+      return fileConfigCache;
+    }
+  } catch {
+    return {};
+  }
+  return {};
+}
 
 function getArgValue(flag: string): string | null {
   const index = process.argv.indexOf(flag);
@@ -88,12 +109,13 @@ export function getConfig(): Config {
   }
 
   const homeDir = path.join(os.homedir(), '.config', 'mtran');
+  const fileConfig = readConfigFile(homeDir);
 
-  const configDir = getString('--config-dir', 'MT_CONFIG_DIR', path.join(homeDir, 'server'));
+  const configDir = getString('--config-dir', 'MT_CONFIG_DIR', fileConfig.configDir || path.join(homeDir, 'server'));
   const localModelsDir = path.join(process.cwd(), 'models');
   const defaultModelDir = fs.existsSync(localModelsDir) ? localModelsDir : path.join(homeDir, 'models');
-  const modelDir = getString('--model-dir', 'MT_MODEL_DIR', defaultModelDir);
-  const logDir = getString('--log-dir', 'MT_LOG_DIR', path.join(homeDir, 'logs'));
+  const modelDir = getString('--model-dir', 'MT_MODEL_DIR', fileConfig.modelDir || defaultModelDir);
+  const logDir = getString('--log-dir', 'MT_LOG_DIR', fileConfig.logDir || path.join(homeDir, 'logs'));
 
   globalConfig = {
     homeDir,
@@ -101,26 +123,26 @@ export function getConfig(): Config {
     modelDir,
     logDir,
 
-    logLevel: getString('--log-level', 'MT_LOG_LEVEL', 'warn'),
-    host: getString('--host', 'MT_HOST', '0.0.0.0'),
-    port: getString('--port', 'MT_PORT', '8989'),
+    logLevel: getString('--log-level', 'MT_LOG_LEVEL', fileConfig.logLevel || 'warn'),
+    host: getString('--host', 'MT_HOST', fileConfig.host || '0.0.0.0'),
+    port: getString('--port', 'MT_PORT', fileConfig.port || '8989'),
 
-    enableWebUI: getBool('--ui', 'MT_ENABLE_UI', true),
-    enableOfflineMode: getBool('--offline', 'MT_OFFLINE', false),
+    enableWebUI: getBool('--ui', 'MT_ENABLE_UI', fileConfig.enableWebUI ?? true),
+    enableOfflineMode: getBool('--offline', 'MT_OFFLINE', fileConfig.enableOfflineMode ?? false),
 
-    workerIdleTimeout: getInt('--worker-idle-timeout', 'MT_WORKER_IDLE_TIMEOUT', 60),
-    workersPerLanguage: getInt('--workers-per-language', 'MT_WORKERS_PER_LANGUAGE', 1),
-    maxLengthBreak: getInt('--max-length-break', 'MT_MAX_LENGTH_BREAK', 128),
+    workerIdleTimeout: getInt('--worker-idle-timeout', 'MT_WORKER_IDLE_TIMEOUT', fileConfig.workerIdleTimeout ?? 60),
+    workersPerLanguage: getInt('--workers-per-language', 'MT_WORKERS_PER_LANGUAGE', fileConfig.workersPerLanguage ?? 1),
+    maxLengthBreak: getInt('--max-length-break', 'MT_MAX_LENGTH_BREAK', fileConfig.maxLengthBreak ?? 128),
 
-    apiToken: getString('--api-token', 'MT_API_TOKEN', ''),
+    apiToken: getString('--api-token', 'MT_API_TOKEN', fileConfig.apiToken || ''),
 
-    logToFile: getBool('--log-to-file', 'MT_LOG_TO_FILE', false),
-    logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', true),
-    logRequests: getBool('--log-requests', 'MT_LOG_REQUESTS', false),
+    logToFile: getBool('--log-to-file', 'MT_LOG_TO_FILE', fileConfig.logToFile ?? false),
+    logConsole: getBool('--log-console', 'MT_LOG_CONSOLE', fileConfig.logConsole ?? true),
+    logRequests: getBool('--log-requests', 'MT_LOG_REQUESTS', fileConfig.logRequests ?? false),
 
-    checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', true),
+    checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', fileConfig.checkUpdate ?? true),
 
-    cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', 1000),
+    cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', fileConfig.cacheSize ?? 1000),
   };
 
   return globalConfig;
@@ -133,4 +155,26 @@ export function setConfig(config: Partial<Config>) {
 
 export function resetConfig() {
   globalConfig = null;
+  fileConfigCache = null;
+}
+
+export function saveConfigFile(config: Partial<Config>) {
+  const current = getConfig();
+  const next = { ...current, ...config };
+  const configPath = getConfigFilePath(current.homeDir);
+  fs.mkdirSync(current.homeDir, { recursive: true });
+  fs.writeFileSync(configPath, JSON.stringify(next, null, 2), 'utf8');
+  fileConfigCache = next;
+}
+
+export function clearConfigFile() {
+  const homeDir = path.join(os.homedir(), '.config', 'mtran');
+  const configPath = getConfigFilePath(homeDir);
+  try {
+    if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+    }
+  } catch {
+    return;
+  }
 }

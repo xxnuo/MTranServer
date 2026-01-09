@@ -8,7 +8,6 @@ export function createTray({
   messages,
   statusLabel,
   versionLabel,
-  onOpenMain,
   onOpenBrowserUi,
   onOpenBrowserDocs,
   onOpenRepo,
@@ -21,12 +20,11 @@ export function createTray({
   if (tray) return tray;
   tray = new Tray(icon);
   tray.setToolTip(tooltip);
-  tray.on('click', () => onOpenMain());
+  tray.on('click', () => tray.popUpContextMenu());
   updateTrayMenu({
     messages,
     statusLabel,
     versionLabel,
-    onOpenMain,
     onOpenBrowserUi,
     onOpenBrowserDocs,
     onOpenRepo,
@@ -43,7 +41,6 @@ export function updateTrayMenu({
   messages,
   statusLabel,
   versionLabel,
-  onOpenMain,
   onOpenBrowserUi,
   onOpenBrowserDocs,
   onOpenRepo,
@@ -56,16 +53,16 @@ export function updateTrayMenu({
   if (!tray) return;
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: messages.trayOpenMain,
-      click: onOpenMain
+      label: messages.trayOpenUi,
+      click: onOpenBrowserUi
     },
     {
-      label: messages.trayOpenBrowser,
-      submenu: [
-        { label: messages.trayOpenUi, click: onOpenBrowserUi },
-        { label: messages.trayOpenDocs, click: onOpenBrowserDocs },
-        { label: messages.trayOpenRepo, click: onOpenRepo }
-      ]
+      label: messages.trayOpenDocs,
+      click: onOpenBrowserDocs
+    },
+    {
+      label: messages.trayOpenRepo,
+      click: onOpenRepo
     },
     { type: 'separator' },
     {

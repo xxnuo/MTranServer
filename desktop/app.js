@@ -1,4 +1,4 @@
-import { app, dialog, nativeImage, shell, Menu } from 'electron';
+import { app, dialog, nativeImage, shell, Menu, screen } from 'electron';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
@@ -7,13 +7,6 @@ import { loadDesktopConfig, saveDesktopConfig, resetDesktopConfig, getDefaultDes
 import { resolveLocale, getMessages } from './i18n.js';
 import { getFreePort, isPortAvailable } from './ports.js';
 import { getServerStatus, startServerWithConfig, stopServerInstance } from './server.js';
-import {
-  createMainWindow,
-  createSettingsWindow,
-  showMainWindow,
-  showSettingsWindow,
-  updateWindowUrls
-} from './windows.js';
 import { createTray, updateTrayMenu } from './tray.js';
 import { registerIpcHandlers } from './ipc.js';
 
@@ -83,11 +76,10 @@ function updateTray() {
     messages,
     statusLabel: getStatusLabel(),
     versionLabel: app.getVersion(),
-    onOpenMain: showMainWindow,
     onOpenBrowserUi: () => shell.openExternal(getUiUrl(desktopConfig.server)),
     onOpenBrowserDocs: () => shell.openExternal(getDocsUrl(desktopConfig.server)),
     onOpenRepo: () => shell.openExternal(repoUrl),
-    onOpenSettings: showSettingsWindow,
+    onOpenSettings: () => shell.openExternal(getSettingsUrl(desktopConfig.server)),
     onRestart: restartServer,
     onOpenModels: () => shell.openPath(desktopConfig.server.modelDir),
     onOpenConfig: () => shell.openPath(desktopConfig.server.configDir),
@@ -167,10 +159,6 @@ async function restartServer() {
     await ensureWritableDirs();
     const ok = await startServer();
     if (!ok) return false;
-    updateWindowUrls({
-      mainUrl: getUiUrl(desktopConfig.server),
-      settingsUrl: getSettingsUrl(desktopConfig.server)
-    });
     updateTray();
     return true;
   } catch {
@@ -232,52 +220,22 @@ async function ensureWritableDirs() {
   }
 }
 
-function getLoadingUrl() {
-  const html = `
-  <!doctype html>
-  <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${messages.appName}</title>
-    <style>
-      html,body{margin:0;height:100%;font-family:system-ui,Segoe UI,Arial,sans-serif;background:#f5f5f5;color:#1f2937}
-      .wrap{height:100%;display:flex;align-items:center;justify-content:center}
-      .card{padding:24px 32px;border:1px solid #e5e7eb;border-radius:16px;background:#fff;box-shadow:0 12px 30px rgba(0,0,0,0.08);text-align:center;min-width:260px}
-      .title{font-size:18px;font-weight:600;margin-bottom:8px}
-      .desc{font-size:14px;color:#6b7280}
-      .dot{display:inline-block;animation:blink 1.2s infinite}
-      @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <div class="card">
-        <div class="title">${messages.appName}</div>
-        <div class="desc">${messages.trayServiceStatus}: ${messages.trayServiceRunning} <span class="dot">...</span></div>
-      </div>
-    </div>
-  </body>
-  </html>
-  `;
-  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+function buildDesktopResponse() {
+  return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
 }
 
 export async function startDesktop() {
   app.isQuitting = false;
   Menu.setApplicationMenu(null);
+  if (app.dock?.hide) {
+    app.dock.hide();
+  }
   desktopConfig = await loadDesktopConfig();
   updateLocale(desktopConfig.locale);
   desktopLogPath = path.join(desktopConfig.server.configDir, 'desktop.log');
   await fs.mkdir(desktopConfig.server.configDir, { recursive: true });
   await logDesktop('desktop starting');
   await ensureWritableDirs();
-
-  const preloadPath = path.join(__dirname, 'preload.cjs');
-  const loadingUrl = getLoadingUrl();
-  const mainWindow = createMainWindow({ url: loadingUrl, preload: preloadPath });
-  createSettingsWindow({ url: loadingUrl, preload: preloadPath, parent: mainWindow });
-  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   const trayIcon = getTrayIcon();
   tray = createTray({
@@ -286,11 +244,10 @@ export async function startDesktop() {
     messages,
     statusLabel: getStatusLabel(),
     versionLabel: app.getVersion(),
-    onOpenMain: showMainWindow,
     onOpenBrowserUi: () => shell.openExternal(getUiUrl(desktopConfig.server)),
     onOpenBrowserDocs: () => shell.openExternal(getDocsUrl(desktopConfig.server)),
     onOpenRepo: () => shell.openExternal(repoUrl),
-    onOpenSettings: showSettingsWindow,
+    onOpenSettings: () => shell.openExternal(getSettingsUrl(desktopConfig.server)),
     onRestart: restartServer,
     onOpenModels: () => shell.openPath(desktopConfig.server.modelDir),
     onOpenConfig: () => shell.openPath(desktopConfig.server.configDir),
@@ -303,52 +260,52 @@ export async function startDesktop() {
     return;
   }
 
-  updateWindowUrls({
-    mainUrl: getUiUrl(desktopConfig.server),
-    settingsUrl: getSettingsUrl(desktopConfig.server)
-  });
+  const getConfigResponse = async () => buildDesktopResponse();
+  const applyConfig = async (config) => {
+    desktopConfig = await saveDesktopConfig(config);
+    updateLocale(desktopConfig.locale);
+    const ok = await restartServer();
+    if (!ok) return buildDesktopResponse();
+    return buildDesktopResponse();
+  };
+  const resetConfig = async () => {
+    desktopConfig = await resetDesktopConfig();
+    updateLocale(desktopConfig.locale);
+    const ok = await restartServer();
+    if (!ok) return buildDesktopResponse();
+    return buildDesktopResponse();
+  };
+  const restartAndRespond = async () => {
+    const ok = await restartServer();
+    if (!ok) return buildDesktopResponse();
+    return buildDesktopResponse();
+  };
+
+  globalThis.mtranDesktopControl = {
+    getConfig: getConfigResponse,
+    applyConfig,
+    resetConfig,
+    restartServer: restartAndRespond
+  };
 
   registerIpcHandlers({
-    getConfig: async () => ({
-      config: desktopConfig,
-      status: getServerStatus(),
-      version: app.getVersion()
-    }),
-    applyConfig: async (config) => {
-      desktopConfig = await saveDesktopConfig(config);
-      updateLocale(desktopConfig.locale);
-      const ok = await restartServer();
-      if (!ok) return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
-      return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
-    },
-    resetConfig: async () => {
-      desktopConfig = await resetDesktopConfig();
-      updateLocale(desktopConfig.locale);
-      const ok = await restartServer();
-      if (!ok) return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
-      return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
-    },
-    restartServer: async () => {
-      const ok = await restartServer();
-      if (!ok) return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
-      return { config: desktopConfig, status: getServerStatus(), version: app.getVersion() };
-    },
+    getConfig: getConfigResponse,
+    applyConfig,
+    resetConfig,
+    restartServer: restartAndRespond,
     getStatus: async () => ({ status: getServerStatus() }),
     openExternal: async (url) => shell.openExternal(url),
     openPath: async (targetPath) => shell.openPath(targetPath)
   });
 
-  app.on('activate', () => showMainWindow());
   app.on('before-quit', (event) => {
     if (app.isQuitting) return;
     event.preventDefault();
     quitApp();
   });
-  app.on('window-all-closed', (event) => event.preventDefault());
 
   updateTray();
 }
 
 export function focusMainWindow() {
-  showMainWindow();
 }

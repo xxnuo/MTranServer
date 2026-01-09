@@ -6,14 +6,17 @@ import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import {
   applyDesktopConfig,
   getDesktopConfig,
   isDesktop,
   resetDesktopConfig,
-  restartDesktopServer
+  restartDesktopServer,
+  applyWebConfig,
+  getWebConfig,
+  resetWebConfig,
+  restartWebServer
 } from '@/lib/desktop'
 import type { DesktopConfig } from '@/lib/desktop'
 
@@ -73,6 +76,10 @@ function toNumber(value: string, fallback: number) {
 export function DesktopSettingsPage() {
   const { t } = useTranslation()
   const desktopAvailable = isDesktop()
+  const getConfigData = desktopAvailable ? getDesktopConfig : getWebConfig
+  const applyConfig = desktopAvailable ? applyDesktopConfig : applyWebConfig
+  const resetConfig = desktopAvailable ? resetDesktopConfig : resetWebConfig
+  const restartServer = desktopAvailable ? restartDesktopServer : restartWebServer
   const [config, setConfig] = useState<DesktopConfig | null>(null)
   const [form, setForm] = useState<FormState | null>(null)
   const [status, setStatus] = useState('')
@@ -81,11 +88,7 @@ export function DesktopSettingsPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!desktopAvailable) {
-      setLoading(false)
-      return
-    }
-    getDesktopConfig()
+    getConfigData()
       .then((response) => {
         if (!response) return
         setConfig(response.config)
@@ -97,7 +100,7 @@ export function DesktopSettingsPage() {
         toast.error(t('loadingConfigFailed'))
       })
       .finally(() => setLoading(false))
-  }, [desktopAvailable, t])
+  }, [getConfigData, t])
 
   const serverStatusLabel = useMemo(() => {
     if (!status) return ''
@@ -131,7 +134,7 @@ export function DesktopSettingsPage() {
       }
     }
     try {
-      const response = await applyDesktopConfig(nextConfig)
+      const response = await applyConfig(nextConfig)
       if (response) {
         setConfig(response.config)
         setForm(toForm(response.config))
@@ -147,10 +150,9 @@ export function DesktopSettingsPage() {
   }
 
   const handleRestart = async () => {
-    if (!desktopAvailable) return
     setSaving(true)
     try {
-      const response = await restartDesktopServer()
+      const response = await restartServer()
       if (response) {
         setConfig(response.config)
         setForm(toForm(response.config))
@@ -166,10 +168,9 @@ export function DesktopSettingsPage() {
   }
 
   const handleReset = async () => {
-    if (!desktopAvailable) return
     setSaving(true)
     try {
-      const response = await resetDesktopConfig()
+      const response = await resetConfig()
       if (response) {
         setConfig(response.config)
         setForm(toForm(response.config))
@@ -182,22 +183,6 @@ export function DesktopSettingsPage() {
     } finally {
       setSaving(false)
     }
-  }
-
-  if (!desktopAvailable) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="mx-auto max-w-3xl">
-          <Alert>
-            <AlertTitle>{t('desktopOnly')}</AlertTitle>
-            <AlertDescription>{t('desktopOnlyDesc')}</AlertDescription>
-          </Alert>
-          <div className="mt-6">
-            <Button onClick={() => (window.location.href = '/ui/')}>{t('backToMain')}</Button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   if (loading || !form || !config) {
@@ -250,20 +235,22 @@ export function DesktopSettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('locale')}</label>
-                <Select value={form.locale} onValueChange={(value) => setForm({ ...form, locale: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="system">{t('system')}</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="zh">中文</SelectItem>
-                    <SelectItem value="ja">日本語</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {desktopAvailable && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('locale')}</label>
+                  <Select value={form.locale} onValueChange={(value) => setForm({ ...form, locale: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="system">{t('system')}</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="zh">中文</SelectItem>
+                      <SelectItem value="ja">日本語</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <Separator />
             <div className="grid gap-3 sm:grid-cols-2">
