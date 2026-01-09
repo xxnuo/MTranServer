@@ -12,8 +12,8 @@ Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung
 
 ## Online Demo
 
-| Website                                                                         | TOKEN                     | Andere Schnittstelle                                                                           | Anbieter                               |
-| ------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Website                                                                      | TOKEN                     | Andere Schnittstelle                                                                    | Anbieter                             |
+| ---------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------ |
 | [ipacel.cc](https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__) | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
 
 Vielen Dank an die Mitwirkenden der Community für die Bereitstellung von Testdiensten für Benutzer!
@@ -32,7 +32,7 @@ Nach dem Start der Desktop-App wird ein Tray-Menü erstellt, über das Sie den D
 
 Das Programm enthält eine einfache Benutzeroberfläche und Online-Debug-Dokumentation.
 
-Detaillierte Gebrauchsanweisungen finden Sie unter [Ökosystem-Projekte](#ökosystem-projekte)
+Detaillierte Gebrauchsanweisungen finden Sie unter [Ökosystem-Projekte](#Ökosystem-Projekte)
 
 Vorschau (in der neuesten Version aktualisiert):
 
@@ -122,15 +122,15 @@ TODO: In aktiver Entwicklung.
 
 Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 
-| Schnittstelle | Methode | Beschreibung | Unterstützte Plugins |
-| ------------- | ------- | ------------ | -------------------- |
-| `/imme` | POST | Schnittstelle für Immersive Translate Plugin | [Immersive Translate](https://immersivetranslate.com/) |
-| `/kiss` | POST | Schnittstelle für Kiss Translator Plugin | [Kiss Translator](https://github.com/fishjar/kiss-translator) |
-| `/deepl` | POST | DeepL API v2 kompatible Schnittstelle | Clients, die die DeepL API unterstützen |
-| `/hcfy` | POST | Selection Translator kompatible Schnittstelle | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy` | POST | Selection Translator kompatible Schnittstelle | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/google/language/translate/v2` | POST | Google Translate API v2 kompatible Schnittstelle | Clients, die die Google Translate API unterstützen |
-| `/google/translate_a/single` | GET | Google translate_a/single kompatible Schnittstelle | Clients, die Google Web Translate unterstützen |
+| Schnittstelle                   | Methode | Beschreibung                                       | Unterstützte Plugins                                                                    |
+| ------------------------------- | ------- | -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `/imme`                         | POST    | Schnittstelle für Immersive Translate Plugin       | [Immersive Translate](https://immersivetranslate.com/)                                  |
+| `/kiss`                         | POST    | Schnittstelle für Kiss Translator Plugin           | [Kiss Translator](https://github.com/fishjar/kiss-translator)                           |
+| `/deepl`                        | POST    | DeepL API v2 kompatible Schnittstelle              | Clients, die die DeepL API unterstützen                                                 |
+| `/hcfy`                         | POST    | Selection Translator kompatible Schnittstelle      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/hcfy`                         | POST    | Selection Translator kompatible Schnittstelle      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/google/language/translate/v2` | POST    | Google Translate API v2 kompatible Schnittstelle   | Clients, die die Google Translate API unterstützen                                      |
+| `/google/translate_a/single`    | GET     | Google translate_a/single kompatible Schnittstelle | Clients, die Google Web Translate unterstützen                                          |
 
 **Plugin-Konfigurationsanleitung:**
 
@@ -142,15 +142,15 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 >
 > Konfigurieren Sie anschließend die Adresse der benutzerdefinierten Schnittstelle des Plugins gemäß der untenstehenden Tabelle.
 
-| Name | URL | Plugin-Einstellung |
-| ---- | --- | ------------------ |
-| Immersive Translate (Ohne Passwort) | `http://localhost:8989/imme` | `Benutzerdefinierte API-Einstellungen` - `API-URL` |
-| Immersive Translate (Mit Passwort) | `http://localhost:8989/imme?token=your_token` | Dasselbe wie oben, ändern Sie `your_token` am Ende der URL in Ihren `MT_API_TOKEN` Wert |
-| Kiss Translator (Ohne Passwort) | `http://localhost:8989/kiss` | `Schnittstelleneinstellungen` - `Custom` - `URL` |
-| Kiss Translator (Mit Passwort) | `http://localhost:8989/kiss` | Dasselbe wie oben, füllen Sie `KEY` mit `your_token` aus |
-| DeepL Kompatibel | `http://localhost:8989/deepl` | Verwenden Sie `DeepL-Auth-Key` oder `Bearer` Authentifizierung |
-| Google Kompatibel | `http://localhost:8989/google/language/translate/v2` | Verwenden Sie den `key` Parameter oder `Bearer` Authentifizierung |
-| Selection Translator | `http://localhost:8989/hcfy` | Unterstützt `token` Parameter oder `Bearer` Authentifizierung |
+| Name                                | URL                                                  | Plugin-Einstellung                                                                      |
+| ----------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Immersive Translate (Ohne Passwort) | `http://localhost:8989/imme`                         | `Benutzerdefinierte API-Einstellungen` - `API-URL`                                      |
+| Immersive Translate (Mit Passwort)  | `http://localhost:8989/imme?token=your_token`        | Dasselbe wie oben, ändern Sie `your_token` am Ende der URL in Ihren `MT_API_TOKEN` Wert |
+| Kiss Translator (Ohne Passwort)     | `http://localhost:8989/kiss`                         | `Schnittstelleneinstellungen` - `Custom` - `URL`                                        |
+| Kiss Translator (Mit Passwort)      | `http://localhost:8989/kiss`                         | Dasselbe wie oben, füllen Sie `KEY` mit `your_token` aus                                |
+| DeepL Kompatibel                    | `http://localhost:8989/deepl`                        | Verwenden Sie `DeepL-Auth-Key` oder `Bearer` Authentifizierung                          |
+| Google Kompatibel                   | `http://localhost:8989/google/language/translate/v2` | Verwenden Sie den `key` Parameter oder `Bearer` Authentifizierung                       |
+| Selection Translator                | `http://localhost:8989/hcfy`                         | Unterstützt `token` Parameter oder `Bearer` Authentifizierung                           |
 
 **Normale Benutzer können den Dienst nutzen, indem sie die Schnittstellenadresse des Plugins gemäß dem Tabelleninhalt konfigurieren.**
 
@@ -184,13 +184,13 @@ Beispiele:
 
 Hier sind einige Projekte mit ähnlichen Funktionen. Wenn Sie andere Bedürfnisse haben, können Sie diese Projekte ausprobieren:
 
-| Projektname | Speicherverbrauch | Nebenläufigkeitsleistung | Übersetzungsqualität | Geschwindigkeit | Weitere Informationen |
-| ----------- | ----------------- | ------------------------ | -------------------- | --------------- | --------------------- |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb) | Sehr hoch | Schlecht | Durchschnittlich | Langsam | Die Android-Portierung [RTranslator](https://github.com/niedev/RTranslator) hat viele Optimierungen, aber der Ressourcenverbrauch ist immer noch hoch und es ist nicht schnell |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch | Durchschnittlich | Durchschnittlich | Mittel | Mittelklasse-CPU verarbeitet 3 Sätze/s, High-End-CPU 15-20 Sätze/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | Hoch | Durchschnittlich | Eher schlecht | Schnell | [Leistungstests](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| Andere große Modelle | Extrem hoch | Dynamisch | Sehr gut | Sehr langsam | Hohe Hardwareanforderungen. Wenn Sie eine Übersetzung mit hoher Nebenläufigkeit benötigen, wird empfohlen, das vllm-Framework zu verwenden. |
-| Dieses Projekt | Niedrig | Hoch | Durchschnittlich | Extrem schnell | Durchschnittliche Antwortzeit von 50 ms pro Anfrage. |
+| Projektname                                                        | Speicherverbrauch | Nebenläufigkeitsleistung | Übersetzungsqualität | Geschwindigkeit | Weitere Informationen                                                                                                                                                          |
+| ------------------------------------------------------------------ | ----------------- | ------------------------ | -------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | Sehr hoch         | Schlecht                 | Durchschnittlich     | Langsam         | Die Android-Portierung [RTranslator](https://github.com/niedev/RTranslator) hat viele Optimierungen, aber der Ressourcenverbrauch ist immer noch hoch und es ist nicht schnell |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch         | Durchschnittlich         | Durchschnittlich     | Mittel          | Mittelklasse-CPU verarbeitet 3 Sätze/s, High-End-CPU 15-20 Sätze/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486)                           |
+| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | Hoch              | Durchschnittlich         | Eher schlecht        | Schnell         | [Leistungstests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                                            |
+| Andere große Modelle                                               | Extrem hoch       | Dynamisch                | Sehr gut             | Sehr langsam    | Hohe Hardwareanforderungen. Wenn Sie eine Übersetzung mit hoher Nebenläufigkeit benötigen, wird empfohlen, das vllm-Framework zu verwenden.                                    |
+| Dieses Projekt                                                     | Niedrig           | Hoch                     | Durchschnittlich     | Extrem schnell  | Durchschnittliche Antwortzeit von 50 ms pro Anfrage.                                                                                                                           |
 
 > Die Daten in der Tabelle beziehen sich auf einfache Tests mit CPU, Englisch-Chinesisch-Szenarien, keine strengen Tests, Vergleich von nicht quantisierten Versionen, nur als Referenz.
 

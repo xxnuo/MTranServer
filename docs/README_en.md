@@ -12,8 +12,8 @@ Note: This model server focuses on `offline translation`, `response speed`, `cro
 
 ## Online Demo
 
-| Website                                                                         | TOKEN                     | Other Interface                                                                | Provider                               |
-| ------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | -------------------------------------- |
+| Website                                                                      | TOKEN                     | Other Interface                                                                         | Provider                             |
+| ---------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------ |
 | [ipacel.cc](https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__) | `__IpacEL_MT_API_TOKEN__` | Immersive Translate: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
 
 Thanks to community contributors for providing trial services for users!
@@ -32,7 +32,7 @@ After the desktop app launches, it will create a tray menu to conveniently manag
 
 The program includes a simple UI and online debug documentation.
 
-For detailed usage instructions, jump to [Ecosystem Projects](#ecosystem-projects)
+For detailed usage instructions, jump to [Ecosystem Projects](#Ecosystem-Projects)
 
 Preview (latest version has updates):
 
@@ -122,15 +122,15 @@ TODO: Under active development.
 
 The server provides compatible endpoints for multiple translation plugins:
 
-| Endpoint | Method | Description | Supported Plugins |
-| -------- | ------ | ----------- | ----------------- |
-| `/imme` | POST | Immersive Translation plugin endpoint | [Immersive Translation](https://immersivetranslate.com/) |
-| `/kiss` | POST | Kiss Translator plugin endpoint | [Kiss Translator](https://github.com/fishjar/kiss-translator) |
-| `/deepl` | POST | DeepL API v2 compatible endpoint | Clients supporting DeepL API |
-| `/hcfy` | POST | Selection Translator compatible endpoint | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy` | POST | Selection Translator compatible endpoint | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/google/language/translate/v2` | POST | Google Translate API v2 compatible endpoint | Clients supporting Google Translate API |
-| `/google/translate_a/single` | GET | Google translate_a/single compatible endpoint | Clients supporting Google web translation |
+| Endpoint                        | Method | Description                                   | Supported Plugins                                                                       |
+| ------------------------------- | ------ | --------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `/imme`                         | POST   | Immersive Translation plugin endpoint         | [Immersive Translation](https://immersivetranslate.com/)                                |
+| `/kiss`                         | POST   | Kiss Translator plugin endpoint               | [Kiss Translator](https://github.com/fishjar/kiss-translator)                           |
+| `/deepl`                        | POST   | DeepL API v2 compatible endpoint              | Clients supporting DeepL API                                                            |
+| `/hcfy`                         | POST   | Selection Translator compatible endpoint      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/hcfy`                         | POST   | Selection Translator compatible endpoint      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/google/language/translate/v2` | POST   | Google Translate API v2 compatible endpoint   | Clients supporting Google Translate API                                                 |
+| `/google/translate_a/single`    | GET    | Google translate_a/single compatible endpoint | Clients supporting Google web translation                                               |
 
 **Plugin Configuration Guide:**
 
@@ -142,15 +142,15 @@ The server provides compatible endpoints for multiple translation plugins:
 >
 > Configure the plugin's custom interface address according to the table below.
 
-| Name                                  | URL                                           | Plugin Setting                                                                   |
-| ------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
-| Immersive Translation (No Password)   | `http://localhost:8989/imme`                  | `Custom API Settings` - `API URL`                                                |
-| Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token` | Same as above, change `your_token` to your `MT_API_TOKEN` value |
-| Kiss Translator (No Password)         | `http://localhost:8989/kiss`                  | `Interface Settings` - `Custom` - `URL`                                          |
-| Kiss Translator (With Password)       | `http://localhost:8989/kiss`                  | Same as above, fill `KEY` with `your_token`                                      |
-| DeepL Compatible                      | `http://localhost:8989/deepl`                 | Use `DeepL-Auth-Key` or `Bearer` authentication                                  |
-| Google Compatible                     | `http://localhost:8989/google/language/translate/v2` | Use `key` parameter or `Bearer` authentication                            |
-| Selection Translator                  | `http://localhost:8989/hcfy`                  | Support `token` parameter or `Bearer` authentication                             |
+| Name                                  | URL                                                  | Plugin Setting                                                  |
+| ------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
+| Immersive Translation (No Password)   | `http://localhost:8989/imme`                         | `Custom API Settings` - `API URL`                               |
+| Immersive Translation (With Password) | `http://localhost:8989/imme?token=your_token`        | Same as above, change `your_token` to your `MT_API_TOKEN` value |
+| Kiss Translator (No Password)         | `http://localhost:8989/kiss`                         | `Interface Settings` - `Custom` - `URL`                         |
+| Kiss Translator (With Password)       | `http://localhost:8989/kiss`                         | Same as above, fill `KEY` with `your_token`                     |
+| DeepL Compatible                      | `http://localhost:8989/deepl`                        | Use `DeepL-Auth-Key` or `Bearer` authentication                 |
+| Google Compatible                     | `http://localhost:8989/google/language/translate/v2` | Use `key` parameter or `Bearer` authentication                  |
+| Selection Translator                  | `http://localhost:8989/hcfy`                         | Support `token` parameter or `Bearer` authentication            |
 
 **Regular users can start using the service after setting up the plugin interface address according to the table above.**
 
@@ -184,13 +184,13 @@ Examples:
 
 Here are some similar projects, you can try them if you have other needs:
 
-| Project Name                                                           | Memory Usage   | Concurrency | Translation Quality | Speed      | Additional Info                                                                                                                                                   |
-| ---------------------------------------------------------------------- | -------------- | ----------- | ------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)          | Very High      | Poor        | Average             | Slow       | Android port [RTranslator](https://github.com/niedev/RTranslator) has many optimizations, but still has high resource usage and is not fast                       |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)     | Very High      | Average     | Average             | Medium     | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)           | High           | Average     | Below Average       | Fast       | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                            |
-| Any LLM                                                                | Extremely High | Dynamic     | Very Good           | Very Slow  | High hardware requirements. If you need high concurrency translation, it is recommended to use vllm framework. |
-| MTranServer (This Project)                                             | Low            | High        | Average             | Ultra Fast | 50ms average response time per request.                                                                   |
+| Project Name                                                       | Memory Usage   | Concurrency | Translation Quality | Speed      | Additional Info                                                                                                                                                   |
+| ------------------------------------------------------------------ | -------------- | ----------- | ------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | Very High      | Poor        | Average             | Slow       | Android port [RTranslator](https://github.com/niedev/RTranslator) has many optimizations, but still has high resource usage and is not fast                       |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High      | Average     | Average             | Medium     | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
+| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | High           | Average     | Below Average       | Fast       | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                            |
+| Any LLM                                                            | Extremely High | Dynamic     | Very Good           | Very Slow  | High hardware requirements. If you need high concurrency translation, it is recommended to use vllm framework.                                                    |
+| MTranServer (This Project)                                         | Low            | High        | Average             | Ultra Fast | 50ms average response time per request.                                                                                                                           |
 
 > Table data is for CPU, English to Chinese scenarios simple testing, not strict testing, non-quantized version comparison, for reference only.
 

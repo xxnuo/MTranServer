@@ -2,18 +2,18 @@
 
 [中文](../README.md) | [English](README_en.md) | [日本語](README_ja.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
-超低リソース消費、超高速なオフライン翻訳モデルサーバーです。グラフィックカードは不要です。リクエストあたりの平均応答時間は50ミリ秒です。世界の主要言語の翻訳をサポートしています。
+超低リソース消費、超高速なオフライン翻訳モデルサーバーです。グラフィックカードは不要です。リクエストあたりの平均応答時間は 50 ミリ秒です。世界の主要言語の翻訳をサポートしています。
 
-注意：このモデルサーバーは、`オフライン翻訳`、`応答速度`、`クロスプラットフォーム展開`、`ローカル実行`による`無制限の無料翻訳`という設計目標に焦点を当てており、モデルサイズと最適化の制限により、翻訳品質は大モデル翻訳の効果には及びません。高品質な翻訳が必要な場合は、オンラインの大規模言語モデルAPIの使用をお勧めします。
+注意：このモデルサーバーは、`オフライン翻訳`、`応答速度`、`クロスプラットフォーム展開`、`ローカル実行`による`無制限の無料翻訳`という設計目標に焦点を当てており、モデルサイズと最適化の制限により、翻訳品質は大モデル翻訳の効果には及びません。高品質な翻訳が必要な場合は、オンラインの大規模言語モデル API の使用をお勧めします。
 
-> v4ではメモリ使用量が最適化され、速度がさらに向上し、安定性が強化されました。古いバージョンを使用している場合は、すぐにアップグレードすることをお勧めします！
+> v4 ではメモリ使用量が最適化され、速度がさらに向上し、安定性が強化されました。古いバージョンを使用している場合は、すぐにアップグレードすることをお勧めします！
 
 <img src="../images/preview.png" width="auto" height="460">
 
 ## オンラインデモ
 
-| ウェブサイト                                                                | TOKEN                     | その他のインターフェース                                                                       | 提供者                               |
-| --------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------ |
+| ウェブサイト                                                                 | TOKEN                     | その他のインターフェース                                                       | 提供者                               |
+| ---------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------ | ------------------------------------ |
 | [ipacel.cc](https://MTranServer.ipacel.cc/ui/?token=__IpacEL_MT_API_TOKEN__) | `__IpacEL_MT_API_TOKEN__` | 没入型翻訳: `https://MTranServer.ipacel.cc/imme?token=__IpacEL_MT_API_TOKEN__` | [@ApliNi](https://github.com/ApliNi) |
 
 ユーザーに試用サービスを提供してくださるコミュニティの貢献者に感謝します！
@@ -122,15 +122,15 @@ TODO: 開発中です。
 
 サーバーは複数の翻訳プラグインの互換インターフェースを提供しています。
 
-| インターフェース | メソッド | 説明 | 対応プラグイン |
-| ---------------- | -------- | ---- | -------------- |
-| `/imme` | POST | 没入型翻訳（Immersive Translate）プラグインインターフェース | [没入型翻訳](https://immersivetranslate.com/) |
-| `/kiss` | POST | Kiss Translator プラグインインターフェース | [Kiss Translator](https://github.com/fishjar/kiss-translator) |
-| `/deepl` | POST | DeepL API v2 互換インターフェース | DeepL API 対応クライアント |
-| `/hcfy` | POST | 划词翻译（Selection Translator）互換インターフェース | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy` | POST | 划词翻译（Selection Translator）互換インターフェース | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/google/language/translate/v2` | POST | Google Translate API v2 互換インターフェース | Google Translate API 対応クライアント |
-| `/google/translate_a/single` | GET | Google translate_a/single 互換インターフェース | Google ウェブ翻訳対応クライアント |
+| インターフェース                | メソッド | 説明                                                        | 対応プラグイン                                                              |
+| ------------------------------- | -------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `/imme`                         | POST     | 没入型翻訳（Immersive Translate）プラグインインターフェース | [没入型翻訳](https://immersivetranslate.com/)                               |
+| `/kiss`                         | POST     | Kiss Translator プラグインインターフェース                  | [Kiss Translator](https://github.com/fishjar/kiss-translator)               |
+| `/deepl`                        | POST     | DeepL API v2 互換インターフェース                           | DeepL API 対応クライアント                                                  |
+| `/hcfy`                         | POST     | 划词翻译（Selection Translator）互換インターフェース        | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/hcfy`                         | POST     | 划词翻译（Selection Translator）互換インターフェース        | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
+| `/google/language/translate/v2` | POST     | Google Translate API v2 互換インターフェース                | Google Translate API 対応クライアント                                       |
+| `/google/translate_a/single`    | GET      | Google translate_a/single 互換インターフェース              | Google ウェブ翻訳対応クライアント                                           |
 
 **プラグイン設定説明：**
 
@@ -142,15 +142,15 @@ TODO: 開発中です。
 >
 > 次に、以下の表に従ってプラグインのカスタムインターフェースアドレスを設定します。
 
-| 名前 | URL | プラグイン設定 |
-| ---- | --- | -------------- |
-| 没入型翻訳（パスワードなし） | `http://localhost:8989/imme` | `カスタムAPI設定` - `API URL` |
-| 没入型翻訳（パスワードあり） | `http://localhost:8989/imme?token=your_token` | 同上、URL末尾の `your_token` をあなたの `MT_API_TOKEN` の値に変更してください |
-| Kiss Translator（パスワードなし） | `http://localhost:8989/kiss` | `インターフェース設定` - `Custom` - `URL` |
-| Kiss Translator（パスワードあり） | `http://localhost:8989/kiss` | 同上、`KEY` に `your_token` を入力してください |
-| DeepL 互換 | `http://localhost:8989/deepl` | `DeepL-Auth-Key` または `Bearer` 認証を使用 |
-| Google 互換 | `http://localhost:8989/google/language/translate/v2` | `key` パラメータまたは `Bearer` 認証を使用 |
-| 划词翻译 | `http://localhost:8989/hcfy` | `token` パラメータまたは `Bearer` 認証をサポート |
+| 名前                              | URL                                                  | プラグイン設定                                                                 |
+| --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 没入型翻訳（パスワードなし）      | `http://localhost:8989/imme`                         | `カスタムAPI設定` - `API URL`                                                  |
+| 没入型翻訳（パスワードあり）      | `http://localhost:8989/imme?token=your_token`        | 同上、URL 末尾の `your_token` をあなたの `MT_API_TOKEN` の値に変更してください |
+| Kiss Translator（パスワードなし） | `http://localhost:8989/kiss`                         | `インターフェース設定` - `Custom` - `URL`                                      |
+| Kiss Translator（パスワードあり） | `http://localhost:8989/kiss`                         | 同上、`KEY` に `your_token` を入力してください                                 |
+| DeepL 互換                        | `http://localhost:8989/deepl`                        | `DeepL-Auth-Key` または `Bearer` 認証を使用                                    |
+| Google 互換                       | `http://localhost:8989/google/language/translate/v2` | `key` パラメータまたは `Bearer` 認証を使用                                     |
+| 划词翻译                          | `http://localhost:8989/hcfy`                         | `token` パラメータまたは `Bearer` 認証をサポート                               |
 
 **一般ユーザーは、表の内容に従ってプラグインの使用インターフェースアドレスを設定すれば使用できます。**
 
@@ -184,15 +184,15 @@ TODO: 開発中です。
 
 同様の機能を持つプロジェクトをいくつか挙げます。他のニーズがある場合は、これらのプロジェクトを試してみてください。
 
-| プロジェクト名 | メモリ使用量 | 同時実行性能 | 翻訳品質 | 速度 | その他情報 |
-| -------------- | ------------ | ------------ | -------- | ---- | ---------- |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb) | 非常に高い | 悪い | 普通 | 遅い | Android移植版の [RTranslator](https://github.com/niedev/RTranslator) は多くの最適化がありますが、それでもリソース使用量が高く、高速ではありません |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 普通 | 普通 | 中程度 | ミドルレンジCPUで毎秒3文、ハイエンドCPUで毎秒15-20文処理。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks) | 高い | 普通 | やや悪い | 速い | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks) |
-| その他大規模モデル | 超高い | 動的 | 非常に良い | 非常に遅い | ハードウェア要件が高い。高同時実行翻訳が必要な場合は、vllmフレームワークの使用をお勧めします。 |
-| 本プロジェクト | 低 | 高い | 普通 | 極めて速い | リクエストあたり平均応答時間50ms。 |
+| プロジェクト名                                                     | メモリ使用量 | 同時実行性能 | 翻訳品質   | 速度       | その他情報                                                                                                                                         |
+| ------------------------------------------------------------------ | ------------ | ------------ | ---------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | 非常に高い   | 悪い         | 普通       | 遅い       | Android 移植版の [RTranslator](https://github.com/niedev/RTranslator) は多くの最適化がありますが、それでもリソース使用量が高く、高速ではありません |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い   | 普通         | 普通       | 中程度     | ミドルレンジ CPU で毎秒 3 文、ハイエンド CPU で毎秒 15-20 文処理。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486)    |
+| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | 高い         | 普通         | やや悪い   | 速い       | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                    |
+| その他大規模モデル                                                 | 超高い       | 動的         | 非常に良い | 非常に遅い | ハードウェア要件が高い。高同時実行翻訳が必要な場合は、vllm フレームワークの使用をお勧めします。                                                    |
+| 本プロジェクト                                                     | 低           | 高い         | 普通       | 極めて速い | リクエストあたり平均応答時間 50ms。                                                                                                                |
 
-> 表のデータはCPU、英中翻訳シナリオでの簡易テストであり、厳密なテストではなく、非量子化バージョンの比較です。参考程度にしてください。
+> 表のデータは CPU、英中翻訳シナリオでの簡易テストであり、厳密なテストではなく、非量子化バージョンの比較です。参考程度にしてください。
 
 # 高度な設定説明
 
