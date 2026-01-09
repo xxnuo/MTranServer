@@ -165,9 +165,9 @@ jobs:
 
           > 桌面端启动后会创建一个托盘菜单，通过菜单可以方便的管理服务。
 
-          **macOS**: 拖动安装后，如果打开 MTranServer App 提示 "app is damaged"，需要运行以下命令修复：
+          **macOS**: 拖动安装后，如果打开 MTranServer App 提示有问题无法打开，需要运行以下命令修复：
 
-          > If you see "app is damaged" error, run this command in Terminal App: 
+          > **macOS**: If you see any error when opening MTranServer App after installing, run this command in Terminal App: 
 
           ```bash
           sudo xattr -d com.apple.quarantine "/Applications/MTranServer.app"
