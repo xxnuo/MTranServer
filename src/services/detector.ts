@@ -18,7 +18,6 @@ const DEFAULT_CONFIDENCE_THRESHOLD = 0.5;
 const MAXIMUM_LANGUAGES_IN_ONE_TEXT = 2;
 const MAX_DETECTION_BYTES = 511;
 const MAX_FALLBACK_DETECTION_BYTES = 1023;
-const SHORT_TEXT_CJK_THRESHOLD = 3;
 
 let cldModule: any = null;
 let initPromise: Promise<void> | null = null;
@@ -180,17 +179,19 @@ function bcp47Normalize(code: string): string {
   }
 }
 
-function detectShortCjkLanguage(text: string): string | null {
-  if (text.length > SHORT_TEXT_CJK_THRESHOLD) {
-    return null;
-  }
+function detectPureCjkLanguage(text: string, startIndex: number = 0): string | null {
+  const limit = Math.min(text.length, startIndex + 2000);
 
   let hasHan = false;
   let hasKana = false;
   let hasHangul = false;
 
-  for (const char of text) {
-    const code = char.charCodeAt(0);
+  for (let i = startIndex; i < limit; i++) {
+    const code = text.charCodeAt(i);
+
+    if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)) {
+      return null;
+    }
 
     if (code >= 0x3040 && code <= 0x30ff) {
       hasKana = true;
@@ -206,20 +207,6 @@ function detectShortCjkLanguage(text: string): string | null {
       hasHan = true;
       continue;
     }
-
-    if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)) {
-      return null;
-    }
-
-    if ((code >= 0x0030 && code <= 0x0039) || code <= 0x007f) {
-      continue;
-    }
-
-    if (code >= 0x3000 && code <= 0x303f) {
-      continue;
-    }
-
-    return null;
   }
 
   if (hasKana) return 'ja';
@@ -228,24 +215,34 @@ function detectShortCjkLanguage(text: string): string | null {
   return null;
 }
 
+function getValidContentStartIndex(text: string): number {
+  const match = text.match(/^[^\p{L}\p{N}]+/u);
+  return match ? match[0].length : 0;
+}
+
 export async function detectLanguage(text: string, maxBytes: number = MAX_DETECTION_BYTES): Promise<string> {
   if (!text) {
     return '';
   }
 
-  const shortCjk = detectShortCjkLanguage(text);
-  if (shortCjk) {
-    return shortCjk;
+  const startIndex = getValidContentStartIndex(text);
+  if (startIndex >= text.length) return 'en';
+
+  const pureCjk = detectPureCjkLanguage(text, startIndex);
+  if (pureCjk) {
+    return pureCjk;
   }
 
   await initCLD();
 
+  const cleanText = text.slice(startIndex);
+
   try {
-    const result = detectLanguageWithCLD(text, false, maxBytes);
+    const result = detectLanguageWithCLD(cleanText, false, maxBytes);
     return bcp47Normalize(result.language);
   } catch (error) {
     logger.warn(`Language detection failed: ${error}`);
-    handleCldError(error, { text, operation: 'detectLanguage' });
+    handleCldError(error, { text: cleanText, operation: 'detectLanguage' });
     return 'en';
   }
 }
@@ -259,10 +256,20 @@ export async function detectLanguageWithConfidence(
     return { language: '', confidence: 0 };
   }
 
+  const startIndex = getValidContentStartIndex(text);
+  if (startIndex >= text.length) return { language: 'en', confidence: 0 };
+
+  const pureCjk = detectPureCjkLanguage(text, startIndex);
+  if (pureCjk) {
+    return { language: pureCjk, confidence: 1.0 };
+  }
+
   await initCLD();
 
+  const cleanText = text.slice(startIndex);
+
   try {
-    const result = detectLanguageWithCLD(text, false, maxBytes);
+    const result = detectLanguageWithCLD(cleanText, false, maxBytes);
     const confidence = result.percentScore / 100;
 
     if (confidence < minConfidence) {
@@ -275,7 +282,7 @@ export async function detectLanguageWithConfidence(
     };
   } catch (error) {
     logger.warn(`Language detection with confidence failed: ${error}`);
-    handleCldError(error, { text, operation: 'detectLanguageWithConfidence' });
+    handleCldError(error, { text: cleanText, operation: 'detectLanguageWithConfidence' });
     return { language: 'en', confidence: 0 };
   }
 }
