@@ -76,28 +76,78 @@ function normalizeConfig(input) {
   };
 }
 
+function getDiffConfig(config) {
+  const defaults = getDefaultDesktopConfig();
+  const diff = {};
+  if (config.locale !== defaults.locale) {
+    diff.locale = config.locale;
+  }
+  const serverDiff = {};
+  const serverKeys = Object.keys(defaults.server);
+  for (const key of serverKeys) {
+    if (config.server[key] !== defaults.server[key]) {
+      serverDiff[key] = config.server[key];
+    }
+  }
+  if (Object.keys(serverDiff).length > 0) {
+    diff.server = serverDiff;
+  }
+  return diff;
+}
+
+function isConfigDefault(config) {
+  const diff = getDiffConfig(config);
+  return Object.keys(diff).length === 0;
+}
+
 export async function loadDesktopConfig() {
   try {
     const raw = await fsPromises.readFile(desktopConfigPath, 'utf8');
     const parsed = YAML.parse(raw);
-    return normalizeConfig(parsed);
-  } catch (error) {
-    const defaults = getDefaultDesktopConfig();
-    await saveDesktopConfig(defaults);
-    return defaults;
+    const normalized = normalizeConfig(parsed);
+    const diff = getDiffConfig(normalized);
+    if (Object.keys(diff).length === 0) {
+      try {
+        await fsPromises.unlink(desktopConfigPath);
+      } catch {
+      }
+    } else {
+      const currentDiff = getDiffConfig(normalizeConfig(parsed));
+      const parsedKeys = Object.keys(parsed?.server || {});
+      const defaultKeys = Object.keys(getDefaultDesktopConfig().server);
+      const hasRemovedKeys = parsedKeys.some(k => !defaultKeys.includes(k));
+      if (hasRemovedKeys) {
+        await fsPromises.mkdir(serverConfigDir, { recursive: true });
+        const data = YAML.stringify(diff);
+        await fsPromises.writeFile(desktopConfigPath, data, 'utf8');
+      }
+    }
+    return normalized;
+  } catch {
+    return getDefaultDesktopConfig();
   }
 }
 
 export async function saveDesktopConfig(config) {
   const normalized = normalizeConfig(config);
-  await fsPromises.mkdir(serverConfigDir, { recursive: true });
-  const data = YAML.stringify(normalized);
-  await fsPromises.writeFile(desktopConfigPath, data, 'utf8');
+  const diff = getDiffConfig(normalized);
+  if (Object.keys(diff).length === 0) {
+    try {
+      await fsPromises.unlink(desktopConfigPath);
+    } catch {
+    }
+  } else {
+    await fsPromises.mkdir(serverConfigDir, { recursive: true });
+    const data = YAML.stringify(diff);
+    await fsPromises.writeFile(desktopConfigPath, data, 'utf8');
+  }
   return normalized;
 }
 
 export async function resetDesktopConfig() {
-  const defaults = getDefaultDesktopConfig();
-  await saveDesktopConfig(defaults);
-  return defaults;
+  try {
+    await fsPromises.unlink(desktopConfigPath);
+  } catch {
+  }
+  return getDefaultDesktopConfig();
 }

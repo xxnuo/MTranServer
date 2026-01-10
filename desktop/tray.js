@@ -8,6 +8,8 @@ export function createTray({
   messages,
   statusLabel,
   versionLabel,
+  newVersionLabel,
+  autoStartEnabled,
   onOpenBrowserUi,
   onOpenBrowserDocs,
   onOpenRepo,
@@ -15,6 +17,8 @@ export function createTray({
   onRestart,
   onOpenModels,
   onOpenConfig,
+  onToggleAutoStart,
+  onOpenReleasePage,
   onQuit
 }) {
   if (tray) return tray;
@@ -25,6 +29,8 @@ export function createTray({
     messages,
     statusLabel,
     versionLabel,
+    newVersionLabel,
+    autoStartEnabled,
     onOpenBrowserUi,
     onOpenBrowserDocs,
     onOpenRepo,
@@ -32,6 +38,8 @@ export function createTray({
     onRestart,
     onOpenModels,
     onOpenConfig,
+    onToggleAutoStart,
+    onOpenReleasePage,
     onQuit
   });
   return tray;
@@ -41,6 +49,8 @@ export function updateTrayMenu({
   messages,
   statusLabel,
   versionLabel,
+  newVersionLabel,
+  autoStartEnabled,
   onOpenBrowserUi,
   onOpenBrowserDocs,
   onOpenRepo,
@@ -48,10 +58,12 @@ export function updateTrayMenu({
   onRestart,
   onOpenModels,
   onOpenConfig,
+  onToggleAutoStart,
+  onOpenReleasePage,
   onQuit
 }) {
   if (!tray) return;
-  const contextMenu = Menu.buildFromTemplate([
+  const menuItems = [
     {
       label: messages.trayOpenUi,
       click: onOpenBrowserUi
@@ -76,6 +88,12 @@ export function updateTrayMenu({
         { label: messages.trayRestart, click: onRestart }
       ]
     },
+    {
+      label: messages.trayAutoStart,
+      type: 'checkbox',
+      checked: autoStartEnabled,
+      click: onToggleAutoStart
+    },
     { type: 'separator' },
     {
       label: messages.trayData,
@@ -87,11 +105,18 @@ export function updateTrayMenu({
     {
       label: `${messages.trayVersion}: ${versionLabel}`,
       enabled: false
-    },
-    {
-      label: messages.trayQuit,
-      click: onQuit
     }
-  ]);
+  ];
+  if (newVersionLabel) {
+    menuItems.push({
+      label: messages.trayNewVersion.replace('{version}', newVersionLabel),
+      click: onOpenReleasePage
+    });
+  }
+  menuItems.push({
+    label: messages.trayQuit,
+    click: onQuit
+  });
+  const contextMenu = Menu.buildFromTemplate(menuItems);
   tray.setContextMenu(contextMenu);
 }

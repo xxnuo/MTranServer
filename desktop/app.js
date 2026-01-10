@@ -18,8 +18,10 @@ let locale = 'en';
 let messages = getMessages(locale);
 let tray = null;
 const repoUrl = 'https://github.com/xxnuo/MTranServer';
+const releasesUrl = 'https://github.com/xxnuo/MTranServer/releases';
 let portCheckPromise = null;
 let desktopLogPath = null;
+let newVersionAvailable = null;
 
 function getLocalHost(host) {
   if (!host || host === '0.0.0.0') return '127.0.0.1';
@@ -36,6 +38,38 @@ function getDocsUrl(server) {
 
 function getSettingsUrl(server) {
   return `http://${getLocalHost(server.host)}:${server.port}/ui/settings`;
+}
+
+function compareVersions(current, latest) {
+  const parseCurrent = current.replace(/^v/, '').split('.').map(Number);
+  const parseLatest = latest.replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < Math.max(parseCurrent.length, parseLatest.length); i++) {
+    const a = parseCurrent[i] || 0;
+    const b = parseLatest[i] || 0;
+    if (a < b) return -1;
+    if (a > b) return 1;
+  }
+  return 0;
+}
+
+async function checkForUpdate() {
+  try {
+    const response = await fetch(releasesUrl, {
+      headers: { 'Accept': 'text/html' },
+      redirect: 'follow',
+    });
+    if (!response.ok) return;
+    const html = await response.text();
+    const match = html.match(/\/xxnuo\/MTranServer\/releases\/tag\/v?([\d.]+)/);
+    if (!match) return;
+    const latestVersion = match[1];
+    const currentVersion = app.getVersion();
+    if (compareVersions(currentVersion, latestVersion) < 0) {
+      newVersionAvailable = latestVersion;
+      updateTray();
+    }
+  } catch {
+  }
 }
 
 function getStatusLabel() {
@@ -76,6 +110,8 @@ function updateTray() {
     messages,
     statusLabel: getStatusLabel(),
     versionLabel: app.getVersion(),
+    newVersionLabel: newVersionAvailable,
+    autoStartEnabled: app.getLoginItemSettings().openAtLogin,
     onOpenBrowserUi: () => shell.openExternal(getUiUrl(desktopConfig.server)),
     onOpenBrowserDocs: () => shell.openExternal(getDocsUrl(desktopConfig.server)),
     onOpenRepo: () => shell.openExternal(repoUrl),
@@ -83,8 +119,16 @@ function updateTray() {
     onRestart: restartServer,
     onOpenModels: () => shell.openPath(desktopConfig.server.modelDir),
     onOpenConfig: () => shell.openPath(desktopConfig.server.configDir),
+    onToggleAutoStart: toggleAutoStart,
+    onOpenReleasePage: () => shell.openExternal(releasesUrl),
     onQuit: quitApp
   });
+}
+
+function toggleAutoStart() {
+  const current = app.getLoginItemSettings().openAtLogin;
+  app.setLoginItemSettings({ openAtLogin: !current });
+  updateTray();
 }
 
 async function logDesktop(message, error) {
@@ -244,6 +288,8 @@ export async function startDesktop() {
     messages,
     statusLabel: getStatusLabel(),
     versionLabel: app.getVersion(),
+    newVersionLabel: newVersionAvailable,
+    autoStartEnabled: app.getLoginItemSettings().openAtLogin,
     onOpenBrowserUi: () => shell.openExternal(getUiUrl(desktopConfig.server)),
     onOpenBrowserDocs: () => shell.openExternal(getDocsUrl(desktopConfig.server)),
     onOpenRepo: () => shell.openExternal(repoUrl),
@@ -251,6 +297,8 @@ export async function startDesktop() {
     onRestart: restartServer,
     onOpenModels: () => shell.openPath(desktopConfig.server.modelDir),
     onOpenConfig: () => shell.openPath(desktopConfig.server.configDir),
+    onToggleAutoStart: toggleAutoStart,
+    onOpenReleasePage: () => shell.openExternal(releasesUrl),
     onQuit: quitApp
   });
 
@@ -259,6 +307,8 @@ export async function startDesktop() {
     app.quit();
     return;
   }
+
+  checkForUpdate();
 
   const getConfigResponse = async () => buildDesktopResponse();
   const applyConfig = async (config) => {
