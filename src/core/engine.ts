@@ -44,7 +44,7 @@ export class TranslationEngine {
   private isReady = false;
   private translating = false;
   private pendingQueue: QueueTask[] = [];
-  private maxLengthBreak = 128;
+  private maxLengthBreak = 512;
 
   constructor(options: TranslationOptions = {}) {
     this.options = options;
@@ -59,9 +59,9 @@ export class TranslationEngine {
       'beam-size': 1,
       'normalize': 1.0,
       'word-penalty': 0,
-      'max-length-break': 128,
+      'max-length-break': 512,
       'mini-batch-words': 1024,
-      'workspace': 128,
+      'workspace': 512,
       'max-length-factor': 2.0,
       'skip-cost': true,
       'cpu-threads': 0,
@@ -72,7 +72,7 @@ export class TranslationEngine {
     };
 
     const mergedConfig = { ...defaultConfig, ...config };
-    this.maxLengthBreak = mergedConfig['max-length-break'] || 128;
+    this.maxLengthBreak = mergedConfig['max-length-break'] || 512;
 
     const MODEL_FILE_ALIGNMENTS: Record<string, number> = {
       model: 256,

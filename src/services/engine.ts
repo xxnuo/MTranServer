@@ -226,7 +226,7 @@ export async function translateWithPivot(
     return text;
   }
 
-  if (fromLang !== 'auto' && text.length <= 128) {
+  if (fromLang !== 'auto' && text.length <= 512) {
     return translateSegment(fromLang, toLang, text, isHTML);
   }
 
