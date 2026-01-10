@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -17,14 +19,27 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "allowJs": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "deprecated", "src/assets/ui.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "deprecated",
+    "src/assets/ui.ts",
+    "ui"
+  ]
 }
