@@ -235,6 +235,39 @@ export class TranslationEngine {
     return fatalPatterns.some(pattern => errorMsg.includes(pattern));
   }
 
+  private _isCJK(lang: string): boolean {
+    if (!lang) return false;
+    const code = lang.toLowerCase();
+    return code.startsWith('zh') || code.startsWith('ja') || code.startsWith('ko');
+  }
+
+  private _getMappedSeparator(sep: string, targetLang?: string): string {
+    if (!targetLang) return sep;
+
+    const isTargetCJK = this._isCJK(targetLang);
+
+    const map: Record<string, { cjk: string; nonCjk: string }> = {
+      ". ": { cjk: "。", nonCjk: ". " },
+      "。": { cjk: "。", nonCjk: ". " },
+      "！": { cjk: "！", nonCjk: "! " },
+      "!": { cjk: "！", nonCjk: "! " },
+      "？": { cjk: "？", nonCjk: "? " },
+      "?": { cjk: "？", nonCjk: "? " },
+      "; ": { cjk: "；", nonCjk: "; " },
+      "；": { cjk: "；", nonCjk: "; " },
+      "：": { cjk: "：", nonCjk: ": " },
+      ": ": { cjk: "：", nonCjk: ": " },
+      "，": { cjk: "，", nonCjk: ", " },
+      ", ": { cjk: "，", nonCjk: ", " }
+    };
+
+    if (sep in map) {
+      return isTargetCJK ? map[sep].cjk : map[sep].nonCjk;
+    }
+
+    return sep;
+  }
+
   private _translateLongText(text: string, options: TranslateOptions = {}): string {
     const separators = [
       "\n", " - ", ". ", "。", "！", "!", "？", "?",
@@ -278,7 +311,8 @@ export class TranslationEngine {
       return this._translateInternal(part, options);
     });
 
-    return results.join(bestSep);
+    const targetSep = this._getMappedSeparator(bestSep, this.options.targetLang);
+    return results.join(targetSep);
   }
 
   private _chunkByWordBoundary(text: string, limit: number): string[] {
