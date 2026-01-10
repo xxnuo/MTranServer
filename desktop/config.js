@@ -40,9 +40,7 @@ export function getDefaultDesktopConfig() {
       logToFile: false,
       logConsole: true,
       logRequests: false,
-      maxLengthBreak: 128,
       checkUpdate: true,
-      cacheSize: 1000,
       modelDir: getDefaultModelDir(),
       configDir: serverConfigDir
     }
@@ -71,11 +69,7 @@ function normalizeConfig(input) {
       logToFile: typeof server.logToFile === 'boolean' ? server.logToFile : defaults.server.logToFile,
       logConsole: typeof server.logConsole === 'boolean' ? server.logConsole : defaults.server.logConsole,
       logRequests: typeof server.logRequests === 'boolean' ? server.logRequests : defaults.server.logRequests,
-      maxLengthBreak: Number.isFinite(Number(server.maxLengthBreak))
-        ? Number(server.maxLengthBreak)
-        : defaults.server.maxLengthBreak,
       checkUpdate: typeof server.checkUpdate === 'boolean' ? server.checkUpdate : defaults.server.checkUpdate,
-      cacheSize: Number.isFinite(Number(server.cacheSize)) ? Number(server.cacheSize) : defaults.server.cacheSize,
       modelDir: server.modelDir ?? defaults.server.modelDir,
       configDir: server.configDir ?? defaults.server.configDir
     }
