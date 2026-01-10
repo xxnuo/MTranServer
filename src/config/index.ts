@@ -18,7 +18,7 @@ export interface Config {
   logToFile: boolean;
   logConsole: boolean;
   logRequests: boolean;
-  maxLengthBreak: number;
+  maxSentenceLength: number;
   checkUpdate: boolean;
   cacheSize: number;
 }
@@ -132,7 +132,7 @@ export function getConfig(): Config {
 
     workerIdleTimeout: getInt('--worker-idle-timeout', 'MT_WORKER_IDLE_TIMEOUT', fileConfig.workerIdleTimeout ?? 60),
     workersPerLanguage: getInt('--workers-per-language', 'MT_WORKERS_PER_LANGUAGE', fileConfig.workersPerLanguage ?? 1),
-    maxLengthBreak: getInt('--max-length-break', 'MT_MAX_LENGTH_BREAK', fileConfig.maxLengthBreak ?? 512),
+    maxSentenceLength: getInt('--max-sentence-length', 'MT_MAX_SENTENCE_LENGTH', fileConfig.maxSentenceLength ?? 512),
 
     apiToken: getString('--api-token', 'MT_API_TOKEN', fileConfig.apiToken || ''),
 
