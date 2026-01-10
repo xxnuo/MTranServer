@@ -35,7 +35,7 @@ type FormState = {
     logToFile: boolean
     logConsole: boolean
     logRequests: boolean
-    maxLengthBreak: string
+    maxSentenceLength: string
     checkUpdate: boolean
     cacheSize: string
     modelDir: string
@@ -59,7 +59,7 @@ function toForm(config: DesktopConfig): FormState {
       logToFile: config.server.logToFile,
       logConsole: config.server.logConsole,
       logRequests: config.server.logRequests,
-      maxLengthBreak: String(config.server.maxLengthBreak),
+      maxSentenceLength: String(config.server.maxSentenceLength),
       checkUpdate: config.server.checkUpdate,
       cacheSize: String(config.server.cacheSize),
       modelDir: config.server.modelDir,
@@ -126,7 +126,7 @@ export function DesktopSettingsPage() {
         logToFile: form.server.logToFile,
         logConsole: form.server.logConsole,
         logRequests: form.server.logRequests,
-        maxLengthBreak: toNumber(form.server.maxLengthBreak, config.server.maxLengthBreak),
+        maxSentenceLength: toNumber(form.server.maxSentenceLength, config.server.maxSentenceLength),
         checkUpdate: form.server.checkUpdate,
         cacheSize: toNumber(form.server.cacheSize, config.server.cacheSize),
         modelDir: form.server.modelDir,
@@ -328,8 +328,8 @@ export function DesktopSettingsPage() {
                 <Input value={form.server.workersPerLanguage} onChange={(e) => setForm({ ...form, server: { ...form.server, workersPerLanguage: e.target.value } })} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('maxLengthBreak')}</label>
-                <Input value={form.server.maxLengthBreak} onChange={(e) => setForm({ ...form, server: { ...form.server, maxLengthBreak: e.target.value } })} />
+                <label className="text-sm font-medium">{t('maxSentenceLength')}</label>
+                <Input value={form.server.maxSentenceLength} onChange={(e) => setForm({ ...form, server: { ...form.server, maxSentenceLength: e.target.value } })} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('cacheSize')}</label>
