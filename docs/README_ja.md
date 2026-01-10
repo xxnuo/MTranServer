@@ -98,11 +98,11 @@ docker compose up -d
 
 ### IDE プラグイン
 
-#### MTranCode コメント翻訳プラグイン
+#### [MTranCode](https://github.com/xxnuo/MTranCode) コメント翻訳プラグイン
 
 VS Code、Cursor、Augment などの VS Code 系 IDE をサポートしています。
 
-拡張機能マーケットプレイスで `MTranCode` を検索するとコメント翻訳プラグインをインストールできます。
+拡張機能マーケットプレイスで **`MTranCode`** を検索するとコメント翻訳プラグインをインストールできます。
 
 プラグインはデフォルトで `http://localhost:8989` のサーバーを呼び出してコメントやコードの翻訳を行います。設定で変更できます。
 
@@ -110,7 +110,7 @@ VS Code、Cursor、Augment などの VS Code 系 IDE をサポートしていま
 
 ### ブラウザ拡張
 
-#### MTranBrowser
+#### [MTranBrowser](https://github.com/xxnuo/MTranBrowser)
 
 TODO: 開発中です。
 
@@ -127,6 +127,7 @@ TODO: 開発中です。
 | `/imme`                         | POST     | 没入型翻訳（Immersive Translate）プラグインインターフェース | [没入型翻訳](https://immersivetranslate.com/)                               |
 | `/kiss`                         | POST     | Kiss Translator プラグインインターフェース                  | [Kiss Translator](https://github.com/fishjar/kiss-translator)               |
 | `/deepl`                        | POST     | DeepL API v2 互換インターフェース                           | DeepL API 対応クライアント                                                  |
+| `/deeplx`                       | POST     | DeepLX 互換インターフェース                                 | DeepLX API 対応クライアント                                                 |
 | `/hcfy`                         | POST     | 划词翻译（Selection Translator）互換インターフェース        | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/hcfy`                         | POST     | 划词翻译（Selection Translator）互換インターフェース        | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST     | Google Translate API v2 互換インターフェース                | Google Translate API 対応クライアント                                       |
@@ -149,6 +150,7 @@ TODO: 開発中です。
 | Kiss Translator（パスワードなし） | `http://localhost:8989/kiss`                         | `インターフェース設定` - `Custom` - `URL`                                      |
 | Kiss Translator（パスワードあり） | `http://localhost:8989/kiss`                         | 同上、`KEY` に `your_token` を入力してください                                 |
 | DeepL 互換                        | `http://localhost:8989/deepl`                        | `DeepL-Auth-Key` または `Bearer` 認証を使用                                    |
+| DeepLX 互換                       | `http://localhost:8989/deeplx`                       | `token` パラメータまたは `Bearer` 認証をサポート                               |
 | Google 互換                       | `http://localhost:8989/google/language/translate/v2` | `key` パラメータまたは `Bearer` 認証を使用                                     |
 | 划词翻译                          | `http://localhost:8989/hcfy`                         | `token` パラメータまたは `Bearer` 認証をサポート                               |
 

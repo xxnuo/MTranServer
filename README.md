@@ -101,11 +101,11 @@ docker compose up -d
 
 ### IDE 插件
 
-#### MTranCode 注释翻译插件
+#### [MTranCode](https://github.com/xxnuo/MTranCode) 代码注释翻译插件
 
 支持 VS Code、Cursor、Augment 等 VS Code 系列 IDE
 
-在插件商店搜索 `MTranCode` 即可安装注释翻译插件
+在插件商店搜索 **`MTranCode`** 即可安装注释翻译插件
 
 插件默认接口会调用 `http://localhost:8989` 接口的服务器进行注释、代码的翻译，可在设置中调整。
 
@@ -113,12 +113,12 @@ docker compose up -d
 
 ### 浏览器插件
 
-#### MTranBrowser
+#### [MTranBrowser](https://github.com/xxnuo/MTranBrowser)
 
 TODO: 火热开发中
 
 > 如果你开发了衍生项目，欢迎提交 PR，我会在生态项目中添加你的项目。
->
+
 > 对了项目已经发布到 npm 包，可以直接在其他程序中调用简单的库接口实现翻译功能，具体信息查看 ts 类型说明。
 
 ## 兼容接口
@@ -130,6 +130,7 @@ TODO: 火热开发中
 | `/imme`                         | POST | 沉浸式翻译插件接口                 | [沉浸式翻译](https://immersivetranslate.com/)                               |
 | `/kiss`                         | POST | 简约翻译插件接口                   | [简约翻译](https://github.com/fishjar/kiss-translator)                      |
 | `/deepl`                        | POST | DeepL API v2 兼容接口              | 支持 DeepL API 的客户端                                                     |
+| `/deeplx`                       | POST | DeepLX 兼容接口                    | 支持 DeepLX 接口的客户端                                                    |
 | `/hcfy`                         | POST | 划词翻译兼容接口                   | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/hcfy`                         | POST | 划词翻译兼容接口                   | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST | Google Translate API v2 兼容接口   | 支持 Google Translate API 的客户端                                          |
@@ -152,6 +153,7 @@ TODO: 火热开发中
 | 简约翻译无密码   | `http://localhost:8989/kiss`                         | `接口设置` - `Custom` - `URL`                                   |
 | 简约翻译有密码   | `http://localhost:8989/kiss`                         | 同上，需要 `KEY` 填 `your_token`                                |
 | DeepL 兼容       | `http://localhost:8989/deepl`                        | 使用 `DeepL-Auth-Key` 或 `Bearer` 认证                          |
+| DeepLX 兼容      | `http://localhost:8989/deeplx`                       | 支持 `token` 参数或 `Bearer` 认证                               |
 | Google 兼容      | `http://localhost:8989/google/language/translate/v2` | 使用 `key` 参数或 `Bearer` 认证                                 |
 | 划词翻译         | `http://localhost:8989/hcfy`                         | 支持 `token` 参数或 `Bearer` 认证                               |
 

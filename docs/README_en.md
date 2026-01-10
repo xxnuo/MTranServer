@@ -98,11 +98,11 @@ docker compose up -d
 
 ### IDE Plugins
 
-#### MTranCode Comment Translation Plugin
+#### [MTranCode](https://github.com/xxnuo/MTranCode) Comment Translation Plugin
 
 Supports VS Code, Cursor, Augment, and other VS Code-based IDEs.
 
-Search for `MTranCode` in the extension marketplace to install the comment translation plugin.
+Search for **MTranCode** in the extension marketplace to install the comment translation plugin.
 
 The plugin defaults to calling the server at `http://localhost:8989` for comment and code translation. You can adjust it in settings.
 
@@ -110,7 +110,7 @@ This plugin is forked from [vscode-comment-translate](https://github.com/intelli
 
 ### Browser Extension
 
-#### MTranBrowser
+#### [MTranBrowser](https://github.com/xxnuo/MTranBrowser)
 
 TODO: Under active development.
 
@@ -127,6 +127,7 @@ The server provides compatible endpoints for multiple translation plugins:
 | `/imme`                         | POST   | Immersive Translation plugin endpoint         | [Immersive Translation](https://immersivetranslate.com/)                                |
 | `/kiss`                         | POST   | Kiss Translator plugin endpoint               | [Kiss Translator](https://github.com/fishjar/kiss-translator)                           |
 | `/deepl`                        | POST   | DeepL API v2 compatible endpoint              | Clients supporting DeepL API                                                            |
+| `/deeplx`                       | POST   | DeepLX compatible endpoint                    | Clients supporting DeepLX API                                                           |
 | `/hcfy`                         | POST   | Selection Translator compatible endpoint      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/hcfy`                         | POST   | Selection Translator compatible endpoint      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST   | Google Translate API v2 compatible endpoint   | Clients supporting Google Translate API                                                 |
@@ -149,6 +150,7 @@ The server provides compatible endpoints for multiple translation plugins:
 | Kiss Translator (No Password)         | `http://localhost:8989/kiss`                         | `Interface Settings` - `Custom` - `URL`                         |
 | Kiss Translator (With Password)       | `http://localhost:8989/kiss`                         | Same as above, fill `KEY` with `your_token`                     |
 | DeepL Compatible                      | `http://localhost:8989/deepl`                        | Use `DeepL-Auth-Key` or `Bearer` authentication                 |
+| DeepLX Compatible                     | `http://localhost:8989/deeplx`                       | Support `token` parameter or `Bearer` authentication            |
 | Google Compatible                     | `http://localhost:8989/google/language/translate/v2` | Use `key` parameter or `Bearer` authentication                  |
 | Selection Translator                  | `http://localhost:8989/hcfy`                         | Support `token` parameter or `Bearer` authentication            |
 

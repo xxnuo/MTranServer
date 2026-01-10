@@ -98,11 +98,11 @@ docker compose up -d
 
 ### IDE-Plugins
 
-#### MTranCode Kommentar-Übersetzungs-Plugin
+#### [MTranCode](https://github.com/xxnuo/MTranCode) Kommentar-Übersetzungs-Plugin
 
 Unterstützt VS Code, Cursor, Augment und andere VS-Code-basierte IDEs.
 
-Suchen Sie im Plugin-Marktplatz nach `MTranCode`, um das Kommentar-Übersetzungs-Plugin zu installieren.
+Suchen Sie im Plugin-Marktplatz nach **`MTranCode`**, um das Kommentar-Übersetzungs-Plugin zu installieren.
 
 Das Plugin ruft standardmäßig den Server unter `http://localhost:8989` für Kommentar- und Code-Übersetzungen auf. Sie können dies in den Einstellungen anpassen.
 
@@ -110,7 +110,7 @@ Dieses Plugin ist ein Fork von [vscode-comment-translate](https://github.com/int
 
 ### Browser-Erweiterung
 
-#### MTranBrowser
+#### [MTranBrowser](https://github.com/xxnuo/MTranBrowser)
 
 TODO: In aktiver Entwicklung.
 
@@ -127,6 +127,7 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 | `/imme`                         | POST    | Schnittstelle für Immersive Translate Plugin       | [Immersive Translate](https://immersivetranslate.com/)                                  |
 | `/kiss`                         | POST    | Schnittstelle für Kiss Translator Plugin           | [Kiss Translator](https://github.com/fishjar/kiss-translator)                           |
 | `/deepl`                        | POST    | DeepL API v2 kompatible Schnittstelle              | Clients, die die DeepL API unterstützen                                                 |
+| `/deeplx`                       | POST    | DeepLX kompatible Schnittstelle                    | Clients, die die DeepLX API unterstützen                                                |
 | `/hcfy`                         | POST    | Selection Translator kompatible Schnittstelle      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/hcfy`                         | POST    | Selection Translator kompatible Schnittstelle      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST    | Google Translate API v2 kompatible Schnittstelle   | Clients, die die Google Translate API unterstützen                                      |
@@ -149,6 +150,7 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 | Kiss Translator (Ohne Passwort)     | `http://localhost:8989/kiss`                         | `Schnittstelleneinstellungen` - `Custom` - `URL`                                        |
 | Kiss Translator (Mit Passwort)      | `http://localhost:8989/kiss`                         | Dasselbe wie oben, füllen Sie `KEY` mit `your_token` aus                                |
 | DeepL Kompatibel                    | `http://localhost:8989/deepl`                        | Verwenden Sie `DeepL-Auth-Key` oder `Bearer` Authentifizierung                          |
+| DeepLX Kompatibel                   | `http://localhost:8989/deeplx`                       | Unterstützt `token` Parameter oder `Bearer` Authentifizierung                           |
 | Google Kompatibel                   | `http://localhost:8989/google/language/translate/v2` | Verwenden Sie den `key` Parameter oder `Bearer` Authentifizierung                       |
 | Selection Translator                | `http://localhost:8989/hcfy`                         | Unterstützt `token` Parameter oder `Bearer` Authentifizierung                           |
 
