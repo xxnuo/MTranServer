@@ -339,6 +339,30 @@ function getScriptType(text: string): 'Latin' | 'CJK' | 'Mixed' | 'Other' {
   return 'Other';
 }
 
+function getDominantScript(text: string): 'Latin' | 'CJK' | 'Other' {
+  let cjkCount = 0;
+  let latinCount = 0;
+
+  for (const char of text) {
+    const code = char.charCodeAt(0);
+
+    if (
+      (code >= 0x4e00 && code <= 0x9fff) ||
+      (code >= 0x3040 && code <= 0x309f) ||
+      (code >= 0x30a0 && code <= 0x30ff) ||
+      (code >= 0xac00 && code <= 0xd7af)
+    ) {
+      cjkCount++;
+    } else if ((code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a)) {
+      latinCount++;
+    }
+  }
+
+  if (cjkCount > latinCount) return 'CJK';
+  if (latinCount > cjkCount) return 'Latin';
+  return 'Other';
+}
+
 export async function detectMultipleLanguages(text: string): Promise<TextSegment[]> {
   return detectMultipleLanguagesWithThreshold(text, DEFAULT_CONFIDENCE_THRESHOLD);
 }
@@ -401,6 +425,25 @@ export async function detectMultipleLanguagesWithThreshold(
           if (detectedLang && detectedLang !== 'un') {
             finalLang = detectedLang;
             usedLogic = 'script-override-cjk';
+          }
+        } else if (scriptType === 'Mixed') {
+          const dominant = getDominantScript(segment);
+          if (dominant === 'CJK') {
+            if (detectedLang && isCJKCode(detectedLang)) {
+              finalLang = detectedLang;
+              usedLogic = 'mixed-dominant-cjk-detected';
+            } else {
+              finalLang = 'zh-Hans';
+              usedLogic = 'mixed-dominant-cjk-default';
+            }
+          } else if (dominant === 'Latin') {
+            if (detectedLang && detectedLang !== 'un' && !isCJKCode(detectedLang)) {
+              finalLang = detectedLang;
+              usedLogic = 'mixed-dominant-latin-detected';
+            } else {
+              finalLang = 'en';
+              usedLogic = 'mixed-dominant-latin-default';
+            }
           }
         }
       }
