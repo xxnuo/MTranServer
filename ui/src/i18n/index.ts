@@ -113,7 +113,9 @@ const resources = {
       desktopOnly: 'Desktop only',
       desktopOnlyDesc: 'Desktop settings are only available in the desktop client',
       version: 'Version',
-      saving: 'Saving...'
+      saving: 'Saving...',
+      loadMore: 'Load More',
+      themeMode: 'Theme Mode',
     }
   },
   zh: {
@@ -226,7 +228,9 @@ const resources = {
       desktopOnly: '仅限桌面端',
       desktopOnlyDesc: '桌面端设置仅在桌面客户端可用',
       version: '版本',
-      saving: '保存中...'
+      saving: '保存中...',
+      loadMore: '加载更多',
+      themeMode: '主题模式',
     }
   },
   ja: {
@@ -339,7 +343,9 @@ const resources = {
       desktopOnly: 'デスクトップ専用',
       desktopOnlyDesc: 'デスクトップ設定はデスクトップクライアントのみ利用できます',
       version: 'バージョン',
-      saving: '保存中...'
+      saving: '保存中...',
+      loadMore: 'もっと読み込む',
+      themeMode: 'テーマモード',
     }
   }
 }

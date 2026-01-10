@@ -61,9 +61,7 @@ export function SettingsMenu({ showTokenDialog, setShowTokenDialog, onTokenSaved
     { code: 'ja', name: '日本語', short: '日' }
   ]
 
-  const toggleTheme = () => {
-    setTheme(actualTheme === 'dark' ? 'light' : 'dark')
-  }
+
 
   const getSystemLanguage = () => {
     const lang = navigator.language?.toLowerCase() || 'en'
@@ -263,26 +261,54 @@ export function SettingsMenu({ showTokenDialog, setShowTokenDialog, onTokenSaved
           </Command>
         </PopoverContent>
       </Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-8 w-8 sm:h-9 sm:w-9"
-            aria-label={t('toggleTheme')}
+      <Popover>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 sm:h-9 sm:w-9"
+                aria-label={t('theme')}
+              >
+                {actualTheme === 'dark' ? (
+                  <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                ) : (
+                  <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('theme')}</p>
+          </TooltipContent>
+        </Tooltip>
+        <PopoverContent className="w-80 p-2" align="end">
+          <div className="mb-2 text-sm font-medium">{t('themeMode')}</div>
+          <ToggleGroup
+            type="single"
+            value={useTheme().theme} 
+            onValueChange={(value) => {
+               if (value) setTheme(value as any)
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full grid grid-cols-3 gap-1"
           >
-            {actualTheme === 'dark' ? (
-              <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            ) : (
-              <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{t('toggleTheme')}</p>
-        </TooltipContent>
-      </Tooltip>
+            <ToggleGroupItem value="light" aria-label={t('light')}>
+              <Sun className="h-4 w-4 mr-2" />
+              <span className="sr-only sm:not-sr-only sm:inline-block">{t('light')}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="dark" aria-label={t('dark')}>
+              <Moon className="h-4 w-4 mr-2" />
+               <span className="sr-only sm:not-sr-only sm:inline-block">{t('dark')}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="system" aria-label={t('system')}>
+               <span className="text-xs">{t('system')}</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 }

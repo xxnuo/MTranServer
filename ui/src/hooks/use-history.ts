@@ -1,66 +1,131 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { dbService, type HistoryItem } from '@/lib/db'
 
-export interface HistoryItem {
-  id: string
-  from: string
-  to: string
-  sourceText: string
-  translatedText: string
-  timestamp: number
-}
+const PAGE_SIZE = 20
 
-const HISTORY_KEY = 'translation_history'
-const MAX_HISTORY = 50
+export type { HistoryItem }
 
 export function useHistory() {
   const [history, setHistory] = useState<HistoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
 
+  // Initial load and migration
   useEffect(() => {
+    const init = async () => {
+      setIsLoading(true)
+      await dbService.migrateFromLocalStorage()
+      const items = await dbService.getAll(PAGE_SIZE, 0)
+      setHistory(items)
+      setHasMore(items.length >= PAGE_SIZE)
+      setIsLoading(false)
+    }
+    init()
+  }, [])
+
+  // Load more function
+  const loadMore = useCallback(async () => {
+    if (isLoading || !hasMore) return
+
+    setIsLoading(true)
     try {
-      const stored = localStorage.getItem(HISTORY_KEY)
-      if (stored) {
-        setHistory(JSON.parse(stored))
+      const nextPage = page + 1
+      const offset = nextPage * PAGE_SIZE
+
+      let newItems: HistoryItem[]
+
+      if (searchQuery) {
+        newItems = []
+      } else {
+        newItems = await dbService.getAll(PAGE_SIZE, offset)
+      }
+
+      if (newItems.length > 0) {
+        setHistory(prev => [...prev, ...newItems])
+        setPage(nextPage)
+        setHasMore(newItems.length >= PAGE_SIZE)
+      } else {
+        setHasMore(false)
+      }
+    } catch (error) {
+      console.error('Failed to load more history:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [page, isLoading, hasMore, searchQuery])
+
+  const search = useCallback(async (query: string) => {
+    setSearchQuery(query)
+    setPage(0)
+    setIsLoading(true)
+    try {
+      if (!query.trim()) {
+        const items = await dbService.getAll(PAGE_SIZE, 0)
+        setHistory(items)
+        setHasMore(items.length >= PAGE_SIZE)
+      } else {
+        const items = await dbService.search(query, 50)
+        setHistory(items)
+        setHasMore(false)
       }
     } catch (e) {
-      console.error('Failed to load history', e)
+      console.error('Search failed', e)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
-  const addToHistory = (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
+  const addToHistory = useCallback(async (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
     const newItem: HistoryItem = {
       ...item,
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       timestamp: Date.now(),
     }
 
-    setHistory((prev) => {
-      // Remove duplicates if same source text and languages
-      const filtered = prev.filter(
-        (h) =>
-          !(
-            h.sourceText === item.sourceText &&
-            h.from === item.from &&
-            h.to === item.to
-          )
-      )
-      const updated = [newItem, ...filtered].slice(0, MAX_HISTORY)
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
-      return updated
-    })
-  }
+    try {
+      await dbService.add(newItem)
+      setHistory((prev) => {
+        const filtered = prev.filter(
+          (h) => !(h.sourceText === item.sourceText && h.from === item.from && h.to === item.to)
+        )
 
-  const clearHistory = () => {
-    setHistory([])
-    localStorage.removeItem(HISTORY_KEY)
-  }
+        return [newItem, ...filtered]
+      })
+    } catch (e) {
+      console.error('Failed to add to history', e)
+    }
+  }, [])
 
-  const deleteItem = (id: string) => {
-    setHistory((prev) => {
-      const updated = prev.filter((item) => item.id !== id)
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated))
-      return updated
-    })
-  }
+  const clearHistory = useCallback(async () => {
+    try {
+      await dbService.clear()
+      setHistory([])
+      setPage(0)
+      setHasMore(false)
+    } catch (e) {
+      console.error('Failed to clear history', e)
+    }
+  }, [])
 
-  return { history, addToHistory, clearHistory, deleteItem }
+  const deleteItem = useCallback(async (id: string) => {
+    try {
+      await dbService.delete(id)
+      setHistory((prev) => prev.filter((item) => item.id !== id))
+    } catch (e) {
+      console.error('Failed to delete item', e)
+    }
+  }, [])
+
+  return {
+    history,
+    addToHistory,
+    clearHistory,
+    deleteItem,
+    loadMore,
+    hasMore,
+    isLoading,
+    search
+  }
 }

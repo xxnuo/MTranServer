@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useEffect } from "react"
 import {
   Sheet,
   SheetContent,
@@ -22,6 +22,9 @@ interface HistorySheetProps {
   onSelect: (item: HistoryItem) => void
   onClear: () => void
   onDelete: (id: string) => void
+  onLoadMore: () => void
+  hasMore: boolean
+  onSearch: (query: string) => void
 }
 
 export function HistorySheet({
@@ -31,47 +34,51 @@ export function HistorySheet({
   onSelect,
   onClear,
   onDelete,
+  onLoadMore,
+  hasMore,
+  onSearch
 }: HistorySheetProps) {
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedQuery, setDebouncedQuery] = useState("")
 
-  const filteredHistory = useMemo(() => {
-    if (!searchQuery.trim()) return history
-    const lowerQuery = searchQuery.toLowerCase()
-    return history.filter(
-      (item) =>
-        item.sourceText.toLowerCase().includes(lowerQuery) ||
-        item.translatedText.toLowerCase().includes(lowerQuery)
-    )
-  }, [history, searchQuery])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    onSearch(debouncedQuery)
+  }, [debouncedQuery, onSearch])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[300px] sm:w-[400px] flex flex-col gap-0">
-        <SheetHeader className="pb-4">
+      <SheetContent side="right" className="w-[300px] sm:w-[500px] flex flex-col gap-0">
+        <SheetHeader className="pb-4 pt-6">
           <SheetTitle>{t('history')}</SheetTitle>
           <SheetDescription>
-            {history.length === 0 ? t('noHistory') : t('historyDesc')}
+            {history.length === 0 && !searchQuery ? t('noHistory') : t('historyDesc')}
           </SheetDescription>
         </SheetHeader>
         
-        {history.length > 0 && (
-          <div className="px-4 pb-4">
-            <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input 
-                    placeholder={t('searchPlaceholder')} 
-                    className="pl-8" 
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                />
-            </div>
+        <div className="px-4 pb-4">
+          <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input 
+                  placeholder={t('searchPlaceholder')} 
+                  className="pl-8" 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+              />
           </div>
-        )}
+        </div>
 
         <ScrollArea className="flex-1 px-4 min-h-0">
           <div className="flex flex-col gap-4 pb-4">
-            {filteredHistory.map((item) => (
+            {history.map((item) => (
               <div
                 key={item.id}
                 className="relative flex flex-col gap-2 rounded-lg border p-3 hover:bg-accent cursor-pointer transition-colors group"
@@ -106,10 +113,18 @@ export function HistorySheet({
                 <div className="text-sm text-muted-foreground line-clamp-2 break-all">{item.translatedText}</div>
               </div>
             ))}
-            {filteredHistory.length === 0 && searchQuery && (
+            {history.length === 0 && searchQuery && (
                 <div className="text-center text-sm text-muted-foreground py-8">
                     {t('noResults')}
                 </div>
+            )}
+            
+             {hasMore && (
+              <div className="flex justify-center pt-2 pb-4">
+                <Button variant="outline" size="sm" onClick={onLoadMore}>
+                  {t('loadMore')}
+                </Button>
+              </div>
             )}
           </div>
         </ScrollArea>

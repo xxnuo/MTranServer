@@ -40,7 +40,7 @@ function MainPage() {
     return ['panel-' + Date.now()]
   })
 
-  const { history, addToHistory, clearHistory, deleteItem } = useHistory()
+  const { history, addToHistory, clearHistory, deleteItem, loadMore, hasMore, search } = useHistory()
 
   const fetchVersion = async () => {
     try {
@@ -244,6 +244,9 @@ function MainPage() {
         }}
         onClear={clearHistory}
         onDelete={deleteItem}
+        onLoadMore={loadMore}
+        hasMore={hasMore}
+        onSearch={search}
       />
     </div>
   )
