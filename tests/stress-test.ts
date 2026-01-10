@@ -6,9 +6,9 @@ import util from 'util';
 
 const execAsync = util.promisify(exec);
 
-const SERVER_URL = 'http://localhost:8989/translate';
+const SERVER_URL = 'http://localhost:8990/translate';
 const PROCESS_NAME = 'mtranserver';
-const LOOPS = 5;
+const LOOPS = 2; // Reduced loops but heavier load per request
 
 async function getPidByName(name: string): Promise<number | null> {
     try {
@@ -58,13 +58,13 @@ async function main() {
     // 1. Find PID
     let serverPid = await getPidByName(PROCESS_NAME);
     if (!serverPid) {
-        console.warn(`Could not find process named "${PROCESS_NAME}". Trying to find generic node/bun process listening on 8989...`);
+        console.warn(`Could not find process named "${PROCESS_NAME}". Trying to find generic node/bun process listening on 8990...`);
         try {
-             const { stdout } = await execAsync("lsof -t -i:8989");
+             const { stdout } = await execAsync("lsof -t -i:8990");
              const pid = parseInt(stdout.trim(), 10);
              if (!isNaN(pid)) serverPid = pid;
         } catch (e) {
-             console.error("Could not find any process on port 8989.");
+             console.error("Could not find any process on port 8990.");
         }
     }
 
@@ -89,10 +89,24 @@ async function main() {
         await fs.writeFile(corpusPath, corpusText);
         console.log(`Corpus loaded. Length: ${corpusText.length} chars.`);
 
-        // 3. Prepare chunks
-        const sentences = corpusText.split(/[.!?]\s+/)
-            .filter(s => s.trim().length > 10 && s.length < 500);
-        console.log(`Split into ${sentences.length} sentences.`);
+        // 3. Prepare chunks - UPDATED for long texts
+        // We want to test the long-text splitting logic, so we need chunks significantly larger than 128 chars.
+        // We will join sentences until they reach ~1500-2000 chars.
+        const rawSentences = corpusText.split(/[.!?]\s+/).filter(s => s.trim().length > 0);
+        const longChunks: string[] = [];
+        let currentChunk = "";
+        
+        for (const s of rawSentences) {
+            if (currentChunk.length + s.length < 2000) {
+                currentChunk += s + ". ";
+            } else {
+                longChunks.push(currentChunk);
+                currentChunk = s + ". ";
+            }
+        }
+        if (currentChunk.length > 0) longChunks.push(currentChunk);
+        
+        console.log(`Prepared ${longChunks.length} large chunks (up to 2000 chars each) from ${rawSentences.length} sentences.`);
 
         // 4. Stress Loop
         let totalChars = 0;
@@ -109,7 +123,7 @@ async function main() {
         for (let l = 0; l < LOOPS; l++) {
             console.log(`Loop ${l + 1}/${LOOPS}`);
             
-            for (const sentence of sentences) {
+            for (const chunk of longChunks) {
                 try {
                     const res = await fetch(SERVER_URL, {
                         method: 'POST',
@@ -117,7 +131,7 @@ async function main() {
                         body: JSON.stringify({
                             from: 'en',
                             to: 'zh-Hans',
-                            text: sentence
+                            text: chunk
                         })
                     });
 
@@ -129,13 +143,13 @@ async function main() {
                     const data = await res.json();
                     if (!data.result) throw new Error('No result in response');
 
-                    totalChars += sentence.length;
+                    totalChars += chunk.length;
                     iterations++;
 
-                    if (iterations % 50 === 0 && serverPid) {
+                    if (iterations % 10 === 0 && serverPid) {
                         const mem = await getProcessMemory(serverPid);
                         process.stdout.write(`\rIter: ${iterations}, TotalChars: ${totalChars}, Errors: ${errors}, ServerMem: RSS=${mem.rssMB}MB `);
-                    } else if (iterations % 50 === 0) {
+                    } else if (iterations % 10 === 0) {
                         process.stdout.write(`\rIter: ${iterations}, TotalChars: ${totalChars}, Errors: ${errors} `);
                     }
 
