@@ -70,7 +70,7 @@ function applyConfigToEnv(config) {
   process.env.MT_LOG_TO_FILE = String(config.logToFile);
   process.env.MT_LOG_CONSOLE = String(config.logConsole);
   process.env.MT_LOG_REQUESTS = String(config.logRequests);
-  process.env.MT_MAX_LENGTH_BREAK = String(config.maxLengthBreak);
+  process.env.MT_MAX_SENTENCE_LENGTH = String(config.maxSentenceLength);
   process.env.MT_CHECK_UPDATE = String(config.checkUpdate);
   process.env.MT_CACHE_SIZE = String(config.cacheSize);
   process.env.MT_MODEL_DIR = config.modelDir;
