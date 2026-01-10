@@ -267,7 +267,7 @@ export class TranslationEngine {
     }
 
     if (bestParts.length <= 1) {
-      bestParts = this._chunkByLength(text, this.maxLengthBreak);
+      bestParts = this._chunkByWordBoundary(text, this.maxLengthBreak);
       bestSep = "";
     }
 
@@ -280,6 +280,36 @@ export class TranslationEngine {
     });
 
     return results.join(bestSep);
+  }
+
+  private _chunkByWordBoundary(text: string, limit: number): string[] {
+    const parts = text.split(/(\s+)/);
+    const chunks: string[] = [];
+    let currentChunk = "";
+
+    for (const part of parts) {
+      if (currentChunk.length + part.length <= limit) {
+        currentChunk += part;
+      } else {
+        if (currentChunk.length > 0) {
+          chunks.push(currentChunk);
+          currentChunk = "";
+        }
+
+        if (part.length > limit) {
+          const subChunks = this._chunkByLength(part, limit);
+          chunks.push(...subChunks);
+        } else {
+          currentChunk = part;
+        }
+      }
+    }
+
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk);
+    }
+
+    return chunks;
   }
 
   private _chunkByLength(text: string, chunkSize: number): string[] {
