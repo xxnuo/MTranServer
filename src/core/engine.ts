@@ -44,7 +44,7 @@ export class TranslationEngine {
   private isReady = false;
   private translating = false;
   private pendingQueue: QueueTask[] = [];
-  private maxLengthBreak = 512;
+  private maxSentenceLength = 512;
 
   constructor(options: TranslationOptions = {}) {
     this.options = options;
@@ -72,7 +72,6 @@ export class TranslationEngine {
     };
 
     const mergedConfig = { ...defaultConfig, ...config };
-    this.maxLengthBreak = mergedConfig['max-length-break'] || 512;
 
     const MODEL_FILE_ALIGNMENTS: Record<string, number> = {
       model: 256,
@@ -129,7 +128,7 @@ export class TranslationEngine {
 
     let translation: string;
     try {
-      if (cleanText.length > this.maxLengthBreak) {
+      if (cleanText.length > this.maxSentenceLength) {
         translation = this._translateLongText(cleanText, effectiveOptions);
       } else {
         translation = this._translateInternal(cleanText, effectiveOptions);
@@ -260,20 +259,20 @@ export class TranslationEngine {
           bestParts = parts;
         }
 
-        if (maxLen <= this.maxLengthBreak) {
+        if (maxLen <= this.maxSentenceLength) {
           break;
         }
       }
     }
 
     if (bestParts.length <= 1) {
-      bestParts = this._chunkByWordBoundary(text, this.maxLengthBreak);
+      bestParts = this._chunkByWordBoundary(text, this.maxSentenceLength);
       bestSep = "";
     }
 
     const results = bestParts.map(part => {
       if (!part.trim()) return part;
-      if (part.length > this.maxLengthBreak) {
+      if (part.length > this.maxSentenceLength) {
         return this._translateLongText(part, options);
       }
       return this._translateInternal(part, options);

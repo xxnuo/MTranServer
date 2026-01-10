@@ -251,7 +251,7 @@ export async function translateWithPivot(
       return text;
     }
 
-    if (text.length > config.maxLengthBreak && !isHTML) {
+    if (text.length > config.maxSentenceLength && !isHTML) {
       return translateLongText(effectiveFromLang, toLang, text);
     }
 

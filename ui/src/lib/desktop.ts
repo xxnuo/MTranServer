@@ -11,7 +11,7 @@ export type DesktopServerConfig = {
   logToFile: boolean
   logConsole: boolean
   logRequests: boolean
-  maxLengthBreak: number
+  maxSentenceLength: number
   checkUpdate: boolean
   cacheSize: number
   modelDir: string
