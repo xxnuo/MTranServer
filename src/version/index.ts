@@ -1,4 +1,4 @@
-export const VERSION = '4.0.27';
+export const VERSION = '4.0.28';
 
 export function getVersion(): string {
   return VERSION;
