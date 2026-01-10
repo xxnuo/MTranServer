@@ -1,5 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { isCJKCode } from '@/utils/lang-alias.js';
 import loadCLD2 from '@/lib/cld2/cld2.js';
 import wasmPath from '@/lib/cld2/cld2.wasm' with { type: 'file' };
 import * as logger from '@/logger/index.js';
@@ -331,10 +332,6 @@ function getScriptType(text: string): 'Latin' | 'CJK' | 'Mixed' | 'Other' {
   return 'Other';
 }
 
-function isCJKLanguage(lang: string): boolean {
-  return ['zh', 'zh-Hans', 'zh-Hant', 'ja', 'ko'].includes(lang) || lang.startsWith('zh-');
-}
-
 export async function detectMultipleLanguages(text: string): Promise<TextSegment[]> {
   return detectMultipleLanguagesWithThreshold(text, DEFAULT_CONFIDENCE_THRESHOLD);
 }
@@ -385,7 +382,7 @@ export async function detectMultipleLanguagesWithThreshold(
         finalLang = detectedLang;
         usedLogic = 'confidence';
       } else {
-        if (scriptType === 'Latin' && isCJKLanguage(effectiveFallback)) {
+        if (scriptType === 'Latin' && isCJKCode(effectiveFallback)) {
           if (detectedLang && detectedLang !== 'un') {
             finalLang = detectedLang;
             usedLogic = 'script-override-latin';
@@ -393,7 +390,7 @@ export async function detectMultipleLanguagesWithThreshold(
             finalLang = 'en';
             usedLogic = 'script-override-en';
           }
-        } else if (scriptType === 'CJK' && !isCJKLanguage(effectiveFallback)) {
+        } else if (scriptType === 'CJK' && !isCJKCode(effectiveFallback)) {
           if (detectedLang && detectedLang !== 'un') {
             finalLang = detectedLang;
             usedLogic = 'script-override-cjk';

@@ -62,3 +62,9 @@ export function NormalizeLanguageCode(code: string): string {
 
   return mainCode;
 }
+
+export function isCJKCode(code: string): boolean {
+  if (!code) return false;
+  const lower = code.toLowerCase();
+  return lower.startsWith('zh') || lower.startsWith('ja') || lower.startsWith('ko');
+}
