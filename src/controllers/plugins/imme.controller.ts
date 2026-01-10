@@ -37,7 +37,7 @@ export class ImmeController extends Controller {
       throw new Error('Unauthorized');
     }
 
-    const sourceLang = NormalizeLanguageCode(body.source_lang);
+    const sourceLang = 'auto';
     const targetLang = NormalizeLanguageCode(body.target_lang);
 
     const translations: ImmeTranslation[] = [];
