@@ -61,7 +61,7 @@ export class TranslationEngine {
       'word-penalty': 0,
       'max-length-break': 512,
       'mini-batch-words': 1024,
-      'workspace': 512,
+      'workspace': 128,
       'max-length-factor': 2.0,
       'skip-cost': true,
       'cpu-threads': 0,
