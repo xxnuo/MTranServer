@@ -40,7 +40,7 @@ export function getDefaultDesktopConfig() {
       logToFile: false,
       logConsole: true,
       logRequests: false,
-      maxSentenceLength: 128,
+      maxSentenceLength: 512,
       checkUpdate: true,
       cacheSize: 1000,
       modelDir: getDefaultModelDir(),
