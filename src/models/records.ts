@@ -294,14 +294,14 @@ function resolveModelFiles(modelDir: string, fromLang: string, toLang: string, r
   return { model: files.model, vocab_src: files.vocab_src, vocab_trg: files.vocab_trg, ...(files.lex ? { lex: files.lex } : {}) };
 }
 
-export async function prepareModel(toLang: string, fromLang: string, version?: string, lexicalShortlist = getConfig().lexicalShortlist === true) {
+export async function prepareModel(toLang: string, fromLang: string, version?: string, lexicalShortlist = getConfig().lexicalShortlist === true, localOnly = false) {
   if (!globalRecords) await initRecords();
   const config = getConfig();
   const records = selectRecords(fromLang, toLang, version);
   const files = resolveModelFiles(config.modelDir, fromLang, toLang, records);
   const manifestRecords = records.map(record => ({ ...record, url: `${ATTACHMENTS_BASE_URL}/${record.attachment.location}` }));
   return ensureConverted(config.modelDir, `${fromLang}_${toLang}`, { files, records: manifestRecords }, async () => {
-    if (!config.enableOfflineMode) await downloadRawModel(toLang, fromLang, version);
+    if (!localOnly && !config.enableOfflineMode) await downloadRawModel(toLang, fromLang, version);
     const repaired = await getModelFiles(config.modelDir, fromLang, toLang, version);
     return { model: repaired.model, vocab_src: repaired.vocab_src, vocab_trg: repaired.vocab_trg, lex: repaired.lex };
   }, lexicalShortlist);

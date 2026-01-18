@@ -10,7 +10,7 @@ test('settings exposes and updates canonical fast without losing explicit alias 
     import { once } from 'node:events';
     import { setConfig, getConfig } from './src/config/index.ts';
     mock.module('./src/models/index.ts', () => ({ initRecords:async()=>{} }));
-    mock.module('./src/services/index.ts', () => ({ cleanupAllEngines:async()=>{}, getEngineRuntimes:()=>[] }));
+    mock.module('./src/services/index.ts', () => ({ cleanupAllEngines:async()=>{}, getEngineRuntimes:()=>[], warmupEngines:async()=>{} }));
     mock.module('./src/generated/routes.ts', () => ({ RegisterRoutes:()=>{} }));
     mock.module('./src/middleware/ui.ts', () => ({ uiStatic:(_req,_res,next)=>next() }));
     mock.module('./src/middleware/swagger.ts', () => ({ swaggerStatic:(_req,_res,next)=>next() }));
@@ -113,7 +113,7 @@ test('desktop fast-only HTTP apply preserves partial configuration and responds 
     mock.module('./desktop/ipc.js',()=>({registerIpcHandlers(){}}));
     mock.module('./desktop/ports.js',()=>({isPortAvailable:async()=>true,getFreePort:async()=>0}));
     mock.module('./src/models/index.ts',()=>({initRecords:async()=>{}}));
-    mock.module('./src/services/index.ts',()=>({cleanupAllEngines:async()=>{},getEngineRuntimes:()=>[]}));
+    mock.module('./src/services/index.ts',()=>({cleanupAllEngines:async()=>{},getEngineRuntimes:()=>[],warmupEngines:async()=>{}}));
     mock.module('./src/generated/routes.ts',()=>({RegisterRoutes(){}}));
     mock.module('./src/middleware/ui.ts',()=>({uiStatic:(_req,_res,next)=>next()}));
     mock.module('./src/middleware/swagger.ts',()=>({swaggerStatic:(_req,_res,next)=>next()}));

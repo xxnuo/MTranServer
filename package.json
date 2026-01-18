@@ -1,6 +1,6 @@
 {
   "name": "mtranserver",
-  "version": "5.3.0",
+  "version": "5.4.0",
   "type": "module",
   "description": "Translation server",
   "repository": {
@@ -17,6 +17,7 @@
     "assets",
     "scripts/build-metal.ts",
     "scripts/build-cuda.ts",
+    "scripts/install-runtime.mjs",
     "native/metal"
   ],
   "scripts": {
@@ -30,7 +31,8 @@
     "electron:dev": "bun run scripts/electron-dev.ts",
     "electron:build": "bun run scripts/electron-build.ts",
     "electron:build:all": "bun run scripts/electron-build.ts --all",
-    "prepublishOnly": "bun scripts/build.ts --lib",
+    "prepublishOnly": "bun scripts/build.ts --lib --publish",
+    "postinstall": "node scripts/install-runtime.mjs",
     "push": "npm publish --registry=https://registry.npmjs.org",
     "build": "bun scripts/build.ts --node",
     "build:docker": "docker build -t xxnuo/mtranserver:latest .",

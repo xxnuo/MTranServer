@@ -1,6 +1,6 @@
 import path from 'path';
 import { parseFragment } from 'parse5';
-import { readFile } from 'fs/promises';
+import { access, readFile, readdir } from 'fs/promises';
 import { TranslationEngine } from '@/core/engine.js';
 import { getConfig } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
@@ -21,6 +21,8 @@ interface EngineInfo {
 const engines = new Map<string, EngineInfo>();
 const inFlightTranslations = new WeakMap<TranslationEngine, Map<string, Promise<string>>>();
 const loadingPromises = new Map<string, { lexicalShortlist: boolean; workersPerLanguage: number; promise: Promise<EngineInfo> }>();
+let warmupPromise: Promise<void> | undefined;
+let warmupController: AbortController | undefined;
 const zhCommaTest = /,/;
 const zhCommaGlobal = /,/g;
 
@@ -49,11 +51,14 @@ function needsPivotTranslation(fromLang: string, toLang: string): boolean {
 async function getOrCreateSingleEngine(
   fromLang: string,
   toLang: string,
-  sampleText: string
+  sampleText = 'Hello, this is a translation test.',
+  localOnly = false,
+  signal?: AbortSignal
 ): Promise<TranslationEngine> {
   const key = `${fromLang}-${toLang}`;
 
   while (true) {
+    signal?.throwIfAborted();
     let loading = loadingPromises.get(key);
     if (!loading) {
       const request = {
@@ -80,12 +85,20 @@ async function getOrCreateSingleEngine(
           }
 
           logger.info(`Creating new engine for ${fromLang} -> ${toLang}`);
-          const model = await models.prepareModel(toLang, fromLang, undefined, request.lexicalShortlist);
+          const model = localOnly
+            ? await models.prepareModel(toLang, fromLang, undefined, request.lexicalShortlist, true)
+            : await models.prepareModel(toLang, fromLang, undefined, request.lexicalShortlist);
+          signal?.throwIfAborted();
           const engine = new TranslationEngine({ sourceLang: fromLang, targetLang: toLang });
-          await engine.init(model, {
-            'max-length-break': config.maxSentenceLength,
-            'max-concurrent-runs': request.workersPerLanguage === 0 ? undefined : request.workersPerLanguage,
-          }, sampleText);
+          try {
+            await engine.init(model, {
+              'max-length-break': config.maxSentenceLength,
+              'max-concurrent-runs': request.workersPerLanguage === 0 ? undefined : request.workersPerLanguage,
+            }, sampleText);
+          } catch (error) {
+            await engine.destroy().catch(cleanup => logger.error(`Engine cleanup failed: ${cleanup}`));
+            throw error;
+          }
           const info: EngineInfo = {
             engine,
             // Keep the requested mode even when a model without lex falls back to K9.
@@ -107,6 +120,7 @@ async function getOrCreateSingleEngine(
 
     try {
       const info = await loading.promise;
+      signal?.throwIfAborted();
       if (info.lexicalShortlist === (getConfig().lexicalShortlist === true)
         && info.workersPerLanguage === getConfig().workersPerLanguage) return info.engine;
     } catch (error) {
@@ -121,18 +135,57 @@ function resetIdleTimer(info: EngineInfo) {
   if (info.timer) {
     clearTimeout(info.timer);
   }
+  info.timer = undefined;
+  if (warmupPromise) return;
 
   const config = getConfig();
   const timeout = config.workerIdleTimeout * 1000;
 
   info.timer = setTimeout(() => {
-    if (info.engine.busy) { resetIdleTimer(info); return; }
     const key = `${info.fromLang}-${info.toLang}`;
+    if (engines.get(key) !== info) return;
+    if (info.engine.busy) { resetIdleTimer(info); return; }
     logger.info(`Engine ${key} idle timeout, stopping...`);
     void info.engine.destroy().catch(error => logger.error(`Engine cleanup failed: ${error}`));
     engines.delete(key);
     logger.info(`Engine ${key} stopped due to idle timeout`);
   }, timeout);
+}
+
+export function warmupEngines(): Promise<void> {
+  if (warmupPromise) return warmupPromise;
+  const controller = warmupController = new AbortController();
+  return warmupPromise = Promise.resolve().then(async () => {
+    for (const info of engines.values()) resetIdleTimer(info);
+    while (true) {
+      controller.signal.throwIfAborted();
+      const { modelDir, lexicalShortlist, workersPerLanguage } = getConfig();
+      const entries = await readdir(modelDir, { withFileTypes: true });
+      for (const entry of entries) {
+        controller.signal.throwIfAborted();
+        if (!entry.isDirectory() || !/^[A-Za-z0-9-]+_[A-Za-z0-9-]+$/.test(entry.name)) continue;
+        const [fromLang, toLang] = entry.name.split('_');
+        try {
+          try { await access(path.join(modelDir, entry.name, 'manifest.json')); }
+          catch (error: any) { if (error.code === 'ENOENT') continue; throw error; }
+          logger.info(`Warming up engine for ${fromLang} -> ${toLang}`);
+          await getOrCreateSingleEngine(fromLang, toLang, undefined, true, controller.signal);
+        } catch (error) {
+          controller.signal.throwIfAborted();
+          logger.warn(`Engine warmup failed for ${fromLang} -> ${toLang}: ${error}`);
+        }
+      }
+      controller.signal.throwIfAborted();
+      const current = getConfig();
+      if (modelDir === current.modelDir && lexicalShortlist === current.lexicalShortlist
+        && workersPerLanguage === current.workersPerLanguage) return;
+    }
+  }).finally(() => {
+    warmupPromise = undefined;
+    warmupController = undefined;
+    // Start the idle budget after all models have finished warming up.
+    for (const info of engines.values()) resetIdleTimer(info);
+  });
 }
 
 async function translateSingleLanguageText(
@@ -313,6 +366,8 @@ export function getEngineRuntimes() {
 }
 
 export async function cleanupAllEngines() {
+  warmupController?.abort(new Error('Engine warmup interrupted by shutdown'));
+  await warmupPromise?.catch(() => {});
   await Promise.allSettled([...loadingPromises.values()].map(loading => loading.promise));
   const closing: Promise<void>[] = [];
   logger.info(`Cleaning up ${engines.size} engine(s)...`);

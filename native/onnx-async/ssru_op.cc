@@ -1,8 +1,7 @@
 #include "ssru_op.h"
 #include "../ssru/ssru.h"
-#ifdef MTRAN_SSRU_AVXVNNI
+#ifdef MTRAN_SSRU_PACKED
 #include "../ssru/packed.h"
-#include <cpuid.h>
 #endif
 #include <algorithm>
 #include <cmath>
@@ -16,16 +15,6 @@
 #include <vector>
 
 namespace {
-bool packedAvailable() noexcept {
-#ifdef MTRAN_SSRU_AVXVNNI
-  // Baseline code checks AVX/OS state via the compiler builtin, then AVX-VNNI.
-  unsigned eax, ebx, ecx, edx;
-  return __builtin_cpu_supports("avx2") &&
-         __get_cpuid_count(7, 1, &eax, &ebx, &ecx, &edx) && (eax & (1u << 4));
-#else
-  return false;
-#endif
-}
 void check(const OrtApi* api, OrtStatus* status) {
   if (!status) return;
   std::unique_ptr<OrtStatus, decltype(api->ReleaseStatus)> owned(status, api->ReleaseStatus);
@@ -95,7 +84,7 @@ struct Quantized {
   int8_t zero = 0;
   size_t rows, cols;
   Value tensor, scaleTensor, zeroTensor;
-#ifdef MTRAN_SSRU_AVXVNNI
+#ifdef MTRAN_SSRU_PACKED
   std::unique_ptr<const mtran::ssru::packed::Weight> packed;
 #endif
   explicit Quantized(const OrtApi* api) : tensor(api), scaleTensor(api), zeroTensor(api) {}
@@ -104,7 +93,8 @@ struct Kernel {
   const OrtApi* api;
   OrtMemoryInfo* memory = nullptr;
   OrtOp* dqmm = nullptr;
-#ifdef MTRAN_SSRU_AVXVNNI
+  OrtOp* dqmmBias = nullptr;
+#ifdef MTRAN_SSRU_PACKED
   OrtOp* dql = nullptr;
 #endif
   OrtOp* mm = nullptr;
@@ -117,7 +107,8 @@ struct Kernel {
   ~Kernel() {
     decoder.reset(); matrices.clear();
     if (dqmm) api->ReleaseOp(dqmm);
-#ifdef MTRAN_SSRU_AVXVNNI
+    if (dqmmBias) api->ReleaseOp(dqmmBias);
+#ifdef MTRAN_SSRU_PACKED
     if (dql) api->ReleaseOp(dql);
 #endif
     if (mm) api->ReleaseOp(mm);
@@ -135,8 +126,8 @@ struct Kernel {
     if (inputCount != firstWeight + names.size()) throw std::runtime_error("SSRU input/weight count mismatch");
     check(api, api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &memory));
     const std::regex linearName(R"(^decoder_l[0-9]+_(rnn_Wf?|context_W[qo]|ffn_W[0-9]+)$)");
-#ifdef MTRAN_SSRU_AVXVNNI
-    const bool usePacked = packedAvailable();
+#ifdef MTRAN_SSRU_PACKED
+    const bool usePacked = mtran::ssru::packed::backend() != nullptr;
     bool hasPacked = false;
 #endif
     std::vector<mtran::ssru::NamedTensor> weights;
@@ -153,7 +144,7 @@ struct Kernel {
       auto q = std::make_unique<Quantized>(api);
       q->rows = static_cast<size_t>(view.shape[0]); q->cols = static_cast<size_t>(view.shape[1]);
       if (q->rows > SIZE_MAX / q->cols || view.size != q->rows * q->cols) throw std::runtime_error("SSRU matrix size mismatch");
-#ifdef MTRAN_SSRU_AVXVNNI
+#ifdef MTRAN_SSRU_PACKED
       if (usePacked && q->rows % 32 == 0 && q->cols % 8 == 0 && q->rows <= size_t(INT32_MAX) / (255 * 128)) {
         q->packed = std::make_unique<const mtran::ssru::packed::Weight>(view.data, q->rows, q->cols);
         hasPacked = true;
@@ -182,7 +173,10 @@ struct Kernel {
     // Standalone ORT operators do not prepack constants. Benchmark this backend
     // against the original graph before enabling it as an acceleration path.
     check(api, api->CreateOp(info, "DynamicQuantizeMatMul", "com.microsoft", 1, namesDQ, typesDQ, 2, nullptr, 0, 4, 1, &dqmm));
-#ifdef MTRAN_SSRU_AVXVNNI
+#if defined(__linux__) && defined(__aarch64__)
+    check(api, api->CreateOp(info, "DynamicQuantizeMatMul", "com.microsoft", 1, namesDQ, typesDQ, 2, nullptr, 0, 5, 1, &dqmmBias));
+#endif
+#ifdef MTRAN_SSRU_PACKED
     if (hasPacked) {
       const char* namesDQL[] = {"T2"};
       ONNXTensorElementDataType typesDQL[] = {ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8};
@@ -215,11 +209,20 @@ struct Kernel {
   struct Invocation {
     Kernel* kernel; OrtKernelContext* context;
     std::vector<float> alignA, alignB, scaled, probs;
-#ifdef MTRAN_SSRU_AVXVNNI
+#ifdef MTRAN_SSRU_PACKED
     std::unique_ptr<mtran::ssru::packed::Workspace> workspace;
 #endif
   };
   static void linear(void* raw, const mtran::ssru::Matrix& weight, const float* input, size_t rows, float* output) {
+    linearImpl(raw, weight, input, rows, output, nullptr);
+  }
+  static void linearBias(void* raw, const mtran::ssru::Matrix& weight, const float* input,
+                         size_t rows, const float* bias, bool separate, float* output) {
+    linearImpl(raw, weight, input, rows, output, separate ? nullptr : bias);
+    if (separate) for (size_t i = 0; i < rows * weight.cols; ++i) output[i] += bias[i % weight.cols];
+  }
+  static void linearImpl(void* raw, const mtran::ssru::Matrix& weight, const float* input,
+                         size_t rows, float* output, const float* bias) {
     auto& invocation = *static_cast<Invocation*>(raw); auto& k = *invocation.kernel;
     const int64_t aShape[] = {static_cast<int64_t>(rows), static_cast<int64_t>(weight.rows)};
     const int64_t yShape[] = {static_cast<int64_t>(rows), static_cast<int64_t>(weight.cols)};
@@ -238,7 +241,7 @@ struct Kernel {
       if (found == k.matrices.end()) throw std::runtime_error("Missing quantized SSRU matrix: " + weight.name);
       const auto& q = *found->second;
       if (q.rows != weight.rows || q.cols != weight.cols) throw std::runtime_error("SSRU matrix dimension mismatch");
-#ifdef MTRAN_SSRU_AVXVNNI
+#ifdef MTRAN_SSRU_PACKED
       if (q.packed) {
         if (!invocation.workspace) invocation.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
         auto* activation = invocation.workspace->resize(rows * weight.rows);
@@ -251,15 +254,18 @@ struct Kernel {
         const OrtValue* inputs[] = {a.value};
         OrtValue* outputs[] = {quantized.value, scaleTensor.value, zeroTensor.value};
         check(k.api, k.api->InvokeOp(invocation.context, k.dql, inputs, 1, outputs, 3));
-        q.packed->multiply(activation, rows, scale, zero, output);
+        q.packed->multiply(activation, rows, scale, zero, output, bias);
         return;
       }
 #endif
       Value y(k.api);
       k.wrap(y, output, rows * weight.cols * sizeof(float), yShape, 2, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
       OrtValue* outputs[] = {y.value};
-      const OrtValue* inputs[] = {a.value, q.tensor.value, q.scaleTensor.value, q.zeroTensor.value};
-      check(k.api, k.api->InvokeOp(invocation.context, k.dqmm, inputs, 4, outputs, 1));
+      Value b(k.api);
+      const int64_t biasShape[] = {static_cast<int64_t>(weight.cols)};
+      if (bias) k.wrap(b, const_cast<float*>(bias), weight.cols * sizeof(float), biasShape, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+      const OrtValue* inputs[] = {a.value, q.tensor.value, q.scaleTensor.value, q.zeroTensor.value, b.value};
+      check(k.api, k.api->InvokeOp(invocation.context, bias ? k.dqmmBias : k.dqmm, inputs, bias ? 5 : 4, outputs, 1));
     }
   }
   static void sigmoidAligned(void* raw, float* x, size_t dim) {
@@ -342,7 +348,12 @@ struct Kernel {
     mtran::ssru::Workspace workspace;
     Invocation invocation{};
     invocation.kernel = this; invocation.context = context;
-    decoder->decode(request, {&invocation, linear}, workspace,
+    mtran::ssru::LinearBackend backend{&invocation, linear};
+#if defined(__linux__) && defined(__aarch64__)
+    // ORT's Linux ARM64 runtime fuses quantized bias with FMA; folded l1 gate/Q stay separate.
+    backend.matmul_bias = linearBias;
+#endif
+    decoder->decode(request, backend, workspace,
                     {&invocation, normalizeAligned, sigmoidAligned, sinAligned, attentionAligned});
     const auto& tokens = workspace.tokens();
     const int64_t dims[] = {static_cast<int64_t>(tokens.size())}; OrtValue* result = nullptr;
@@ -386,7 +397,10 @@ const OrtCustomOp& operation() {
 }  // namespace
 
 const char* ssruBackend() noexcept {
-  return packedAvailable() ? "packed-avxvnni" : "invokeop";
+#ifdef MTRAN_SSRU_PACKED
+  if (const char* backend = mtran::ssru::packed::backend()) return backend;
+#endif
+  return "invokeop";
 }
 
 OrtCustomOpDomain* createSsruDomain(const OrtApi* api) {

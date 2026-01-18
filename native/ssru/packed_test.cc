@@ -5,19 +5,13 @@
 #include <cfenv>
 #include <cmath>
 #include <cstdint>
-#include <cpuid.h>
 #include <future>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 
-// This entry point is compiled without AVX flags, including on unsupported hosts.
-static bool available() {
-  unsigned eax, ebx, ecx, edx;
-  return __builtin_cpu_supports("avx2") &&
-         __get_cpuid_count(7, 1, &eax, &ebx, &ecx, &edx) && (eax & (1u << 4));
-}
 using mtran::ssru::packed::Weight;
 using mtran::ssru::packed::Workspace;
 
@@ -28,7 +22,7 @@ template<class F> static void rejects(F f) {
 }
 static void golden(const Weight& weight, const std::vector<float>& original,
                    std::size_t k, std::size_t n, std::size_t rows,
-                   float activation_scale, std::uint8_t zero_point, bool extreme) {
+                   float activation_scale, std::uint8_t zero_point, bool extreme, bool fused_bias = false) {
   float maximum = 0;
   for (float x : original) maximum = std::max(maximum, std::abs(x));
   float weight_scale = (maximum * 2.f) / 254.f;
@@ -41,25 +35,71 @@ static void golden(const Weight& weight, const std::vector<float>& original,
   assert(reinterpret_cast<std::uintptr_t>(activation) % 32 == 0);
   for (std::size_t i = 0; i < rows * k; ++i) activation[i] = extreme ? 255 : (i * 137 + 51) % 256;
   std::vector<float> output(rows * n + 2, 123456.f);
-  weight.multiply(activation, rows, activation_scale, zero_point, output.data() + 1);
+  std::vector<float> bias(n);
+  for (std::size_t col = 0; col < n; ++col) bias[col] = static_cast<float>(int(col % 19) - 9) / 7.f;
+  weight.multiply(activation, rows, activation_scale, zero_point, output.data() + 1, fused_bias ? bias.data() : nullptr);
+  const bool ortSaturation = std::string_view(mtran::ssru::packed::backend()) == "packed-avx2-ort";
   for (std::size_t row = 0; row < rows; ++row) {
     for (std::size_t col = 0; col < n; ++col) {
       std::int64_t reference = 0;
-      for (std::size_t j = 0; j < k; ++j)
-        reference += (std::int64_t(activation[row * k + j]) - zero_point) * quantized[j * n + col];
-      const float expected = static_cast<float>(reference) * (activation_scale * weight_scale);
+      if (ortSaturation) {
+        for (std::size_t j = 0; j < k; j += 2) {
+          const int w0 = quantized[j * n + col], w1 = quantized[(j + 1) * n + col];
+          const int pair = int(activation[row * k + j]) * w0 + int(activation[row * k + j + 1]) * w1;
+          reference += std::clamp(pair, -32768, 32767) - int(zero_point) * (w0 + w1);
+        }
+      } else {
+        for (std::size_t j = 0; j < k; ++j)
+          reference += (std::int64_t(activation[row * k + j]) - zero_point) * quantized[j * n + col];
+      }
+      const float expected = fused_bias ? std::fma(static_cast<float>(reference), activation_scale * weight_scale, bias[col])
+                                       : static_cast<float>(reference) * (activation_scale * weight_scale);
       assert(std::bit_cast<std::uint32_t>(output[1 + row * n + col]) == std::bit_cast<std::uint32_t>(expected));
     }
   }
   assert(output.front() == 123456.f && output.back() == 123456.f);
 }
+static void cpuOsGolden() {
+  using namespace mtran::ssru::packed::detail;
+  constexpr unsigned avx = 0x18000000u, avx2 = 1u << 5, vnni = 1u << 4;
+  constexpr unsigned avx512 = 0xc0030000u, vnni512 = 1u << 11;
+  // i7-8550U / EPYC 7763: no VNNI, including CPUs with no CPUID 7.1.
+  assert(x86Features(avx, avx2, 0, 0, 6) == Avx2);
+  assert(x86Features(avx, avx2 | avx512, 0, 0, 0xe6) == Avx2);
+  // AVXVNNI needs only XMM/YMM state; AVX512VNNI needs all ZMM/opmask state.
+  assert(x86Features(avx, avx2, 0, vnni, 6) == (Avx2 | AvxVnni));
+  assert(x86Features(avx, avx2 | avx512, vnni512, 0, 0xe6) == (Avx2 | Avx512Vnni));
+  assert(x86Features(avx, avx2 | avx512, vnni512, vnni, 0xe6) == (Avx2 | AvxVnni | Avx512Vnni));
+  for (unsigned bit : {16, 17, 30, 31})
+    assert(x86Features(avx, avx2 | (avx512 & ~(1u << bit)), vnni512, 0, 0xe6) == Avx2);
+  for (std::uint64_t state : {0x6, 0x26, 0x46, 0x66, 0x86, 0xa6, 0xc6}) {
+    assert(x86Features(avx, avx2 | avx512, vnni512, 0, state) == Avx2);
+    assert(x86Features(avx, avx2 | avx512, vnni512, vnni, state) == (Avx2 | AvxVnni));
+  }
+  for (unsigned leaf1 : {0u, 1u << 27, 1u << 28})
+    assert(x86Features(leaf1, avx2 | avx512, vnni512, vnni, 0xe6) == 0);
+  for (std::uint64_t state : {0, 2, 4, 0xe0, 0xe2, 0xe4})
+    assert(x86Features(avx, avx2 | avx512, vnni512, vnni, state) == 0);
+  assert(x86Features(avx, avx512, vnni512, vnni, 0xe6) == 0);
+}
 int main() {
-  if (!available()) { std::cout << "SKIP: AVXVNNI unavailable; baseline entry point ran safely\n"; return 0; }
+  cpuOsGolden();
+  if (!mtran::ssru::packed::backend()) {
+    const float unused = 0;
+    rejects([&] { Weight unavailable(&unused, 32, 8); });
+    std::cout << "SKIP: packed CPU/OS unavailable; baseline entry point ran safely\n";
+    return 0;
+  }
+  std::cout << "Backend: " << mtran::ssru::packed::backend() << "\n";
   std::fesetround(FE_TONEAREST);
-  for (std::size_t k : {32, 64}) for (std::size_t n : {8, 24}) {
+  for (std::size_t k : {32, 64, 512, 2048}) for (std::size_t n : {8, 24, 32, 64}) {
     std::vector<float> original(k * n, 127.f);
     const Weight positive(original.data(), k, n);
-    golden(positive, original, k, n, 3, .03125f, 0, true); // 255*127 must not saturate at int16.
+    golden(positive, original, k, n, 3, .03125f, 0, true); // Distinguishes exact from ORT pair saturation.
+    golden(positive, original, k, n, 1, .03125f, 255, true);
+    std::fill(original.begin(), original.end(), -127.f);
+    const Weight negative(original.data(), k, n);
+    golden(negative, original, k, n, 3, .03125f, 0, true);
     for (std::size_t i = 0; i < original.size(); ++i) original[i] = static_cast<int>((i * 71) % 255) - 127;
     original[0] = 127;
     // Ties to even on both signs; retain the +127 anchor so scale == 1.
@@ -74,6 +114,14 @@ int main() {
     for (auto& x : original) x /= 7.f;
     const Weight scaled(original.data(), k, n);
     golden(scaled, original, k, n, 1, .007f, 128, false);
+    golden(scaled, original, k, n, 3, .007f, 128, false, true);
+  }
+  {
+    constexpr std::size_t k = (std::size_t(INT32_MAX) / (255 * 128)) & ~std::size_t(31);
+    const std::vector<float> large(k * 8, -127.f);
+    const Weight weight(large.data(), k, 8);
+    golden(weight, large, k, 8, 1, .03125f, 0, true);
+    golden(weight, large, k, 8, 1, .03125f, 255, false);
   }
   std::vector<float> original(32 * 8, 0.f);
   const Weight zeros(original.data(), 32, 8);
@@ -86,9 +134,12 @@ int main() {
   original[0] = std::numeric_limits<float>::max();
   rejects([&] { Weight bad(original.data(), 32, 8); });
   Workspace workspace;
+  rejects([&] { workspace.resize(SIZE_MAX); });
   auto* activation = workspace.resize(64);
   std::fill(activation, activation + 64, 255);
   std::vector<float> output(8, 123456.f);
+  rejects([&] { zeros.multiply(nullptr, 1, .1f, 0, output.data()); });
+  rejects([&] { zeros.multiply(activation, 1, .1f, 0, nullptr); });
   rejects([&] { zeros.multiply(activation + 1, 1, .1f, 0, output.data()); });
   rejects([&] { zeros.multiply(activation, 0, .1f, 0, output.data()); });
   rejects([&] { zeros.multiply(activation, SIZE_MAX/32+1, .1f, 0, output.data()); });
@@ -100,5 +151,6 @@ int main() {
   std::fill(activation, activation + 32, 255);
   zeros.multiply(activation, 1, .1f, 255, output.data());
   assert(std::all_of(output.begin(), output.end(), [](float x) { return x == 0; }));
-  std::cout << "PASS: scalar golden, scale/zero/extremes, shape/overflow, recovery and concurrency\n";
+  std::cout << "PASS: scalar golden (" << (std::string_view(mtran::ssru::packed::backend()) == "packed-avx2-ort" ? "ORT int16 saturation" : "mathematically exact")
+            << "), CPUID/OS state, scale/zero/full-u8 extremes, shape/overflow, recovery and concurrency\n";
 }

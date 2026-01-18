@@ -1,0 +1,3 @@
+native/** text eol=lf
+scripts/** text eol=lf
+src/converter/** text eol=lf

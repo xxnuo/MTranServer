@@ -61,9 +61,21 @@ function setup(provider = 'cpu', shortlist = true) {
   return { original, candidate, src, dst, select, capability, convert, create };
 }
 
-test.each([undefined, '0', 'true', 'false'])('SSRU switch %j leaves the existing Fast native path unchanged', async flag => {
+test.each([undefined, '1', 'true', 'false', ''])('Fast CPU selects SSRU by default (switch=%j)', async flag => {
   const { capability, convert, create } = setup();
   if (flag === undefined) delete process.env.MT_NATIVE_SSRU; else process.env.MT_NATIVE_SSRU = flag;
+  const engine = new TranslationEngine();
+  try {
+    await engine.init(model);
+    expect(capability).toHaveBeenCalledTimes(1); expect(convert).toHaveBeenCalledWith(model);
+    expect(create).toHaveBeenCalledWith(custom.model, ['X', 'eos_id', 'candidate_ids'], 1, true);
+    expect(engine.backend?.runtime).toBe('native-ssru');
+  } finally { await engine.destroy(); }
+});
+
+test('SSRU switch 0 leaves the existing Fast native path unchanged', async () => {
+  const { capability, convert, create } = setup();
+  process.env.MT_NATIVE_SSRU = '0';
   const engine = new TranslationEngine();
   try {
     await engine.init(model);
@@ -73,8 +85,9 @@ test.each([undefined, '0', 'true', 'false'])('SSRU switch %j leaves the existing
   } finally { await engine.destroy(); }
 });
 
-test.each([['cuda', true], ['cpu', false]] as const)('SSRU requires CPU and shortlist (%s, %s)', async (provider, shortlist) => {
+test.each([['cuda', true], ['dml', true], ['cpu', false]] as const)('SSRU requires CPU and shortlist (%s, %s)', async (provider, shortlist) => {
   const { convert, capability } = setup(provider, shortlist);
+  delete process.env.MT_NATIVE_SSRU;
   const engine = new TranslationEngine();
   try {
     await engine.init(model);
@@ -93,6 +106,7 @@ test.each([false, true])('missing SSRU capability falls back before conversion (
     expect(convert).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledWith(model.model, ['X', 'eos_id', 'candidate_ids'], 1);
     expect(engine.backend?.runtime).toBe(missingAddon ? undefined : 'native-async');
+    expect(engine.backend?.fallbackReason).toContain('SSRU addon unavailable');
     expect(await engine.translateAsync('hello')).toBe('result');
     if (missingAddon) expect(original.release).not.toHaveBeenCalled();
   } finally { await engine.destroy(); }
@@ -131,6 +145,7 @@ test.each(malformedKinds)('SSRU init rejects malformed %s output and retains ord
   try {
     await engine.init(model);
     expect(engine.backend?.runtime).toBeUndefined(); expect(original.release).not.toHaveBeenCalled();
+    expect(engine.backend?.fallbackReason).toContain('Native SSRU validation failed');
     expect(candidate.release).toHaveBeenCalledTimes(1);
     expect(await engine.translateAsync('hello')).toBe('result');
   } finally { await engine.destroy(); }

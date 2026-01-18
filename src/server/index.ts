@@ -1,10 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import fs from 'fs/promises';
+import { createServer } from 'node:http';
 import swaggerUi from 'swagger-ui-express';
 import { getConfig, setConfig, resetConfig, saveConfigFile, clearConfigFile } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
 import { initRecords } from '@/models/index.js';
-import { cleanupAllEngines, getEngineRuntimes } from '@/services/index.js';
+import { cleanupAllEngines, getEngineRuntimes, warmupEngines } from '@/services/index.js';
 import { cleanupLegacyBin } from '@/assets/index.js';
 import { requestId, errorHandler, cors, requestLogger } from '@/middleware/index.js';
 import { RegisterRoutes } from '@/generated/routes.js';
@@ -14,19 +15,8 @@ import { swaggerStatic } from '@/middleware/swagger.js';
 import { checkForUpdate } from '@/utils/update-checker.js';
 import { VERSION } from '@/version';
 
-export async function startServer({ handleSignals = true } = {}) {
+export async function startServer({ handleSignals = true, signal }: { handleSignals?: boolean; signal?: AbortSignal } = {}) {
   const config = getConfig();
-
-  logger.info('Initializing MTranServer...');
-
-  await fs.mkdir(config.modelDir, { recursive: true });
-  await fs.mkdir(config.configDir, { recursive: true });
-
-  await cleanupLegacyBin(config.configDir);
-
-  logger.info('Initializing model records...');
-  await initRecords();
-
   const app = express();
 
   app.use(requestId());
@@ -176,41 +166,77 @@ export async function startServer({ handleSignals = true } = {}) {
 
   app.use(errorHandler());
 
-  const server = app.listen(parseInt(config.port), config.host, () => {
-    logger.important(`MTranServer v${VERSION} is running!`);
-    logger.important(`Web UI: http://${config.host}:${config.port}/ui/`);
-    logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs/`);
-    logger.important(`Log level set to: ${config.logLevel}`);
-
-    if (config.checkUpdate) {
-      checkForUpdate();
-    }
-  });
-
-  const stop = async () => {
+  const server = createServer(app);
+  const listening = new AbortController();
+  let stopping: Promise<void> | undefined;
+  const stop = () => stopping ??= (async () => {
     logger.info('Shutting down server...');
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await cleanupAllEngines();
+    listening.abort(signal?.aborted ? signal.reason : new Error('Server startup interrupted by shutdown'));
+    try {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await cleanupAllEngines();
+    } finally {
+      signal?.removeEventListener('abort', abort);
+      process.off('SIGINT', shutdown);
+      process.off('SIGTERM', shutdown);
+    }
     logger.info('Server shutdown complete');
+  })();
+  const abort = () => { void stop().catch(error => logger.error(`Server shutdown failed: ${error}`)); };
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    const timeout = setTimeout(() => {
+      logger.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+    try { await stop(); }
+    finally { clearTimeout(timeout); }
+    process.exit(0);
   };
-
   if (handleSignals) {
-    let shuttingDown = false;
-    const shutdown = async () => {
-      if (shuttingDown) return;
-      shuttingDown = true;
-      const timeout = setTimeout(() => {
-        logger.error('Forced shutdown after timeout');
-        process.exit(1);
-      }, 10000);
-      await stop();
-      clearTimeout(timeout);
-      process.exit(0);
-    };
-
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
   }
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) abort();
+  try {
+    listening.signal.throwIfAborted();
+    logger.info('Initializing MTranServer...');
+    await fs.mkdir(config.modelDir, { recursive: true });
+    listening.signal.throwIfAborted();
+    await fs.mkdir(config.configDir, { recursive: true });
+    listening.signal.throwIfAborted();
+    await cleanupLegacyBin(config.configDir);
+    listening.signal.throwIfAborted();
+    logger.info('Initializing model records...');
+    await initRecords();
+    listening.signal.throwIfAborted();
+    await warmupEngines();
+    listening.signal.throwIfAborted();
+    await new Promise<void>((resolve, reject) => {
+      const clear = () => { server.off('error', failed); server.off('close', closed); };
+      const failed = (error: Error) => { clear(); reject(error); };
+      const closed = () => failed(new Error('Server startup interrupted by shutdown'));
+      server.once('error', failed);
+      server.once('close', closed);
+      server.listen({ port: parseInt(config.port), host: config.host, signal: listening.signal }, () => {
+        clear();
+        resolve();
+      });
+    });
+    listening.signal.throwIfAborted();
+  } catch (error) {
+    await stop();
+    throw error;
+  }
+  logger.important(`MTranServer v${VERSION} is running!`);
+  logger.important(`Web UI: http://${config.host}:${config.port}/ui/`);
+  logger.important(`Swagger Docs: http://${config.host}:${config.port}/docs/`);
+  logger.important(`Log level set to: ${config.logLevel}`);
+
+  if (config.checkUpdate) checkForUpdate();
 
   return { server, stop };
 }

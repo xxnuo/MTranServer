@@ -7,16 +7,45 @@ permissions:
   contents: write
 
 jobs:
+  native:
+    uses: ./.github/workflows/native-ssru.yml
+    permissions:
+      contents: read
+      actions: read
+
   build_desktop:
+    needs: native
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+            arch: x64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+            arch: arm64
+          - os: windows-2025
+            platform: win32-x64
+            arch: x64
+          - os: windows-11-arm
+            platform: win32-arm64
+            arch: arm64
+          - os: macos-15
+            platform: darwin-arm64
+            arch: arm64
+          - os: macos-15-intel
+            platform: darwin-x64
+            arch: x64
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+      MTRAN_NATIVE_ARTIFACT_DIR: .tmp/release-native
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      npm_config_arch: ${{ matrix.arch }}
     defaults:
       run:
         shell: bash
@@ -25,12 +54,49 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
+      - name: Setup native Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          architecture: ${{ matrix.arch }}
+
+      - name: Check native Node architecture
+        id: node
+        run: |
+          node -e 'if(process.platform+"-"+process.arch!=="${{ matrix.platform }}")throw Error("Runner architecture mismatch")'
+          echo "arch=$(node -p process.arch)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup MSVC for native Node
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ steps.node.outputs.arch }}
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      - name: Install native Electron runtime for smoke check
+        run: node node_modules/electron/install.js
+
+      - name: Download verified native addons and Intel ORT
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-ssru-*
+          path: .tmp/release-native
+          merge-multiple: true
+
+      - name: Restore verified Intel Mac ORT
+        if: matrix.platform == 'darwin-x64'
+        run: |
+          node -e 'require("fs").cpSync(process.env.MTRAN_NATIVE_ARTIFACT_DIR+"/ort/darwin/x64","dist/ort/darwin/x64",{recursive:true})'
+          bun scripts/prepare-ort-macos-x64.ts --restore-only
+
+      - name: Prepare official Node headers
+        run: bun scripts/prepare-node-headers.ts
 
       - name: Setup uv for Apple GPU runtime
         if: runner.os == 'macOS' && runner.arch == 'ARM64'
@@ -51,10 +117,11 @@ jobs:
           bun run bump ${VERSION}
 
       - name: Build Desktop
-        run: bun run build:electron
+        run: bun run build:electron -- --${{ matrix.arch }}
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os }}
+          name: desktop-${{ matrix.platform }}
           path: release/mtranserver-desktop-*
+          if-no-files-found: error

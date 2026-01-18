@@ -127,7 +127,7 @@ test.each(['valid', 'missing-lex', 'vocab-mismatch'])('native worker %s builds t
     mock.module('./src/converter/release.ts', () => ({ readRelease: async () => ({ weights:new Map([['Wemb',{dims:[8,2]}]]), config:{'tied-embeddings-all':true} }) }));
     mock.module('./src/converter/graph.ts', () => ({ buildModel(_w,_c,mode,shortlist,native) { assert.equal(mode,'qall'); assert.equal(shortlist,true); assert.equal(native,true); built=true; return new Uint8Array(); } }));
     mock.module('./src/core/tokenizer.ts', () => ({ Tokenizer: { load:async()=>({size:${kind === 'vocab-mismatch' ? 7 : 8},close(){closed++;}}) } }));
-    mock.module('onnxruntime-node', () => ({ InferenceSession: { create() { throw new Error('must not use ordinary ORT for SSRU'); } } }));
+    mock.module('onnxruntime-node', () => { throw new Error('must not load ORT in the native graph conversion worker'); });
     const source = ${JSON.stringify(source)}
       .replace("import { parentPort, workerData } from 'node:worker_threads';", 'const workerData = ' + ${JSON.stringify(JSON.stringify(data))} + '; const parentPort = {postMessage(message){globalThis.ssruResponse=message;}};')
       .replace("import { writeFile } from 'node:fs/promises';", 'const writeFile = async () => {};')

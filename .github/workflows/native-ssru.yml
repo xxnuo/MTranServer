@@ -1,0 +1,223 @@
+name: Native SSRU platforms
+
+on:
+  workflow_dispatch:
+    inputs:
+      ort-bootstrap-run:
+        description: Existing run containing the pinned Intel Mac ORT build
+        type: string
+        default: ''
+  workflow_call:
+    inputs:
+      ort-bootstrap-run:
+        type: string
+        default: ''
+  push:
+    branches: [native-ssru-platform-check]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+          - os: windows-2025
+            platform: win32-x64
+          - os: windows-11-arm
+            platform: win32-arm64
+          - os: macos-15
+            platform: darwin-arm64
+          - os: macos-15-intel
+            platform: darwin-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: 'skip'
+      UV_THREADPOOL_SIZE: '8'
+      SSRU_VERIFY_FLORES: '1'
+      ORT_BOOTSTRAP_RUN: ${{ inputs.ort-bootstrap-run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          architecture: ${{ contains(matrix.platform, 'arm64') && 'arm64' || 'x64' }}
+      - uses: oven-sh/setup-bun@v2
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+        with:
+          arch: ${{ runner.arch == 'ARM64' && 'arm64' || 'x64' }}
+      - run: bun install --frozen-lockfile
+      - name: Install native Electron host
+        run: node node_modules/electron/install.js
+      - uses: astral-sh/setup-uv@v6
+        if: matrix.platform == 'darwin-x64'
+      - uses: actions/cache@v4
+        id: ort-cache
+        if: matrix.platform == 'darwin-x64'
+        with:
+          path: dist/ort/darwin/x64
+          key: ort-1.30.0-macos-x64-${{ hashFiles('scripts/prepare-ort-macos-x64.ts') }}
+      - uses: actions/download-artifact@v4
+        if: matrix.platform == 'darwin-x64' && steps.ort-cache.outputs.cache-hit != 'true' && env.ORT_BOOTSTRAP_RUN != ''
+        with:
+          name: native-ssru-darwin-x64
+          run-id: ${{ env.ORT_BOOTSTRAP_RUN }}
+          github-token: ${{ github.token }}
+          path: .tmp/ort-bootstrap
+      - name: Restore pinned Intel Mac ORT bootstrap
+        if: matrix.platform == 'darwin-x64' && steps.ort-cache.outputs.cache-hit != 'true' && env.ORT_BOOTSTRAP_RUN != ''
+        run: |
+          node -e 'const f=require("fs");const p=[".tmp/ort-bootstrap/dist/ort/darwin/x64",".tmp/ort-bootstrap/ort/darwin/x64"].find(p=>f.existsSync(p+"/provenance.json"));if(!p)throw Error("Missing pinned ORT bootstrap");f.cpSync(p,"dist/ort/darwin/x64",{recursive:true})'
+      - name: Prepare Intel Mac ORT
+        if: matrix.platform == 'darwin-x64'
+        run: bun scripts/prepare-ort-macos-x64.ts
+      - name: Prepare official Node headers
+        run: bun scripts/prepare-node-headers.ts
+      - name: Build target native addon
+        run: bun scripts/build-native.ts
+      - name: Build product for the target host
+        run: bun run build:node
+      - name: Build portable Linux release addon
+        if: runner.os == 'Linux'
+        run: bash scripts/build-portable-native.sh dist
+      - name: Build target verification runner
+        run: bun build scripts/verify-ssru-platform.ts --target=node --packages=external --outfile=.tmp/ssru-platform/verify.mjs
+      - name: Verify architecture and real-model execution
+        run: |
+          node -e 'if(process.platform+"-"+process.arch!=="${{ matrix.platform }}")throw Error("Runner architecture mismatch")'
+          node .tmp/ssru-platform/verify.mjs
+      - name: Verify Fast startup and HTTP translation with Node
+        run: node scripts/verify-fast-service.mjs --report .tmp/node-http-result.json
+      - name: Verify Fast startup and HTTP translation with Electron
+        run: |
+          ELECTRON_BINARY=$(node -p 'require("electron")')
+          node scripts/verify-fast-service.mjs --runtime "$ELECTRON_BINARY" --report .tmp/electron-http-result.json
+      - name: Repeat fresh Linux Electron startups
+        if: runner.os == 'Linux'
+        run: |
+          ELECTRON_BINARY=$(node -p 'require("electron")')
+          for attempt in 2 3; do node scripts/verify-fast-service.mjs --runtime "$ELECTRON_BINARY" --report ".tmp/electron-http-result-$attempt.json"; done
+      - name: Capture Linux Electron startup failure
+        if: failure() && runner.os == 'Linux'
+        run: |
+          if test -f .tmp/electron-http-result.json; then
+            if ! command -v gdb >/dev/null; then sudo apt-get update && sudo apt-get install -y gdb; fi
+            ELECTRON_BINARY=$(node -p 'require("electron")')
+            PREPARED_MODELS=$(node -e 'const f=require("fs"),p=require("path"),r=JSON.parse(f.readFileSync(".tmp/electron-http-result.json"));console.log(p.join(r.directory,"models"))')
+            bash scripts/capture-native-startup.sh "$ELECTRON_BINARY" dist/main.js "$PREPARED_MODELS" scripts/ssru-platform-records.json .tmp/electron-gdb || true
+          fi
+      - name: Collect verified target artifact
+        if: always()
+        run: |
+          node -e 'const f=require("fs"),p=".tmp/native-artifact";f.mkdirSync(p,{recursive:true});for(const [a,b]of[["dist/onnx-async-${{ matrix.platform }}.node","onnx-async-${{ matrix.platform }}.node"],[".tmp/ssru-platform/result.json","${{ matrix.platform }}.json"]])if(f.existsSync(a))f.copyFileSync(a,p+"/"+b)'
+          node -e 'const f=require("fs");if(f.existsSync("dist/ort/darwin/x64"))f.cpSync("dist/ort/darwin/x64",".tmp/native-artifact/ort/darwin/x64",{recursive:true})'
+          node -e 'const f=require("fs");for(const n of ["node-http","electron-http"])if(f.existsSync(".tmp/"+n+"-result.json"))f.copyFileSync(".tmp/"+n+"-result.json",".tmp/native-artifact/${{ matrix.platform }}-"+n+".json")'
+          node -e 'const f=require("fs");for(const n of [2,3])if(f.existsSync(".tmp/electron-http-result-"+n+".json"))f.copyFileSync(".tmp/electron-http-result-"+n+".json",".tmp/native-artifact/${{ matrix.platform }}-electron-http-"+n+".json")'
+          node -e 'const f=require("fs"),p=require("path"),d=".tmp/native-artifact/debug/${{ matrix.platform }}";if(f.existsSync(".tmp/electron-gdb"))f.cpSync(".tmp/electron-gdb",d+"/gdb",{recursive:true});if(f.existsSync(".tmp/fast-service"))f.cpSync(".tmp/fast-service",d+"/http",{recursive:true,filter:n=>f.lstatSync(n).isDirectory()||p.basename(n)==="service.log"})'
+      - name: Preserve portable real-model fixtures
+        if: success() && matrix.platform == 'linux-x64'
+        run: tar -czf .tmp/native-artifact/models.tar.gz -C .tmp/ssru-platform en_zh-Hans zh-Hans_en
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-ssru-${{ matrix.platform }}
+          path: |
+            .tmp/native-artifact/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  package:
+    needs: verify
+    runs-on: ubuntu-24.04
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      MTRAN_NATIVE_ARTIFACT_DIR: .tmp/release-native
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-ssru-*
+          path: .tmp/release-native
+          merge-multiple: true
+      - run: bun run build:lib
+      - run: mkdir -p .tmp/package && npm pack --ignore-scripts --pack-destination .tmp/package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-ssru-package
+          path: .tmp/package/*.tgz
+          if-no-files-found: error
+
+  consumer:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+          - os: windows-2025
+            platform: win32-x64
+          - os: windows-11-arm
+            platform: win32-arm64
+          - os: macos-15
+            platform: darwin-arm64
+          - os: macos-15-intel
+            platform: darwin-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          architecture: ${{ contains(matrix.platform, 'arm64') && 'arm64' || 'x64' }}
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-ssru-package
+          path: .tmp/package
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-ssru-linux-x64
+          path: .tmp/fixtures
+      - name: Install the actual npm tarball
+        run: |
+          PACKAGE_PATH=$(node -e 'const f=require("fs"),p=require("path");console.log(p.resolve(".tmp/package",f.readdirSync(".tmp/package").find(n=>n.endsWith(".tgz"))))')
+          npm install --prefix .tmp/consumer --omit=dev --ignore-scripts --no-audit --no-fund "$PACKAGE_PATH"
+      - name: Prepare verified model fixtures
+        run: |
+          mkdir -p .tmp/consumer-models
+          tar -xzf .tmp/fixtures/models.tar.gz -C .tmp/consumer-models
+      - name: Run the installed package
+        run: node scripts/verify-fast-service.mjs --dist .tmp/consumer/node_modules/mtranserver/dist --models .tmp/consumer-models --report .tmp/consumer-result.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: consumer-${{ matrix.platform }}
+          path: .tmp/consumer-result.json
+          if-no-files-found: error

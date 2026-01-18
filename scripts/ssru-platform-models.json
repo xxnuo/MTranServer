@@ -1,0 +1,82 @@
+[
+  {
+    "pair": "en_zh-Hans",
+    "files": [
+      {
+        "path": "lex.50.50.enzh.s2t.bin",
+        "role": "source-lex",
+        "description": "Mozilla lexical shortlist",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "4a5e5827788060f1d718a8132b69440929387514a045796e9b77f935db68c055",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/900beaed-2dba-4a88-ad7c-852ec9e73f6a.zst",
+        "downloadSha256": "c7e4b2ee202e6cf526d07f9c5a47b759ba32b0b42a5353d3db4ee1ff3bfb5217"
+      },
+      {
+        "path": "srcvocab.enzh.spm",
+        "role": "source-srcvocab",
+        "description": "Source-language SentencePiece vocabulary",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "bd9b65504acc6d9726dd281f7defc2adb7c2c22d0688fe2f84697de25197c8c5",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/83278466-fec4-4944-a99d-c2372fa9de88.zst",
+        "downloadSha256": "ec495ad8f0c80ba4eae5ac3b9a8e2ccb4a3a7becb1992efcfea5f4653ffdece1"
+      },
+      {
+        "path": "trgvocab.enzh.spm",
+        "role": "source-trgvocab",
+        "description": "Target-language SentencePiece vocabulary",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "aded6993c36e440284d11cec3f6b8aef9c0e43188a772d80be342a713adf223d",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/84236654-1b66-42fc-9ba2-74c37f27e5eb.zst",
+        "downloadSha256": "25c6c984a7556cb6478b9f1748ff68d8fd433c0e7d472bfdbd4d64a2dffa21f1"
+      },
+      {
+        "path": "model.enzh.intgemm.alphas.bin",
+        "role": "source-model",
+        "description": "Mozilla Marian source model",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "4e5accc141373565ddc8fa1565bceaa8d0c3482a82cab8131c719ebcc6c2157c",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/321191b6-2c42-4bca-84ec-b7b074b67bd6.zst",
+        "downloadSha256": "f0c96e546b0af7c1fe84647d450b1eba0b0591c167e1ead135b334e4b54f6e08"
+      }
+    ]
+  },
+  {
+    "pair": "zh-Hans_en",
+    "files": [
+      {
+        "path": "vocab.zhen.spm",
+        "role": "source-vocab",
+        "description": "Shared SentencePiece vocabulary",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "dff594318ab7d8b7b60b844ab98ebe6b932ae8045fab15235404c787715965b3",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/369efa59-d98e-4aa9-8a91-363ba16c3ba7.zst",
+        "downloadSha256": "4f9c18c3665d995845a4e3ff71476a881a2c4257a5caf88a042237f4d1f14e58"
+      },
+      {
+        "path": "lex.50.50.zhen.s2t.bin",
+        "role": "source-lex",
+        "description": "Mozilla lexical shortlist",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "8524dd4c93ffd7f0ae7be32f77a7c14fea7cdbbebe34ea6ad0ec368d5ddd8b13",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/a2261cbe-7fe7-498d-a128-c08d918b42fc.zst",
+        "downloadSha256": "59d9e4341d8cd4403ea1d12fc54c6100c4f25a7529df1f21f3d35952808e7d45"
+      },
+      {
+        "path": "model.zhen.intgemm.alphas.bin",
+        "role": "source-model",
+        "description": "Mozilla Marian source model",
+        "origin": "mozilla",
+        "required": true,
+        "sha256": "5cd149601802fc8a18124a1c1306144dbbedc058630c4ddb2d53aa76fa9c7c06",
+        "url": "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/translations-models-v2/8bb74789-fad9-40e0-8f49-d3e017106138.zst",
+        "downloadSha256": "37af47d465cd0bfdf5cf3c6452e860c6682519a7109f86c33cf5f332a3f4cfa4"
+      }
+    ]
+  }
+]

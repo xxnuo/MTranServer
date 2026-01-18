@@ -44,7 +44,9 @@ struct LinearBackend {
   // for simultaneous calls. Core never invokes ORT or owns backend state.
   void (*matmul)(void* context, const Matrix& weight, const float* input,
                  std::size_t rows, float* output) = nullptr;
-
+  // Optional fused quantized bias; separate_bias preserves first-step constant folding.
+  void (*matmul_bias)(void* context, const Matrix& weight, const float* input,
+                      std::size_t rows, const float* bias, bool separate_bias, float* output) = nullptr;
 };
 
 // Optional synchronous math operations, independent of the matrix backend.

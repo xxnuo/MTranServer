@@ -6,7 +6,28 @@
 #include <cstring>
 #include <cmath>
 #include <limits>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#ifdef _MSC_VER
+#include <delayimp.h>
+// Match node-gyp: resolve Node imports from the current host (including Electron).
+static FARPROC WINAPI nodeDelayLoad(unsigned event, DelayLoadInfo *info) {
+  if (event != dliNotePreLoadLibrary || _stricmp(info->szDll, "node.exe") != 0)
+    return nullptr;
+  auto host = GetModuleHandleW(L"libnode.dll");
+  return reinterpret_cast<FARPROC>(host ? host : GetModuleHandleW(nullptr));
+}
+decltype(__pfnDliNotifyHook2) __pfnDliNotifyHook2 = nodeDelayLoad;
+#endif
+#else
 #include <dlfcn.h>
+#endif
 #include <memory>
 #include <mutex>
 #include <node_api.h>
@@ -68,7 +89,11 @@ void fail(napi_env env, napi_deferred deferred, const char *message) noexcept {
     reportStatus(env, napi_reject_deferred(env, deferred, error), "Cannot reject native promise");
 }
 struct State {
+#ifdef _WIN32
+  HMODULE lib = nullptr;
+#else
   void *lib = nullptr;
+#endif
   const OrtApi *api = nullptr;
   OrtEnv *env = nullptr;
   OrtSession *session = nullptr;
@@ -108,7 +133,11 @@ struct State {
       env = nullptr;
     }
     if (lib) {
+#ifdef _WIN32
+      FreeLibrary(lib);
+#else
       dlclose(lib);
+#endif
       lib = nullptr;
     }
   }
@@ -178,6 +207,20 @@ std::string readString(napi_env env, napi_value value) {
     throw std::runtime_error("Path contains NUL");
   return {bytes.data(), length};
 }
+std::basic_string<ORTCHAR_T> readPath(napi_env env, napi_value value) {
+#ifdef _WIN32
+  size_t length = 0;
+  checkNapi(napi_get_value_string_utf16(env, value, nullptr, 0, &length));
+  std::vector<char16_t> chars(length + 1);
+  checkNapi(napi_get_value_string_utf16(env, value, chars.data(), chars.size(), &length));
+  std::wstring result(chars.begin(), chars.begin() + length);
+  if (result.find(L'\0') != std::wstring::npos)
+    throw std::runtime_error("Path contains NUL");
+  return result;
+#else
+  return readString(env, value);
+#endif
+}
 std::vector<int64_t> readTokens(napi_env env, napi_value value) {
   napi_typedarray_type type;
   size_t length = 0, offset = 0;
@@ -202,7 +245,7 @@ struct Job {
   napi_async_work work = nullptr;
   bool init = false, accepted = false;
   std::shared_ptr<State> state;
-  std::string model, library;
+  std::basic_string<ORTCHAR_T> model, library;
   // Fixed storage makes even the catch path allocation-free.
   char error[1024] = {};
   std::vector<int64_t> x, candidates, result;
@@ -296,11 +339,18 @@ void executeWork(napi_env, void *data) noexcept {
     waitAtExecute(*job.context);
 #endif
     if (job.init) {
+#ifdef _WIN32
+      s.lib = LoadLibraryW(job.library.c_str());
+      if (!s.lib)
+        throw std::runtime_error("Cannot load ORT library (Windows error " +
+                                 std::to_string(GetLastError()) + ")");
+      auto getApi = reinterpret_cast<decltype(&OrtGetApiBase)>(GetProcAddress(s.lib, "OrtGetApiBase"));
+#else
       s.lib = dlopen(job.library.c_str(), RTLD_NOW | RTLD_LOCAL);
       if (!s.lib)
         throw std::runtime_error(dlerror());
-      auto getApi =
-          reinterpret_cast<const OrtApiBase *(ORT_API_CALL *)()>(dlsym(s.lib, "OrtGetApiBase"));
+      auto getApi = reinterpret_cast<decltype(&OrtGetApiBase)>(dlsym(s.lib, "OrtGetApiBase"));
+#endif
       if (!getApi)
         throw std::runtime_error("Missing OrtGetApiBase");
       auto *base = getApi();
@@ -528,8 +578,8 @@ napi_value invoke(napi_env env, napi_callback_info info, Operation operation) no
             throw std::runtime_error("cpuThreads must be a non-negative integer");
           job->state->cpuThreads = static_cast<int>(threads);
         }
-        job->model = readString(env, args[0]);
-        job->library = readString(env, args[1]);
+        job->model = readPath(env, args[0]);
+        job->library = readPath(env, args[1]);
         std::erase_if(context->states, [](const auto &previous) { return previous.expired(); });
         context->states.emplace_back(job->state);
       } else {
