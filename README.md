@@ -164,12 +164,14 @@ mtranserver --offline
 | 英 → 中 | 段落 | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
 | 中 → 英 | 短句 | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
 | 中 → 英 | 段落 | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| 英 → 中 | 长文（32 句） | 1 | 164.2 ms | 120.8 ms | 482.2 ms |
+| 中 → 英 | 长文（32 句） | 1 | 459.1 ms | 159.1 ms | 580.7 ms |
 | 英 → 中 | 短句 | 8 | 273 次/秒 | 401 次/秒 | 491 次/秒 |
 | 中 → 英 | 短句 | 8 | 155 次/秒 | 453 次/秒 | 497 次/秒 |
 
 同时加载英中、中英模型后，内存约为：普通 619 MiB、Fast 650 MiB、LinguaSpark 190 MiB。
 
-普通模式和 Fast 均支持并发加速。`--fast` 开启 Fast，默认关闭；可能增加误译。[译文对比](tests/fixtures/translation-quality-regressions.json)。
+长文支持句子并发；[配对 HTTP 测试](docs/benchmarks/plain-inference-concurrency.json)中，单个长文请求耗时较优化前降低约 36%–60%。`--fast` 开启 Fast，默认关闭；可能增加误译。[译文对比](tests/fixtures/translation-quality-regressions.json)。
 
 ## 同类项目
 
