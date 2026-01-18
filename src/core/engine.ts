@@ -129,7 +129,7 @@ export class TranslationEngine {
 
     let translation: string;
     try {
-      if (cleanText.length > this.maxSentenceLength) {
+      if (cleanText.length > this.maxSentenceLength && !effectiveOptions.html) {
         translation = this._translateLongText(cleanText, effectiveOptions);
       } else {
         translation = this._translateInternal(cleanText, effectiveOptions);
