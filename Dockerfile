@@ -1,3 +1,5 @@
+ARG DEBIAN_MIRROR=http://mirrors.ustc.edu.cn
+
 FROM oven/bun:1 AS builder
 WORKDIR /app
 
@@ -26,6 +28,8 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
     cd /runtime && bun install --production --frozen-lockfile --ignore-scripts
 
 FROM node:22-bookworm AS native-builder
+ARG DEBIAN_MIRROR
+RUN sed -i "s|http://deb.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/debian.sources
 WORKDIR /native
 COPY --from=builder /usr/local/bin/bun /usr/local/bin/bun
 COPY scripts/build-native.ts ./scripts/build-native.ts
@@ -35,8 +39,10 @@ RUN bun scripts/build-native.ts && \
     node -e 'const a=require("./dist/onnx-async-linux-"+process.arch+".node"); if(a.ssruVersion!==1) process.exit(1)'
 
 FROM node:22-bookworm-slim AS runtime
+ARG DEBIAN_MIRROR
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN sed -i "s|http://deb.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates libtcmalloc-minimal4 \
     && rm -rf /var/lib/apt/lists/*
 
