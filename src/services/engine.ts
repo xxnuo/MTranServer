@@ -21,6 +21,18 @@ interface EngineInfo {
 
 const engines = new Map<string, EngineInfo>();
 const loadingPromises = new Map<string, Promise<TranslationEngine>>();
+const zhPunctTest = /[!-/:-@[-`{-~]/;
+const zhPunctGlobal = /[!-/:-@[-`{-~]/g;
+
+function formatChinesePunctuation(text: string, toLang: string, isHTML: boolean, enabled: boolean): string {
+  if (!enabled || isHTML || !toLang.startsWith('zh')) {
+    return text;
+  }
+  if (!zhPunctTest.test(text)) {
+    return text;
+  }
+  return text.replace(zhPunctGlobal, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0xFEE0));
+}
 
 function needsPivotTranslation(fromLang: string, toLang: string): boolean {
   if (fromLang === 'en' || toLang === 'en') {
@@ -222,15 +234,18 @@ export async function translateWithPivot(
     `TranslateWithPivot: ${fromLang} -> ${toLang}, text length: ${text.length}, isHTML: ${isHTML}`
   );
 
+  const config = getConfig();
+  const shouldFullwidth = config.fullwidthZhPunctuation ?? true;
+
   if (fromLang !== 'auto' && fromLang === toLang) {
-    return text;
+    return formatChinesePunctuation(text, toLang, isHTML, shouldFullwidth);
   }
 
   if (fromLang !== 'auto' && text.length <= 512) {
-    return translateSegment(fromLang, toLang, text, isHTML);
+    const translated = await translateSegment(fromLang, toLang, text, isHTML);
+    return formatChinesePunctuation(translated, toLang, isHTML, shouldFullwidth);
   }
 
-  const config = getConfig();
   const segments = await detectMultipleLanguages(text);
 
   if (segments.length <= 1) {
@@ -248,14 +263,16 @@ export async function translateWithPivot(
     }
 
     if (effectiveFromLang === toLang) {
-      return text;
+      return formatChinesePunctuation(text, toLang, isHTML, shouldFullwidth);
     }
 
     if (text.length > config.maxSentenceLength && !isHTML) {
-      return translateLongText(effectiveFromLang, toLang, text);
+      const translated = await translateLongText(effectiveFromLang, toLang, text);
+      return formatChinesePunctuation(translated, toLang, isHTML, shouldFullwidth);
     }
 
-    return translateSegment(effectiveFromLang, toLang, text, isHTML);
+    const translated = await translateSegment(effectiveFromLang, toLang, text, isHTML);
+    return formatChinesePunctuation(translated, toLang, isHTML, shouldFullwidth);
   }
 
   logger.debug(`Detected ${segments.length} language segments`);
@@ -285,7 +302,7 @@ export async function translateWithPivot(
     result += text.substring(lastEnd);
   }
 
-  return result;
+  return formatChinesePunctuation(result, toLang, isHTML, shouldFullwidth);
 }
 
 async function translateLongText(

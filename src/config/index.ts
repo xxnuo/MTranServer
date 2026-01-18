@@ -21,6 +21,7 @@ export interface Config {
   maxSentenceLength: number;
   checkUpdate: boolean;
   cacheSize: number;
+  fullwidthZhPunctuation: boolean;
 }
 
 let globalConfig: Config | null = null;
@@ -133,6 +134,7 @@ export function getConfig(): Config {
     workerIdleTimeout: getInt('--worker-idle-timeout', 'MT_WORKER_IDLE_TIMEOUT', fileConfig.workerIdleTimeout ?? 60),
     workersPerLanguage: getInt('--workers-per-language', 'MT_WORKERS_PER_LANGUAGE', fileConfig.workersPerLanguage ?? 1),
     maxSentenceLength: getInt('--max-sentence-length', 'MT_MAX_SENTENCE_LENGTH', fileConfig.maxSentenceLength ?? 512),
+    fullwidthZhPunctuation: getBool('--fullwidth-zh-punctuation', 'MT_FULLWIDTH_ZH_PUNCTUATION', fileConfig.fullwidthZhPunctuation ?? true),
 
     apiToken: getString('--api-token', 'MT_API_TOKEN', fileConfig.apiToken || ''),
 

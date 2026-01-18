@@ -12,6 +12,7 @@ export type DesktopServerConfig = {
   logConsole: boolean
   logRequests: boolean
   maxSentenceLength: number
+  fullwidthZhPunctuation: boolean
   checkUpdate: boolean
   cacheSize: number
   modelDir: string
