@@ -82,3 +82,22 @@ test('explicit concurrency one overrides automatic native parallelism',async()=>
  try{await engine.init(model,{'max-concurrent-runs':1});expect(engine.backend?.maxConcurrentRuns).toBe(1);}
  finally{await engine.destroy();}
 });
+
+test('HTML parts drain through one serialized fallback while the engine closes',async()=>{
+ const {original,parallel}=setup();const engine=new TranslationEngine();
+ await engine.init(model,{'max-concurrent-runs':2});
+ parallel.run.mockImplementation(async()=>{throw new native.NativeRunError('HTML native failed');});
+ let active=0,peak=0,calls=0;
+ const fallback={...original,release:mock(async()=>{expect(active).toBe(0);}),run:async()=>{
+  active++;calls++;peak=Math.max(peak,active);
+  try{await new Promise(resolve=>setTimeout(resolve,1));return {Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])};}
+  finally{active--;}
+ }};
+ const create=spyOn(backend,'createSession').mockResolvedValue(fallback as any);
+ const requests=Promise.all(Array.from({length:4},()=>engine.translateAsync('<p>one</p><b>two</b><i>three</i>',{html:true})));
+ const closing=engine.destroy();
+ expect(await requests).toEqual(Array(4).fill('<p>result</p><b>result</b><i>result</i>'));
+ await closing;expect(create).toHaveBeenCalledTimes(1);expect(calls).toBe(12);expect(peak).toBe(1);
+ expect(parallel.release).toHaveBeenCalledTimes(1);expect(fallback.release).toHaveBeenCalledTimes(1);
+ expect(engine.busy).toBe(false);
+});

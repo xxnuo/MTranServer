@@ -57,3 +57,71 @@ describe('ONNX text handling', () => {
     expect(released).toBe(true);
   });
 });
+
+describe('HTML inference scheduling', () => {
+  function setup(limit = 2) {
+    const engine = new TranslationEngine() as any;
+    let active = 0, peak = 0, calls = 0, released = false;
+    engine.backend = {provider:'cpu',runtime:'native-async',maxConcurrentRuns:limit};
+    engine.src = {encode:()=>[5],eos:2,close(){expect(active).toBe(0);}};
+    engine.dst = {eos:2,decode:()=> 'translated & <text>',close(){expect(active).toBe(0);}};
+    engine.session = {
+      run: async () => {
+        active++; calls++; peak=Math.max(peak,active);
+        try { await new Promise(resolve=>setTimeout(resolve,2));expect(released).toBe(false);return {Y:{data:BigInt64Array.of(8n,2n),dispose(){}}}; }
+        finally {active--;}
+      },
+      release:async()=>{expect(active).toBe(0);released=true;},
+    };
+    return {engine,stats:()=>({active,peak,calls,released})};
+  }
+  test.each([1,2,4])('multiple HTML requests share the inference limit %i and drain on close',async limit=>{
+    const {engine,stats}=setup(limit);
+    const html='<p title="same">one</p><b>two</b><i>three</i><em class="notranslate">four</em><script>five</script>';
+    const output='<p title="same">translated &amp; &lt;text&gt;</p><b>translated &amp; &lt;text&gt;</b><i>translated &amp; &lt;text&gt;</i><em class="notranslate">four</em><script>five</script>';
+    const requests=Promise.all(Array.from({length:5},()=>engine.translateAsync(html,{html:true})));
+    const closing=engine.destroy();
+    await expect(engine.translateAsync('late')).rejects.toThrow('closing');
+    expect(await requests).toEqual(Array(5).fill(output));await closing;
+    expect(stats()).toEqual({active:0,peak:limit,calls:15,released:true});expect(engine.busy).toBe(false);
+  });
+  test('an HTML failure stops new parts and waits for already running parts before release',async()=>{
+    const {engine,stats}=setup();let finish!:()=>void,failed!:()=>void;
+    const failureStarted=new Promise<void>(resolve=>failed=resolve),pending=new Promise<void>(resolve=>finish=resolve);
+    let calls=0;
+    engine.session.run=async()=>{
+      calls++;
+      if(calls===1){failed();throw new Error('part failed');}
+      await pending;
+      return {Y:{data:BigInt64Array.of(8n,2n),dispose(){}}};
+    };
+    const request=engine.translateAsync('<p>one</p><p>two</p><p>three</p>',{html:true});
+    const result=request.catch((error:Error)=>error.message);
+    await failureStarted;await new Promise(resolve=>setTimeout(resolve,0));
+    const closing=engine.destroy();let closed=false;void closing.then(()=>closed=true);
+    await new Promise(resolve=>setTimeout(resolve,0));expect(closed).toBe(false);expect(engine.busy).toBe(true);expect(calls).toBe(2);
+    finish();expect(await result).toBe('part failed');await closing;expect(calls).toBe(2);expect(stats().released).toBe(true);
+  });
+  test('queued inference respects a reduced backend limit',async()=>{
+    const {engine}=setup(2);let active=0,peakAfterDrain=0,started=0;
+    engine.session.run=async()=>{
+      active++;started++;
+      if(started===2)engine.backend.maxConcurrentRuns=1;
+      if(started>2)peakAfterDrain=Math.max(peakAfterDrain,active);
+      try{await new Promise(resolve=>setTimeout(resolve,2));return {Y:{data:BigInt64Array.of(8n,2n),dispose(){}}};}finally{active--;}
+    };
+    await Promise.all(Array.from({length:3},()=>engine.translateAsync('<p>one</p><p>two</p><p>three</p>',{html:true})));
+    await engine.destroy();expect(started).toBe(9);expect(peakAfterDrain).toBe(1);
+  });
+});
+
+test('competing requests suppress extra HTML workers',async()=>{
+ const engine=new TranslationEngine() as any;let active=0,peak=0,calls=0,finish!:()=>void;
+ const gate=new Promise<void>(resolve=>finish=resolve);
+ engine.backend={provider:'cpu',maxConcurrentRuns:4};engine.session={release:async()=>{expect(active).toBe(0);}};
+ engine.translateText=async(text:string)=>{active++;calls++;peak=Math.max(peak,active);try{await gate;return text;}finally{active--;}};
+ const plain=engine.translateAsync('hold'),html=engine.translateAsync('<p>one</p><b>two</b><i>three</i>',{html:true});
+ await Promise.resolve();expect(calls).toBe(2);finish();
+ expect(await plain).toBe('hold');expect(await html).toBe('<p>one</p><b>two</b><i>three</i>');
+ await engine.destroy();expect(peak).toBe(2);expect(calls).toBe(4);
+});

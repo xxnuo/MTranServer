@@ -1,0 +1,507 @@
+{
+  "version": "5.1.2",
+  "scope": "Engine public init/translateAsync/destroy with native async; fixed CPU4,6,8,10, UV_THREADPOOL_SIZE=4, cpu-threads=1, max-concurrent-runs=4; 32 text nodes per page; 4 competing pages have distinct attributes. Each load warmed separately before measurement.",
+  "baselineCommit": "c629dd4",
+  "baselineSourceSha256": "f15f7b9f5cc9fbc354ebe8d93cc1f6e5ebd01b14a3318ae2a54a02fc44de994d",
+  "candidateSourceSha256": "ca027d2817683f1de948dece0a107bd3822b4e40ab83888fc5317606bde0ef0f",
+  "raw": {
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "nodes": 32,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 312.92397800000026
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 475.25578499999983
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 117.28909100000055
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 475.07167500000014
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 115.68983000000026
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 480.98049400000036
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 305.7619159999995
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 472.98345700000027
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 125.43631199999982
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 473.5111459999989
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 305.31386499999826
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 477.7076340000003
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 297.3266109999986
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 472.86414499999955
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 114.39176899999802
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 473.14564600000085
+          }
+        ]
+      },
+      {
+        "pair": "en_zh-Hans",
+        "mode": "standard",
+        "nodes": 32,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 624.5377039999985
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 789.7047230000026
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 196.57139800000004
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 775.5896580000008
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 194.66382299999896
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 787.0557020000015
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 605.0922170000013
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 781.849298000001
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 205.19563699999708
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 782.0040840000001
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 627.6944959999964
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 776.9570029999959
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 622.7435630000036
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 804.1944169999988
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 199.2508830000006
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 809.4438270000028
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "nodes": 32,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 378.8594359999988
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 590.5530930000023
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 143.1109030000007
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 576.109881000004
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 155.41455799999676
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 626.2807339999999
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 401.39109299999836
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 636.9586029999991
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 143.13686299999972
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 584.0968730000022
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 393.6014690000011
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 579.6569939999972
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 404.945842000001
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 626.379271999991
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 138.19870899998932
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 567.4725759999856
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "standard",
+        "nodes": 32,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1464.3931379999995
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 2022.4747189999907
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 529.6277279999922
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2045.1135910000012
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 525.0609960000002
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2013.728707000002
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1420.9347400000115
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 1987.0277859999915
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 518.1319989999902
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2031.4689409999992
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1398.1268950000085
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 1979.9771349999937
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1510.2395330000145
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 2041.176094999988
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 521.959136999998
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2148.651238999999
+          }
+        ]
+      }
+    ],
+    "finished": "2026-11-13T14:03:50.864Z"
+  },
+  "summary": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "documentConcurrency": 1,
+      "pairedMedianSpeedRatio": 2.621070675621664,
+      "latencyReductionPercent": 61.847652209423146,
+      "ratios": [
+        2.6679717212575107,
+        2.642945503507083,
+        2.434015000377233,
+        2.599195847736245
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "documentConcurrency": 4,
+      "pairedMedianSpeedRatio": 0.9998962925929453,
+      "latencyReductionPercent": -0.010371816339649342,
+      "ratios": [
+        1.0003875415220234,
+        0.9833734691951976,
+        1.0088624904301648,
+        0.9994050436638673
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "documentConcurrency": 1,
+      "pairedMedianSpeedRatio": 3.1169100972250714,
+      "latencyReductionPercent": 67.91694438378951,
+      "ratios": [
+        3.177154511563266,
+        3.1083958368577016,
+        3.0590050801129136,
+        3.1254243575924416
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "documentConcurrency": 4,
+      "pairedMedianSpeedRatio": 0.993530379943112,
+      "latencyReductionPercent": -0.6511748596211397,
+      "ratios": [
+        1.0181991402984925,
+        0.9933849612082469,
+        0.9935459659312927,
+        0.9935147939549313
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "documentConcurrency": 1,
+      "pairedMedianSpeedRatio": 2.69856979211694,
+      "latencyReductionPercent": 62.94333380143811,
+      "ratios": [
+        2.64731357330613,
+        2.582712315792236,
+        2.74982601092775,
+        2.930170946821452
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "documentConcurrency": 4,
+      "pairedMedianSpeedRatio": 1.0210599454909173,
+      "latencyReductionPercent": 2.062557206745763,
+      "ratios": [
+        1.0250702382936532,
+        1.0170496526881811,
+        0.9923987283527111,
+        1.103805361688539
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "documentConcurrency": 1,
+      "pairedMedianSpeedRatio": 2.735587982427137,
+      "latencyReductionPercent": 63.44478750368121,
+      "ratios": [
+        2.764948020244176,
+        2.7062279446100983,
+        2.698399052169011,
+        2.8934056824452528
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "documentConcurrency": 4,
+      "pairedMedianSpeedRatio": 0.9806967384441356,
+      "latencyReductionPercent": -1.9683211740347817,
+      "ratios": [
+        0.9889302618203516,
+        0.9867405570039328,
+        0.9746529198843383,
+        0.9499801819628807
+      ]
+    }
+  ],
+  "lifecycle": [
+    {
+      "pair": "en_zh-Hans",
+      "nativePeak": 4,
+      "fallbackOutputsEqual": true,
+      "closed": true
+    },
+    {
+      "pair": "zh-Hans_en",
+      "nativePeak": 4,
+      "fallbackOutputsEqual": true,
+      "closed": true
+    }
+  ],
+  "validation": {
+    "unitTests": 98,
+    "typecheck": true,
+    "allHtmlOutputsMatchBaseline": true,
+    "protectedMarkupAndEscapingTests": true,
+    "limitsTested": [
+      1,
+      2,
+      4
+    ],
+    "errorDrainingAndCloseTested": true,
+    "nativeFallbackTested": true
+  },
+  "scripts": {
+    "public-bench.ts": "fa415de7aa2656cdd0c8212af1290432a02b2d731a193ce0e44e9517c5e64dd9",
+    "lifecycle.ts": "99ae8f45de17137b2cc41d0cd66f12bd5e19f86023b5165c2396e7652c0cb37d"
+  },
+  "limitations": [
+    "Single local Linux x64 CPU; dynamic frequency and desktop background load retained.",
+    "Direct engine API, not HTTP latency, real traffic or whole service throughput.",
+    "Single-page speedup uses more of the already allowed parallel CPU budget.",
+    "Four-page contention shows no stable benefit; Chinese standard median about 2% slower.",
+    "Retired extra HTML workers do not restart when competing requests finish; remaining work uses the baseline serial path.",
+    "Overlapping preliminary runs were discarded; raw data here is only the independent load-warmed run.",
+    "No model weights, tokenization boundaries or precision changes.",
+    "No npm publication or other hardware validation."
+  ]
+}
