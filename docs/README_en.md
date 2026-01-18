@@ -160,16 +160,16 @@ Ryzen 9 9950X, 4-CPU quota, 3 GiB memory, cache disabled; medians of three round
 
 | Direction | Input | Concurrency | Default | Fast |
 | --- | --- | --- | --- | --- |
-| English → Chinese | Short | 1 | 4.1 ms | **3.8 ms** |
-| English → Chinese | Paragraph | 1 | 15.8 ms | **14.0 ms** |
-| Chinese → English | Short | 1 | 5.5 ms | **3.5 ms** |
-| Chinese → English | Paragraph | 1 | 23.2 ms | **14.9 ms** |
-| English → Chinese | Long text (32 sentences) | 1 | 91.1 ms | **53.0 ms** |
-| Chinese → English | Long text (32 sentences) | 1 | 151.2 ms | **72.6 ms** |
-| English → Chinese | Short | 8 | 581 req/s | **910 req/s** |
-| Chinese → English | Short | 8 | 440 req/s | **1067 req/s** |
+| English → Chinese | Short | 1 | 4.4 ms | **2.4 ms** |
+| English → Chinese | Paragraph | 1 | 14.2 ms | **9.4 ms** |
+| Chinese → English | Short | 1 | 5.4 ms | **2.3 ms** |
+| Chinese → English | Paragraph | 1 | 19.2 ms | **9.9 ms** |
+| English → Chinese | Long text (32 sentences) | 1 | 72.8 ms | **28.6 ms** |
+| Chinese → English | Long text (32 sentences) | 1 | 132.4 ms | **38.5 ms** |
+| English → Chinese | Short | 8 | 633 req/s | **1941 req/s** |
+| Chinese → English | Short | 8 | 495 req/s | **2124 req/s** |
 
-With both translation directions loaded: Default about 648 MiB, Fast 677 MiB.
+With both translation directions loaded: Default about 534 MiB, Fast 651 MiB.
 
 Long texts use sentence concurrency; [paired HTTP tests](benchmarks/plain-inference-concurrency.json) showed 36%–60% lower latency per long-text request than before the optimization. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
