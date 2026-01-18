@@ -27,6 +27,7 @@ export interface BackendMeasurement {
   error?: string;
 }
 export interface BackendInfo {
+  documentAcceleration?: { provider: 'metal'; runtime: 'mlx'; selected: boolean; batchSize?: number; maxTokens?: number; cpuMs?: number; gpuMs?: number; error?: string };
   runtime?: 'native-async';
   provider: string;
   cpuThreads: number;
@@ -62,9 +63,9 @@ async function release(session?: ort.InferenceSession) {
   catch (error) { logger.debug(`ONNX session release failed: ${error}`); }
 }
 
-export async function selectBackend(model: string, probe: (session: ort.InferenceSession, short?: boolean) => Promise<void>, cpuThreads?: number, identity?: string) {
+export async function selectBackend(model: string, probe: (session: ort.InferenceSession, short?: boolean) => Promise<void>, cpuThreads?: number, identity?: string, cpuGraphOnly = false) {
   if (cpuThreads !== undefined && (!Number.isInteger(cpuThreads) || cpuThreads < 0)) throw new Error('cpu-threads must be a non-negative integer');
-  const cpuOnly = process.env.MT_CPU_ONLY === 'true';
+  const cpuOnly = cpuGraphOnly || process.env.MT_CPU_ONLY === 'true';
   const cacheKey = identity ? `${identity}:${cpuThreads ?? 'auto'}:${cpuOnly}` : undefined;
   const cached = cacheKey ? selections.get(cacheKey) : undefined;
   if (cached) {

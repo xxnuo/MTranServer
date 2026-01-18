@@ -251,3 +251,16 @@ test.each(['device lost', 'invalid output'])('accelerator %s retries the request
   expect(dispose).toHaveBeenCalledTimes(failure === 'device lost' ? 1 : 2);
   await engine.destroy();
 });
+
+test('a native document backend calibrates its CPU graph without loading legacy GPU providers', async () => {
+  const backends = spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }, { name: 'webgpu', bundled: true }]);
+  let clock = 0;
+  spyOn(performance, 'now').mockImplementation(() => clock);
+  spyOn(ort.InferenceSession, 'create').mockImplementation(async (_model: any, options: any) => ({ provider: options.executionProviders[0], release: async () => {} }) as any);
+  const selected = await selectBackend('model.onnx', async () => { clock += 5; }, 1, 'native-document-cpu-graph', true);
+  try {
+    expect(selected.info.provider).toBe('cpu');
+    expect(selected.info.measurements.every(m => m.provider === 'cpu')).toBe(true);
+    expect(backends).not.toHaveBeenCalled();
+  } finally { await selected.session.release(); }
+});
