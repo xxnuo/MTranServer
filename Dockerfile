@@ -33,7 +33,7 @@ RUN c++ -std=c++20 -O3 -shared -fPIC -pthread -I/usr/local/include/node \
 FROM node:22-bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libvulkan1 mesa-vulkan-drivers \
+    ca-certificates libvulkan1 mesa-vulkan-drivers libtcmalloc-minimal4 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -45,7 +45,10 @@ COPY --from=builder /runtime/package.json ./package.json
 
 ENV MT_HOST=0.0.0.0 \
     MT_PORT=8989 \
-    NODE_ENV=production
+    NODE_ENV=production \
+    LD_PRELOAD=libtcmalloc_minimal.so.4 \
+    TCMALLOC_AGGRESSIVE_DECOMMIT=1 \
+    TCMALLOC_RELEASE_RATE=10
 
 EXPOSE 8989
 
