@@ -16,8 +16,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'No linter configured'",
-    "dev": "bun src/main.ts --log-level debug --port 8990 --model-dir ~/.config/mtran/models",
-    "dev2": "bun src/main.ts --log-level debug --port 8989 --model-dir ~/.config/mtran/models",
+    "dev": "bun run build:node && node dist/main.js --log-level debug --port 8990 --model-dir ~/.config/mtran/models",
+    "dev2": "bun run build:node && node dist/main.js --log-level debug --port 8989 --model-dir ~/.config/mtran/models",
     "bump": "bun scripts/bump.ts",
     "electron": "bun run build:node && electron ./scripts/electron-main.js",
     "electron:dev": "bun run scripts/electron-dev.ts",
@@ -25,7 +25,7 @@
     "electron:build:all": "bun run scripts/electron-build.ts --all",
     "prepublishOnly": "bun scripts/build.ts --lib",
     "push": "npm publish --registry=https://registry.npmjs.org",
-    "build": "bun scripts/build.ts --single",
+    "build": "bun scripts/build.ts --node",
     "build:all": "bun scripts/build.ts --all",
     "build:docker": "docker build -t xxnuo/mtranserver:latest .",
     "build:node": "bun scripts/build.ts --node",
@@ -35,10 +35,10 @@
   },
   "keywords": [
     "translation",
-    "bergamot",
     "wasm",
     "machine-translation",
-    "translation-server"
+    "translation-server",
+    "onnx"
   ],
   "author": {
     "name": "xxnuo",
@@ -50,19 +50,27 @@
     "@types/bun": "^1.3.5",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
+    "@types/proper-lockfile": "^4.1.4",
     "@types/swagger-ui-express": "^4.1.8",
-    "tsoa": "^7.0.0-alpha.0",
-    "tsx": "^4.21.0",
     "electron": "^39.2.7",
     "electron-builder": "^26.4.0",
+    "onnxruntime-web": "^1.30.0",
+    "tsoa": "^7.0.0-alpha.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@sctg/sentencepiece-js": "1.3.3",
     "express": "^5.2.1",
     "express-validator": "^7.3.1",
     "fzstd": "^0.1.1",
     "lru-cache": "^11.2.4",
-    "swagger-ui-express": "^5.0.1"
+    "onnxruntime-node": "1.30.0",
+    "parse5": "8.0.1",
+    "proper-lockfile": "^4.1.2",
+    "protobufjs": "8.8.0",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "2.9.1"
   },
   "engines": {
     "node": ">=18.0.0"

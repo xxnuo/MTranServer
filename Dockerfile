@@ -20,11 +20,17 @@ RUN if [ -z "$VERSION" ]; then VERSION=$(bun -p "require('./package.json').versi
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun run build:node
 
-FROM node:22-alpine
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    mkdir /runtime && cp package.json bun.lock /runtime/ && \
+    cd /runtime && bun install --production --frozen-lockfile --ignore-scripts
+
+FROM node:22-bookworm-slim
 
 WORKDIR /app
 
 COPY --from=builder /app/dist ./
+COPY --from=builder /runtime/node_modules ./node_modules
+COPY --from=builder /runtime/package.json ./package.json
 
 ENV MT_HOST=0.0.0.0 \
     MT_PORT=8989 \

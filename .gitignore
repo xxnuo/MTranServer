@@ -25,3 +25,7 @@ src/assets/swagger.ts
 /release
 /.electron-node-modules
 /.electron-build-temp
+
+/.tmp/
+
+/models-onnx/

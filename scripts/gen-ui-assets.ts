@@ -22,7 +22,7 @@ const imports = files
   .map((file, i) => {
     const relativePath = path.relative(path.dirname(outputFile), file);
     const importPath = (relativePath.startsWith(".") ? relativePath : `./${relativePath}`).replace(/\\/g, "/");
-    return `import _asset${i} from "${importPath}" with { type: "file" };`;
+    return `// @ts-ignore -- Bundler file asset, not a JavaScript module.\nimport _asset${i} from "${importPath}" with { type: "file" };`;
   })
   .join("\n");
 

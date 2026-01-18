@@ -56,7 +56,7 @@ export class MTran {
    * Clean up all loaded engines and release memory
    */
   async close(): Promise<void> {
-    cleanupAllEngines();
+    await cleanupAllEngines();
   }
 
   /**

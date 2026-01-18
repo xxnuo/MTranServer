@@ -7,6 +7,7 @@ export interface Config {
   homeDir: string;
   configDir: string;
   modelDir: string;
+  convertedModelDir: string;
   host: string;
   port: string;
   enableWebUI: boolean;
@@ -122,6 +123,7 @@ export function getConfig(): Config {
     homeDir,
     configDir,
     modelDir,
+    convertedModelDir: getString('--converted-model-dir', 'MT_CONVERTED_MODEL_DIR', fileConfig.convertedModelDir || path.join(path.dirname(modelDir), 'models-onnx')),
     logDir,
 
     logLevel: getString('--log-level', 'MT_LOG_LEVEL', fileConfig.logLevel || 'warn'),
@@ -152,7 +154,8 @@ export function getConfig(): Config {
 
 export function setConfig(config: Partial<Config>) {
   const current = getConfig();
-  globalConfig = { ...current, ...config };
+  const convertedModelDir = config.convertedModelDir ?? (config.modelDir && current.convertedModelDir === path.join(path.dirname(current.modelDir), 'models-onnx') ? path.join(path.dirname(config.modelDir), 'models-onnx') : current.convertedModelDir);
+  globalConfig = { ...current, ...config, convertedModelDir };
 }
 
 export function resetConfig() {

@@ -11,3 +11,10 @@ deprecated
 tests
 coverage
 *.log
+
+.tmp
+.venv
+release
+models
+
+models-onnx

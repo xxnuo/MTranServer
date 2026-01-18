@@ -1,8 +1,6 @@
 import fs from 'fs/promises'
-import path from 'path'
+import { createHash } from 'node:crypto'
 import { decompress } from 'fzstd'
-import { ResourceLoader } from '@/core/loader.js'
-import { FileSystem } from '@/core/interfaces.js'
 
 export interface DownloadOptions {
   url: string
@@ -20,15 +18,8 @@ export class Downloader {
   async download(options: DownloadOptions): Promise<void> {
     const { url, outputPath, hash } = options
 
-    if (hash) {
-      try {
-        await fs.access(outputPath)
-        return
-      } catch {
-      }
-    }
-
     const data = await this.downloadBinary(url)
+    if (hash && createHash('sha256').update(data).digest('hex') !== hash) throw new Error('Download hash mismatch')
     await fs.writeFile(outputPath, data)
   }
 
@@ -64,28 +55,5 @@ export class Downloader {
 
 export function createDownloader(): Downloader {
   return new Downloader()
-}
-
-class NodeFileSystem implements FileSystem {
-  async readFile(filePath: string): Promise<Buffer> {
-    return fs.readFile(filePath)
-  }
-
-  async fileExists(filePath: string): Promise<boolean> {
-    try {
-      await fs.access(filePath)
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  joinPath(...paths: string[]): string {
-    return path.join(...paths)
-  }
-}
-
-export function createResourceLoader(): ResourceLoader {
-  return new ResourceLoader(new NodeFileSystem())
 }
 

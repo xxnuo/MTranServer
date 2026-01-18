@@ -17,7 +17,8 @@ Options:
   --port <port>            Server port (default: 8989)
   --log-level <level>      Log level (debug, info, warn, error) (default: warn)
   --config-dir <path>      Config directory
-  --model-dir <path>       Model directory
+  --model-dir <path>       Original model directory
+  --converted-model-dir <path>  Converted ONNX model directory
   --log-dir <path>         Log directory
   --ui / --no-ui           Enable/Disable web UI (default: true)
   --offline                Enable offline mode (default: false)
@@ -35,7 +36,7 @@ Commands:
   --language / --languages [filter] List available language pairs
 
 Environment Variables:
-  MT_HOST, MT_PORT, MT_LOG_LEVEL, MT_CONFIG_DIR, MT_MODEL_DIR,
+  MT_HOST, MT_PORT, MT_LOG_LEVEL, MT_CONFIG_DIR, MT_MODEL_DIR, MT_CONVERTED_MODEL_DIR,
   MT_LOG_DIR, MT_ENABLE_UI, MT_OFFLINE, MT_WORKER_IDLE_TIMEOUT,
   MT_WORKERS_PER_LANGUAGE, MT_API_TOKEN, MT_LOG_TO_FILE, MT_LOG_CONSOLE,
   MT_CHECK_UPDATE, MT_FULLWIDTH_ZH_PUNCTUATION
@@ -45,12 +46,6 @@ Environment Variables:
 
 if (process.argv.includes('--languages') || process.argv.includes('--language') || process.argv.includes('--download')) {
   try {
-    const config = getConfig();
-    if (config.enableOfflineMode) {
-      logger.error('This command is not available in offline mode.');
-      logger.error('Please disable offline mode to use this feature.');
-      process.exit(1);
-    }
     const models = await import('@/models/index.js');
     await models.initRecords();
 
@@ -63,7 +58,7 @@ if (process.argv.includes('--languages') || process.argv.includes('--language') 
     }
 
     if (process.argv.includes('--download')) {
-      DownloadCommand(models.globalRecords, models.downloadModel);
+      await DownloadCommand(models.globalRecords, models.downloadModel);
     }
 
   } catch (error) {

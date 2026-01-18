@@ -186,8 +186,8 @@ export async function startServer({ handleSignals = true } = {}) {
 
   const stop = async () => {
     logger.info('Shutting down server...');
-    cleanupAllEngines();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    await cleanupAllEngines();
     logger.info('Server shutdown complete');
   };
 
