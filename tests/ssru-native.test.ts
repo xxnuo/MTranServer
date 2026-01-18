@@ -63,7 +63,7 @@ function fixture(tied: boolean) {
   return { weights, config };
 }
 
-let directory = '', binary = '';
+let directory = '', binary = '', probeBinary = '';
 const files: Record<string, string> = {};
 const malformed: { name: string; file: string; pattern: string }[] = [];
 const kvCases: { name: string; file: string; pattern: string; validAtTwo: boolean }[] = [];
@@ -84,6 +84,14 @@ beforeAll(async () => {
     const [out, err, exit] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
     assert.equal(exit, 0, out + err);
   } finally { clearTimeout(timer); }
+  probeBinary = path.join(directory, 'kleidi-test');
+  const probe = Bun.spawn([compiler!, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-ffp-contract=off', '-pthread',
+    path.join(root, 'native/onnx-async/kleidi_test.cc'), path.join(root, 'native/ssru/ssru.cc'),
+    ...(process.platform === 'darwin' ? [] : ['-ldl']), '-o', probeBinary],
+  { cwd: root, stdout: 'pipe', stderr: 'pipe' });
+  const [probeOut, probeErr, probeExit] = await Promise.all([
+    new Response(probe.stdout).text(), new Response(probe.stderr).text(), probe.exited]);
+  assert.equal(probeExit, 0, probeOut + probeErr);
   const save = (name: string, bytes: Uint8Array) => {
     const file = path.join(directory, name + '.onnx'); writeFileSync(file, bytes); files[name] = file; return file;
   };
@@ -150,6 +158,12 @@ beforeAll(async () => {
 }, 90_000);
 
 afterAll(() => { if (directory) rmSync(directory, { recursive: true, force: true }); });
+
+nativeTest('SSRU quantization probe detects real ORT arithmetic and rejects unknown or failed probes', () => {
+  const result = spawnSync(probeBinary, [library], { cwd: root, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(result.status, 0, result.error?.message || result.stdout + result.stderr);
+  assert.match(result.stdout, /PASS: quantization probe.*disabled configs and failure rejection/);
+});
 
 async function runNode(body: string) {
   const script = `

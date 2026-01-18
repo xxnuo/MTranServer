@@ -38,16 +38,16 @@ $(OUTPUT)/ssru-test: $(SOURCES) ssru.h Makefile | $(OUTPUT)
 $(OUTPUT)/ssru-test-sanitize: $(SOURCES) ssru.h Makefile | $(OUTPUT)
 	$(CXX) $(CPPFLAGS) -O1 -g $(TEST_FLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer $(SOURCES) $(LDFLAGS) -o $@
 
-$(OUTPUT)/packed-test: packed.cc packed_test.cc packed.h Makefile | $(OUTPUT)
+$(OUTPUT)/packed-test: packed.cc packed_test.cc packed.h kleidi.h Makefile | $(OUTPUT)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_FLAGS) packed.cc packed_test.cc $(LDFLAGS) -o $@
 
-$(OUTPUT)/packed-test-no-vnni: packed.cc packed_test.cc packed.h Makefile | $(OUTPUT)
+$(OUTPUT)/packed-test-no-vnni: packed.cc packed_test.cc packed.h kleidi.h Makefile | $(OUTPUT)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_FLAGS) -DMTRAN_SSRU_NO_VNNI -DMTRAN_SSRU_NO_DOTPROD packed.cc packed_test.cc $(LDFLAGS) -o $@
 
-$(OUTPUT)/packed-test-sanitize: packed.cc packed_test.cc packed.h Makefile | $(OUTPUT)
+$(OUTPUT)/packed-test-sanitize: packed.cc packed_test.cc packed.h kleidi.h Makefile | $(OUTPUT)
 	$(CXX) $(CPPFLAGS) -O1 -g $(TEST_FLAGS) -fsanitize=address,undefined -fno-omit-frame-pointer packed.cc packed_test.cc $(LDFLAGS) -o $@
 
-$(OUTPUT)/packed-test-no-vnni-sanitize: packed.cc packed_test.cc packed.h Makefile | $(OUTPUT)
+$(OUTPUT)/packed-test-no-vnni-sanitize: packed.cc packed_test.cc packed.h kleidi.h Makefile | $(OUTPUT)
 	$(CXX) $(CPPFLAGS) -O1 -g $(TEST_FLAGS) -DMTRAN_SSRU_NO_VNNI -DMTRAN_SSRU_NO_DOTPROD -fsanitize=address,undefined -fno-omit-frame-pointer packed.cc packed_test.cc $(LDFLAGS) -o $@
 
 $(OUTPUT)/packed-vnni.o: packed_vnni.cc Makefile | $(OUTPUT)
@@ -56,8 +56,8 @@ $(OUTPUT)/packed-vnni.o: packed_vnni.cc Makefile | $(OUTPUT)
 $(OUTPUT)/packed-vnni-sanitize.o: packed_vnni.cc Makefile | $(OUTPUT)
 	$(CXX) $(CPPFLAGS) -O1 -g $(TEST_FLAGS) -Wno-unused-parameter -mavx2 -mavxvnni -isystem third_party/xsimd/include -fsanitize=address,undefined -fno-omit-frame-pointer -c $< -o $@
 
-$(OUTPUT)/packed-vnni-test: packed.cc packed_test.cc packed.h Makefile $(OUTPUT)/packed-vnni.o
+$(OUTPUT)/packed-vnni-test: packed.cc packed_test.cc packed.h kleidi.h Makefile $(OUTPUT)/packed-vnni.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TEST_FLAGS) -DMTRAN_SSRU_HAVE_VNNI packed.cc packed_test.cc $(OUTPUT)/packed-vnni.o $(LDFLAGS) -o $@
 
-$(OUTPUT)/packed-vnni-sanitize: packed.cc packed_test.cc packed.h Makefile $(OUTPUT)/packed-vnni-sanitize.o
+$(OUTPUT)/packed-vnni-sanitize: packed.cc packed_test.cc packed.h kleidi.h Makefile $(OUTPUT)/packed-vnni-sanitize.o
 	$(CXX) $(CPPFLAGS) -O1 -g $(TEST_FLAGS) -DMTRAN_SSRU_HAVE_VNNI -fsanitize=address,undefined -fno-omit-frame-pointer packed.cc packed_test.cc $(OUTPUT)/packed-vnni-sanitize.o $(LDFLAGS) -o $@

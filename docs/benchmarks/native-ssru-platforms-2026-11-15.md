@@ -1,8 +1,22 @@
-# Fast 原生 SSRU 六平台适配（5.4.0）
+# Fast 原生 SSRU 六平台适配（5.4.0／5.4.1）
 
 Fast CPU 默认选择原生 SSRU，不再需要 `MT_NATIVE_SSRU=1`；设置 `MT_NATIVE_SSRU=0` 可使用原 Fast。普通模式与 GPU 选择保持原有行为。插件缺失、初始化或运行失败时保留 ONNX 回退，并报告实际 runtime／fallbackReason。
 
 服务启动时预热本地已有 manifest 的方向，不下载全部语言。整批预热完成后监听端口，再开始正常 idle 计时；部分坏模型记录警告，其他方向继续启动。闲置回收后仍会重新加载。桌面退出／重启可以取消并排空正在进行的启动。
+
+## 5.4.1：实体 M4 数值修复与最终发行包验收
+
+5.4.0 的实体 M4 补测发现29条差异，5.4.1已修复。首个确认的分叉位于第二层 query：输入完全一致，但 KleidiAI 先计算 `255/range` 再取倒数，普通 ORT DQL 直接计算 `range/255`。加上 signed activation 的舍入及分离 bias 顺序，细微误差会沿解码放大。原图的 gate/state 和首步常量折叠 query 仍需保留各自原有计算顺序，不能统一启用 FMA 或关闭 KleidiAI。
+
+修复在 Apple ARM SME/SME2 候选设备上，于模型初始化时用固定小图探测当前 ORT 的实际数值行为；尊重禁用 KleidiAI／prepacking 配置，未知结果或探针失败时明确拒绝原生初始化并由产品回退。不按 CPU 型号硬编码，不改 Fast 基准，不逐 token 探测。
+
+[5.4.1 最终 CI](https://github.com/xxnuo/MTranServer/actions/runs/43717420248)六平台全部通过，包含每平台2049条逐token对照、Node／Electron真实HTTP、Linux重复冷启动，以及禁安装脚本安装实际tarball后的三场景验证，无失败重跑。实体 Apple M4 使用同一 CI 发行插件，1025条英→中和1024条中→英全部一致；最终tarball安装后的默认Fast／关闭SSRU／缺插件回退HTTP亦全部通过，插件哈希与完整回归一致。
+
+实体 M4 三轮8并发核心推理中位吞吐：英→中286.76→342.39 req/s（+19.4%），中→英358.10→449.98 req/s（+25.7%）。沿用下述25条混合输入方法，属于核心推理＋N-API，不能当作HTTP吞吐或所有输入的收益。
+
+本地302项测试、类型检查、Node／携带六插件的library构建和packed ASan／UBSan通过。最终包23,590,705 bytes，SHA-256 `4febaa52a5b597b77fcccc34cabcbc5f520ae97943c5ae2580cc66abb68ada8e`。新原始报告在同名JSON的 `fix_5_4_1` 字段；以下表格与失败记录保留为5.4.0历史证据。
+
+Windows与Intel macOS实体设备访问尚未获得；托管原生架构运行器已通过，但不能宣称这些实体机项目完成。没有发布npm或部署现有服务。
 
 ## 平台与执行证据
 

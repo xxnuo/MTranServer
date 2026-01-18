@@ -1,4 +1,5 @@
 #include "packed.h"
+#include "kleidi.h"
 #include <algorithm>
 #include <bit>
 #include <cassert>
@@ -82,6 +83,36 @@ static void cpuOsGolden() {
     assert(x86Features(avx, avx2 | avx512, vnni512, vnni, state) == 0);
   assert(x86Features(avx, avx512, vnni512, vnni, 0xe6) == 0);
 }
+static void kleidiGolden() {
+  std::vector<float> input(32), output(8), original(32 * 8, .1f);
+  input[0] = -3.3f; input[1] = 4.4f;
+  original.back() = 12.7f;
+  Workspace workspace;
+  auto* activation = workspace.resize(input.size());
+  std::uint8_t zero = 0;
+  const float scale = mtran::ssru::kleidi::quantize(input.data(), input.size(), activation, zero);
+  assert(std::bit_cast<std::uint32_t>(scale) == 0x3cf75dc5u);
+  assert(zero == 109 && activation[0] == 0 && activation[1] == 255);
+  assert(std::all_of(activation + 2, activation + 32, [&](auto x) { return x == zero; }));
+  const Weight weight(original.data(), 32, 8);
+  weight.multiply(activation, 1, scale, zero, output.data());
+  for (float x : output) assert(std::bit_cast<std::uint32_t>(x + .125f) == 0x3e72682cu);
+  const float ordinary = (4.4f - -3.3f) / 255.f;
+  assert(std::bit_cast<std::uint32_t>((37.f * (ordinary * .1f)) + .125f) == 0x3e72682bu);
+  const float ties[] = {-127.5f, 127.5f, -.5f, .5f, -1.5f, 1.5f};
+  mtran::ssru::kleidi::quantize(ties, 6, activation, zero);
+  const std::uint8_t expected[] = {0, 255, 127, 129, 126, 130};
+  assert(zero == 128 && std::equal(activation, activation + 6, expected));
+  std::fill(input.begin(), input.end(), 0.f);
+  assert(mtran::ssru::kleidi::quantize(input.data(), 32, activation, zero) == 1.f);
+  assert(std::all_of(activation, activation + 32, [&](auto x) { return x == zero; }));
+  rejects([&] { mtran::ssru::kleidi::quantize(nullptr, 32, activation, zero); });
+  rejects([&] { mtran::ssru::kleidi::quantize(input.data(), 0, activation, zero); });
+  input[0] = std::numeric_limits<float>::infinity();
+  rejects([&] { mtran::ssru::kleidi::quantize(input.data(), 32, activation, zero); });
+  input[0] = std::numeric_limits<float>::denorm_min();
+  rejects([&] { mtran::ssru::kleidi::quantize(input.data(), 32, activation, zero); });
+}
 int main() {
   cpuOsGolden();
   if (!mtran::ssru::packed::backend()) {
@@ -92,6 +123,7 @@ int main() {
   }
   std::cout << "Backend: " << mtran::ssru::packed::backend() << "\n";
   std::fesetround(FE_TONEAREST);
+  kleidiGolden();
   for (std::size_t k : {32, 64, 512, 2048}) for (std::size_t n : {8, 24, 32, 64}) {
     std::vector<float> original(k * n, 127.f);
     const Weight positive(original.data(), k, n);
