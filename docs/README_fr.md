@@ -156,20 +156,20 @@ Les variables d'environnement et les autres options sont dans [API_fr.md](API_fr
 
 ## Performances
 
-Comparaison CPU issue du même test, à titre indicatif. Moins de ms et plus de req/s sont préférables.
+Ryzen 9 9950X, quota de 4 CPU, 3 GiB de mémoire, cache désactivé ; médianes de trois séries. Moins de ms et plus de req/s sont préférables.
 
-| Sens | Entrée | Concurrence | Défaut | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- | --- | --- |
-| Anglais → chinois | Courte | 1 | 8.8 ms | **7.2 ms** | 10.7 ms |
-| Anglais → chinois | Paragraphe | 1 | 32.5 ms | **28.1 ms** | 46.7 ms |
-| Chinois → anglais | Courte | 1 | 11.8 ms | **6.5 ms** | 9.9 ms |
-| Chinois → anglais | Paragraphe | 1 | 53.0 ms | **29.0 ms** | 48.6 ms |
-| Anglais → chinois | Texte long (32 phrases) | 1 | 164.2 ms | **120.8 ms** | 482.2 ms |
-| Chinois → anglais | Texte long (32 phrases) | 1 | 459.1 ms | **159.1 ms** | 580.7 ms |
-| Anglais → chinois | Courte | 8 | 273 req/s | 401 req/s | **491 req/s** |
-| Chinois → anglais | Courte | 8 | 155 req/s | 453 req/s | **497 req/s** |
+| Sens | Entrée | Concurrence | Défaut | Fast |
+| --- | --- | --- | --- | --- |
+| Anglais → chinois | Courte | 1 | 4.1 ms | **3.8 ms** |
+| Anglais → chinois | Paragraphe | 1 | 15.8 ms | **14.0 ms** |
+| Chinois → anglais | Courte | 1 | 5.5 ms | **3.5 ms** |
+| Chinois → anglais | Paragraphe | 1 | 23.2 ms | **14.9 ms** |
+| Anglais → chinois | Texte long (32 phrases) | 1 | 91.1 ms | **53.0 ms** |
+| Chinois → anglais | Texte long (32 phrases) | 1 | 151.2 ms | **72.6 ms** |
+| Anglais → chinois | Courte | 8 | 581 req/s | **910 req/s** |
+| Chinois → anglais | Courte | 8 | 440 req/s | **1067 req/s** |
 
-Avec les deux sens de traduction chargés : Défaut environ 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
+Avec les deux sens de traduction chargés : Défaut environ 648 MiB, Fast 677 MiB.
 
 Les textes longs sont traduits phrase par phrase en parallèle ; les [tests HTTP appariés](benchmarks/plain-inference-concurrency.json) ont montré une latence par requête de texte long réduite de 36% à 60% par rapport à la version avant optimisation. `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
 

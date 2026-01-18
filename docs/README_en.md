@@ -156,20 +156,20 @@ Environment variables and the remaining options are in [API_en.md](API_en.md), o
 
 ## Performance
 
-Same-run CPU comparison, for reference. Lower ms and higher req/s are better.
+Ryzen 9 9950X, 4-CPU quota, 3 GiB memory, cache disabled; medians of three rounds. Lower ms and higher req/s are better.
 
-| Direction | Input | Concurrency | Default | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- | --- | --- |
-| English → Chinese | Short | 1 | 8.8 ms | **7.2 ms** | 10.7 ms |
-| English → Chinese | Paragraph | 1 | 32.5 ms | **28.1 ms** | 46.7 ms |
-| Chinese → English | Short | 1 | 11.8 ms | **6.5 ms** | 9.9 ms |
-| Chinese → English | Paragraph | 1 | 53.0 ms | **29.0 ms** | 48.6 ms |
-| English → Chinese | Long text (32 sentences) | 1 | 164.2 ms | **120.8 ms** | 482.2 ms |
-| Chinese → English | Long text (32 sentences) | 1 | 459.1 ms | **159.1 ms** | 580.7 ms |
-| English → Chinese | Short | 8 | 273 req/s | 401 req/s | **491 req/s** |
-| Chinese → English | Short | 8 | 155 req/s | 453 req/s | **497 req/s** |
+| Direction | Input | Concurrency | Default | Fast |
+| --- | --- | --- | --- | --- |
+| English → Chinese | Short | 1 | 4.1 ms | **3.8 ms** |
+| English → Chinese | Paragraph | 1 | 15.8 ms | **14.0 ms** |
+| Chinese → English | Short | 1 | 5.5 ms | **3.5 ms** |
+| Chinese → English | Paragraph | 1 | 23.2 ms | **14.9 ms** |
+| English → Chinese | Long text (32 sentences) | 1 | 91.1 ms | **53.0 ms** |
+| Chinese → English | Long text (32 sentences) | 1 | 151.2 ms | **72.6 ms** |
+| English → Chinese | Short | 8 | 581 req/s | **910 req/s** |
+| Chinese → English | Short | 8 | 440 req/s | **1067 req/s** |
 
-With both translation directions loaded: Default about 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
+With both translation directions loaded: Default about 648 MiB, Fast 677 MiB.
 
 Long texts use sentence concurrency; [paired HTTP tests](benchmarks/plain-inference-concurrency.json) showed 36%–60% lower latency per long-text request than before the optimization. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
