@@ -1,0 +1,1258 @@
+{
+  "decision": "Experimental native projection batching; not production-ready",
+  "nodeLong": {
+    "started": "2026-11-13T10:49:27.092Z",
+    "scope": "single-core split decoder proof of concept, no HTTP or concurrent worker pool",
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "validation": [
+          {
+            "variant": "baseline",
+            "matched": 60,
+            "tokens": 1779
+          },
+          {
+            "variant": "split1",
+            "matched": 60,
+            "tokens": 1779
+          },
+          {
+            "variant": "split2",
+            "matched": 60,
+            "tokens": 1779
+          }
+        ],
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "baseline",
+            "ms": 2432.0730110000004,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 0,
+            "variant": "split2",
+            "ms": 2089.0868900000005,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 1,
+            "variant": "split2",
+            "ms": 2029.3394270000008,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 1,
+            "variant": "baseline",
+            "ms": 2049.663847,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 2,
+            "variant": "baseline",
+            "ms": 1937.9386679999989,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 2,
+            "variant": "split2",
+            "ms": 1943.1372039999987,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 3,
+            "variant": "split2",
+            "ms": 2435.485413999999,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 3,
+            "variant": "baseline",
+            "ms": 1815.5153129999999,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 4,
+            "variant": "baseline",
+            "ms": 2145.2725470000005,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 4,
+            "variant": "split2",
+            "ms": 2041.2427769999995,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 5,
+            "variant": "split2",
+            "ms": 1901.3026850000024,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 5,
+            "variant": "baseline",
+            "ms": 1763.9162890000043,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 6,
+            "variant": "baseline",
+            "ms": 1788.1981799999994,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 6,
+            "variant": "split2",
+            "ms": 1837.0641469999973,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 7,
+            "variant": "split2",
+            "ms": 1852.3663429999942,
+            "tokens": 1779,
+            "requests": 60
+          },
+          {
+            "round": 7,
+            "variant": "baseline",
+            "ms": 1953.5535630000013,
+            "tokens": 1779,
+            "requests": 60
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "validation": [
+          {
+            "variant": "baseline",
+            "matched": 57,
+            "tokens": 1659
+          },
+          {
+            "variant": "split1",
+            "matched": 57,
+            "tokens": 1659
+          },
+          {
+            "variant": "split2",
+            "matched": 57,
+            "tokens": 1659
+          }
+        ],
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "baseline",
+            "ms": 3204.7128230000017,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 0,
+            "variant": "split2",
+            "ms": 2996.5661420000033,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 1,
+            "variant": "split2",
+            "ms": 3111.0542120000027,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 1,
+            "variant": "baseline",
+            "ms": 3530.351975999998,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 2,
+            "variant": "baseline",
+            "ms": 3308.0402259999973,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 2,
+            "variant": "split2",
+            "ms": 2830.5395169999974,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 3,
+            "variant": "split2",
+            "ms": 2659.0663550000027,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 3,
+            "variant": "baseline",
+            "ms": 3182.8095840000024,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 4,
+            "variant": "baseline",
+            "ms": 3094.0457749999914,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 4,
+            "variant": "split2",
+            "ms": 2742.4766630000086,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 5,
+            "variant": "split2",
+            "ms": 2742.3556459999963,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 5,
+            "variant": "baseline",
+            "ms": 3139.16195400001,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 6,
+            "variant": "baseline",
+            "ms": 4115.954383000004,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 6,
+            "variant": "split2",
+            "ms": 4183.506185999999,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 7,
+            "variant": "split2",
+            "ms": 3763.5538690000103,
+            "tokens": 1659,
+            "requests": 57
+          },
+          {
+            "round": 7,
+            "variant": "baseline",
+            "ms": 4584.497599000009,
+            "tokens": 1659,
+            "requests": 57
+          }
+        ]
+      }
+    ],
+    "finished": "2026-11-13T10:51:15.358Z"
+  },
+  "extendedValidation": {
+    "started": "2026-11-13T10:44:08.526Z",
+    "scope": "single-core split decoder proof of concept, no HTTP or concurrent worker pool",
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "validation": [
+          {
+            "variant": "baseline",
+            "matched": 64,
+            "tokens": 1831
+          },
+          {
+            "variant": "split1",
+            "matched": 64,
+            "tokens": 1831
+          },
+          {
+            "variant": "split2",
+            "matched": 64,
+            "tokens": 1831
+          }
+        ],
+        "blocks": []
+      },
+      {
+        "pair": "zh-Hans_en",
+        "validation": [
+          {
+            "variant": "baseline",
+            "matched": 61,
+            "tokens": 1720
+          },
+          {
+            "variant": "split1",
+            "matched": 61,
+            "tokens": 1720
+          },
+          {
+            "variant": "split2",
+            "matched": 61,
+            "tokens": 1720
+          }
+        ],
+        "blocks": []
+      }
+    ],
+    "finished": "2026-11-13T10:44:47.141Z"
+  },
+  "native": [
+    {
+      "pair": "en_zh-Hans",
+      "validation": [
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 604.389,
+          "tokens": 593,
+          "requests": 20,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 761.947,
+          "tokens": 593,
+          "requests": 20,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 557.49,
+          "tokens": 593,
+          "requests": 20,
+          "matched": true
+        }
+      ],
+      "blocks": [
+        {
+          "round": 0,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1725.45,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 0,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1847.76,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 0,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1547.36,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 1,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1719.63,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 1,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1894.65,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 1,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1998.59,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 2,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1722.41,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 2,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1730.91,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 2,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1545.59,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 3,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1514.24,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 3,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1690.28,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 3,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1745.96,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 4,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1662.54,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 4,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 2037.72,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 4,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1527.16,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 5,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1555.66,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 5,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1774.06,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 5,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1683.86,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 6,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1748.02,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 6,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1757.99,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 6,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1690.08,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 7,
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1599.66,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 7,
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 1788.46,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "round": 7,
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1697.43,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        }
+      ],
+      "stats": [
+        {
+          "baselineBatch": 0,
+          "candidateBatch": 1,
+          "medianSpeedup": 0.9717424616472099,
+          "minimumSpeedup": 0.8158824568635533,
+          "maximumSpeedup": 1.0548597366268175,
+          "wins": 2,
+          "rounds": 8
+        },
+        {
+          "baselineBatch": 0,
+          "candidateBatch": 2,
+          "medianSpeedup": 1.101525561923172,
+          "minimumSpeedup": 1.0342824008330966,
+          "maximumSpeedup": 1.1622209428772468,
+          "wins": 8,
+          "rounds": 8
+        },
+        {
+          "baselineBatch": 1,
+          "candidateBatch": 2,
+          "medianSpeedup": 1.1189637562052615,
+          "minimumSpeedup": 1.0401815298684087,
+          "maximumSpeedup": 1.334319914088897,
+          "wins": 8,
+          "rounds": 8
+        }
+      ],
+      "earlierTwoVariantRun": [
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 713.899,
+          "tokens": 593,
+          "requests": 20,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 1,
+          "ms": 570.622,
+          "tokens": 593,
+          "requests": 20,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 574.813,
+          "tokens": 593,
+          "requests": 20,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 2268.37,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1803.65,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1674.71,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1948.69,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1770.39,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1692.86,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1653.59,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1854.45,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1866.42,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1594.13,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1580.46,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1789.83,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1799.82,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1690.87,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 2,
+          "ms": 1686.29,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        },
+        {
+          "pair": "en_zh-Hans",
+          "batch": 0,
+          "ms": 1787.4,
+          "tokens": 1779,
+          "requests": 60,
+          "matched": true
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "validation": [
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 924.241,
+          "tokens": 553,
+          "requests": 19,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 1051.37,
+          "tokens": 553,
+          "requests": 19,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 949.694,
+          "tokens": 553,
+          "requests": 19,
+          "matched": true
+        }
+      ],
+      "blocks": [
+        {
+          "round": 0,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2887.42,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 0,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 2838.96,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 0,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2477.82,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 1,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2566.01,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 1,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 3004.48,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 1,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3139.51,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 2,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2954.26,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 2,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 3785.7,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 2,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 3363.14,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 3,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 3007.54,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 3,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 3695.1,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 3,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3844.26,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 4,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3107.72,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 4,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 3498.42,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 4,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2571.35,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 5,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2797.06,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 5,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 3004.87,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 5,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3056.16,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 6,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3049.37,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 6,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 2887.63,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 6,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2464.73,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 7,
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2639.74,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 7,
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 3028.15,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "round": 7,
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3242.65,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        }
+      ],
+      "stats": [
+        {
+          "baselineBatch": 0,
+          "candidateBatch": 1,
+          "medianSpeedup": 1.0287183018047958,
+          "minimumSpeedup": 0.7803735108434372,
+          "maximumSpeedup": 1.0708353285008998,
+          "wins": 6,
+          "rounds": 8
+        },
+        {
+          "baselineBatch": 0,
+          "candidateBatch": 2,
+          "medianSpeedup": 1.2160467231741685,
+          "minimumSpeedup": 0.8784231402796198,
+          "maximumSpeedup": 1.2782074386375577,
+          "wins": 7,
+          "rounds": 8
+        },
+        {
+          "baselineBatch": 1,
+          "candidateBatch": 2,
+          "medianSpeedup": 1.1590078381081519,
+          "minimumSpeedup": 1.0742958678040513,
+          "maximumSpeedup": 1.3605382386684037,
+          "wins": 8,
+          "rounds": 8
+        }
+      ],
+      "earlierTwoVariantRun": [
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 966.007,
+          "tokens": 553,
+          "requests": 19,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 1,
+          "ms": 956.178,
+          "tokens": 553,
+          "requests": 19,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 821.025,
+          "tokens": 553,
+          "requests": 19,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2985.49,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2752.97,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2493.27,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2968.54,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 3138.88,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2567.99,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2626.48,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2992.97,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2941.6,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2415.86,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2360.16,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2848.38,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2815.44,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2407.98,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 2,
+          "ms": 2439.16,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        },
+        {
+          "pair": "zh-Hans_en",
+          "batch": 0,
+          "ms": 2563.77,
+          "tokens": 1659,
+          "requests": 57,
+          "matched": true
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Same CPU and ORT optimized graphs only",
+    "Fixed groups of two, no continuous refill or early response delivery",
+    "No HTTP load, cancellation, memory or tail-latency acceptance",
+    "Floating-point equivalence not proven beyond samples"
+  ],
+  "artifactHashes": {
+    "build.mjs": "40d2101af914d3c11e7018d27847004db3544534c3ee4ca5bcbb98943c849102",
+    "run.mjs": "9deaaad3b7ceb8dc545b382fe1d199cb9fd4a8abf4f228730cd61c0c76f0a3ef",
+    "native.cc": "2a5d3aee839df2e5bfe10be66620ebf9bfb1f24eadaaf9c01cf5aa7464f90757",
+    "native": "30722900c8f26dce63aabd4cde50e841908b47dec7376f6643721c96e065613d",
+    "extended-corpus.json": "afbbf5c2babe87ffe699964952606da1c6c9a324e8c9f7705a0097e24d661127",
+    "long-corpus.json": "305c06a319167eca0164f971cb31e47d2bc5ff5fd8a56db8724380388d9be33a"
+  },
+  "sanitizer": {
+    "leakSanitizer": "14 bytes in one allocation per process; same ORT allocation reproduced with environment creation/release only, without models or split decoder",
+    "instrumented": "Experimental C++ runner only; shipped ORT library is not instrumented",
+    "addressAndUndefinedBehaviorErrors": false,
+    "records": [
+      {
+        "pair": "en_zh-Hans",
+        "batch": 0,
+        "ms": 2169.35,
+        "tokens": 1831,
+        "requests": 64,
+        "matched": true
+      },
+      {
+        "pair": "en_zh-Hans",
+        "batch": 1,
+        "ms": 2403.75,
+        "tokens": 1831,
+        "requests": 64,
+        "matched": true
+      },
+      {
+        "pair": "en_zh-Hans",
+        "batch": 2,
+        "ms": 2195.04,
+        "tokens": 1831,
+        "requests": 64,
+        "matched": true
+      },
+      {
+        "pair": "zh-Hans_en",
+        "batch": 0,
+        "ms": 3476.62,
+        "tokens": 1720,
+        "requests": 61,
+        "matched": true
+      },
+      {
+        "pair": "zh-Hans_en",
+        "batch": 1,
+        "ms": 3749.17,
+        "tokens": 1720,
+        "requests": 61,
+        "matched": true
+      },
+      {
+        "pair": "zh-Hans_en",
+        "batch": 2,
+        "ms": 3408.21,
+        "tokens": 1720,
+        "requests": 61,
+        "matched": true
+      }
+    ]
+  }
+}
