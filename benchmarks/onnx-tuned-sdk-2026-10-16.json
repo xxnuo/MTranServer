@@ -1,0 +1,809 @@
+{
+  "testedAt": "2026-10-16T12:01:35.627Z",
+  "checks": [
+    "published package imports and translates offline",
+    "HTML markup and protected content",
+    "placeholders",
+    "long text splitting",
+    "64 concurrent uncached SDK requests preserve outputs",
+    "native backend tuning reused after destroy and reload",
+    "native CPU runs with measured concurrency 1"
+  ],
+  "runs": [
+    {
+      "initMs": 39838.246193000006,
+      "backend": {
+        "provider": "cpu",
+        "cpuThreads": 7,
+        "tuning": {
+          "executionMode": "sequential",
+          "interOpNumThreads": 1,
+          "graphOptimizationLevel": "all",
+          "enableCpuMemArena": true,
+          "enableMemPattern": true,
+          "spinning": true,
+          "dynamicBlockBase": 0
+        },
+        "maxConcurrentRuns": 1,
+        "measurements": [
+          {
+            "provider": "cpu",
+            "cpuThreads": 1,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "shortProbeMs": 21.22683799999504,
+            "samples": 5,
+            "medianMs": 57.919342999994115
+          },
+          {
+            "provider": "webgpu",
+            "cpuThreads": 1,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": false,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "shortProbeMs": 12850.899126000004,
+            "skippedReason": "More than four times slower than CPU on the short input"
+          },
+          {
+            "provider": "cuda",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "tensorrt",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 0,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 31.291054000001168
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 2,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 38.1046090000018
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 3,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 36.651318999996874
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 29.494808000003104
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 5,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.05168199999025
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 6,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.86397200000647
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 25.940813000008347
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 8,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.891391999990446
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 9,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 28.59278199999244
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 10,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 29.89863900000637
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 11,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.36848600000667
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 12,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 31.536387000000104
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 13,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 27.721181000000797
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 14,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 31.735958000004757
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 15,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 45.37313199999335
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 43.748597999991034
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 4
+            },
+            "samples": 5,
+            "medianMs": 28.849512000000686
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "parallel",
+              "interOpNumThreads": 2,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 27.572507000004407
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 4,
+            "tuning": {
+              "executionMode": "parallel",
+              "interOpNumThreads": 4,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 38.00430899999628
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 51.5133829999977,
+            "concurrency": 2,
+            "requestsPerSecond": 38.82486226928814
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 82.53618899999128,
+            "concurrency": 3,
+            "requestsPerSecond": 36.34769228320339
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 107.1832449999929,
+            "concurrency": 4,
+            "requestsPerSecond": 37.31926571172822
+          }
+        ]
+      },
+      "translation": "“We now have 4-month-old mice that had diabetes and now have none,” he added."
+    },
+    {
+      "initMs": 279.44060800000443,
+      "backend": {
+        "provider": "cpu",
+        "cpuThreads": 7,
+        "tuning": {
+          "executionMode": "sequential",
+          "interOpNumThreads": 1,
+          "graphOptimizationLevel": "all",
+          "enableCpuMemArena": true,
+          "enableMemPattern": true,
+          "spinning": true,
+          "dynamicBlockBase": 0
+        },
+        "maxConcurrentRuns": 1,
+        "measurements": [
+          {
+            "provider": "cpu",
+            "cpuThreads": 1,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "shortProbeMs": 21.22683799999504,
+            "samples": 5,
+            "medianMs": 57.919342999994115
+          },
+          {
+            "provider": "webgpu",
+            "cpuThreads": 1,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": false,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "shortProbeMs": 12850.899126000004,
+            "skippedReason": "More than four times slower than CPU on the short input"
+          },
+          {
+            "provider": "cuda",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "tensorrt",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 0,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 31.291054000001168
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 2,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 38.1046090000018
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 3,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 36.651318999996874
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 29.494808000003104
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 5,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.05168199999025
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 6,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.86397200000647
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 25.940813000008347
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 8,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.891391999990446
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 9,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 28.59278199999244
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 10,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 29.89863900000637
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 11,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 30.36848600000667
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 12,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 31.536387000000104
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 13,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 27.721181000000797
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 14,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 31.735958000004757
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 15,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 45.37313199999335
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 43.748597999991034
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 4
+            },
+            "samples": 5,
+            "medianMs": 28.849512000000686
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "parallel",
+              "interOpNumThreads": 2,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 27.572507000004407
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 4,
+            "tuning": {
+              "executionMode": "parallel",
+              "interOpNumThreads": 4,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 38.00430899999628
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 51.5133829999977,
+            "concurrency": 2,
+            "requestsPerSecond": 38.82486226928814
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 82.53618899999128,
+            "concurrency": 3,
+            "requestsPerSecond": 36.34769228320339
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 7,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": true,
+              "dynamicBlockBase": 0
+            },
+            "samples": 5,
+            "medianMs": 107.1832449999929,
+            "concurrency": 4,
+            "requestsPerSecond": 37.31926571172822
+          }
+        ],
+        "selectionCached": true
+      },
+      "translation": "“We now have 4-month-old mice that had diabetes and now have none,” he added."
+    }
+  ]
+}

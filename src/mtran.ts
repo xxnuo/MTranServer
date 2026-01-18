@@ -1,4 +1,4 @@
-import { setConfig, getConfig, Config } from '@/config/index.js';
+import { setConfig, getConfig, Config } from './config/index.js';
 import { initRecords, downloadModel } from '@/models/index.js';
 import { translateWithPivot, cleanupAllEngines } from '@/services/index.js';
 import { detectLanguage } from '@/services/detector.js';

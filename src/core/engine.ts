@@ -2,6 +2,8 @@ import * as ort from 'onnxruntime-node';
 import { parseFragment } from 'parse5';
 import { Tokenizer } from './tokenizer.js';
 import type { ConvertedModel } from '../converter/cache.js';
+import { createSession, selectBackend, type BackendInfo, type SessionTuning } from './backend.js';
+import * as logger from '../logger/index.js';
 
 export interface TranslationOptions { sourceLang?: string; targetLang?: string; cacheSize?: number }
 export interface TranslateOptions { qualityScores?: boolean; alignment?: boolean; html?: boolean }
@@ -10,32 +12,61 @@ export class TranslationEngine {
   private session?: ort.InferenceSession;
   private src?: Tokenizer;
   private dst?: Tokenizer;
-  private queue: Promise<unknown> = Promise.resolve();
+  private tasks = new Set<Promise<string>>();
+  private running = 0;
+  private waiters: Array<() => void> = [];
   private pending = 0;
   private closing = false;
   private closed?: Promise<void>;
   private tokenLimit = 512;
+  private modelPath = '';
+  private fallbackCpuThreads = 1;
+  private fallbackCpuTuning?: SessionTuning;
+  backend?: BackendInfo;
   identity = '';
   constructor(private options: TranslationOptions = {}) {}
   get busy() { return this.pending > 0; }
-  async init(model: ConvertedModel, config: TranslationConfig = {}) {
+  async init(model: ConvertedModel, config: TranslationConfig = {}, sampleText = 'Hello, this is a translation test.') {
     if (this.session) return;
     this.tokenLimit = Math.max(8, config['max-length-break'] ?? 512);
     try {
       this.src = await Tokenizer.load(model.sourceVocab);
       this.dst = await Tokenizer.load(model.targetVocab);
-      this.session = await ort.InferenceSession.create(model.model, {
-        executionProviders: ['cpu'], graphOptimizationLevel: 'all',
-        intraOpNumThreads: config['cpu-threads'] ?? 1, interOpNumThreads: 1,
+      const sampleIds = this.src.encode(Array.from(sampleText).slice(0, 512).join(''));
+      const inputs = [...new Set([Math.min(16, this.tokenLimit - 1), Math.min(32, this.tokenLimit - 1)])].map(length => {
+        const ids = sampleIds.length ? Array.from({ length }, (_, i) => sampleIds[i % sampleIds.length]) : [];
+        ids.push(this.src!.eos);
+        return new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
       });
+      const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst.eos)), [1]);
+      try {
+        const selected = await selectBackend(model.model, async (session, short) => {
+          for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos);
+        }, config['cpu-threads'], model.identity);
+        this.session = selected.session;
+        this.backend = selected.info;
+        this.fallbackCpuThreads = selected.fallbackCpuThreads;
+        this.fallbackCpuTuning = selected.fallbackCpuTuning;
+        this.modelPath = model.model;
+      } finally { for (const input of inputs) input.dispose(); eos.dispose(); }
       this.identity = model.identity;
     } catch (error) { this.src?.close(); this.dst?.close(); throw error; }
   }
   translateAsync(text: string, options: TranslateOptions = {}): Promise<string> {
     if (this.closing || !this.session) return Promise.reject(new Error('Engine not initialized or closing'));
     this.pending++;
-    const task = this.queue.then(() => options.html ? this.translateHTML(text) : this.translateText(text));
-    this.queue = task.catch(() => {}).finally(() => { this.pending--; });
+    const task = (async () => {
+      if (this.running >= (this.backend?.maxConcurrentRuns ?? 1)) await new Promise<void>(resolve => this.waiters.push(resolve));
+      else this.running++;
+      try { return await (options.html ? this.translateHTML(text) : this.translateText(text)); }
+      finally {
+        this.pending--;
+        const next = this.waiters.shift();
+        if (next) next(); else this.running--;
+      }
+    })();
+    this.tasks.add(task);
+    task.then(() => this.tasks.delete(task), () => this.tasks.delete(task));
     return task;
   }
   private async translateHTML(html: string) {
@@ -85,18 +116,36 @@ export class TranslationEngine {
     ids.push(this.src!.eos);
     const input = new ort.Tensor('int64', BigInt64Array.from(ids.map(BigInt)), [ids.length]);
     const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst!.eos)), [1]);
-    let output: ort.InferenceSession.ReturnType | undefined;
     try {
-      output = await this.session!.run({ X: input, eos_id: eos });
-      const tokens = Array.from(output.Y.data as BigInt64Array, Number), end = tokens.indexOf(this.dst!.eos);
+      let tokens: number[];
+      try { tokens = await this.infer(this.session!, input, eos); }
+      catch (error) {
+        if (!this.backend || this.backend.provider === 'cpu') throw error;
+        const session = await createSession(this.modelPath, 'cpu', this.fallbackCpuThreads, this.fallbackCpuTuning);
+        const previous = this.session!;
+        this.session = session;
+        this.backend = { ...this.backend, provider: 'cpu', cpuThreads: this.fallbackCpuThreads,
+          tuning: this.fallbackCpuTuning ?? this.backend.tuning, maxConcurrentRuns: 1, fallbackReason: String(error) };
+        await previous.release().catch(releaseError => logger.debug(`ONNX accelerator release failed: ${releaseError}`));
+        logger.warn(`ONNX accelerator failed, falling back to CPU: ${error}`);
+        tokens = await this.infer(session, input, eos);
+      }
+      return before + this.dst!.decode(tokens) + after;
+    } finally { input.dispose(); eos.dispose(); }
+  }
+  private async infer(session: ort.InferenceSession, input: ort.Tensor, eos: ort.Tensor) {
+    const output = await session.run({ X: input, eos_id: eos });
+    try {
+      if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
+      const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
       if (end < 0) throw new Error('Translation exceeded generation limit');
-      return before + this.dst!.decode(tokens.slice(0, end)) + after;
-    } finally { input.dispose(); eos.dispose(); if (output) for (const tensor of Object.values(output)) tensor.dispose(); }
+      return tokens.slice(0, end);
+    } finally { for (const tensor of Object.values(output)) tensor.dispose(); }
   }
   destroy(): Promise<void> {
     if (this.closed) return this.closed;
     this.closing = true;
-    this.closed = this.queue.then(async () => {
+    this.closed = Promise.allSettled([...this.tasks]).then(async () => {
       try { await this.session?.release(); } finally { this.session = undefined; this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; }
     });
     return this.closed;

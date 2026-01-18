@@ -1,8 +1,12 @@
 {
   "name": "mtranserver",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "type": "module",
   "description": "Translation server",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xxnuo/MTranServer.git"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

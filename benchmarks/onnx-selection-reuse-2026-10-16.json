@@ -1,0 +1,77 @@
+{
+  "testedAt": "2026-10-16T08:38:47.329Z",
+  "modelIdentity": "0e95a6e56bfe0ee44d560f2e7cf283a82b312f63a69392c127c1d42789ec839b",
+  "runs": [
+    {
+      "initMs": 15986.022823,
+      "backend": {
+        "provider": "cpu",
+        "cpuThreads": 6,
+        "measurements": [
+          {
+            "provider": "cuda",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "tensorrt",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 1,
+            "medianMs": 110.72561199999996
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 6,
+            "medianMs": 29.986466999999948
+          },
+          {
+            "provider": "webgpu",
+            "cpuThreads": 1,
+            "medianMs": 3255.078245999999
+          }
+        ]
+      },
+      "translation": "“We now have 4-month-old mice that had diabetes and now have none,” he added."
+    },
+    {
+      "initMs": 293.0570150000003,
+      "backend": {
+        "provider": "cpu",
+        "cpuThreads": 6,
+        "measurements": [
+          {
+            "provider": "cuda",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "tensorrt",
+            "cpuThreads": 1,
+            "error": "Optional provider library is not installed"
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 1,
+            "medianMs": 110.72561199999996
+          },
+          {
+            "provider": "cpu",
+            "cpuThreads": 6,
+            "medianMs": 29.986466999999948
+          },
+          {
+            "provider": "webgpu",
+            "cpuThreads": 1,
+            "medianMs": 3255.078245999999
+          }
+        ],
+        "selectionCached": true
+      },
+      "translation": "“We now have 4-month-old mice that had diabetes and now have none,” he added."
+    }
+  ]
+}

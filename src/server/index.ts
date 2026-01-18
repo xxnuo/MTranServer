@@ -4,7 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import { getConfig, setConfig, resetConfig, saveConfigFile, clearConfigFile } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
 import { initRecords } from '@/models/index.js';
-import { cleanupAllEngines } from '@/services/index.js';
+import { cleanupAllEngines, getEngineRuntimes } from '@/services/index.js';
 import { cleanupLegacyBin } from '@/assets/index.js';
 import { requestId, errorHandler, cors, requestLogger } from '@/middleware/index.js';
 import { RegisterRoutes } from '@/generated/routes.js';
@@ -64,7 +64,8 @@ export async function startServer({ handleSignals = true } = {}) {
         }
       },
       status: 'running',
-      version: VERSION
+      version: VERSION,
+      engines: getEngineRuntimes()
     };
   };
   const toNumber = (value: unknown, fallback: number) => {
@@ -111,7 +112,7 @@ export async function startServer({ handleSignals = true } = {}) {
     const control = getDesktopControl();
     if (control?.getConfig) {
       const payload = await control.getConfig();
-      res.json(payload);
+      res.json({ ...payload, engines: getEngineRuntimes() });
       return;
     }
     res.json(getSettingsPayload());

@@ -1,0 +1,4121 @@
+{
+  "startedAt": "2026-10-16T08:10:25.552Z",
+  "finishedAt": "2026-10-16T08:12:00.929Z",
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i5-14400",
+    "logicalCpus": 16,
+    "totalMemoryBytes": 33294221312,
+    "platform": "linux",
+    "architecture": "x64",
+    "kernel": "7.2.9-arch1-1",
+    "osRelease": "NAME=\"EndeavourOS\"\nPRETTY_NAME=\"EndeavourOS\"\nID=\"endeavouros\"\nID_LIKE=\"arch\"\nBUILD_ID=\"2025.03.19\"\nANSI_COLOR=\"38;2;23;147;209\"\nHOME_URL=\"https://endeavouros.com\"\nDOCUMENTATION_URL=\"https://discovery.endeavouros.com\"\nSUPPORT_URL=\"https://forum.endeavouros.com\"\nBUG_REPORT_URL=\"https://forum.endeavouros.com/c/general-system/endeavouros-installation\"\nPRIVACY_POLICY_URL=\"https://endeavouros.com/privacy-policy-2\"\nLOGO=\"endeavouros\"\n",
+    "nodeVersion": "v24.2.0",
+    "onnxruntimeVersion": "1.30.0",
+    "loadAverageAtStart": [
+      21.25,
+      28,
+      30.11
+    ],
+    "loadAverageAtEnd": [
+      23.63,
+      27.07,
+      29.56
+    ],
+    "gitCommit": "79356acace08720efe59cf40f3a764f70eceb418",
+    "workingTreeChanges": [
+      "README.md",
+      "docs/README_de.md",
+      "docs/README_en.md",
+      "docs/README_fr.md",
+      "docs/README_ja.md",
+      "src/index.ts",
+      "src/mtran.ts"
+    ],
+    "serverEntrySha256": "6288afe585cfca51f635f43a290eeb1f6084800ac4d986571a8add00a51de8e6"
+  },
+  "method": {
+    "endpoint": "POST /translate on loopback HTTP",
+    "executionProvider": "cpu",
+    "intraOpNumThreads": 1,
+    "interOpNumThreads": 1,
+    "cacheSize": 0,
+    "rounds": 3,
+    "warmupRequests": 8,
+    "corpus": "onnx-corpus.json",
+    "corpusSha256": "2eecdd97d72e0a7fff0708806a735146dc4c79286c472af9a9d73cff756149e9",
+    "corpusDescription": "32 fixed, self-authored everyday/software sentences per language; 8 paragraphs formed by joining consecutive groups of 4 sentences.",
+    "percentile": "nearest rank, ceil(p * sample count) - 1",
+    "coldRequest": "Fresh server process, prepared model files, no model download/conversion or OS page-cache eviction.",
+    "memory": "Linux VmHWM for the entire server process (including model loading); one fresh process per language pair.",
+    "backgroundLoad": "Shared desktop machine; other applications and compute tasks were left running."
+  },
+  "results": [
+    {
+      "pair": "en_zh-Hans",
+      "serverVersion": "5.0.1",
+      "serverSettings": {
+        "host": "127.0.0.1",
+        "port": 43475,
+        "logLevel": "warn",
+        "enableWebUI": true,
+        "enableOfflineMode": true,
+        "workerIdleTimeout": 600,
+        "workersPerLanguage": 1,
+        "apiToken": "",
+        "logDir": "/tmp/mtran-onnx-benchmark-sWPIkd/logs",
+        "logToFile": false,
+        "logConsole": false,
+        "logRequests": false,
+        "maxSentenceLength": 512,
+        "fullwidthZhPunctuation": true,
+        "checkUpdate": false,
+        "cacheSize": 0,
+        "modelDir": "/tmp/mtran-onnx-benchmark-sWPIkd/models",
+        "configDir": "/tmp/mtran-onnx-benchmark-sWPIkd/config"
+      },
+      "baselineMemory": {
+        "rssMiB": 160.1796875,
+        "peakRssMiB": 160.1796875
+      },
+      "coldRequest": {
+        "elapsedMs": 1130.503417,
+        "translation": "应用程序本地运行，无需显卡。"
+      },
+      "warmMemory": {
+        "rssMiB": 324.01953125,
+        "peakRssMiB": 349.37109375
+      },
+      "model": {
+        "bytes": 124549692,
+        "sha256": "8247cf605656a0e77be72b8d18679acfdfa5c38046b6da528372aa2cc20d3909",
+        "identity": "90db42eb975d25dae9fd46fff4b985530133c78164d88120e192de58610242d7",
+        "converterRevision": "3bd0aed2b1d5bd3a638545635f7e9467319c48a46d17288d11e065c443548d5e",
+        "records": [
+          {
+            "fileType": "lex",
+            "version": "3.0",
+            "decompressedHash": "4a5e5827788060f1d718a8132b69440929387514a045796e9b77f935db68c055"
+          },
+          {
+            "fileType": "model",
+            "version": "3.0",
+            "decompressedHash": "4e5accc141373565ddc8fa1565bceaa8d0c3482a82cab8131c719ebcc6c2157c"
+          },
+          {
+            "fileType": "srcvocab",
+            "version": "3.0",
+            "decompressedHash": "bd9b65504acc6d9726dd281f7defc2adb7c2c22d0688fe2f84697de25197c8c5"
+          },
+          {
+            "fileType": "trgvocab",
+            "version": "3.0",
+            "decompressedHash": "aded6993c36e440284d11cec3f6b8aef9c0e43188a772d80be342a713adf223d"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "name": "sentence",
+          "concurrency": 1,
+          "uniqueTexts": 32,
+          "requests": 96,
+          "inputCharacters": {
+            "min": 49,
+            "mean": 72.53125,
+            "max": 94
+          },
+          "summary": {
+            "meanMs": 68.84374776041665,
+            "p50Ms": 60.0459179999998,
+            "p95Ms": 126.03160200000002,
+            "medianRequestsPerSecond": 14.18872784462072,
+            "minRequestsPerSecond": 13.022116167557988,
+            "maxRequestsPerSecond": 16.816340823472377,
+            "peakRssMiB": 349.37109375,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 2457.3578970000003,
+              "requestsPerSecond": 13.022116167557988,
+              "loadAverage": [
+                21.07,
+                27.85,
+                30.05
+              ],
+              "memory": {
+                "rssMiB": 324.453125,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 210.68653900000027,
+                  "translation": "应用程序本地运行，无需显卡。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 114.44039100000009,
+                  "translation": "请在关闭文档前保存您的更改。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 118.07960599999979,
+                  "translation": "火车将在二十分钟内到达中央车站。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 92.47218399999974,
+                  "translation": "您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 130.54818899999964,
+                  "translation": "新版本提高了稳定性，并修复了多个已知问题。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 98.02689499999997,
+                  "translation": "我们建议在安装更新之前进行备份。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 126.03160200000002,
+                  "translation": "本书解释了计算机如何存储和处理信息。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 67.18471499999987,
+                  "translation": "预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 60.78334799999993,
+                  "translation": "下载文件后，重新启动服务并重试。"
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 54.73888399999987,
+                  "translation": "餐厅每天供应新鲜蔬菜和自制面包。"
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 48.689524999999776,
+                  "translation": "离线翻译时，您的个人数据会保留在此设备上。"
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 46.192337999999836,
+                  "translation": "会议已移至周四下午三点。"
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 58.66212600000017,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。"
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 68.66007200000013,
+                  "translation": "图书馆从上午九点起，直至晚上六点，对所有游客开放。"
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 65.96341900000061,
+                  "translation": "选择一个有足够的空余空间来存储翻译文件的文件夹。"
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 60.0459179999998,
+                  "translation": "孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 63.88272799999959,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。"
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 39.06385499999942,
+                  "translation": "博物馆展示着城市随时间变化的画面。"
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 44.55997899999966,
+                  "translation": "即使网络连接无法使用，您也可以阅读翻译页面。"
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 53.77134699999988,
+                  "translation": "该团队在发布该软件之前，已在多台不同计算机上进行了测试。"
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 76.08779299999969,
+                  "translation": "为了获得最佳效果，请提供完整的句子，而不是孤立的词语。"
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 116.0057399999996,
+                  "translation": "花园在干燥的夏季需要定期浇水。"
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 65.10476800000015,
+                  "translation": "更大规模的请求可以增加等待时间，而不会提高翻译速度。"
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 52.30075500000021,
+                  "translation": "该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 66.23810400000002,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行了比较。"
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 91.71413299999949,
+                  "translation": "移动到新计算机时，请同时保留配置文件夹和模型文件夹。"
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 60.719646999999895,
+                  "translation": "步行路线沿着河边，然后向北转向村庄。"
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 72.41892499999994,
+                  "translation": "当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 66.54816100000062,
+                  "translation": "报告包含一个简短的介绍、方法描述以及最终结果。"
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 48.93279900000016,
+                  "translation": "请等到准备完成后再断开网络。"
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 65.6053520000005,
+                  "translation": "店内提供在工作日中午前下单的免费送货服务。"
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 50.48666500000036,
+                  "translation": "性能取决于处理器、所选语言以及文本的长度。"
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 2255.3114239999995,
+              "requestsPerSecond": 14.18872784462072,
+              "loadAverage": [
+                21.39,
+                27.8,
+                30.02
+              ],
+              "memory": {
+                "rssMiB": 325.18359375,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 39.538158000000294,
+                  "translation": "应用程序本地运行，无需显卡。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 48.063264000000345,
+                  "translation": "请在关闭文档前保存您的更改。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 54.53493100000014,
+                  "translation": "火车将在二十分钟内到达中央车站。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 31.45384600000034,
+                  "translation": "您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 49.01228499999979,
+                  "translation": "新版本提高了稳定性，并修复了多个已知问题。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 72.76130600000033,
+                  "translation": "我们建议在安装更新之前进行备份。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 62.57618699999966,
+                  "translation": "本书解释了计算机如何存储和处理信息。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 53.05537000000004,
+                  "translation": "预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 49.34423700000025,
+                  "translation": "下载文件后，重新启动服务并重试。"
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 51.243797000000086,
+                  "translation": "餐厅每天供应新鲜蔬菜和自制面包。"
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 54.68550099999993,
+                  "translation": "离线翻译时，您的个人数据会保留在此设备上。"
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 52.97855900000013,
+                  "translation": "会议已移至周四下午三点。"
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 73.26115999999911,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。"
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 114.75900499999989,
+                  "translation": "图书馆从上午九点起，直至晚上六点，对所有游客开放。"
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 83.80869399999938,
+                  "translation": "选择一个有足够的空余空间来存储翻译文件的文件夹。"
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 55.51802299999963,
+                  "translation": "孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 58.41168199999993,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。"
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 42.50134600000001,
+                  "translation": "博物馆展示着城市随时间变化的画面。"
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 105.55394100000012,
+                  "translation": "即使网络连接无法使用，您也可以阅读翻译页面。"
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 174.2771270000003,
+                  "translation": "该团队在发布该软件之前，已在多台不同计算机上进行了测试。"
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 160.04663700000037,
+                  "translation": "为了获得最佳效果，请提供完整的句子，而不是孤立的词语。"
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 53.7058849999994,
+                  "translation": "花园在干燥的夏季需要定期浇水。"
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 86.3581809999996,
+                  "translation": "更大规模的请求可以增加等待时间，而不会提高翻译速度。"
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 62.87881399999969,
+                  "translation": "该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 68.8765370000001,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行了比较。"
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 86.20617599999969,
+                  "translation": "移动到新计算机时，请同时保留配置文件夹和模型文件夹。"
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 66.22969099999955,
+                  "translation": "步行路线沿着河边，然后向北转向村庄。"
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 72.13239099999919,
+                  "translation": "当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 63.1409620000004,
+                  "translation": "报告包含一个简短的介绍、方法描述以及最终结果。"
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 50.653330000000096,
+                  "translation": "请等到准备完成后再断开网络。"
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 77.73541899999964,
+                  "translation": "店内提供在工作日中午前下单的免费送货服务。"
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 77.98854799999935,
+                  "translation": "性能取决于处理器、所选语言以及文本的长度。"
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 1902.9110039999996,
+              "requestsPerSecond": 16.816340823472377,
+              "loadAverage": [
+                21.39,
+                27.8,
+                30.02
+              ],
+              "memory": {
+                "rssMiB": 325.546875,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 52.45858599999974,
+                  "translation": "应用程序本地运行，无需显卡。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 54.34141600000021,
+                  "translation": "请在关闭文档前保存您的更改。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 50.135763000000225,
+                  "translation": "火车将在二十分钟内到达中央车站。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 41.09751999999935,
+                  "translation": "您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 57.32857400000012,
+                  "translation": "新版本提高了稳定性，并修复了多个已知问题。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 41.30518800000027,
+                  "translation": "我们建议在安装更新之前进行备份。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 57.98958799999946,
+                  "translation": "本书解释了计算机如何存储和处理信息。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 68.4353200000005,
+                  "translation": "预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 46.882808999999725,
+                  "translation": "下载文件后，重新启动服务并重试。"
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 57.3866850000004,
+                  "translation": "餐厅每天供应新鲜蔬菜和自制面包。"
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 65.1176889999997,
+                  "translation": "离线翻译时，您的个人数据会保留在此设备上。"
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 46.028902000000016,
+                  "translation": "会议已移至周四下午三点。"
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 70.75202900000022,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。"
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 86.37417699999969,
+                  "translation": "图书馆从上午九点起，直至晚上六点，对所有游客开放。"
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 59.99774500000058,
+                  "translation": "选择一个有足够的空余空间来存储翻译文件的文件夹。"
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 65.56429399999979,
+                  "translation": "孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 55.48835599999984,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。"
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 51.885606000001644,
+                  "translation": "博物馆展示着城市随时间变化的画面。"
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 52.09605900000133,
+                  "translation": "即使网络连接无法使用，您也可以阅读翻译页面。"
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 71.73563699999977,
+                  "translation": "该团队在发布该软件之前，已在多台不同计算机上进行了测试。"
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 78.1454990000002,
+                  "translation": "为了获得最佳效果，请提供完整的句子，而不是孤立的词语。"
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 54.626344999998764,
+                  "translation": "花园在干燥的夏季需要定期浇水。"
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 75.60862400000042,
+                  "translation": "更大规模的请求可以增加等待时间，而不会提高翻译速度。"
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 54.47651600000063,
+                  "translation": "该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 51.69358900000043,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行了比较。"
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 59.987543999999616,
+                  "translation": "移动到新计算机时，请同时保留配置文件夹和模型文件夹。"
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 51.93546400000014,
+                  "translation": "步行路线沿着河边，然后向北转向村庄。"
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 71.32292800000141,
+                  "translation": "当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 58.57426299999861,
+                  "translation": "报告包含一个简短的介绍、方法描述以及最终结果。"
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 52.72225000000071,
+                  "translation": "请等到准备完成后再断开网络。"
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 88.95543800000087,
+                  "translation": "店内提供在工作日中午前下单的免费送货服务。"
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 50.61188999999831,
+                  "translation": "性能取决于处理器、所选语言以及文本的长度。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "sentence",
+          "concurrency": 4,
+          "uniqueTexts": 32,
+          "requests": 96,
+          "inputCharacters": {
+            "min": 49,
+            "mean": 72.53125,
+            "max": 94
+          },
+          "summary": {
+            "meanMs": 248.39857117708326,
+            "p50Ms": 254.98674500000016,
+            "p95Ms": 362.45334899999943,
+            "medianRequestsPerSecond": 16.106908064065518,
+            "minRequestsPerSecond": 13.554845724148844,
+            "maxRequestsPerSecond": 16.12892154244835,
+            "peakRssMiB": 349.37109375,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 1986.7251909999995,
+              "requestsPerSecond": 16.106908064065518,
+              "loadAverage": [
+                22.16,
+                27.86,
+                30.03
+              ],
+              "memory": {
+                "rssMiB": 328.41796875,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 37.6234000000004,
+                  "translation": "应用程序本地运行，无需显卡。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 72.07075199999963,
+                  "translation": "请在关闭文档前保存您的更改。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 119.9420140000002,
+                  "translation": "火车将在二十分钟内到达中央车站。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 165.69519599999876,
+                  "translation": "您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 187.44277800000054,
+                  "translation": "新版本提高了稳定性，并修复了多个已知问题。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 197.96396599999935,
+                  "translation": "我们建议在安装更新之前进行备份。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 188.87574499999937,
+                  "translation": "本书解释了计算机如何存储和处理信息。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 177.06629799999973,
+                  "translation": "预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 192.88821300000018,
+                  "translation": "下载文件后，重新启动服务并重试。"
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 260.93300400000044,
+                  "translation": "餐厅每天供应新鲜蔬菜和自制面包。"
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 330.4672809999993,
+                  "translation": "离线翻译时，您的个人数据会保留在此设备上。"
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 361.40993999999955,
+                  "translation": "会议已移至周四下午三点。"
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 341.7863150000012,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。"
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 292.9741130000002,
+                  "translation": "图书馆从上午九点起，直至晚上六点，对所有游客开放。"
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 246.47270000000026,
+                  "translation": "选择一个有足够的空余空间来存储翻译文件的文件夹。"
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 258.85303999999996,
+                  "translation": "孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 270.2418229999985,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。"
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 269.1421859999991,
+                  "translation": "博物馆展示着城市随时间变化的画面。"
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 283.7741189999997,
+                  "translation": "即使网络连接无法使用，您也可以阅读翻译页面。"
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 275.1990940000014,
+                  "translation": "该团队在发布该软件之前，已在多台不同计算机上进行了测试。"
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 266.44804699999986,
+                  "translation": "为了获得最佳效果，请提供完整的句子，而不是孤立的词语。"
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 256.65171999999984,
+                  "translation": "花园在干燥的夏季需要定期浇水。"
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 241.52514999999948,
+                  "translation": "更大规模的请求可以增加等待时间，而不会提高翻译速度。"
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 233.8544010000005,
+                  "translation": "该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 244.9150840000002,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行了比较。"
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 274.8662089999998,
+                  "translation": "移动到新计算机时，请同时保留配置文件夹和模型文件夹。"
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 278.0549150000006,
+                  "translation": "步行路线沿着河边，然后向北转向村庄。"
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 283.36797300000035,
+                  "translation": "当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 274.6320820000001,
+                  "translation": "报告包含一个简短的介绍、方法描述以及最终结果。"
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 228.6019670000005,
+                  "translation": "请等到准备完成后再断开网络。"
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 238.2850529999996,
+                  "translation": "店内提供在工作日中午前下单的免费送货服务。"
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 230.4501360000013,
+                  "translation": "性能取决于处理器、所选语言以及文本的长度。"
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 1984.0136189999994,
+              "requestsPerSecond": 16.12892154244835,
+              "loadAverage": [
+                22.16,
+                27.86,
+                30.03
+              ],
+              "memory": {
+                "rssMiB": 329.51171875,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 37.618837999998505,
+                  "translation": "应用程序本地运行，无需显卡。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 84.85958899999969,
+                  "translation": "请在关闭文档前保存您的更改。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 133.0067510000008,
+                  "translation": "火车将在二十分钟内到达中央车站。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 193.91819699999905,
+                  "translation": "您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 227.10248800000045,
+                  "translation": "新版本提高了稳定性，并修复了多个已知问题。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 226.93469299999924,
+                  "translation": "我们建议在安装更新之前进行备份。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 223.81357800000114,
+                  "translation": "本书解释了计算机如何存储和处理信息。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 202.1295429999991,
+                  "translation": "预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 202.70404000000053,
+                  "translation": "下载文件后，重新启动服务并重试。"
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 232.8651430000009,
+                  "translation": "餐厅每天供应新鲜蔬菜和自制面包。"
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 239.56337499999972,
+                  "translation": "离线翻译时，您的个人数据会保留在此设备上。"
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 252.43337900000006,
+                  "translation": "会议已移至周四下午三点。"
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 253.99446999999964,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。"
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 276.6074809999991,
+                  "translation": "图书馆从上午九点起，直至晚上六点，对所有游客开放。"
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 286.19214099999954,
+                  "translation": "选择一个有足够的空余空间来存储翻译文件的文件夹。"
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 298.0815390000007,
+                  "translation": "孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 291.78484899999967,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。"
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 243.5797590000002,
+                  "translation": "博物馆展示着城市随时间变化的画面。"
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 245.71182300000146,
+                  "translation": "即使网络连接无法使用，您也可以阅读翻译页面。"
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 251.96907499999907,
+                  "translation": "该团队在发布该软件之前，已在多台不同计算机上进行了测试。"
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 255.18081200000051,
+                  "translation": "为了获得最佳效果，请提供完整的句子，而不是孤立的词语。"
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 267.80109900000025,
+                  "translation": "花园在干燥的夏季需要定期浇水。"
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 263.36189600000034,
+                  "translation": "更大规模的请求可以增加等待时间，而不会提高翻译速度。"
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 245.31376199999977,
+                  "translation": "该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 249.78267199999937,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行了比较。"
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 260.1887340000012,
+                  "translation": "移动到新计算机时，请同时保留配置文件夹和模型文件夹。"
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 258.2373970000008,
+                  "translation": "步行路线沿着河边，然后向北转向村庄。"
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 281.4954629999993,
+                  "translation": "当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 277.87648400000035,
+                  "translation": "报告包含一个简短的介绍、方法描述以及最终结果。"
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 256.7662199999995,
+                  "translation": "请等到准备完成后再断开网络。"
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 276.1935819999999,
+                  "translation": "店内提供在工作日中午前下单的免费送货服务。"
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 258.09188300000096,
+                  "translation": "性能取决于处理器、所选语言以及文本的长度。"
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 2360.779359,
+              "requestsPerSecond": 13.554845724148844,
+              "loadAverage": [
+                22.31,
+                27.79,
+                29.99
+              ],
+              "memory": {
+                "rssMiB": 332.40625,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 51.052693999999974,
+                  "translation": "应用程序本地运行，无需显卡。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 108.20537100000001,
+                  "translation": "请在关闭文档前保存您的更改。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 167.78500899999926,
+                  "translation": "火车将在二十分钟内到达中央车站。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 210.81265500000154,
+                  "translation": "您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 227.28830500000004,
+                  "translation": "新版本提高了稳定性，并修复了多个已知问题。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 242.0140849999989,
+                  "translation": "我们建议在安装更新之前进行备份。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 298.23512499999924,
+                  "translation": "本书解释了计算机如何存储和处理信息。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 298.3138030000009,
+                  "translation": "预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 295.45500699999866,
+                  "translation": "下载文件后，重新启动服务并重试。"
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 281.39909699999953,
+                  "translation": "餐厅每天供应新鲜蔬菜和自制面包。"
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 227.87027900000066,
+                  "translation": "离线翻译时，您的个人数据会保留在此设备上。"
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 243.10843600000044,
+                  "translation": "会议已移至周四下午三点。"
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 247.3118340000001,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。"
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 290.60850400000163,
+                  "translation": "图书馆从上午九点起，直至晚上六点，对所有游客开放。"
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 362.45334899999943,
+                  "translation": "选择一个有足够的空余空间来存储翻译文件的文件夹。"
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 376.06536400000005,
+                  "translation": "孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 371.9989910000004,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。"
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 325.15461700000014,
+                  "translation": "博物馆展示着城市随时间变化的画面。"
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 238.14947399999983,
+                  "translation": "即使网络连接无法使用，您也可以阅读翻译页面。"
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 244.26084300000002,
+                  "translation": "该团队在发布该软件之前，已在多台不同计算机上进行了测试。"
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 254.98674500000016,
+                  "translation": "为了获得最佳效果，请提供完整的句子，而不是孤立的词语。"
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 255.71440099999927,
+                  "translation": "花园在干燥的夏季需要定期浇水。"
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 271.2970239999995,
+                  "translation": "更大规模的请求可以增加等待时间，而不会提高翻译速度。"
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 251.04548499999873,
+                  "translation": "该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 245.8921250000003,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行了比较。"
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 264.0812929999993,
+                  "translation": "移动到新计算机时，请同时保留配置文件夹和模型文件夹。"
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 268.13583800000015,
+                  "translation": "步行路线沿着河边，然后向北转向村庄。"
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 287.43128199999956,
+                  "translation": "当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 297.1056749999989,
+                  "translation": "报告包含一个简短的介绍、方法描述以及最终结果。"
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 295.9878489999992,
+                  "translation": "请等到准备完成后再断开网络。"
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 460.2445260000004,
+                  "translation": "店内提供在工作日中午前下单的免费送货服务。"
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 449.1622790000001,
+                  "translation": "性能取决于处理器、所选语言以及文本的长度。"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "paragraph",
+          "concurrency": 1,
+          "uniqueTexts": 8,
+          "requests": 24,
+          "inputCharacters": {
+            "min": 234,
+            "mean": 293.125,
+            "max": 344
+          },
+          "summary": {
+            "meanMs": 248.65811312499986,
+            "p50Ms": 212.44337200000155,
+            "p95Ms": 490.42251399999805,
+            "medianRequestsPerSecond": 4.7814931732948445,
+            "minRequestsPerSecond": 3.0374275663271906,
+            "maxRequestsPerSecond": 4.810137447404765,
+            "peakRssMiB": 349.37109375,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 2633.8076630000014,
+              "requestsPerSecond": 3.0374275663271906,
+              "loadAverage": [
+                22.31,
+                27.79,
+                29.99
+              ],
+              "memory": {
+                "rssMiB": 333.28125,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 180.43564100000003,
+                  "translation": "应用程序本地运行，无需显卡。请在关闭文件前保存您的更改。列车将在20分钟内到达中央车站。您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 165.89750100000128,
+                  "translation": "新版本可提高稳定性，并修复多个已知问题。我们建议在安装更新前进行备份。本书介绍了计算机如何存储和处理信息。预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 204.3731429999989,
+                  "translation": "下载文件后，重新启动服务并重试。餐厅每天供应新鲜蔬菜和自制面包。在离线翻译期间，您的个人数据将保留在此设备上。会议已移至周四下午三点。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 280.6286519999994,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。图书馆从早上九点起至晚上六点向所有访客开放。选择一个有足够空余空间的文件夹来存储翻译文件。孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 450.6956659999996,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。博物馆会展示城市随时间变化的照片。即使无法使用网络连接，您也可以阅读翻译后的页面。团队在发布前，会在多台不同计算机上测试该软件。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 490.42251399999805,
+                  "translation": "为达到最佳效果，请提供完整的句子，而非孤立的词语。花园在干燥的夏季需要定期浇水。更频繁的请求可以增加等待时间，且无法提高翻译速度。该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 547.4554150000004,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行比较。移动到新计算机时，请同时保留配置文件夹和模型文件夹。步行路线沿着河流向北转向村庄。当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 313.1908599999988,
+                  "translation": "报告包含简短的介绍、方法描述以及最终结果。请等到准备完成后再断开网络连接。商店提供在工作日中午前下单的免费送货服务。具体性能取决于处理器、所选语言以及文本长度。"
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 1673.1175199999998,
+              "requestsPerSecond": 4.7814931732948445,
+              "loadAverage": [
+                22.31,
+                27.79,
+                29.99
+              ],
+              "memory": {
+                "rssMiB": 334.75390625,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 196.45277999999962,
+                  "translation": "应用程序本地运行，无需显卡。请在关闭文件前保存您的更改。列车将在20分钟内到达中央车站。您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 190.30223900000055,
+                  "translation": "新版本可提高稳定性，并修复多个已知问题。我们建议在安装更新前进行备份。本书介绍了计算机如何存储和处理信息。预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 177.23841899999752,
+                  "translation": "下载文件后，重新启动服务并重试。餐厅每天供应新鲜蔬菜和自制面包。在离线翻译期间，您的个人数据将保留在此设备上。会议已移至周四下午三点。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 246.70379799999864,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。图书馆从早上九点起至晚上六点向所有访客开放。选择一个有足够空余空间的文件夹来存储翻译文件。孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 213.64143999999942,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。博物馆会展示城市随时间变化的照片。即使无法使用网络连接，您也可以阅读翻译后的页面。团队在发布前，会在多台不同计算机上测试该软件。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 230.3543090000021,
+                  "translation": "为达到最佳效果，请提供完整的句子，而非孤立的词语。花园在干燥的夏季需要定期浇水。更频繁的请求可以增加等待时间，且无法提高翻译速度。该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 219.30295900000056,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行比较。移动到新计算机时，请同时保留配置文件夹和模型文件夹。步行路线沿着河流向北转向村庄。当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 198.35719400000016,
+                  "translation": "报告包含简短的介绍、方法描述以及最终结果。请等到准备完成后再断开网络连接。商店提供在工作日中午前下单的免费送货服务。具体性能取决于处理器、所选语言以及文本长度。"
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 1663.1541380000017,
+              "requestsPerSecond": 4.810137447404765,
+              "loadAverage": [
+                21.8,
+                27.6,
+                29.92
+              ],
+              "memory": {
+                "rssMiB": 335.0625,
+                "peakRssMiB": 349.37109375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 231.64552800000092,
+                  "translation": "应用程序本地运行，无需显卡。请在关闭文件前保存您的更改。列车将在20分钟内到达中央车站。您可以在设置菜单中更改语言。"
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 159.33653299999787,
+                  "translation": "新版本可提高稳定性，并修复多个已知问题。我们建议在安装更新前进行备份。本书介绍了计算机如何存储和处理信息。预计整个周末天气将保持温暖。"
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 172.98068200000125,
+                  "translation": "下载文件后，重新启动服务并重试。餐厅每天供应新鲜蔬菜和自制面包。在离线翻译期间，您的个人数据将保留在此设备上。会议已移至周四下午三点。"
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 270.4466509999984,
+                  "translation": "较慢的网络连接可能会增加下载模型所需的时间。图书馆从早上九点起至晚上六点向所有访客开放。选择一个有足够空余空间的文件夹来存储翻译文件。孩子们在溪流中搭建了一座小木桥。"
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 178.02348600000187,
+                  "translation": "如果请求失败，请检查服务器地址和访问令牌。博物馆会展示城市随时间变化的照片。即使无法使用网络连接，您也可以阅读翻译后的页面。团队在发布前，会在多台不同计算机上测试该软件。"
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 198.53328600000168,
+                  "translation": "为达到最佳效果，请提供完整的句子，而非孤立的词语。花园在干燥的夏季需要定期浇水。更频繁的请求可以增加等待时间，且无法提高翻译速度。该套餐包含启动本地翻译服务所需的一切内容。"
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 238.93264699999781,
+                  "translation": "研究人员每小时采集一次测量结果，并在周末对结果进行比较。移动到新计算机时，请同时保留配置文件夹和模型文件夹。步行路线沿着河流向北转向村庄。当翻译引擎处于空闲状态时，服务器可以自动释放其内存。"
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 212.44337200000155,
+                  "translation": "报告包含简短的介绍、方法描述以及最终结果。请等到准备完成后再断开网络连接。商店提供在工作日中午前下单的免费送货服务。具体性能取决于处理器、所选语言以及文本长度。"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "serverVersion": "5.0.1",
+      "serverSettings": {
+        "host": "127.0.0.1",
+        "port": 39625,
+        "logLevel": "warn",
+        "enableWebUI": true,
+        "enableOfflineMode": true,
+        "workerIdleTimeout": 600,
+        "workersPerLanguage": 1,
+        "apiToken": "",
+        "logDir": "/tmp/mtran-onnx-benchmark-sWPIkd/logs",
+        "logToFile": false,
+        "logConsole": false,
+        "logRequests": false,
+        "maxSentenceLength": 512,
+        "fullwidthZhPunctuation": true,
+        "checkUpdate": false,
+        "cacheSize": 0,
+        "modelDir": "/tmp/mtran-onnx-benchmark-sWPIkd/models",
+        "configDir": "/tmp/mtran-onnx-benchmark-sWPIkd/config"
+      },
+      "baselineMemory": {
+        "rssMiB": 161.0234375,
+        "peakRssMiB": 161.0234375
+      },
+      "coldRequest": {
+        "elapsedMs": 1558.4206410000006,
+        "translation": "This application runs locally and does not require a graphics card."
+      },
+      "warmMemory": {
+        "rssMiB": 356.19140625,
+        "peakRssMiB": 418.27734375
+      },
+      "model": {
+        "bytes": 131589619,
+        "sha256": "8fba17d3ab3e85fc1c42f891ca9bef795731bb0dda4f6c8258a733fffd74a948",
+        "identity": "992d015b7bdff23f9a7ee0d78797f3af7abdb85a5a524e02deceefbe8fe00488",
+        "converterRevision": "3bd0aed2b1d5bd3a638545635f7e9467319c48a46d17288d11e065c443548d5e",
+        "records": [
+          {
+            "fileType": "lex",
+            "version": "3.1",
+            "decompressedHash": "8524dd4c93ffd7f0ae7be32f77a7c14fea7cdbbebe34ea6ad0ec368d5ddd8b13"
+          },
+          {
+            "fileType": "model",
+            "version": "3.1",
+            "decompressedHash": "5cd149601802fc8a18124a1c1306144dbbedc058630c4ddb2d53aa76fa9c7c06"
+          },
+          {
+            "fileType": "vocab",
+            "version": "3.1",
+            "decompressedHash": "dff594318ab7d8b7b60b844ab98ebe6b932ae8045fab15235404c787715965b3"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "name": "sentence",
+          "concurrency": 1,
+          "uniqueTexts": 32,
+          "requests": 96,
+          "inputCharacters": {
+            "min": 14,
+            "mean": 20.9375,
+            "max": 28
+          },
+          "summary": {
+            "meanMs": 105.44123028124955,
+            "p50Ms": 101.34658599999966,
+            "p95Ms": 153.09417100000064,
+            "medianRequestsPerSecond": 9.242852038859343,
+            "minRequestsPerSecond": 8.992493305170942,
+            "maxRequestsPerSecond": 10.293991908502234,
+            "peakRssMiB": 418.27734375,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 3462.134833,
+              "requestsPerSecond": 9.242852038859343,
+              "loadAverage": [
+                21.82,
+                27.5,
+                29.87
+              ],
+              "memory": {
+                "rssMiB": 356.31640625,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 137.509188,
+                  "translation": "This application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 94.07393899999806,
+                  "translation": "Save your changes before you close the file."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 80.93573400000241,
+                  "translation": "The train will arrive at Central Station in 20 minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 74.5777820000003,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 114.41004099999918,
+                  "translation": "The new version improves stability and fixes several known issues."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 97.44766100000197,
+                  "translation": "We recommend that you make a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 77.08362500000294,
+                  "translation": "This book describes how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 96.58343799999784,
+                  "translation": "The weather is expected to remain warm throughout the weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 82.4728520000026,
+                  "translation": "After downloading the file, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 106.13980499999889,
+                  "translation": "This restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 103.99089099999765,
+                  "translation": "When you translate offline, your personal data is retained on this device."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 105.2210559999985,
+                  "translation": "The meeting was changed to 3 p.m. on Thursday."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 153.09417100000064,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 131.54406499999823,
+                  "translation": "The library is open to all visitors from 9 a.m. to 6 p.m."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 100.65940699999919,
+                  "translation": "Please select a folder with enough space to store the translated file."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 93.73344100000031,
+                  "translation": "The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 96.56268099999943,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 102.42327600000135,
+                  "translation": "The museum displays photographs showing how the city has changed over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 123.18470099999831,
+                  "translation": "Even if you can’t connect to the internet, you can read the translated page."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 129.1614019999979,
+                  "translation": "The team had already tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 101.34658599999966,
+                  "translation": "For better results, provide complete sentences instead of isolated words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 102.21413900000334,
+                  "translation": "In the dry summer, the garden needs to be watered regularly."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 141.65486899999814,
+                  "translation": "A larger number of requests may increase wait times, but they do not increase translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 111.13985599999796,
+                  "translation": "This package contains all the content you need to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 99.21990700000242,
+                  "translation": "The researchers collected the measurements every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 123.6737609999982,
+                  "translation": "When migrating to a new computer, keep both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 98.73630100000082,
+                  "translation": "The walkway first advanced along the river and then turned north toward the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 106.87850400000025,
+                  "translation": "When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 109.99473500000022,
+                  "translation": "This report contains a short introduction, a description of the methodology, and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 123.58738199999789,
+                  "translation": "Wait for the preparation to be completed before disconnecting the network."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 127.65257299999939,
+                  "translation": "The store offers free shipping for orders placed before noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 112.92045599999983,
+                  "translation": "Performance depends on the processor, the language selected, and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 3108.609399000001,
+              "requestsPerSecond": 10.293991908502234,
+              "loadAverage": [
+                21.43,
+                27.33,
+                29.8
+              ],
+              "memory": {
+                "rssMiB": 358.00390625,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 84.31216099999801,
+                  "translation": "This application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 82.6347960000021,
+                  "translation": "Save your changes before you close the file."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 72.61234499999773,
+                  "translation": "The train will arrive at Central Station in 20 minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 60.63512300000002,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 94.37264000000141,
+                  "translation": "The new version improves stability and fixes several known issues."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 93.52188000000024,
+                  "translation": "We recommend that you make a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 73.3050379999986,
+                  "translation": "This book describes how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 92.69437599999947,
+                  "translation": "The weather is expected to remain warm throughout the weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 106.02151400000002,
+                  "translation": "After downloading the file, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 72.68847599999935,
+                  "translation": "This restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 118.27084399999876,
+                  "translation": "When you translate offline, your personal data is retained on this device."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 101.82572499999878,
+                  "translation": "The meeting was changed to 3 p.m. on Thursday."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 127.1080320000001,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 105.93661299999803,
+                  "translation": "The library is open to all visitors from 9 a.m. to 6 p.m."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 81.35913000000073,
+                  "translation": "Please select a folder with enough space to store the translated file."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 86.43095600000015,
+                  "translation": "The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 95.49024899999858,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 80.77837199999703,
+                  "translation": "The museum displays photographs showing how the city has changed over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 111.07547800000248,
+                  "translation": "Even if you can’t connect to the internet, you can read the translated page."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 90.81760799999756,
+                  "translation": "The team had already tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 76.78726900000038,
+                  "translation": "For better results, provide complete sentences instead of isolated words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 92.30687399999806,
+                  "translation": "In the dry summer, the garden needs to be watered regularly."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 130.25369000000137,
+                  "translation": "A larger number of requests may increase wait times, but they do not increase translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 84.69573399999717,
+                  "translation": "This package contains all the content you need to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 108.06018300000142,
+                  "translation": "The researchers collected the measurements every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 144.60279100000116,
+                  "translation": "When migrating to a new computer, keep both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 99.64611700000023,
+                  "translation": "The walkway first advanced along the river and then turned north toward the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 126.11841999999888,
+                  "translation": "When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 134.82511700000032,
+                  "translation": "This report contains a short introduction, a description of the methodology, and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 77.05863099999988,
+                  "translation": "Wait for the preparation to be completed before disconnecting the network."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 97.02728500000012,
+                  "translation": "The store offers free shipping for orders placed before noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 102.87122699999964,
+                  "translation": "Performance depends on the processor, the language selected, and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 3558.5236389999955,
+              "requestsPerSecond": 8.992493305170942,
+              "loadAverage": [
+                21.32,
+                27.21,
+                29.75
+              ],
+              "memory": {
+                "rssMiB": 360.63671875,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 76.45873500000016,
+                  "translation": "This application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 60.3587039999984,
+                  "translation": "Save your changes before you close the file."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 77.16927199999918,
+                  "translation": "The train will arrive at Central Station in 20 minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 65.34043799999927,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 72.74908700000015,
+                  "translation": "The new version improves stability and fixes several known issues."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 102.38498199999958,
+                  "translation": "We recommend that you make a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 74.91091799999776,
+                  "translation": "This book describes how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 96.9707559999988,
+                  "translation": "The weather is expected to remain warm throughout the weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 82.13268999999855,
+                  "translation": "After downloading the file, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 90.77151900000172,
+                  "translation": "This restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 101.0188670000025,
+                  "translation": "When you translate offline, your personal data is retained on this device."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 130.7487009999968,
+                  "translation": "The meeting was changed to 3 p.m. on Thursday."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 178.47048399999767,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 160.99625700000615,
+                  "translation": "The library is open to all visitors from 9 a.m. to 6 p.m."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 121.1909039999955,
+                  "translation": "Please select a folder with enough space to store the translated file."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 161.70551899999555,
+                  "translation": "The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 118.16298700000334,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 203.5851579999944,
+                  "translation": "The museum displays photographs showing how the city has changed over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 121.6361440000037,
+                  "translation": "Even if you can’t connect to the internet, you can read the translated page."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 90.05691300000035,
+                  "translation": "The team had already tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 81.12335599999642,
+                  "translation": "For better results, provide complete sentences instead of isolated words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 74.85161099999823,
+                  "translation": "In the dry summer, the garden needs to be watered regularly."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 122.46081399999821,
+                  "translation": "A larger number of requests may increase wait times, but they do not increase translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 118.77548699999898,
+                  "translation": "This package contains all the content you need to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 120.94866100000218,
+                  "translation": "The researchers collected the measurements every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 144.9767739999952,
+                  "translation": "When migrating to a new computer, keep both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 115.96700799999962,
+                  "translation": "The walkway first advanced along the river and then turned north toward the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 136.09509199999593,
+                  "translation": "When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 149.54660400000284,
+                  "translation": "This report contains a short introduction, a description of the methodology, and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 96.7087709999978,
+                  "translation": "Wait for the preparation to be completed before disconnecting the network."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 119.51185899999837,
+                  "translation": "The store offers free shipping for orders placed before noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 88.60011600000144,
+                  "translation": "Performance depends on the processor, the language selected, and the length of the text."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "sentence",
+          "concurrency": 4,
+          "uniqueTexts": 32,
+          "requests": 96,
+          "inputCharacters": {
+            "min": 14,
+            "mean": 20.9375,
+            "max": 28
+          },
+          "summary": {
+            "meanMs": 649.5503543020833,
+            "p50Ms": 569.0482619999966,
+            "p95Ms": 1287.8821519999983,
+            "medianRequestsPerSecond": 5.266398983922833,
+            "minRequestsPerSecond": 4.404581152827943,
+            "maxRequestsPerSecond": 9.590739854866088,
+            "peakRssMiB": 418.27734375,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 3336.551765999997,
+              "requestsPerSecond": 9.590739854866088,
+              "loadAverage": [
+                21.32,
+                27.21,
+                29.75
+              ],
+              "memory": {
+                "rssMiB": 360.875,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 121.31650300000183,
+                  "translation": "This application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 182.42727499999455,
+                  "translation": "Save your changes before you close the file."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 292.6231770000013,
+                  "translation": "The train will arrive at Central Station in 20 minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 405.502161000004,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 343.1926119999989,
+                  "translation": "The new version improves stability and fixes several known issues."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 361.3941550000018,
+                  "translation": "We recommend that you make a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 321.66215999999986,
+                  "translation": "This book describes how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 286.1514640000023,
+                  "translation": "The weather is expected to remain warm throughout the weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 296.75971800000116,
+                  "translation": "After downloading the file, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 351.5765720000054,
+                  "translation": "This restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 485.71312000000034,
+                  "translation": "When you translate offline, your personal data is retained on this device."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 622.8847879999958,
+                  "translation": "The meeting was changed to 3 p.m. on Thursday."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 672.0664000000033,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 635.6175860000003,
+                  "translation": "The library is open to all visitors from 9 a.m. to 6 p.m."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 501.4377569999997,
+                  "translation": "Please select a folder with enough space to store the translated file."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 369.3384589999987,
+                  "translation": "The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 348.15903600000456,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 327.8256209999963,
+                  "translation": "The museum displays photographs showing how the city has changed over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 381.4638169999962,
+                  "translation": "Even if you can’t connect to the internet, you can read the translated page."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 410.4211579999974,
+                  "translation": "The team had already tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 383.9179230000009,
+                  "translation": "For better results, provide complete sentences instead of isolated words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 377.43659800000023,
+                  "translation": "In the dry summer, the garden needs to be watered regularly."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 395.3629940000028,
+                  "translation": "A larger number of requests may increase wait times, but they do not increase translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 377.95203699999547,
+                  "translation": "This package contains all the content you need to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 419.5590000000011,
+                  "translation": "The researchers collected the measurements every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 475.56954199999745,
+                  "translation": "When migrating to a new computer, keep both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 437.83865199999855,
+                  "translation": "The walkway first advanced along the river and then turned north toward the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 455.7968299999993,
+                  "translation": "When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 474.5390830000033,
+                  "translation": "This report contains a short introduction, a description of the methodology, and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 422.27804099999776,
+                  "translation": "Wait for the preparation to be completed before disconnecting the network."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 405.68827500000043,
+                  "translation": "The store offers free shipping for orders placed before noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 407.90653100000054,
+                  "translation": "Performance depends on the processor, the language selected, and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 7265.162994999999,
+              "requestsPerSecond": 4.404581152827943,
+              "loadAverage": [
+                24.1,
+                27.61,
+                29.86
+              ],
+              "memory": {
+                "rssMiB": 362.0390625,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 71.38958799999818,
+                  "translation": "This application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 139.93720100000064,
+                  "translation": "Save your changes before you close the file."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 299.6579100000017,
+                  "translation": "The train will arrive at Central Station in 20 minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 370.39509199999884,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 359.2966749999978,
+                  "translation": "The new version improves stability and fixes several known issues."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 368.40665699999954,
+                  "translation": "We recommend that you make a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 280.21079199999804,
+                  "translation": "This book describes how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 280.1372590000028,
+                  "translation": "The weather is expected to remain warm throughout the weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 338.2370540000047,
+                  "translation": "After downloading the file, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 358.5319810000001,
+                  "translation": "This restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 429.61577699999907,
+                  "translation": "When you translate offline, your personal data is retained on this device."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 459.73106800000096,
+                  "translation": "The meeting was changed to 3 p.m. on Thursday."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 703.6287310000043,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 859.443637999997,
+                  "translation": "The library is open to all visitors from 9 a.m. to 6 p.m."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 994.3645600000018,
+                  "translation": "Please select a folder with enough space to store the translated file."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 1250.8221859999976,
+                  "translation": "The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 1287.8821519999983,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 1182.2603109999982,
+                  "translation": "The museum displays photographs showing how the city has changed over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 1148.1418029999986,
+                  "translation": "Even if you can’t connect to the internet, you can read the translated page."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 1218.0364389999959,
+                  "translation": "The team had already tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 1139.3683440000023,
+                  "translation": "For better results, provide complete sentences instead of isolated words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 1189.4339259999979,
+                  "translation": "In the dry summer, the garden needs to be watered regularly."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 1132.0382179999942,
+                  "translation": "A larger number of requests may increase wait times, but they do not increase translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 835.3527489999979,
+                  "translation": "This package contains all the content you need to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 681.3102280000021,
+                  "translation": "The researchers collected the measurements every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 637.9094519999999,
+                  "translation": "When migrating to a new computer, keep both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 910.496097999996,
+                  "translation": "The walkway first advanced along the river and then turned north toward the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 1141.4260429999995,
+                  "translation": "When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 1506.3189149999962,
+                  "translation": "This report contains a short introduction, a description of the methodology, and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 1661.3879469999956,
+                  "translation": "Wait for the preparation to be completed before disconnecting the network."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 1393.605091999998,
+                  "translation": "The store offers free shipping for orders placed before noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 1708.4106790000005,
+                  "translation": "Performance depends on the processor, the language selected, and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 6076.258198000003,
+              "requestsPerSecond": 5.266398983922833,
+              "loadAverage": [
+                24.17,
+                27.57,
+                29.83
+              ],
+              "memory": {
+                "rssMiB": 364.69140625,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 310.91985599999316,
+                  "translation": "This application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 693.7240810000003,
+                  "translation": "Save your changes before you close the file."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 967.8031909999991,
+                  "translation": "The train will arrive at Central Station in 20 minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 1136.0204430000013,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 1107.372586000005,
+                  "translation": "The new version improves stability and fixes several known issues."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 936.7742550000039,
+                  "translation": "We recommend that you make a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 736.6783300000025,
+                  "translation": "This book describes how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 688.3358339999977,
+                  "translation": "The weather is expected to remain warm throughout the weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 569.0482619999966,
+                  "translation": "After downloading the file, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 580.2323939999987,
+                  "translation": "This restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 844.1492910000015,
+                  "translation": "When you translate offline, your personal data is retained on this device."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 1108.9989659999992,
+                  "translation": "The meeting was changed to 3 p.m. on Thursday."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 1226.930171,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 1154.3945530000055,
+                  "translation": "The library is open to all visitors from 9 a.m. to 6 p.m."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 948.3733100000027,
+                  "translation": "Please select a folder with enough space to store the translated file."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 760.3218310000011,
+                  "translation": "The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 607.1815500000012,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 737.4627659999969,
+                  "translation": "The museum displays photographs showing how the city has changed over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 496.2251019999967,
+                  "translation": "Even if you can’t connect to the internet, you can read the translated page."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 647.9339390000023,
+                  "translation": "The team had already tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 636.7116199999946,
+                  "translation": "For better results, provide complete sentences instead of isolated words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 577.5602369999979,
+                  "translation": "In the dry summer, the garden needs to be watered regularly."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 623.7168300000048,
+                  "translation": "A larger number of requests may increase wait times, but they do not increase translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 513.9416070000007,
+                  "translation": "This package contains all the content you need to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 567.7277969999996,
+                  "translation": "The researchers collected the measurements every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 614.7875429999985,
+                  "translation": "When migrating to a new computer, keep both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 579.7572960000034,
+                  "translation": "The walkway first advanced along the river and then turned north toward the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 602.332242000004,
+                  "translation": "When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 587.8288329999996,
+                  "translation": "This report contains a short introduction, a description of the methodology, and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 544.9883860000045,
+                  "translation": "Wait for the preparation to be completed before disconnecting the network."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 542.6668780000036,
+                  "translation": "The store offers free shipping for orders placed before noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 617.3704230000003,
+                  "translation": "Performance depends on the processor, the language selected, and the length of the text."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "paragraph",
+          "concurrency": 1,
+          "uniqueTexts": 8,
+          "requests": 24,
+          "inputCharacters": {
+            "min": 65,
+            "mean": 86.75,
+            "max": 104
+          },
+          "summary": {
+            "meanMs": 565.717000458334,
+            "p50Ms": 487.79077600000164,
+            "p95Ms": 1052.6406910000005,
+            "medianRequestsPerSecond": 1.9305303331499424,
+            "minRequestsPerSecond": 1.379755645023461,
+            "maxRequestsPerSecond": 2.1994171264739037,
+            "peakRssMiB": 418.27734375,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 3637.3273189999964,
+              "requestsPerSecond": 2.1994171264739037,
+              "loadAverage": [
+                23.44,
+                27.36,
+                29.75
+              ],
+              "memory": {
+                "rssMiB": 366.0546875,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 726.3146459999989,
+                  "translation": "This app runs locally and does not require a graphics card. Before closing the document, save your changes. The train will arrive at the central station in 20 minutes. You can change the language in the settings menu."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 298.3168860000005,
+                  "translation": "The new version improves stability and fixes several known issues. We recommend backing up before installing the update. This book describes how computers store and process information. It is expected that the weather will remain warm throughout the weekend."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 322.22960299999977,
+                  "translation": "After downloading the file, please restart the service and try again.This restaurant serves fresh vegetables and homemade bread every day.When translating offline, your personal data is retained on this device.The meeting has been changed to Thursday at 3 p.m."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 402.9538190000021,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer. The library is open to all visitors from 9 a.m. to 6 p.m. Please select a folder with enough space to store the translation documents.The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 370.6580380000014,
+                  "translation": "If the request fails, check the server address and your access token. The museum displays photos showing how the city changes over time. Even if you can't connect to the Internet, you can read the translated page.The team has tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 370.61165099999926,
+                  "translation": "For better results, provide complete sentences rather than isolated words. In the dry summer, the garden needs to be watered regularly. A larger number of requests may increase the waiting time without increasing the speed of translation.This package contains all the content needed to start the local translation service."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 478.32016999999905,
+                  "translation": "The researchers collected the measurement data every hour and compared the results at the end of the week. When migrating to a new computer, keep the configuration folder and model folders at the same time. This walking route first follows the river and then turns north to the village.When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 666.9657120000047,
+                  "translation": "This report contains a short introduction, a description of the method, and the final result. Please wait until the preparation is complete before disconnecting the network. The store offers free shipping for orders placed before noon on the weekday. Performance depends on the processor, the language of choice, and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 5798.128117,
+              "requestsPerSecond": 1.379755645023461,
+              "loadAverage": [
+                24.36,
+                27.49,
+                29.78
+              ],
+              "memory": {
+                "rssMiB": 366.6640625,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 855.5062080000062,
+                  "translation": "This app runs locally and does not require a graphics card. Before closing the document, save your changes. The train will arrive at the central station in 20 minutes. You can change the language in the settings menu."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 452.8167700000049,
+                  "translation": "The new version improves stability and fixes several known issues. We recommend backing up before installing the update. This book describes how computers store and process information. It is expected that the weather will remain warm throughout the weekend."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 368.2538050000003,
+                  "translation": "After downloading the file, please restart the service and try again.This restaurant serves fresh vegetables and homemade bread every day.When translating offline, your personal data is retained on this device.The meeting has been changed to Thursday at 3 p.m."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 524.7407320000057,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer. The library is open to all visitors from 9 a.m. to 6 p.m. Please select a folder with enough space to store the translation documents.The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 532.8045979999952,
+                  "translation": "If the request fails, check the server address and your access token. The museum displays photos showing how the city changes over time. Even if you can't connect to the Internet, you can read the translated page.The team has tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 1052.6406910000005,
+                  "translation": "For better results, provide complete sentences rather than isolated words. In the dry summer, the garden needs to be watered regularly. A larger number of requests may increase the waiting time without increasing the speed of translation.This package contains all the content needed to start the local translation service."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 763.4813119999963,
+                  "translation": "The researchers collected the measurement data every hour and compared the results at the end of the week. When migrating to a new computer, keep the configuration folder and model folders at the same time. This walking route first follows the river and then turns north to the village.When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 1247.289929999999,
+                  "translation": "This report contains a short introduction, a description of the method, and the final result. Please wait until the preparation is complete before disconnecting the network. The store offers free shipping for orders placed before noon on the weekday. Performance depends on the processor, the language of choice, and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 4143.939031999995,
+              "requestsPerSecond": 1.9305303331499424,
+              "loadAverage": [
+                25.78,
+                27.73,
+                29.84
+              ],
+              "memory": {
+                "rssMiB": 367.23046875,
+                "peakRssMiB": 418.27734375
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 296.82132699999784,
+                  "translation": "This app runs locally and does not require a graphics card. Before closing the document, save your changes. The train will arrive at the central station in 20 minutes. You can change the language in the settings menu."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 327.30913200000214,
+                  "translation": "The new version improves stability and fixes several known issues. We recommend backing up before installing the update. This book describes how computers store and process information. It is expected that the weather will remain warm throughout the weekend."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 849.8534720000025,
+                  "translation": "After downloading the file, please restart the service and try again.This restaurant serves fresh vegetables and homemade bread every day.When translating offline, your personal data is retained on this device.The meeting has been changed to Thursday at 3 p.m."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 498.0065079999986,
+                  "translation": "When the network connection is slow, the time it takes to download the model may be longer. The library is open to all visitors from 9 a.m. to 6 p.m. Please select a folder with enough space to store the translation documents.The children built a small wooden bridge over the creek."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 487.79077600000164,
+                  "translation": "If the request fails, check the server address and your access token. The museum displays photos showing how the city changes over time. Even if you can't connect to the Internet, you can read the translated page.The team has tested it on several different computers before releasing the software."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 533.7970400000049,
+                  "translation": "For better results, provide complete sentences rather than isolated words. In the dry summer, the garden needs to be watered regularly. A larger number of requests may increase the waiting time without increasing the speed of translation.This package contains all the content needed to start the local translation service."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 672.9588349999976,
+                  "translation": "The researchers collected the measurement data every hour and compared the results at the end of the week. When migrating to a new computer, keep the configuration folder and model folders at the same time. This walking route first follows the river and then turns north to the village.When the translation engine is idle, the server can automatically release the memory it occupies."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 476.76634999999806,
+                  "translation": "This report contains a short introduction, a description of the method, and the final result. Please wait until the preparation is complete before disconnecting the network. The store offers free shipping for orders placed before noon on the weekday. Performance depends on the processor, the language of choice, and the length of the text."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pair": "de_en",
+      "serverVersion": "5.0.1",
+      "serverSettings": {
+        "host": "127.0.0.1",
+        "port": 43367,
+        "logLevel": "warn",
+        "enableWebUI": true,
+        "enableOfflineMode": true,
+        "workerIdleTimeout": 600,
+        "workersPerLanguage": 1,
+        "apiToken": "",
+        "logDir": "/tmp/mtran-onnx-benchmark-sWPIkd/logs",
+        "logToFile": false,
+        "logConsole": false,
+        "logRequests": false,
+        "maxSentenceLength": 512,
+        "fullwidthZhPunctuation": true,
+        "checkUpdate": false,
+        "cacheSize": 0,
+        "modelDir": "/tmp/mtran-onnx-benchmark-sWPIkd/models",
+        "configDir": "/tmp/mtran-onnx-benchmark-sWPIkd/config"
+      },
+      "baselineMemory": {
+        "rssMiB": 161.56640625,
+        "peakRssMiB": 161.56640625
+      },
+      "coldRequest": {
+        "elapsedMs": 1300.8433000000077,
+        "translation": "The application runs locally and does not require a graphics card."
+      },
+      "warmMemory": {
+        "rssMiB": 278.9453125,
+        "peakRssMiB": 301.65625
+      },
+      "model": {
+        "bytes": 75397619,
+        "sha256": "d5fc7606eef49bca1a24ed6b2e7f59b8c9cfba6712764abcd5fda45c0129a016",
+        "identity": "0e95a6e56bfe0ee44d560f2e7cf283a82b312f63a69392c127c1d42789ec839b",
+        "converterRevision": "3bd0aed2b1d5bd3a638545635f7e9467319c48a46d17288d11e065c443548d5e",
+        "records": [
+          {
+            "fileType": "lex",
+            "version": "3.0",
+            "decompressedHash": "113b98460468360cca68c042e1cddf49c4e1931cbb975ed04349c9a3bd607010"
+          },
+          {
+            "fileType": "model",
+            "version": "3.0",
+            "decompressedHash": "3e6f7c2c2425d10824797270b382bee718ff34af2cab9308841c82ca46dc6f20"
+          },
+          {
+            "fileType": "vocab",
+            "version": "3.0",
+            "decompressedHash": "69f730becafa48e3bb2c244eab66456877c08959a02f2bd5519b5a3088b62f9c"
+          }
+        ]
+      },
+      "cases": [
+        {
+          "name": "sentence",
+          "concurrency": 1,
+          "uniqueTexts": 32,
+          "requests": 96,
+          "inputCharacters": {
+            "min": 50,
+            "mean": 82.3125,
+            "max": 113
+          },
+          "summary": {
+            "meanMs": 86.12165971874977,
+            "p50Ms": 77.0953440000012,
+            "p95Ms": 170.9913119999983,
+            "medianRequestsPerSecond": 12.42440675467007,
+            "minRequestsPerSecond": 10.177745978216198,
+            "maxRequestsPerSecond": 12.524831299994247,
+            "peakRssMiB": 301.65625,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 2575.575689999998,
+              "requestsPerSecond": 12.42440675467007,
+              "loadAverage": [
+                26.44,
+                27.83,
+                29.87
+              ],
+              "memory": {
+                "rssMiB": 279.39453125,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 111.989533999993,
+                  "translation": "The application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 66.39118900000176,
+                  "translation": "Please save your changes before closing the document."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 70.75594200000342,
+                  "translation": "The train arrives at the main train station in twenty minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 63.0308759999898,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 88.26524799999606,
+                  "translation": "The new version improves stability and fixes several known problems."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 94.3849179999961,
+                  "translation": "We recommend that you create a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 55.510765999992145,
+                  "translation": "This book explains how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 54.52265400000033,
+                  "translation": "The weather is expected to stay warm all weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 61.268937999993796,
+                  "translation": "After downloading the files, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 62.40687700000126,
+                  "translation": "The restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 69.96969500000705,
+                  "translation": "Your personal data will remain on this device with offline translation."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 77.87184300000081,
+                  "translation": "The meeting was postponed to Thursday afternoon at three o'clock."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 83.74743299999682,
+                  "translation": "A slower network connection can extend the time it takes to download the models."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 87.83379999999306,
+                  "translation": "The library is open to all visitors from nine in the morning until six in the evening."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 70.59565299999667,
+                  "translation": "Select a folder with sufficient free space for the translation files."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 51.587799000000814,
+                  "translation": "The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 74.58520000000135,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 90.54860100000224,
+                  "translation": "The museum shows photographs depicting the change of the city over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 90.1306329999934,
+                  "translation": "You can also read the translated page without an internet connection."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 108.25078600000415,
+                  "translation": "The team tested the software on several different computers before it was released."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 59.41417599999113,
+                  "translation": "For better results, enter complete sentences instead of single words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 60.3035239999881,
+                  "translation": "The garden must be watered regularly during the dry summer months."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 92.94451499999559,
+                  "translation": "A larger number of requests can increase the waiting time without improving the translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 79.6629019999964,
+                  "translation": "The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 100.63738100000774,
+                  "translation": "The researchers recorded measured values every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 87.32284100000106,
+                  "translation": "When switching to a new computer, store both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 70.01706299999205,
+                  "translation": "The trail follows the river and then turns north towards the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 83.75129000000015,
+                  "translation": "If the translation engine is not used, the server can automatically share its storage."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 87.88694199999736,
+                  "translation": "The report contains a brief introduction, a description of the method and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 70.36079299999983,
+                  "translation": "Please wait until the preparation is complete before disconnecting the network connection."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 89.55246200000693,
+                  "translation": "The store offers free delivery for orders before twelve noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 157.74821099999826,
+                  "translation": "The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 2554.9246320000093,
+              "requestsPerSecond": 12.524831299994247,
+              "loadAverage": [
+                26.44,
+                27.83,
+                29.87
+              ],
+              "memory": {
+                "rssMiB": 281.09375,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 68.76675300000352,
+                  "translation": "The application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 49.99166200000036,
+                  "translation": "Please save your changes before closing the document."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 63.375161999996635,
+                  "translation": "The train arrives at the main train station in twenty minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 47.616474999987986,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 59.57564199999615,
+                  "translation": "The new version improves stability and fixes several known problems."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 57.86959800000477,
+                  "translation": "We recommend that you create a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 61.566325000007055,
+                  "translation": "This book explains how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 88.36715499999991,
+                  "translation": "The weather is expected to stay warm all weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 67.06959899999492,
+                  "translation": "After downloading the files, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 58.09480199999234,
+                  "translation": "The restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 73.13206800000626,
+                  "translation": "Your personal data will remain on this device with offline translation."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 67.32998600001156,
+                  "translation": "The meeting was postponed to Thursday afternoon at three o'clock."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 70.04154399999243,
+                  "translation": "A slower network connection can extend the time it takes to download the models."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 75.1784270000062,
+                  "translation": "The library is open to all visitors from nine in the morning until six in the evening."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 55.92544099999941,
+                  "translation": "Select a folder with sufficient free space for the translation files."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 51.379704999999376,
+                  "translation": "The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 69.85262499999953,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 70.42336800000339,
+                  "translation": "The museum shows photographs depicting the change of the city over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 68.82382800000778,
+                  "translation": "You can also read the translated page without an internet connection."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 61.974823000011384,
+                  "translation": "The team tested the software on several different computers before it was released."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 55.10955000000831,
+                  "translation": "For better results, enter complete sentences instead of single words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 65.15107500000158,
+                  "translation": "The garden must be watered regularly during the dry summer months."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 77.0953440000012,
+                  "translation": "A larger number of requests can increase the waiting time without improving the translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 67.26717900000222,
+                  "translation": "The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 78.11362000000372,
+                  "translation": "The researchers recorded measured values every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 97.56280200000037,
+                  "translation": "When switching to a new computer, store both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 97.9984209999966,
+                  "translation": "The trail follows the river and then turns north towards the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 117.88675999999396,
+                  "translation": "If the translation engine is not used, the server can automatically share its storage."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 194.37876099999994,
+                  "translation": "The report contains a brief introduction, a description of the method and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 185.99833699999726,
+                  "translation": "Please wait until the preparation is complete before disconnecting the network connection."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 143.3892360000027,
+                  "translation": "The store offers free delivery for orders before twelve noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 86.39506399999664,
+                  "translation": "The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 3144.1146270000027,
+              "requestsPerSecond": 10.177745978216198,
+              "loadAverage": [
+                26.24,
+                27.77,
+                29.84
+              ],
+              "memory": {
+                "rssMiB": 283.6171875,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 107.909393000009,
+                  "translation": "The application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 39.79300499999954,
+                  "translation": "Please save your changes before closing the document."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 50.198319999995874,
+                  "translation": "The train arrives at the main train station in twenty minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 48.009351000000606,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 81.31694000000425,
+                  "translation": "The new version improves stability and fixes several known problems."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 87.62027899999521,
+                  "translation": "We recommend that you create a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 113.33100999999442,
+                  "translation": "This book explains how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 99.61613600001147,
+                  "translation": "The weather is expected to stay warm all weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 110.9592249999987,
+                  "translation": "After downloading the files, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 113.75784000000567,
+                  "translation": "The restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 128.21619000000646,
+                  "translation": "Your personal data will remain on this device with offline translation."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 128.30296300000919,
+                  "translation": "The meeting was postponed to Thursday afternoon at three o'clock."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 138.80290599999717,
+                  "translation": "A slower network connection can extend the time it takes to download the models."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 204.66884199999913,
+                  "translation": "The library is open to all visitors from nine in the morning until six in the evening."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 124.53262100000575,
+                  "translation": "Select a folder with sufficient free space for the translation files."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 99.76592900000105,
+                  "translation": "The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 170.9913119999983,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 78.15488699999696,
+                  "translation": "The museum shows photographs depicting the change of the city over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 61.63121399999363,
+                  "translation": "You can also read the translated page without an internet connection."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 68.58602800000517,
+                  "translation": "The team tested the software on several different computers before it was released."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 59.72566799999913,
+                  "translation": "For better results, enter complete sentences instead of single words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 60.3319979999942,
+                  "translation": "The garden must be watered regularly during the dry summer months."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 81.95539000000281,
+                  "translation": "A larger number of requests can increase the waiting time without improving the translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 64.49827900000673,
+                  "translation": "The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 82.45047799999884,
+                  "translation": "The researchers recorded measured values every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 93.72108000000298,
+                  "translation": "When switching to a new computer, store both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 56.66326999999001,
+                  "translation": "The trail follows the river and then turns north towards the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 62.79652899999928,
+                  "translation": "If the translation engine is not used, the server can automatically share its storage."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 79.50970900000539,
+                  "translation": "The report contains a brief introduction, a description of the method and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 93.97031900000002,
+                  "translation": "Please wait until the preparation is complete before disconnecting the network connection."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 145.0743589999911,
+                  "translation": "The store offers free delivery for orders before twelve noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 204.86624099999608,
+                  "translation": "The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "sentence",
+          "concurrency": 4,
+          "uniqueTexts": 32,
+          "requests": 96,
+          "inputCharacters": {
+            "min": 50,
+            "mean": 82.3125,
+            "max": 113
+          },
+          "summary": {
+            "meanMs": 335.98397141666675,
+            "p50Ms": 305.717656000008,
+            "p95Ms": 545.6557830000093,
+            "medianRequestsPerSecond": 10.383752082337779,
+            "minRequestsPerSecond": 9.706096156828984,
+            "maxRequestsPerSecond": 15.683051458222849,
+            "peakRssMiB": 301.65625,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 3296.897072000007,
+              "requestsPerSecond": 9.706096156828984,
+              "loadAverage": [
+                25.34,
+                27.56,
+                29.76
+              ],
+              "memory": {
+                "rssMiB": 284.03515625,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 121.0863559999998,
+                  "translation": "The application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 258.02704100000847,
+                  "translation": "Please save your changes before closing the document."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 410.4091020000051,
+                  "translation": "The train arrives at the main train station in twenty minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 544.8936720000056,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 553.2104970000073,
+                  "translation": "The new version improves stability and fixes several known problems."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 517.8795370000007,
+                  "translation": "We recommend that you create a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 457.60330200000317,
+                  "translation": "This book explains how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 412.4237439999997,
+                  "translation": "The weather is expected to stay warm all weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 404.36019400000805,
+                  "translation": "After downloading the files, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 413.52768399998604,
+                  "translation": "The restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 439.2218690000009,
+                  "translation": "Your personal data will remain on this device with offline translation."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 487.8115370000014,
+                  "translation": "The meeting was postponed to Thursday afternoon at three o'clock."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 545.6557830000093,
+                  "translation": "A slower network connection can extend the time it takes to download the models."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 606.4247699999978,
+                  "translation": "The library is open to all visitors from nine in the morning until six in the evening."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 542.7727850000083,
+                  "translation": "Select a folder with sufficient free space for the translation files."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 448.40515800000867,
+                  "translation": "The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 339.4483980000077,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 290.2008710000082,
+                  "translation": "The museum shows photographs depicting the change of the city over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 372.0779579999944,
+                  "translation": "You can also read the translated page without an internet connection."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 461.17851599999995,
+                  "translation": "The team tested the software on several different computers before it was released."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 510.6243570000079,
+                  "translation": "For better results, enter complete sentences instead of single words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 495.1955549999984,
+                  "translation": "The garden must be watered regularly during the dry summer months."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 426.3195209999976,
+                  "translation": "A larger number of requests can increase the waiting time without improving the translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 363.40722399999504,
+                  "translation": "The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 317.6628759999876,
+                  "translation": "The researchers recorded measured values every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 284.9049510000041,
+                  "translation": "When switching to a new computer, store both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 276.5290709999972,
+                  "translation": "The trail follows the river and then turns north towards the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 272.27177599999413,
+                  "translation": "If the translation engine is not used, the server can automatically share its storage."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 265.2636930000008,
+                  "translation": "The report contains a brief introduction, a description of the method and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 247.48272899999574,
+                  "translation": "Please wait until the preparation is complete before disconnecting the network connection."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 267.4980110000033,
+                  "translation": "The store offers free delivery for orders before twelve noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 305.717656000008,
+                  "translation": "The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 2040.4192439999897,
+              "requestsPerSecond": 15.683051458222849,
+              "loadAverage": [
+                25.34,
+                27.56,
+                29.76
+              ],
+              "memory": {
+                "rssMiB": 284.6484375,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 66.93254700000398,
+                  "translation": "The application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 108.51058600000397,
+                  "translation": "Please save your changes before closing the document."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 167.4511449999991,
+                  "translation": "The train arrives at the main train station in twenty minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 212.3278239999927,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 217.88484899999457,
+                  "translation": "The new version improves stability and fixes several known problems."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 223.8797659999982,
+                  "translation": "We recommend that you create a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 214.96863400000439,
+                  "translation": "This book explains how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 211.0743530000036,
+                  "translation": "The weather is expected to stay warm all weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 198.9362390000024,
+                  "translation": "After downloading the files, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 209.02777400000195,
+                  "translation": "The restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 235.2517940000107,
+                  "translation": "Your personal data will remain on this device with offline translation."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 251.8484929999977,
+                  "translation": "The meeting was postponed to Thursday afternoon at three o'clock."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 246.2183359999908,
+                  "translation": "A slower network connection can extend the time it takes to download the models."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 269.73635799999465,
+                  "translation": "The library is open to all visitors from nine in the morning until six in the evening."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 243.13393799999903,
+                  "translation": "Select a folder with sufficient free space for the translation files."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 245.64276600000449,
+                  "translation": "The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 258.16452600000775,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 233.82657299999846,
+                  "translation": "The museum shows photographs depicting the change of the city over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 249.5789039999945,
+                  "translation": "You can also read the translated page without an internet connection."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 255.17128799999773,
+                  "translation": "The team tested the software on several different computers before it was released."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 239.1285540000099,
+                  "translation": "For better results, enter complete sentences instead of single words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 239.35735599999316,
+                  "translation": "The garden must be watered regularly during the dry summer months."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 251.9096419999987,
+                  "translation": "A larger number of requests can increase the waiting time without improving the translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 250.43486999999732,
+                  "translation": "The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 267.980137999999,
+                  "translation": "The researchers recorded measured values every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 284.7039289999957,
+                  "translation": "When switching to a new computer, store both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 294.26168300000427,
+                  "translation": "The trail follows the river and then turns north towards the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 307.4322909999901,
+                  "translation": "If the translation engine is not used, the server can automatically share its storage."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 328.33620299999893,
+                  "translation": "The report contains a brief introduction, a description of the method and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 318.0871919999918,
+                  "translation": "Please wait until the preparation is complete before disconnecting the network connection."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 311.53587799999514,
+                  "translation": "The store offers free delivery for orders before twelve noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 305.1179310000007,
+                  "translation": "The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 3081.7376749999967,
+              "requestsPerSecond": 10.383752082337779,
+              "loadAverage": [
+                24.67,
+                27.38,
+                29.69
+              ],
+              "memory": {
+                "rssMiB": 287.015625,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 42.883883999995305,
+                  "translation": "The application runs locally and does not require a graphics card."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 82.31039999998757,
+                  "translation": "Please save your changes before closing the document."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 192.20979499998793,
+                  "translation": "The train arrives at the main train station in twenty minutes."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 303.8345560000016,
+                  "translation": "You can change the language in the settings menu."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 395.7176790000085,
+                  "translation": "The new version improves stability and fixes several known problems."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 469.75586000000476,
+                  "translation": "We recommend that you create a backup before installing the update."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 476.6907429999992,
+                  "translation": "This book explains how computers store and process information."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 455.4167599999928,
+                  "translation": "The weather is expected to stay warm all weekend."
+                },
+                {
+                  "index": 8,
+                  "elapsedMs": 434.4042300000001,
+                  "translation": "After downloading the files, restart the service and try again."
+                },
+                {
+                  "index": 9,
+                  "elapsedMs": 444.88598099999945,
+                  "translation": "The restaurant serves fresh vegetables and homemade bread every day."
+                },
+                {
+                  "index": 10,
+                  "elapsedMs": 440.7769910000061,
+                  "translation": "Your personal data will remain on this device with offline translation."
+                },
+                {
+                  "index": 11,
+                  "elapsedMs": 505.31939999999304,
+                  "translation": "The meeting was postponed to Thursday afternoon at three o'clock."
+                },
+                {
+                  "index": 12,
+                  "elapsedMs": 543.9531480000005,
+                  "translation": "A slower network connection can extend the time it takes to download the models."
+                },
+                {
+                  "index": 13,
+                  "elapsedMs": 594.8466599999956,
+                  "translation": "The library is open to all visitors from nine in the morning until six in the evening."
+                },
+                {
+                  "index": 14,
+                  "elapsedMs": 589.2668410000042,
+                  "translation": "Select a folder with sufficient free space for the translation files."
+                },
+                {
+                  "index": 15,
+                  "elapsedMs": 541.3126900000061,
+                  "translation": "The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 16,
+                  "elapsedMs": 537.5987000000023,
+                  "translation": "If the request fails, check the server address and your access token."
+                },
+                {
+                  "index": 17,
+                  "elapsedMs": 496.5913280000095,
+                  "translation": "The museum shows photographs depicting the change of the city over time."
+                },
+                {
+                  "index": 18,
+                  "elapsedMs": 454.5251300000091,
+                  "translation": "You can also read the translated page without an internet connection."
+                },
+                {
+                  "index": 19,
+                  "elapsedMs": 408.93432899999607,
+                  "translation": "The team tested the software on several different computers before it was released."
+                },
+                {
+                  "index": 20,
+                  "elapsedMs": 314.4957110000105,
+                  "translation": "For better results, enter complete sentences instead of single words."
+                },
+                {
+                  "index": 21,
+                  "elapsedMs": 223.23587399999087,
+                  "translation": "The garden must be watered regularly during the dry summer months."
+                },
+                {
+                  "index": 22,
+                  "elapsedMs": 227.88100599999598,
+                  "translation": "A larger number of requests can increase the waiting time without improving the translation speed."
+                },
+                {
+                  "index": 23,
+                  "elapsedMs": 245.83386499999324,
+                  "translation": "The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 24,
+                  "elapsedMs": 265.1408519999968,
+                  "translation": "The researchers recorded measured values every hour and compared the results at the end of the week."
+                },
+                {
+                  "index": 25,
+                  "elapsedMs": 300.2590829999972,
+                  "translation": "When switching to a new computer, store both the configuration folder and the model folder."
+                },
+                {
+                  "index": 26,
+                  "elapsedMs": 296.9844030000095,
+                  "translation": "The trail follows the river and then turns north towards the village."
+                },
+                {
+                  "index": 27,
+                  "elapsedMs": 314.0811679999897,
+                  "translation": "If the translation engine is not used, the server can automatically share its storage."
+                },
+                {
+                  "index": 28,
+                  "elapsedMs": 326.108407000007,
+                  "translation": "The report contains a brief introduction, a description of the method and the final results."
+                },
+                {
+                  "index": 29,
+                  "elapsedMs": 316.7951469999971,
+                  "translation": "Please wait until the preparation is complete before disconnecting the network connection."
+                },
+                {
+                  "index": 30,
+                  "elapsedMs": 328.66398599999957,
+                  "translation": "The store offers free delivery for orders before twelve noon on weekdays."
+                },
+                {
+                  "index": 31,
+                  "elapsedMs": 306.39809499999683,
+                  "translation": "The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "paragraph",
+          "concurrency": 1,
+          "uniqueTexts": 8,
+          "requests": 24,
+          "inputCharacters": {
+            "min": 232,
+            "mean": 332.25,
+            "max": 395
+          },
+          "summary": {
+            "meanMs": 254.29887983333478,
+            "p50Ms": 226.70663299999433,
+            "p95Ms": 418.4434980000078,
+            "medianRequestsPerSecond": 4.073915030505954,
+            "minRequestsPerSecond": 3.559507315831576,
+            "maxRequestsPerSecond": 4.222839738634299,
+            "peakRssMiB": 301.65625,
+            "errors": 0
+          },
+          "measurements": [
+            {
+              "round": 1,
+              "elapsedMs": 1963.713023000004,
+              "requestsPerSecond": 4.073915030505954,
+              "loadAverage": [
+                24.67,
+                27.38,
+                29.69
+              ],
+              "memory": {
+                "rssMiB": 288.06640625,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 178.48350200000277,
+                  "translation": "The application runs locally and does not require a graphics card. Please save your changes before closing the document. The train arrives at the main train station in twenty minutes. You can change the language in the settings menu."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 170.69778800000495,
+                  "translation": "The new version improves stability and fixes several known issues. We recommend creating a backup before installing the update. This book explains how computers store and process information. The weather is expected to stay warm throughout the weekend."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 238.77187599999888,
+                  "translation": "After downloading the files, restart the service and try again. The restaurant serves fresh vegetables and homemade bread daily. Your personal data remains with the offline translation on this device. The meeting was postponed to Thursday afternoon at three o’clock."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 223.56947200000286,
+                  "translation": "A slower network connection can extend the time required to download the models. The library is open to all visitors from nine in the morning to six in the evening. Select a folder with sufficient free space for the translation files. The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 297.05996099999174,
+                  "translation": "If the request fails, check the server address and your access token. The museum shows photographs that represent the change of the city over time. You can also read the translated page without an internet connection. The team tested the software on several different computers before publication."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 226.70663299999433,
+                  "translation": "Enter complete sentences instead of single words for better results. The garden must be watered regularly during the dry summer months. A larger number of requests can increase the waiting time without improving the translation speed. The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 322.13625700000557,
+                  "translation": "The researchers captured measurement values hourly and compared the results at the end of the week. When switching to a new computer, keep both the configuration folder and the model folder. The trail follows the river and then turns north towards the village. If the translation engine is not used, the server can automatically release its memory."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 305.36166200001026,
+                  "translation": "The report includes a brief introduction, a description of the method and the final results. Please wait until the preparation is complete before you disconnect the network connection. The store offers free delivery for orders before twelve o’clock at noon on business days. The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "elapsedMs": 1894.4597700000013,
+              "requestsPerSecond": 4.222839738634299,
+              "loadAverage": [
+                24.67,
+                27.38,
+                29.69
+              ],
+              "memory": {
+                "rssMiB": 289.546875,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 222.82566800000495,
+                  "translation": "The application runs locally and does not require a graphics card. Please save your changes before closing the document. The train arrives at the main train station in twenty minutes. You can change the language in the settings menu."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 178.93897699999798,
+                  "translation": "The new version improves stability and fixes several known issues. We recommend creating a backup before installing the update. This book explains how computers store and process information. The weather is expected to stay warm throughout the weekend."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 204.4428179999959,
+                  "translation": "After downloading the files, restart the service and try again. The restaurant serves fresh vegetables and homemade bread daily. Your personal data remains with the offline translation on this device. The meeting was postponed to Thursday afternoon at three o’clock."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 259.80170799999905,
+                  "translation": "A slower network connection can extend the time required to download the models. The library is open to all visitors from nine in the morning to six in the evening. Select a folder with sufficient free space for the translation files. The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 220.7974339999928,
+                  "translation": "If the request fails, check the server address and your access token. The museum shows photographs that represent the change of the city over time. You can also read the translated page without an internet connection. The team tested the software on several different computers before publication."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 212.89549900000566,
+                  "translation": "Enter complete sentences instead of single words for better results. The garden must be watered regularly during the dry summer months. A larger number of requests can increase the waiting time without improving the translation speed. The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 291.4957010000071,
+                  "translation": "The researchers captured measurement values hourly and compared the results at the end of the week. When switching to a new computer, keep both the configuration folder and the model folder. The trail follows the river and then turns north towards the village. If the translation engine is not used, the server can automatically release its memory."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 302.21289699999033,
+                  "translation": "The report includes a brief introduction, a description of the method and the final results. Please wait until the preparation is complete before you disconnect the network connection. The store offers free delivery for orders before twelve o’clock at noon on business days. The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            },
+            {
+              "round": 3,
+              "elapsedMs": 2247.502053000004,
+              "requestsPerSecond": 3.559507315831576,
+              "loadAverage": [
+                24.3,
+                27.26,
+                29.63
+              ],
+              "memory": {
+                "rssMiB": 290.16796875,
+                "peakRssMiB": 301.65625
+              },
+              "samples": [
+                {
+                  "index": 0,
+                  "elapsedMs": 179.00666100000672,
+                  "translation": "The application runs locally and does not require a graphics card. Please save your changes before closing the document. The train arrives at the main train station in twenty minutes. You can change the language in the settings menu."
+                },
+                {
+                  "index": 1,
+                  "elapsedMs": 169.35774600000877,
+                  "translation": "The new version improves stability and fixes several known issues. We recommend creating a backup before installing the update. This book explains how computers store and process information. The weather is expected to stay warm throughout the weekend."
+                },
+                {
+                  "index": 2,
+                  "elapsedMs": 418.4434980000078,
+                  "translation": "After downloading the files, restart the service and try again. The restaurant serves fresh vegetables and homemade bread daily. Your personal data remains with the offline translation on this device. The meeting was postponed to Thursday afternoon at three o’clock."
+                },
+                {
+                  "index": 3,
+                  "elapsedMs": 247.45688399999926,
+                  "translation": "A slower network connection can extend the time required to download the models. The library is open to all visitors from nine in the morning to six in the evening. Select a folder with sufficient free space for the translation files. The children built a small wooden bridge over the stream."
+                },
+                {
+                  "index": 4,
+                  "elapsedMs": 238.4654029999947,
+                  "translation": "If the request fails, check the server address and your access token. The museum shows photographs that represent the change of the city over time. You can also read the translated page without an internet connection. The team tested the software on several different computers before publication."
+                },
+                {
+                  "index": 5,
+                  "elapsedMs": 195.51536200000555,
+                  "translation": "Enter complete sentences instead of single words for better results. The garden must be watered regularly during the dry summer months. A larger number of requests can increase the waiting time without improving the translation speed. The package contains everything that is needed to start the local translation service."
+                },
+                {
+                  "index": 6,
+                  "elapsedMs": 295.95520399999805,
+                  "translation": "The researchers captured measurement values hourly and compared the results at the end of the week. When switching to a new computer, keep both the configuration folder and the model folder. The trail follows the river and then turns north towards the village. If the translation engine is not used, the server can automatically release its memory."
+                },
+                {
+                  "index": 7,
+                  "elapsedMs": 502.7745050000085,
+                  "translation": "The report includes a brief introduction, a description of the method and the final results. Please wait until the preparation is complete before you disconnect the network connection. The store offers free delivery for orders before twelve o’clock at noon on business days. The performance depends on the processor, the selected languages and the length of the text."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

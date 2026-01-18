@@ -45,7 +45,8 @@ function needsPivotTranslation(fromLang: string, toLang: string): boolean {
 
 async function getOrCreateSingleEngine(
   fromLang: string,
-  toLang: string
+  toLang: string,
+  sampleText: string
 ): Promise<TranslationEngine> {
   const key = `${fromLang}-${toLang}`;
 
@@ -58,7 +59,7 @@ async function getOrCreateSingleEngine(
       if (existing.timer) clearTimeout(existing.timer);
       engines.delete(key);
       await existing.engine.destroy();
-      return getOrCreateSingleEngine(fromLang, toLang);
+      return getOrCreateSingleEngine(fromLang, toLang, sampleText);
     }
     existing.lastUsed = new Date();
     resetIdleTimer(existing);
@@ -78,7 +79,7 @@ async function getOrCreateSingleEngine(
 
       const model = await models.prepareModel(toLang, fromLang);
       const engine = new TranslationEngine({ sourceLang: fromLang, targetLang: toLang });
-      await engine.init(model, { 'max-length-break': config.maxSentenceLength });
+      await engine.init(model, { 'max-length-break': config.maxSentenceLength }, sampleText);
 
       const info: EngineInfo = {
         engine,
@@ -126,12 +127,12 @@ async function translateSingleLanguageText(
   text: string,
   isHTML: boolean
 ): Promise<string> {
-  const engine = await getOrCreateSingleEngine(fromLang, toLang);
-  const cacheKey = [fromLang, toLang, engine.identity, text, isHTML];
-  const cached = readCache(cacheKey);
+  const engine = await getOrCreateSingleEngine(fromLang, toLang, text);
+  const cacheKey = () => [fromLang, toLang, engine.identity, engine.backend?.provider, engine.backend?.cpuThreads, engine.backend?.tuning, text, isHTML];
+  const cached = readCache(cacheKey());
   if (cached !== null) return cached;
   const result = await engine.translateAsync(text, { html: isHTML });
-  writeCache(result, cacheKey);
+  writeCache(result, cacheKey());
   return result;
 }
 
@@ -275,6 +276,10 @@ async function translateLongText(
   }
 
   return results.join('');
+}
+
+export function getEngineRuntimes() {
+  return [...engines.values()].map(({ fromLang, toLang, engine }) => ({ from: fromLang, to: toLang, ...engine.backend }));
 }
 
 export async function cleanupAllEngines() {

@@ -6,7 +6,7 @@ A free offline translation service that runs on your own computer, with no GPU r
 
 Useful for everyday reading and understanding the main meaning. Translations can contain mistakes; check important content against the original.
 
-> v5 uses a new translation engine. After upgrading, the first translation in a language direction may require preparing the translation files again. Please wait for this to finish.
+> v5 uses a new translation engine with significantly improved performance. New Chinese–English translation models with better translation quality are currently being trained. After upgrading, the first translation in a language direction may require preparing the translation files again. Please wait for this to finish.
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -179,13 +179,102 @@ mtranserver --help
   mtranserver --offline
 ```
 
+## Performance Tests (v5 ONNX)
+
+Measured on 2026-10-16: MTranServer **5.1.0**, ONNX Runtime **1.30.0**, Node.js **24.2.0**; Intel Core **i5-14400** (10 cores, 16 threads), **31.0GiB** RAM, EndeavourOS Linux x86_64. The selected backends and thread counts are shown below.
+
+On first model load, the application measures CPU thread counts across the available hardware, execution modes, and installed CPU/GPU backends with short and longer inputs. Repeated warm measurements select faster settings, with full graph optimization, memory reuse and thread spinning enabled. Clearly slower accelerators stop probing early. Choices are cached by model identity within the process, validated on reload and reused; accelerator failures fall back to CPU. WebGPU was measured on this machine but was slower. CUDA/TensorRT extension libraries are absent, so no NVIDIA GPU was measured. A thread count of 0 lets ONNX Runtime arrange threads automatically.
+
+Translation result caching was disabled (`MT_CACHE_SIZE=0`). Prepared default quantized ONNX models were used. Timings cover the local HTTP request through receipt of the complete translation. Each direction received 8 warm-up requests, followed by 32 fixed sentences and 8 paragraphs (4 consecutive sentences each), with 3 rounds per test.
+
+| Direction | Input (characters) | Backend / inference threads | Concurrent requests | Mean (ms) | P95 (ms) | Throughput (requests/s) |
+| --- | --- | --- | --- | --- | --- | --- |
+| English → Chinese | Sentence 49–94 | CPU / 6 | 1 | 11.5 | 16.6 | 86.51 |
+| English → Chinese | Sentence 49–94 | CPU / 6 | 4 | 35.6 | 50.8 | 108.33 |
+| English → Chinese | Paragraph 234–344 | CPU / 6 | 1 | 27.7 | 35.0 | 36.31 |
+| Chinese → English | Sentence 14–28 | CPU / 7 | 1 | 20.2 | 28.3 | 48.61 |
+| Chinese → English | Sentence 14–28 | CPU / 7 | 4 | 68.2 | 89.1 | 56.19 |
+| Chinese → English | Paragraph 65–104 | CPU / 7 | 1 | 62.5 | 85.7 | 15.52 |
+| German → English | Sentence 50–113 | CPU / 5 | 1 | 12.6 | 17.7 | 83.02 |
+| German → English | Sentence 50–113 | CPU / 5 | 4 | 39.7 | 51.5 | 96.51 |
+| German → English | Paragraph 232–395 | CPU / 5 | 1 | 33.4 | 43.4 | 30.00 |
+
+Throughput is the median of three rounds; mean latency and P95 use all requests across those rounds. P95 means 95% of requests completed within that time. Each sentence test has 96 requests and each paragraph test has 24: **648/648 timed requests succeeded**, excluding warm-up and first-load requests. Parallel inference per direction follows the measured limit; excess requests are queued. Higher request concurrency does not guarantee higher throughput.
+
+| Direction | First load, backend selection + translation (s) | RSS after warm-up (MiB) | Peak RSS (MiB) | ONNX model (MiB) |
+| --- | --- | --- | --- | --- |
+| English → Chinese | 33.47 | 364.3 | 391.7 | 118.8 |
+| Chinese → English | 62.99 | 410.0 | 475.7 | 125.5 |
+| German → English | 26.44 | 319.3 | 345.1 | 71.9 |
+
+Each direction used a fresh server process. RSS includes the entire server and model; peak RSS includes model loading and automatic backend probing. First-load latency was measured once per direction, excluding downloads, conversion, and server startup; the OS file cache was not cleared. Other compute tasks remained active, with a one-minute system load of **4.5–6.9** across 16 logical CPUs. These results reflect that load. The historical 50ms result and other projects’ figures use different conditions and cannot establish a version speedup or cross-project ranking. Translation quality was not evaluated.
+
+[Raw results, individual timings, and translations](../benchmarks/onnx-tuned-2026-10-16.json) | [Fixed test corpus](../benchmarks/onnx-corpus.json) | [Benchmark script](../scripts/benchmark-onnx.ts)
+
+[Earlier fixed single-thread CPU measurements under heavy load](../benchmarks/onnx-cpu-2026-10-16.json)
+
+### Same-round Comparison with Published 5.0.1
+
+Both versions used identical default quantized models and fixed inputs, caching disabled, 8 warm-ups each, and 3 alternating rounds with the same Python HTTP client. These are median full-endpoint throughputs, excluding model loading and tuning; absolute values differ from the independent tests above.
+
+| Direction | Input | Concurrency | 5.0.1 (requests/s) | 5.1.0 (requests/s) | Speed ratio |
+| --- | --- | --- | --- | --- | --- |
+| English → Chinese | Sentence | 1 | 46.92 | 83.52 | 1.78× |
+| English → Chinese | Sentence | 4 | 57.25 | 93.65 | 1.64× |
+| English → Chinese | Paragraph | 1 | 17.27 | 32.15 | 1.86× |
+| Chinese → English | Sentence | 1 | 28.76 | 48.42 | 1.68× |
+| Chinese → English | Sentence | 4 | 28.86 | 51.69 | 1.79× |
+| Chinese → English | Paragraph | 1 | 7.40 | 15.58 | 2.10× |
+| German → English | Sentence | 1 | 48.45 | 75.11 | 1.55× |
+| German → English | Sentence | 4 | 46.20 | 93.65 | 2.03× |
+| German → English | Paragraph | 1 | 14.78 | 30.57 | 2.07× |
+
+**1296/1296 timed requests succeeded, with matching translations for every input.** Gains on this host come from CPU threading and parallel execution. Tuning targets the combined probe workload; actual speed varies with text and system state.
+
+[Raw paired results](../benchmarks/onnx-tuned-paired-2026-10-16.json) | [Benchmark script](../scripts/benchmark-onnx-paired.py)
+
+### Earlier One-versus-six-thread Experiment
+
+Both versions used the archived 64 German-to-English inputs, the identical current qall model, and Node. Caching was disabled. Each version received 8 warm-up requests and 3 alternating rounds of serial HTTP requests: 192 timed requests per version, excluding model loading and backend selection.
+
+| Version / configuration | Median throughput (sentences/s) | P95 (ms) |
+| --- | --- | --- |
+| Before: fixed single-thread CPU | 19.56 | 100.49 |
+| After: automatic CPU, 6 threads | 36.59 | 48.14 |
+
+Throughput increased by **1.87×** in this paired run, with **64/64 identical translations**. These are results from the earlier experiment; the CPU thread budget also increased from 1 to 6. It is not a GPU speedup.
+
+[Raw paired results](../benchmarks/onnx-service-paired-2026-10-16.json) | [Historical test corpus](../benchmarks/service-corpus-de-en.jsonl)
+
+### Historical Service Comparison (2026-09-23)
+
+The earlier session compared the two services on one host with the same Mozilla source model, German-to-English, one CPU thread, caching disabled, 64 inputs, 8 warm-ups, and 3 alternating rounds. The original used Bun and the ONNX qdecoder service used Node, so this measures complete HTTP service stacks. These are historical results; those two historical versions were not rerun here.
+
+| Version / configuration | Median throughput (sentences/s) | P95 (ms) |
+| --- | --- | --- |
+| Original Bergamot | 10.68 | 190.91 |
+| ONNX qdecoder at that time | 22.86 | 80.93 |
+
+[Historical raw results, including rounds, timings, translations, and quality scores](../benchmarks/service-historical-2026-09-23.json)
+
 ## Comparison with Similar Projects
 
-Speed, memory use, and translation quality vary by device, language, and text. Old test numbers do not represent v5, so performance rankings have been removed. You can also explore these projects:
+The table preserves earlier comparison records and adds the current v5 English-to-Chinese measurement. Test environments differ; use it as a reference:
 
-- [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)
-- [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)
-- [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT)
+| Project Name                                                       | Memory Usage   | Concurrency | Translation Quality | Speed      | Additional Info                                                                                                                                                   |
+| ------------------------------------------------------------------ | -------------- | ----------- | ------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | Very High      | Poor        | Average             | Slow       | Android port [RTranslator](https://github.com/niedev/RTranslator) has many optimizations, but still has high resource usage and is not fast                       |
+| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High      | Average     | Average             | Medium     | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
+| [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT)       | High           | Average     | Below Average       | Fast       | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                            |
+| Any LLM                                                            | Extremely High | Dynamic     | Very Good           | Very Slow  | High hardware requirements. If you need high concurrency translation, it is recommended to use vllm framework.                                                    |
+| MTranServer (previous Bergamot engine)                                         | Low            | High        | Average             | Ultra Fast | 50ms average response time per request.                                                                                                                           |
+| MTranServer (v5 ONNX, automatic backend) | 392MiB (peak, EN-ZH) | Measured concurrency limit | Not evaluated | 86.51/s | Local English-to-Chinese sentences; CPU with 6 threads selected automatically; conditions above |
+
+> Earlier rows retain the original README’s informal CPU English-to-Chinese tests and non-quantized comparison. The v5 row uses the measurements above with default quantized ONNX models.
+
+> The 50ms figure is a historical result from the previous Bergamot engine, not a measurement of v5 ONNX Runtime. The original README did not record the hardware, text length, sample count, or cache settings. Qualitative ratings are also retained from that version; this is not a current ranking measured in a shared test environment.
+
+[Original record](https://github.com/xxnuo/MTranServer/blob/1f05f8536940f825be205e3434fd7fe964c56a26/docs/README_en.md)
 
 # Advanced Configuration Guide
 

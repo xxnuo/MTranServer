@@ -36,6 +36,9 @@ jobs:
       - name: Build Server
         run: bun run build:node
 
+      - name: Validate runtime and benchmarks
+        run: bun run typecheck && bun test
+
   build-desktop:
     strategy:
       matrix:
@@ -141,12 +144,12 @@ jobs:
 
           | Platform | Architecture | Binary |
           |----------|-------------|--------|
-          | Linux | x64 | [mtranserver-desktop-${VERSION}-linux-x64.AppImage](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x64.AppImage) |
+          | Linux | x64 | [mtranserver-desktop-${VERSION}-linux-x86_64.AppImage](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x86_64.AppImage) |
           | Linux | arm64 | [mtranserver-desktop-${VERSION}-linux-arm64.AppImage](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-arm64.AppImage) |
-          | Linux | x64 (deb) | [mtranserver-desktop-${VERSION}-linux-x64.deb](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x64.deb) |
+          | Linux | x64 (deb) | [mtranserver-desktop-${VERSION}-linux-amd64.deb](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-amd64.deb) |
           | Linux | arm64 (deb) | [mtranserver-desktop-${VERSION}-linux-arm64.deb](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-arm64.deb) |
-          | Linux | x64 (rpm) | [mtranserver-desktop-${VERSION}-linux-x64.rpm](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x64.rpm) |
-          | Linux | arm64 (rpm) | [mtranserver-desktop-${VERSION}-linux-arm64.rpm](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-arm64.rpm) |
+          | Linux | x64 (rpm) | [mtranserver-desktop-${VERSION}-linux-x86_64.rpm](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-x86_64.rpm) |
+          | Linux | arm64 (rpm) | [mtranserver-desktop-${VERSION}-linux-aarch64.rpm](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-linux-aarch64.rpm) |
           | macOS | x64 | [mtranserver-desktop-${VERSION}-mac-x64.dmg](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-mac-x64.dmg) |
           | macOS | arm64 | [mtranserver-desktop-${VERSION}-mac-arm64.dmg](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-mac-arm64.dmg) |
           | Windows | x64 | [mtranserver-desktop-${VERSION}-win-x64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-win-x64.exe) |

@@ -31,4 +31,29 @@ describe('ONNX text handling', () => {
     await expect(engine.translateAsync('late')).rejects.toThrow('closing');
     expect(await request).toBe('text'); await closing; expect(release).toBe(true);
   });
+  test('CPU requests respect the measured concurrency and drain after an error before closing', async () => {
+    const engine = new TranslationEngine() as any;
+    let active = 0, peak = 0, released = false;
+    engine.backend = { provider: 'cpu', maxConcurrentRuns: 2 };
+    engine.session = { release: async () => { expect(active).toBe(0); released = true; } };
+    engine.translateText = async (text: string) => {
+      active++; peak = Math.max(peak, active);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 5));
+        expect(released).toBe(false);
+        if (text === '2') throw new Error('request failed');
+        return text;
+      } finally { active--; }
+    };
+    const requests = Promise.allSettled(Array.from({ length: 8 }, (_, i) => engine.translateAsync(String(i))));
+    const closing = engine.destroy();
+    expect(engine.busy).toBe(true);
+    const results = await requests;
+    await closing;
+    expect(peak).toBe(2);
+    expect(results.filter(result => result.status === 'rejected')).toHaveLength(1);
+    expect(results.filter(result => result.status === 'fulfilled').map(result => result.value)).toEqual(['0', '1', '3', '4', '5', '6', '7']);
+    expect(engine.busy).toBe(false);
+    expect(released).toBe(true);
+  });
 });
