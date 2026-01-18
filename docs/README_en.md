@@ -160,14 +160,14 @@ Same-run CPU comparison, for reference. Lower ms and higher req/s are better.
 
 | Direction | Input | Concurrency | Default | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| English → Chinese | Short | 1 | 8.8 ms | 7.2 ms | 10.7 ms |
-| English → Chinese | Paragraph | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
-| Chinese → English | Short | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
-| Chinese → English | Paragraph | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
-| English → Chinese | Long text (32 sentences) | 1 | 164.2 ms | 120.8 ms | 482.2 ms |
-| Chinese → English | Long text (32 sentences) | 1 | 459.1 ms | 159.1 ms | 580.7 ms |
-| English → Chinese | Short | 8 | 273 req/s | 401 req/s | 491 req/s |
-| Chinese → English | Short | 8 | 155 req/s | 453 req/s | 497 req/s |
+| English → Chinese | Short | 1 | 8.8 ms | **7.2 ms** | 10.7 ms |
+| English → Chinese | Paragraph | 1 | 32.5 ms | **28.1 ms** | 46.7 ms |
+| Chinese → English | Short | 1 | 11.8 ms | **6.5 ms** | 9.9 ms |
+| Chinese → English | Paragraph | 1 | 53.0 ms | **29.0 ms** | 48.6 ms |
+| English → Chinese | Long text (32 sentences) | 1 | 164.2 ms | **120.8 ms** | 482.2 ms |
+| Chinese → English | Long text (32 sentences) | 1 | 459.1 ms | **159.1 ms** | 580.7 ms |
+| English → Chinese | Short | 8 | 273 req/s | 401 req/s | **491 req/s** |
+| Chinese → English | Short | 8 | 155 req/s | 453 req/s | **497 req/s** |
 
 With both translation directions loaded: Default about 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 

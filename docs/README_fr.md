@@ -160,14 +160,14 @@ Comparaison CPU issue du même test, à titre indicatif. Moins de ms et plus de 
 
 | Sens | Entrée | Concurrence | Défaut | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| Anglais → chinois | Courte | 1 | 8.8 ms | 7.2 ms | 10.7 ms |
-| Anglais → chinois | Paragraphe | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
-| Chinois → anglais | Courte | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
-| Chinois → anglais | Paragraphe | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
-| Anglais → chinois | Texte long (32 phrases) | 1 | 164.2 ms | 120.8 ms | 482.2 ms |
-| Chinois → anglais | Texte long (32 phrases) | 1 | 459.1 ms | 159.1 ms | 580.7 ms |
-| Anglais → chinois | Courte | 8 | 273 req/s | 401 req/s | 491 req/s |
-| Chinois → anglais | Courte | 8 | 155 req/s | 453 req/s | 497 req/s |
+| Anglais → chinois | Courte | 1 | 8.8 ms | **7.2 ms** | 10.7 ms |
+| Anglais → chinois | Paragraphe | 1 | 32.5 ms | **28.1 ms** | 46.7 ms |
+| Chinois → anglais | Courte | 1 | 11.8 ms | **6.5 ms** | 9.9 ms |
+| Chinois → anglais | Paragraphe | 1 | 53.0 ms | **29.0 ms** | 48.6 ms |
+| Anglais → chinois | Texte long (32 phrases) | 1 | 164.2 ms | **120.8 ms** | 482.2 ms |
+| Chinois → anglais | Texte long (32 phrases) | 1 | 459.1 ms | **159.1 ms** | 580.7 ms |
+| Anglais → chinois | Courte | 8 | 273 req/s | 401 req/s | **491 req/s** |
+| Chinois → anglais | Courte | 8 | 155 req/s | 453 req/s | **497 req/s** |
 
 Avec les deux sens de traduction chargés : Défaut environ 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 
