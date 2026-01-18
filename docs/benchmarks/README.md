@@ -11,3 +11,7 @@
 [5.4.2 全链路性能优化与候选方案实测报告（2026-11-16）](performance-optimization-2026-11-16.md)：L3 常驻两阶段 INT8 + Cauchy-Schwarz 精确重排候选表、无锁动态量化、启动与服务热路径优化、六平台与四台实体机 2049 条逐 token 一致验收及否决方案记录。
 
 [CPU 性能对比：普通、Fast 与 LinguaSpark（2026-11-16，v5.4.2）](cpu-comparison-2026-11-16.md)：Ryzen 9 9950X（4 CPU 配额、3 GiB 内存）同口径复测与 [2026-11-14（v5.1.3）基线](cpu-comparison-2026-11-14.md)对照，附结构化数据 [cpu-comparison-2026-11-16.json](cpu-comparison-2026-11-16.json)。
+
+[5.4.3 普通与 Fast 双模式性能优化及候选方案报告（2026-11-17）](performance-optimization-2026-11-17.md)：普通模式原生 SSRU 全词表 `FullVocabQ4`、句级张量复用、精确 INT8 候选表快速路径、零 `ort.Tensor` N-API 热路径、六平台与四台实体机 4098 条逐 token 一致验收及否决方案记录。
+
+[CPU 性能对比：普通、Fast 与 LinguaSpark（2026-11-17，v5.4.3）](cpu-comparison-2026-11-17.md)：Ryzen 9 9950X（4 CPU 配额、3 GiB 内存）普通与 Fast 双模式更新对照，附结构化数据 [cpu-comparison-2026-11-17.json](cpu-comparison-2026-11-17.json)。

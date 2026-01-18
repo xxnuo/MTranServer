@@ -160,16 +160,16 @@ Ryzen 9 9950X, 4-CPU-Kontingent, 3 GiB Arbeitsspeicher, Cache deaktiviert; Media
 
 | Richtung | Eingabe | Parallelität | Standard | Fast |
 | --- | --- | --- | --- | --- |
-| Englisch → Chinesisch | Kurz | 1 | 4.4 ms | **2.4 ms** |
-| Englisch → Chinesisch | Absatz | 1 | 14.2 ms | **9.4 ms** |
-| Chinesisch → Englisch | Kurz | 1 | 5.4 ms | **2.3 ms** |
-| Chinesisch → Englisch | Absatz | 1 | 19.2 ms | **9.9 ms** |
-| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 72.8 ms | **28.6 ms** |
-| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 132.4 ms | **38.5 ms** |
-| Englisch → Chinesisch | Kurz | 8 | 633 Anfragen/s | **1941 Anfragen/s** |
-| Chinesisch → Englisch | Kurz | 8 | 495 Anfragen/s | **2124 Anfragen/s** |
+| Englisch → Chinesisch | Kurz | 1 | 2.9 ms | **2.3 ms** |
+| Englisch → Chinesisch | Absatz | 1 | 10.6 ms | **8.8 ms** |
+| Chinesisch → Englisch | Kurz | 1 | 3.6 ms | **2.2 ms** |
+| Chinesisch → Englisch | Absatz | 1 | 13.9 ms | **8.9 ms** |
+| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 44.8 ms | **26.6 ms** |
+| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 91.8 ms | **34.6 ms** |
+| Englisch → Chinesisch | Kurz | 8 | 1148 Anfragen/s | **1951 Anfragen/s** |
+| Chinesisch → Englisch | Kurz | 8 | 796 Anfragen/s | **2280 Anfragen/s** |
 
-Mit beiden Übersetzungsrichtungen geladen: Standard etwa 534 MiB, Fast 651 MiB.
+Mit beiden Übersetzungsrichtungen geladen: Standard etwa 572 MiB, Fast 652 MiB.
 
 Lange Texte werden satzweise parallel übersetzt; [gepaarte HTTP-Tests](benchmarks/plain-inference-concurrency.json) zeigten pro Langtext-Anfrage 36%–60% weniger Latenz als vor der Optimierung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 

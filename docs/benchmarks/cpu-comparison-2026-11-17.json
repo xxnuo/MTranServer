@@ -1,0 +1,1735 @@
+{
+  "date": "2026-11-17",
+  "previous_date": "2026-11-16",
+  "baseline_date": "2026-11-14",
+  "environment": {
+    "cpu": "AMD Ryzen 9 9950X (shared Linux host)",
+    "cpu_quota": "4 CPUs (400000/100000)",
+    "memory_limit_gib": 3,
+    "swap_allowed": false,
+    "pids_limit": 256,
+    "nice": 15,
+    "io_class": "idle",
+    "cache_size": 0,
+    "rounds": 3,
+    "measured_requests": 5193
+  },
+  "versions": {
+    "mtranserver": "5.4.3",
+    "mtranserver_commit": "5dda16e",
+    "previous_mtranserver": "5.4.2",
+    "baseline_mtranserver": "5.1.3",
+    "onnxruntime": "1.30.0",
+    "linguaspark_server": "edd16a674b1484490a4a29d588dab9c1a191e6c3",
+    "linguaspark_engine": "269605c",
+    "linguaspark_workers": 4
+  },
+  "models_sha256": {
+    "en_zh-Hans/lex.50.50.enzh.s2t.bin": "4a5e5827788060f1d718a8132b69440929387514a045796e9b77f935db68c055",
+    "en_zh-Hans/model.enzh.intgemm.alphas.bin": "4e5accc141373565ddc8fa1565bceaa8d0c3482a82cab8131c719ebcc6c2157c",
+    "en_zh-Hans/srcvocab.enzh.spm": "bd9b65504acc6d9726dd281f7defc2adb7c2c22d0688fe2f84697de25197c8c5",
+    "en_zh-Hans/trgvocab.enzh.spm": "aded6993c36e440284d11cec3f6b8aef9c0e43188a772d80be342a713adf223d",
+    "zh-Hans_en/lex.50.50.zhen.s2t.bin": "8524dd4c93ffd7f0ae7be32f77a7c14fea7cdbbebe34ea6ad0ec368d5ddd8b13",
+    "zh-Hans_en/model.zhen.intgemm.alphas.bin": "5cd149601802fc8a18124a1c1306144dbbedc058630c4ddb2d53aa76fa9c7c06",
+    "zh-Hans_en/vocab.zhen.spm": "dff594318ab7d8b7b60b844ab98ebe6b932ae8045fab15235404c787715965b3"
+  },
+  "translation_parity_vs_2026_11_16": {
+    "original-cpu": {
+      "matched": 27,
+      "total": 27,
+      "differences": 0
+    },
+    "fast-cpu": {
+      "matched": 27,
+      "total": 27,
+      "differences": 0
+    },
+    "linguaspark-cpu": {
+      "matched": 27,
+      "total": 27,
+      "differences": 0
+    }
+  },
+  "cold_unconverted_first_run": [
+    {
+      "variant": "original-cpu",
+      "cold_ready_ms": 371.93,
+      "first_en_zh_ms": 2304.55,
+      "first_zh_en_ms": 2748.29
+    },
+    {
+      "variant": "fast-cpu",
+      "cold_ready_ms": 376.34,
+      "first_en_zh_ms": 2227.3,
+      "first_zh_en_ms": 2482.99
+    }
+  ],
+  "initialization_and_memory": {
+    "original-cpu": {
+      "ready_ms_rounds": [
+        1276.56,
+        1280.16,
+        1336.7
+      ],
+      "ready_ms_median": 1280.16,
+      "first_en_zh_ms_rounds": [
+        8.47,
+        8.07,
+        8.08
+      ],
+      "first_en_zh_ms_median": 8.08,
+      "first_zh_en_ms_rounds": [
+        5.38,
+        5.05,
+        5.05
+      ],
+      "first_zh_en_ms_median": 5.05,
+      "warm_rss_mib_rounds": [
+        571.89,
+        560.53,
+        573.55
+      ],
+      "warm_rss_mib_median": 571.89,
+      "peak_rss_mib_rounds": [
+        757.27,
+        738.25,
+        756.98
+      ],
+      "peak_rss_mib_max": 757.27,
+      "engines": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 4
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 4
+        }
+      ]
+    },
+    "fast-cpu": {
+      "ready_ms_rounds": [
+        1485.01,
+        1484.43,
+        1483.16
+      ],
+      "ready_ms_median": 1484.43,
+      "first_en_zh_ms_rounds": [
+        7.07,
+        7.18,
+        6.87
+      ],
+      "first_en_zh_ms_median": 7.07,
+      "first_zh_en_ms_rounds": [
+        4.06,
+        3.66,
+        3.24
+      ],
+      "first_zh_en_ms_median": 3.66,
+      "warm_rss_mib_rounds": [
+        651.71,
+        648.53,
+        655.56
+      ],
+      "warm_rss_mib_median": 651.71,
+      "peak_rss_mib_rounds": [
+        817.18,
+        820.83,
+        826.09
+      ],
+      "peak_rss_mib_max": 826.09,
+      "engines": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 4
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 4
+        }
+      ]
+    },
+    "linguaspark-cpu": {
+      "ready_ms_rounds": [
+        287.97,
+        266.66,
+        273.97
+      ],
+      "ready_ms_median": 273.97,
+      "first_en_zh_ms_rounds": [
+        5.85,
+        5.77,
+        5.4
+      ],
+      "first_en_zh_ms_median": 5.77,
+      "first_zh_en_ms_rounds": [
+        4.99,
+        5.15,
+        4.9
+      ],
+      "first_zh_en_ms_median": 4.99,
+      "warm_rss_mib_rounds": [
+        313.18,
+        313.25,
+        313.04
+      ],
+      "warm_rss_mib_median": 313.18,
+      "peak_rss_mib_rounds": [
+        313.18,
+        313.25,
+        313.04
+      ],
+      "peak_rss_mib_max": 313.25
+    }
+  },
+  "summary": [
+    {
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 44.7871,
+      "p95_ms": 46.8819,
+      "requests_per_second": 22.2675,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 72.8236,
+        "p95_ms": 83.4436,
+        "requests_per_second": 13.7077
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 91.0986,
+        "p95_ms": 93.2728,
+        "requests_per_second": 10.9608
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 167.0864,
+      "p95_ms": 173.9958,
+      "requests_per_second": 23.3528,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 291.4971,
+        "p95_ms": 317.1362,
+        "requests_per_second": 13.5527
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 326.9684,
+        "p95_ms": 348.7751,
+        "requests_per_second": 11.715
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "mean_latency_ms": 91.7793,
+      "p95_ms": 91.9946,
+      "requests_per_second": 10.8827,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 132.3995,
+        "p95_ms": 161.9718,
+        "requests_per_second": 7.5466
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 151.2212,
+        "p95_ms": 161.6284,
+        "requests_per_second": 6.6081
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "mean_latency_ms": 347.3052,
+      "p95_ms": 362.1863,
+      "requests_per_second": 11.3049,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 532.4843,
+        "p95_ms": 580.2353,
+        "requests_per_second": 7.2455
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 619.2342,
+        "p95_ms": 633.3254,
+        "requests_per_second": 6.3879
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 10.6273,
+      "p95_ms": 12.2074,
+      "requests_per_second": 93.7893,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 14.1552,
+        "p95_ms": 15.8747,
+        "requests_per_second": 70.4535
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 15.7729,
+        "p95_ms": 17.86,
+        "requests_per_second": 63.2681
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 13.8594,
+      "p95_ms": 16.3773,
+      "requests_per_second": 71.918,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 19.1869,
+        "p95_ms": 21.8855,
+        "requests_per_second": 51.9897
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 23.1535,
+        "p95_ms": 23.7538,
+        "requests_per_second": 43.087
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 2.8861,
+      "p95_ms": 3.6355,
+      "requests_per_second": 344.8692,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 4.3636,
+        "p95_ms": 5.3145,
+        "requests_per_second": 228.2367
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 4.1425,
+        "p95_ms": 5.1675,
+        "requests_per_second": 240.66
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 6.8527,
+      "p95_ms": 7.7479,
+      "requests_per_second": 1147.7312,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 11.8409,
+        "p95_ms": 46.4249,
+        "requests_per_second": 633.461
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 13.6122,
+        "p95_ms": 34.3042,
+        "requests_per_second": 581.0562
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 3.5716,
+      "p95_ms": 4.7261,
+      "requests_per_second": 278.7234,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 5.4177,
+        "p95_ms": 7.5078,
+        "requests_per_second": 183.9022
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 5.5307,
+        "p95_ms": 6.7527,
+        "requests_per_second": 180.0571
+      }
+    },
+    {
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "mean_latency_ms": 9.897,
+      "p95_ms": 17.9747,
+      "requests_per_second": 795.6535,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 15.9719,
+        "p95_ms": 51.3492,
+        "requests_per_second": 495.0448
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 18.0168,
+        "p95_ms": 48.3866,
+        "requests_per_second": 439.6658
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 26.6339,
+      "p95_ms": 27.3098,
+      "requests_per_second": 37.3676,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 28.5931,
+        "p95_ms": 29.376,
+        "requests_per_second": 34.8497
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 52.9553,
+        "p95_ms": 53.6936,
+        "requests_per_second": 18.8463
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 95.2063,
+      "p95_ms": 99.0129,
+      "requests_per_second": 40.5058,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 102.7925,
+        "p95_ms": 106.7462,
+        "requests_per_second": 38.4397
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 214.9878,
+        "p95_ms": 217.3684,
+        "requests_per_second": 18.5683
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "mean_latency_ms": 34.6144,
+      "p95_ms": 35.2746,
+      "requests_per_second": 28.8178,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 38.4521,
+        "p95_ms": 38.6337,
+        "requests_per_second": 25.9499
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 72.5716,
+        "p95_ms": 75.3395,
+        "requests_per_second": 13.7637
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "mean_latency_ms": 126.5063,
+      "p95_ms": 131.1674,
+      "requests_per_second": 31.0678,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 137.8223,
+        "p95_ms": 143.2738,
+        "requests_per_second": 28.5511
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 268.7439,
+        "p95_ms": 285.8863,
+        "requests_per_second": 14.2976
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 8.8388,
+      "p95_ms": 10.5792,
+      "requests_per_second": 112.728,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 9.4362,
+        "p95_ms": 11.25,
+        "requests_per_second": 105.6533
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 13.9648,
+        "p95_ms": 16.0596,
+        "requests_per_second": 71.4232
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 8.9181,
+      "p95_ms": 9.9148,
+      "requests_per_second": 111.6666,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 9.9384,
+        "p95_ms": 10.694,
+        "requests_per_second": 100.1387
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 14.8937,
+        "p95_ms": 16.945,
+        "requests_per_second": 66.9034
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 2.2552,
+      "p95_ms": 2.7775,
+      "requests_per_second": 441.1543,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 2.3906,
+        "p95_ms": 2.9553,
+        "requests_per_second": 416.1431
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 3.8073,
+        "p95_ms": 4.2638,
+        "requests_per_second": 261.4978
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 4.0177,
+      "p95_ms": 4.6498,
+      "requests_per_second": 1950.6038,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 4.04,
+        "p95_ms": 4.7586,
+        "requests_per_second": 1940.7521
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 8.6354,
+        "p95_ms": 10.713,
+        "requests_per_second": 910.034
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 2.1461,
+      "p95_ms": 2.8418,
+      "requests_per_second": 463.9358,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 2.2514,
+        "p95_ms": 3.0957,
+        "requests_per_second": 441.4395
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 3.4571,
+        "p95_ms": 4.5742,
+        "requests_per_second": 287.7772
+      }
+    },
+    {
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "mean_latency_ms": 3.417,
+      "p95_ms": 4.4026,
+      "requests_per_second": 2280.1007,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 3.6697,
+        "p95_ms": 4.5869,
+        "requests_per_second": 2123.599
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 7.3459,
+        "p95_ms": 9.2992,
+        "requests_per_second": 1067.4056
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 274.3547,
+      "p95_ms": 276.413,
+      "requests_per_second": 3.6434,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 274.8062,
+        "p95_ms": 278.6962,
+        "requests_per_second": 3.6371
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 279.4376,
+        "p95_ms": 284.3838,
+        "requests_per_second": 3.5769
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 469.4259,
+      "p95_ms": 486.8328,
+      "requests_per_second": 8.3279,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 472.2525,
+        "p95_ms": 488.7574,
+        "requests_per_second": 8.2966
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 466.3691,
+        "p95_ms": 493.8323,
+        "requests_per_second": 8.2869
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "mean_latency_ms": 215.6977,
+      "p95_ms": 218.3388,
+      "requests_per_second": 4.6341,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 218.1049,
+        "p95_ms": 219.3168,
+        "requests_per_second": 4.5827
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 219.4087,
+        "p95_ms": 220.0471,
+        "requests_per_second": 4.5559
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "mean_latency_ms": 329.7728,
+      "p95_ms": 343.0222,
+      "requests_per_second": 11.937,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 324.8407,
+        "p95_ms": 341.0149,
+        "requests_per_second": 11.9716
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 333.7491,
+        "p95_ms": 355.3329,
+        "requests_per_second": 11.7226
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 16.9838,
+      "p95_ms": 19.1388,
+      "requests_per_second": 58.7795,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 17.1602,
+        "p95_ms": 19.5198,
+        "requests_per_second": 58.1532
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 17.3138,
+        "p95_ms": 19.8206,
+        "requests_per_second": 57.6411
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 16.3785,
+      "p95_ms": 17.3281,
+      "requests_per_second": 60.8506,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 16.324,
+        "p95_ms": 17.6076,
+        "requests_per_second": 61.0751
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 16.8833,
+        "p95_ms": 17.5235,
+        "requests_per_second": 59.0785
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 3.7473,
+      "p95_ms": 4.5706,
+      "requests_per_second": 265.7488,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 3.5683,
+        "p95_ms": 4.0855,
+        "requests_per_second": 279.2805
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 3.7881,
+        "p95_ms": 4.819,
+        "requests_per_second": 262.7543
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 6.6252,
+      "p95_ms": 7.4559,
+      "requests_per_second": 1183.0595,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 6.6648,
+        "p95_ms": 7.4577,
+        "requests_per_second": 1179.901
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 6.6943,
+        "p95_ms": 7.3194,
+        "requests_per_second": 1177.4783
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 3.3928,
+      "p95_ms": 4.486,
+      "requests_per_second": 293.3595,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 3.3242,
+        "p95_ms": 4.3108,
+        "requests_per_second": 299.8801
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 3.2934,
+        "p95_ms": 4.3244,
+        "requests_per_second": 302.6477
+      }
+    },
+    {
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "mean_latency_ms": 5.6881,
+      "p95_ms": 6.6744,
+      "requests_per_second": 1376.3637,
+      "previous_2026_11_16_v5_4_2": {
+        "mean_latency_ms": 5.8104,
+        "p95_ms": 6.7743,
+        "requests_per_second": 1347.9603
+      },
+      "baseline_2026_11_14_v5_1_3": {
+        "mean_latency_ms": 5.8774,
+        "p95_ms": 7.0188,
+        "requests_per_second": 1329.758
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 141.874,
+      "mean_latency_ms": 46.8141,
+      "p95_ms": 47.8046,
+      "requests_per_second": 21.1455
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 342.6221,
+      "mean_latency_ms": 167.0864,
+      "p95_ms": 174.2713,
+      "requests_per_second": 23.3493
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 275.668,
+      "mean_latency_ms": 91.7793,
+      "p95_ms": 91.9946,
+      "requests_per_second": 10.8827
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 707.6587,
+      "mean_latency_ms": 347.3052,
+      "p95_ms": 362.1863,
+      "requests_per_second": 11.3049
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 95.9598,
+      "mean_latency_ms": 10.6273,
+      "p95_ms": 12.2074,
+      "requests_per_second": 93.7893
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 84.4372,
+      "mean_latency_ms": 14.0262,
+      "p95_ms": 16.8015,
+      "requests_per_second": 71.0587
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 86.9895,
+      "mean_latency_ms": 2.8861,
+      "p95_ms": 3.8838,
+      "requests_per_second": 344.8692
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 208.1142,
+      "mean_latency_ms": 6.8225,
+      "p95_ms": 7.4655,
+      "requests_per_second": 1153.2131
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 107.6336,
+      "mean_latency_ms": 3.5716,
+      "p95_ms": 5.1304,
+      "requests_per_second": 278.7234
+    },
+    {
+      "round": 0,
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 301.6388,
+      "mean_latency_ms": 9.897,
+      "p95_ms": 18.8253,
+      "requests_per_second": 795.6535
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 79.1606,
+      "mean_latency_ms": 26.2683,
+      "p95_ms": 26.6871,
+      "requests_per_second": 37.8976
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 199.9549,
+      "mean_latency_ms": 96.4059,
+      "p95_ms": 102.5056,
+      "requests_per_second": 40.009
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 109.903,
+      "mean_latency_ms": 36.5515,
+      "p95_ms": 37.9915,
+      "requests_per_second": 27.2968
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 259.9446,
+      "mean_latency_ms": 127.5983,
+      "p95_ms": 133.4564,
+      "requests_per_second": 30.7758
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 79.8382,
+      "mean_latency_ms": 8.8388,
+      "p95_ms": 10.5792,
+      "requests_per_second": 112.728
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 55.4279,
+      "mean_latency_ms": 9.1975,
+      "p95_ms": 10.1704,
+      "requests_per_second": 108.2487
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 68.0034,
+      "mean_latency_ms": 2.2552,
+      "p95_ms": 2.7775,
+      "requests_per_second": 441.1543
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 123.0388,
+      "mean_latency_ms": 4.0177,
+      "p95_ms": 5.0272,
+      "requests_per_second": 1950.6038
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 65.4071,
+      "mean_latency_ms": 2.1677,
+      "p95_ms": 2.6473,
+      "requests_per_second": 458.6659
+    },
+    {
+      "round": 0,
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 102.7148,
+      "mean_latency_ms": 3.3385,
+      "p95_ms": 4.2058,
+      "requests_per_second": 2336.5677
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 823.4,
+      "mean_latency_ms": 274.3547,
+      "p95_ms": 276.413,
+      "requests_per_second": 3.6434
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 955.6594,
+      "mean_latency_ms": 469.4259,
+      "p95_ms": 482.431,
+      "requests_per_second": 8.3712
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 648.5374,
+      "mean_latency_ms": 216.0862,
+      "p95_ms": 218.8674,
+      "requests_per_second": 4.6258
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 661.0313,
+      "mean_latency_ms": 324.6003,
+      "p95_ms": 335.868,
+      "requests_per_second": 12.1023
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 150.5427,
+      "mean_latency_ms": 16.6942,
+      "p95_ms": 18.542,
+      "requests_per_second": 59.7837
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 97.9084,
+      "mean_latency_ms": 16.2646,
+      "p95_ms": 16.8875,
+      "requests_per_second": 61.2817
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 109.8736,
+      "mean_latency_ms": 3.6505,
+      "p95_ms": 4.3543,
+      "requests_per_second": 273.041
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 201.4748,
+      "mean_latency_ms": 6.5753,
+      "p95_ms": 7.2396,
+      "requests_per_second": 1191.216
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 110.19,
+      "mean_latency_ms": 3.6551,
+      "p95_ms": 4.8352,
+      "requests_per_second": 272.257
+    },
+    {
+      "round": 0,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 174.3725,
+      "mean_latency_ms": 5.6881,
+      "p95_ms": 6.6744,
+      "requests_per_second": 1376.3637
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 81.4643,
+      "mean_latency_ms": 27.0393,
+      "p95_ms": 27.7739,
+      "requests_per_second": 36.826
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 197.5027,
+      "mean_latency_ms": 95.2063,
+      "p95_ms": 99.0129,
+      "requests_per_second": 40.5058
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 104.1023,
+      "mean_latency_ms": 34.6144,
+      "p95_ms": 34.8203,
+      "requests_per_second": 28.8178
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 257.5014,
+      "mean_latency_ms": 126.5063,
+      "p95_ms": 129.6238,
+      "requests_per_second": 31.0678
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 78.6125,
+      "mean_latency_ms": 8.7033,
+      "p95_ms": 10.7267,
+      "requests_per_second": 114.4856
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 53.7314,
+      "mean_latency_ms": 8.9181,
+      "p95_ms": 9.9148,
+      "requests_per_second": 111.6666
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 66.5499,
+      "mean_latency_ms": 2.2067,
+      "p95_ms": 2.7763,
+      "requests_per_second": 450.7897
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 129.2005,
+      "mean_latency_ms": 4.2362,
+      "p95_ms": 4.6498,
+      "requests_per_second": 1857.5778
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 63.3224,
+      "mean_latency_ms": 2.0986,
+      "p95_ms": 2.8833,
+      "requests_per_second": 473.7661
+    },
+    {
+      "round": 1,
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 105.7637,
+      "mean_latency_ms": 3.4321,
+      "p95_ms": 4.4026,
+      "requests_per_second": 2269.2106
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 825.5812,
+      "mean_latency_ms": 275.0728,
+      "p95_ms": 280.23,
+      "requests_per_second": 3.6338
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 962.5466,
+      "mean_latency_ms": 476.1166,
+      "p95_ms": 486.8328,
+      "requests_per_second": 8.3113
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 647.3758,
+      "mean_latency_ms": 215.6977,
+      "p95_ms": 218.3388,
+      "requests_per_second": 4.6341
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 670.1846,
+      "mean_latency_ms": 329.7728,
+      "p95_ms": 343.0222,
+      "requests_per_second": 11.937
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 153.1146,
+      "mean_latency_ms": 16.9838,
+      "p95_ms": 19.1388,
+      "requests_per_second": 58.7795
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 99.0032,
+      "mean_latency_ms": 16.4552,
+      "p95_ms": 17.3281,
+      "requests_per_second": 60.6041
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 113.1814,
+      "mean_latency_ms": 3.7583,
+      "p95_ms": 4.678,
+      "requests_per_second": 265.0613
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 209.4735,
+      "mean_latency_ms": 6.8273,
+      "p95_ms": 7.8055,
+      "requests_per_second": 1145.7294
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 102.2636,
+      "mean_latency_ms": 3.3928,
+      "p95_ms": 4.1586,
+      "requests_per_second": 293.3595
+    },
+    {
+      "round": 1,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 178.3942,
+      "mean_latency_ms": 5.8077,
+      "p95_ms": 6.7828,
+      "requests_per_second": 1345.3352
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 134.7256,
+      "mean_latency_ms": 44.7871,
+      "p95_ms": 45.013,
+      "requests_per_second": 22.2675
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 342.5713,
+      "mean_latency_ms": 169.0446,
+      "p95_ms": 172.2429,
+      "requests_per_second": 23.3528
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 279.0799,
+      "mean_latency_ms": 92.9393,
+      "p95_ms": 93.8668,
+      "requests_per_second": 10.7496
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 734.4708,
+      "mean_latency_ms": 360.7376,
+      "p95_ms": 375.7884,
+      "requests_per_second": 10.8922
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 92.202,
+      "mean_latency_ms": 10.2158,
+      "p95_ms": 12.0866,
+      "requests_per_second": 97.6118
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 80.9595,
+      "mean_latency_ms": 13.4521,
+      "p95_ms": 14.3099,
+      "requests_per_second": 74.1111
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 93.293,
+      "mean_latency_ms": 3.0941,
+      "p95_ms": 3.6355,
+      "requests_per_second": 321.5675
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 209.1082,
+      "mean_latency_ms": 6.8527,
+      "p95_ms": 7.7479,
+      "requests_per_second": 1147.7312
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 110.8319,
+      "mean_latency_ms": 3.676,
+      "p95_ms": 4.7261,
+      "requests_per_second": 270.6802
+    },
+    {
+      "round": 1,
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 318.0052,
+      "mean_latency_ms": 10.426,
+      "p95_ms": 17.9747,
+      "requests_per_second": 754.7046
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 821.3233,
+      "mean_latency_ms": 273.6436,
+      "p95_ms": 275.4067,
+      "requests_per_second": 3.6526
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 960.6282,
+      "mean_latency_ms": 468.887,
+      "p95_ms": 491.119,
+      "requests_per_second": 8.3279
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 646.882,
+      "mean_latency_ms": 215.5201,
+      "p95_ms": 216.8961,
+      "requests_per_second": 4.6376
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 678.8034,
+      "mean_latency_ms": 334.3816,
+      "p95_ms": 347.0459,
+      "requests_per_second": 11.7854
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 155.8938,
+      "mean_latency_ms": 17.2808,
+      "p95_ms": 19.4327,
+      "requests_per_second": 57.7316
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 98.6021,
+      "mean_latency_ms": 16.3785,
+      "p95_ms": 17.353,
+      "requests_per_second": 60.8506
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 112.8886,
+      "mean_latency_ms": 3.7473,
+      "p95_ms": 4.5706,
+      "requests_per_second": 265.7488
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 202.8638,
+      "mean_latency_ms": 6.6252,
+      "p95_ms": 7.4559,
+      "requests_per_second": 1183.0595
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 99.4246,
+      "mean_latency_ms": 3.301,
+      "p95_ms": 4.486,
+      "requests_per_second": 301.7361
+    },
+    {
+      "round": 2,
+      "variant": "linguaspark-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 172.0018,
+      "mean_latency_ms": 5.6008,
+      "p95_ms": 6.5927,
+      "requests_per_second": 1395.3343
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 134.2276,
+      "mean_latency_ms": 44.6119,
+      "p95_ms": 46.8819,
+      "requests_per_second": 22.3501
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 342.0108,
+      "mean_latency_ms": 166.9676,
+      "p95_ms": 173.9958,
+      "requests_per_second": 23.3911
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 270.1844,
+      "mean_latency_ms": 89.9535,
+      "p95_ms": 90.1438,
+      "requests_per_second": 11.1035
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 699.6354,
+      "mean_latency_ms": 346.7847,
+      "p95_ms": 355.6911,
+      "requests_per_second": 11.4345
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 96.7133,
+      "mean_latency_ms": 10.7085,
+      "p95_ms": 12.9778,
+      "requests_per_second": 93.0586
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 83.4283,
+      "mean_latency_ms": 13.8594,
+      "p95_ms": 16.3773,
+      "requests_per_second": 71.918
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 86.4331,
+      "mean_latency_ms": 2.8696,
+      "p95_ms": 3.2614,
+      "requests_per_second": 347.0891
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 218.116,
+      "mean_latency_ms": 7.1328,
+      "p95_ms": 13.2639,
+      "requests_per_second": 1100.3318
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 95.0382,
+      "mean_latency_ms": 3.1553,
+      "p95_ms": 4.0319,
+      "requests_per_second": 315.6627
+    },
+    {
+      "round": 2,
+      "variant": "original-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 300.6766,
+      "mean_latency_ms": 9.8484,
+      "p95_ms": 17.2683,
+      "requests_per_second": 798.1998
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 80.2834,
+      "mean_latency_ms": 26.6339,
+      "p95_ms": 27.3098,
+      "requests_per_second": 37.3676
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 192.8175,
+      "mean_latency_ms": 94.7087,
+      "p95_ms": 97.757,
+      "requests_per_second": 41.49
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "requests": 3,
+      "wall_ms": 102.306,
+      "mean_latency_ms": 34.0292,
+      "p95_ms": 35.2746,
+      "requests_per_second": 29.3238
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "requests": 8,
+      "wall_ms": 256.2503,
+      "mean_latency_ms": 125.8306,
+      "p95_ms": 131.1674,
+      "requests_per_second": 31.2195
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "requests": 9,
+      "wall_ms": 81.8409,
+      "mean_latency_ms": 9.0605,
+      "p95_ms": 10.1994,
+      "requests_per_second": 109.9695
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "requests": 6,
+      "wall_ms": 53.6824,
+      "mean_latency_ms": 8.9081,
+      "p95_ms": 9.7393,
+      "requests_per_second": 111.7684
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 70.6669,
+      "mean_latency_ms": 2.3432,
+      "p95_ms": 3.0479,
+      "requests_per_second": 424.5271
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 113.2541,
+      "mean_latency_ms": 3.6916,
+      "p95_ms": 4.4461,
+      "requests_per_second": 2119.1294
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "requests": 30,
+      "wall_ms": 64.6641,
+      "mean_latency_ms": 2.1461,
+      "p95_ms": 2.8418,
+      "requests_per_second": 463.9358
+    },
+    {
+      "round": 2,
+      "variant": "fast-cpu",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "requests": 240,
+      "wall_ms": 105.2585,
+      "mean_latency_ms": 3.417,
+      "p95_ms": 4.4327,
+      "requests_per_second": 2280.1007
+    }
+  ]
+}
