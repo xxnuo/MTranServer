@@ -1,21 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { SentencePieceProcessor } from '@sctg/sentencepiece-js';
-import protobuf from 'protobufjs';
+import { vocabularyInfo } from './shortlist.js';
 
 export class Tokenizer {
   private constructor(private processor: SentencePieceProcessor, readonly eos: number, readonly size: number) {}
   static async load(file: string) {
-    const bytes = await readFile(file), reader = protobuf.Reader.create(bytes);
-    let eos = 2, pieces = 0;
-    while (reader.pos < reader.len) {
-      const tag = reader.uint32();
-      if (tag === 10) { pieces++; reader.skipType(2); }
-      else if (tag === 18) {
-        const length = reader.uint32(), end = reader.pos + length;
-        if (end > reader.len) throw new Error('Truncated SentencePiece trainer spec');
-        while (reader.pos < end) { const t = reader.uint32(); if (t === 336) eos = reader.int32(); else reader.skipType(t & 7); }
-      } else reader.skipType(tag & 7);
-    }
+    const bytes = await readFile(file);
+    const { eos, size: pieces } = vocabularyInfo(bytes);
     if (eos < 0 || pieces <= eos) throw new Error('Invalid SentencePiece vocabulary or EOS token');
     const processor = new SentencePieceProcessor();
     try {

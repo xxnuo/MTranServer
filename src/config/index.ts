@@ -21,6 +21,7 @@ export interface Config {
   maxSentenceLength: number;
   checkUpdate: boolean;
   cacheSize: number;
+  lexicalShortlist: boolean;
   fullwidthZhPunctuation: boolean;
 }
 
@@ -144,6 +145,7 @@ export function getConfig(): Config {
 
     checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', fileConfig.checkUpdate ?? true),
 
+    lexicalShortlist: getBool('--lexical-shortlist', 'MT_LEXICAL_SHORTLIST', fileConfig.lexicalShortlist === true),
     cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', fileConfig.cacheSize ?? 1000),
   };
 

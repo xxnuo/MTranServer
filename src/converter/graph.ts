@@ -44,7 +44,7 @@ export function quantize4(w: Float32Array, k: number, n: number) {
 class Builder {
   keys: string[] = []; vals: string[] = [];
   readonly dim: number; readonly headsCount: number; readonly depth: number; readonly emb: string;
-  constructor(public g: Graph, public root: Graph, public serial: { n: number }, public c: ModelConfig, public weights: Map<string, Weight>, public mode: Mode) {
+  constructor(public g: Graph, public root: Graph, public serial: { n: number }, public c: ModelConfig, public weights: Map<string, Weight>, public mode: Mode, public shortlist = false) {
     this.dim = c['dim-emb']; this.headsCount = c['transformer-heads']; this.depth = c['dec-depth']; this.emb = c['tied-embeddings-all'] ? 'Wemb' : 'decoder_Wemb';
   }
   name(s: string) { return `${s}_${++this.serial.n}`; }
@@ -97,6 +97,11 @@ class Builder {
   }
   project(x: string) {
     x = this.reshape(x, 1, this.dim);
+    if (this.shortlist) {
+      const logits = this.linear(x, 'shortlist_projection_T', 'shortlist_bias');
+      const index = this.squeeze(this.node('ArgMax', [logits], ia('axis', 1), ia('keepdims', 0)), 0);
+      return this.node('Gather', ['candidate_ids', index], ia('axis', 0));
+    }
     if (this.mode === 'fp32') return this.squeeze(this.node('ArgMax', [this.linear(x, 'projection_T', 'decoder_ff_logit_out_b')], ia('axis', 1), ia('keepdims', 0)), 0);
     let coarse = this.node('MatMulNBits', [x, 'projection_Q4', 'projection_scales'], ia('K', this.dim), ia('N', this.weights.get(this.emb)!.dims[0]), ia('bits', 4), ia('block_size', 64), ia('accuracy_level', 4));
     this.g.node.at(-1)!.domain = 'com.microsoft';
@@ -157,8 +162,8 @@ function dynamicInt8(root: Graph, mode: Mode) {
   };
   rewrite(root); prune(root);
 }
-export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qall'): Uint8Array {
-  const g = graph('mozilla_release_greedy'), b = new Builder(g, g, { n: 0 }, c, weights, mode);
+export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qall', shortlist = false): Uint8Array {
+  const g = graph('mozilla_release_greedy'), b = new Builder(g, g, { n: 0 }, c, weights, mode, shortlist);
   const emb = weights.get(b.emb);
   if (!emb || emb.dims.length !== 2 || emb.dims[1] !== b.dim || emb.dims[0] < 9) throw new Error('Invalid target embedding');
   for (const name of [...weights.keys()].sort()) {
@@ -170,11 +175,19 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
   const frequency = new Float32Array(b.dim), offsets = new Float32Array(b.dim);
   for (let i = 0; i < b.dim; i++) { frequency[i] = Math.pow(1e-4, (i % (b.dim / 2)) / (b.dim / 2 - 1)); offsets[i] = Math.floor(i / (b.dim / 2)) * Math.PI / 2; }
   g.initializer.push(ft('position_frequency', [b.dim], frequency), ft('position_offset', [b.dim], offsets));
-  const n = emb.dims[0], pt = new Float32Array(emb.values.length);
-  for (let i = 0; i < n; i++) for (let j = 0; j < b.dim; j++) pt[j * n + i] = emb.values[i * b.dim + j];
-  if (mode === 'fp32') g.initializer.push(ft('projection_T', [b.dim, n], pt));
-  else { const { packed, scales } = quantize4(pt, b.dim, n); g.initializer.push({ name: 'projection_Q4', dims: [n, Math.ceil(b.dim / 64), 32], dataType: 2, rawData: packed }, ft('projection_scales', [n, Math.ceil(b.dim / 64)], scales)); }
+  if (!shortlist) {
+    const n = emb.dims[0], pt = new Float32Array(emb.values.length);
+    for (let i = 0; i < n; i++) for (let j = 0; j < b.dim; j++) pt[j * n + i] = emb.values[i * b.dim + j];
+    if (mode === 'fp32') g.initializer.push(ft('projection_T', [b.dim, n], pt));
+    else { const { packed, scales } = quantize4(pt, b.dim, n); g.initializer.push({ name: 'projection_Q4', dims: [n, Math.ceil(b.dim / 64), 32], dataType: 2, rawData: packed }, ft('projection_scales', [n, Math.ceil(b.dim / 64)], scales)); }
+  }
   g.input = [value('X', 7, -1), value('eos_id', 7, 1)]; g.output = [value('Y', 7, -1)];
+  if (shortlist) {
+    g.input.push(value('candidate_ids', 7, -1));
+    const selected = b.node('Gather', [b.emb, 'candidate_ids'], ia('axis', 0));
+    b.transpose(selected, 1, 0); g.node.at(-1)!.output = ['shortlist_projection_T'];
+    b.node('Gather', ['decoder_ff_logit_out_b', 'candidate_ids'], ia('axis', 1)); g.node.at(-1)!.output = ['shortlist_bias'];
+  }
   const length = b.squeeze(b.op('Shape', 'X'), 0);
   let pos = b.node('Cast', [b.op('Range', b.icon([], 0), length, b.icon([], 1))], ia('to', 1)); pos = b.unsqueeze(pos, 1);
   let x = b.node('Gather', [c['tied-embeddings-all'] ? b.emb : 'encoder_Wemb', 'X'], ia('axis', 0));
@@ -185,7 +198,7 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
   const zero = b.fc([1, 1, 1, b.dim], ...new Float32Array(b.dim));
   const [hidden, cells] = b.decode(zero, b.fc([], 0), Array(b.depth).fill(zero)), first = b.project(hidden);
   const eos = b.squeeze('eos_id', 0), condition = b.op('Not', b.op('Equal', first, eos));
-  const body = graph('decode_loop'), bb = new Builder(body, g, b.serial, c, weights, mode); bb.keys = b.keys; bb.vals = b.vals;
+  const body = graph('decode_loop'), bb = new Builder(body, g, b.serial, c, weights, mode, shortlist); bb.keys = b.keys; bb.vals = b.vals;
   body.input = [value('iteration', 7), value('condition', 9), value('previous_token', 7)];
   const states = Array.from({ length: b.depth }, (_, i) => `cell_${i}`);
   for (const s of states) body.input.push(value(s, 1, 1, 1, 1, b.dim));
