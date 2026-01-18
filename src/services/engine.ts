@@ -19,6 +19,7 @@ interface EngineInfo {
 }
 
 const engines = new Map<string, EngineInfo>();
+const inFlightTranslations = new WeakMap<TranslationEngine, Map<string, Promise<string>>>();
 const loadingPromises = new Map<string, { lexicalShortlist: boolean; workersPerLanguage: number; promise: Promise<EngineInfo> }>();
 const zhCommaTest = /,/;
 const zhCommaGlobal = /,/g;
@@ -144,9 +145,24 @@ async function translateSingleLanguageText(
   const cacheKey = () => [fromLang, toLang, engine.identity, engine.backend?.provider, engine.backend?.cpuThreads, engine.backend?.tuning, text, isHTML];
   const cached = readCache(cacheKey());
   if (cached !== null) return cached;
-  const result = await engine.translateAsync(text, { html: isHTML });
-  writeCache(result, cacheKey());
-  return result;
+  const translate = async () => {
+    const result = await engine.translateAsync(text, { html: isHTML });
+    writeCache(result, cacheKey());
+    return result;
+  };
+  if (getConfig().cacheSize <= 0) return translate();
+
+  let pending = inFlightTranslations.get(engine);
+  if (!pending) {
+    pending = new Map();
+    inFlightTranslations.set(engine, pending);
+  }
+  const key = JSON.stringify(cacheKey());
+  const existing = pending.get(key);
+  if (existing) return existing;
+  const promise = translate().finally(() => pending.delete(key));
+  pending.set(key, promise);
+  return promise;
 }
 
 async function translateSegment(
