@@ -173,6 +173,9 @@ With both translation directions loaded: Default about 619 MiB, Fast 650 MiB, Li
 
 Long texts use sentence concurrency; [paired HTTP tests](benchmarks/plain-inference-concurrency.json) showed 36%–60% lower latency per long-text request than before the optimization. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
+- Desktop: use Default mode to prioritize translation accuracy. GPU acceleration is supported; a discrete GPU may be several times faster than the CPU on suitable workloads.
+- Server: use Fast mode for stable throughput and speed, with acceleration across multiple CPU instruction sets.
+
 ## Similar projects
 
 | Project | Memory | Speed | Notes |

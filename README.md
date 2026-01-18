@@ -173,6 +173,9 @@ mtranserver --offline
 
 长文支持句子并发；[配对 HTTP 测试](docs/benchmarks/plain-inference-concurrency.json)中，单个长文请求耗时较优化前降低约 36%–60%。`--fast` 开启 Fast，默认关闭；可能增加误译。[译文对比](tests/fixtures/translation-quality-regressions.json)。
 
+- 桌面场景：推荐普通模式，优先保证翻译准确性；支持 GPU 加速，独显在适合的负载下可能比 CPU 快数倍。
+- 服务器场景：推荐 Fast 模式，侧重稳定吞吐与速度，可利用多种 CPU 指令集加速。
+
 ## 同类项目
 
 | 项目 | 内存 | 速度 | 说明 |

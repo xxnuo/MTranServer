@@ -173,6 +173,9 @@ mtranserver --offline
 
 長文は文単位で並列翻訳され、[HTTP のペア比較テスト](benchmarks/plain-inference-concurrency.json)では、長文 1 リクエストの処理時間が最適化前より約 36%～60% 短縮されました。`--fast` で Fast を有効にできます。誤訳が増える可能性があるため、既定では無効です。[訳文比較](../tests/fixtures/translation-quality-regressions.json)。
 
+- デスクトップ：翻訳精度を優先する通常モードを推奨します。GPU アクセラレーションに対応し、適した処理では専用 GPU が CPU の数倍高速になる可能性があります。
+- サーバー：安定したスループットと速度を重視する Fast モードを推奨します。複数の CPU 命令セットによる高速化を利用できます。
+
 ## 類似プロジェクト
 
 | プロジェクト | メモリ | 速度 | 説明 |
