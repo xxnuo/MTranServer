@@ -184,6 +184,7 @@ Ryzen 9 9950X，4 CPU 配额、3 GiB 内存，关闭缓存，三轮中位数。�
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高 | 中等 | [社区数据](https://community.libretranslate.com/t/performance-benchmark-data/486)：中端 CPU 约 3 句/秒，高端约 15–20 句/秒 |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | 高 | 快 | [CTranslate2 基准](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | 其他大模型 | 超高 | 很慢 | 效果好，硬件要求高；高并发常用 vLLM |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | 较低 | 快 | [CPU 对比测试](docs/benchmarks/cpu-comparison-2026-11-17.md) |
 | 本项目 | 随模型和并发变化 | 超快 | CPU 翻译，无缓存状态 |
 
 ## 更多

@@ -184,6 +184,7 @@ Long texts use sentence concurrency; [paired HTTP tests](benchmarks/plain-infere
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very high | Medium | [Community data](https://community.libretranslate.com/t/performance-benchmark-data/486): about 3 sentences/s on a mid-range CPU, about 15–20 on a high-end CPU |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | High | Fast | [CTranslate2 benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Other large models | Extremely high | Very slow | Good quality and high hardware requirements; vLLM is commonly used for high concurrency |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | Lower | Fast | [CPU comparison](benchmarks/cpu-comparison-2026-11-17.md) |
 | This project | Depends on models and concurrency | Extremely fast | CPU translation, cache disabled |
 
 ## More

@@ -184,6 +184,7 @@ Lange Texte werden satzweise parallel übersetzt; [gepaarte HTTP-Tests](benchmar
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch | Mittel | [Community-Daten](https://community.libretranslate.com/t/performance-benchmark-data/486): etwa 3 Sätze/s auf einer Mittelklasse-CPU, etwa 15–20 auf einer High-End-CPU |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | Hoch | Schnell | [CTranslate2-Benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Andere große Modelle | Extrem hoch | Sehr langsam | Gute Qualität, hohe Hardware-Anforderungen; für hohe Parallelität wird oft vLLM verwendet |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | Niedriger | Schnell | [CPU-Vergleich](benchmarks/cpu-comparison-2026-11-17.md) |
 | Dieses Projekt | Abhängig von Modellen und Parallelität | Extrem schnell | CPU-Übersetzung, Cache aus |
 
 ## Weiteres

@@ -184,6 +184,7 @@ Ryzen 9 9950X、CPU 使用枠 4、メモリ 3 GiB、キャッシュ無効で 3 �
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 中程度 | [コミュニティのデータ](https://community.libretranslate.com/t/performance-benchmark-data/486): 中位 CPU で約 3 文/秒、上位 CPU で約 15–20 文/秒 |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | 高い | 速い | [CTranslate2 のベンチマーク](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | その他の大規模モデル | 極めて高い | 非常に遅い | 品質は良いがハードウェア要件が高い。高同時実行には vLLM がよく使われます |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | 低め | 速い | [CPU 比較テスト](benchmarks/cpu-comparison-2026-11-17.md) |
 | 本プロジェクト | モデルと同時実行数による | 非常に速い | CPU 翻訳、キャッシュ無効 |
 
 ## その他

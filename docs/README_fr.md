@@ -184,6 +184,7 @@ Les textes longs sont traduits phrase par phrase en parallèle ; les [tests HTTP
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Très élevée | Moyenne | [Données de la communauté](https://community.libretranslate.com/t/performance-benchmark-data/486) : environ 3 phrases/s sur un CPU milieu de gamme, 15–20 sur un CPU haut de gamme |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | Élevée | Rapide | [Mesures CTranslate2](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Autres grands modèles | Extrêmement élevée | Très lente | Bonne qualité, matériel exigeant ; vLLM est courant pour une forte concurrence |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | Plus faible | Rapide | [Comparaison CPU](benchmarks/cpu-comparison-2026-11-17.md) |
 | Ce projet | Selon les modèles et la concurrence | Extrêmement rapide | Traduction sur CPU, cache désactivé |
 
 ## Pour aller plus loin
