@@ -27,7 +27,8 @@ interface Manifest {
   mtranserverVersion: string;
   identity: string;
   sourceRevision: string;
-  conversion: { version: string; parameters: typeof CONVERSION_PARAMETERS };
+  converterRevision?: string;
+  conversion?: { version: string; parameters: typeof CONVERSION_PARAMETERS };
   records: unknown;
   files: ManifestFile[];
 }
@@ -46,6 +47,8 @@ async function exists(file: string) { try { await fs.access(file); return true; 
 function hashJson(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
 }
+
+const CONVERTER_REVISION = hashJson({ version: CONVERSION_VERSION, parameters: CONVERSION_PARAMETERS });
 
 function normalizedRecords(records: unknown) {
   if (!Array.isArray(records)) return records;
@@ -105,8 +108,8 @@ function result(target: string, identity: string, files: SourceFiles): Converted
 function compatible(manifest: Manifest, revision: string) {
   if (manifest.schemaVersion !== 1 || manifest.sourceRevision !== revision) return false;
   if (manifest.mtranserverVersion === VERSION) return true;
-  return manifest.conversion?.version === CONVERSION_VERSION
-    && JSON.stringify(manifest.conversion.parameters) === JSON.stringify(CONVERSION_PARAMETERS);
+  if (manifest.converterRevision === CONVERTER_REVISION) return true;
+  return manifest.conversion ? hashJson(manifest.conversion) === CONVERTER_REVISION : false;
 }
 
 async function hasRequiredFiles(target: string, manifest: Manifest, source: SourceFiles) {
@@ -164,8 +167,10 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
       if (compatible(manifest, revision)) {
         if (!await hasRequiredFiles(target, manifest, source.files)) repairedFiles = await repairSource();
         if (await hasRequiredFiles(target, manifest, repairedFiles ?? source.files)) {
-          if (manifest.mtranserverVersion !== VERSION) {
+          if (manifest.mtranserverVersion !== VERSION || manifest.converterRevision !== CONVERTER_REVISION || manifest.conversion) {
             manifest.mtranserverVersion = VERSION;
+            manifest.converterRevision = CONVERTER_REVISION;
+            delete manifest.conversion;
             await writeManifest(target, manifest);
           }
           logger.debug(`Reusing converted model ${path.basename(target)}`);
@@ -198,7 +203,7 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
       mtranserverVersion: VERSION,
       identity,
       sourceRevision: revision,
-      conversion: { version: CONVERSION_VERSION, parameters: CONVERSION_PARAMETERS },
+      converterRevision: CONVERTER_REVISION,
       records: normalizedRecords(source.records),
       files: [
         ...recordFiles(source.records),

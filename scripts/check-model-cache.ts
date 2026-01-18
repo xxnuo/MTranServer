@@ -50,6 +50,8 @@ if (args[0] === '--child') {
     const manifestPath = path.join(pair, 'manifest.json');
     const firstManifest = JSON.parse(await readFile(manifestPath, 'utf8'));
     assert.equal(firstManifest.mtranserverVersion, VERSION);
+    assert.equal(typeof firstManifest.converterRevision, 'string');
+    assert.equal(firstManifest.conversion, undefined);
     assert.deepEqual(firstManifest.files.map((file: any) => file.role), ['source-model', 'source-vocab', 'inference-model', 'manifest']);
 
     const before = (await stat(a.model)).mtimeMs;
@@ -83,17 +85,17 @@ if (args[0] === '--child') {
     assert.equal(JSON.parse(await readFile(manifestPath, 'utf8')).mtranserverVersion, VERSION);
     assert.equal(repairs, 3);
 
-    const oldParameters = JSON.parse(await readFile(manifestPath, 'utf8'));
-    oldParameters.mtranserverVersion = '0.0.0';
-    oldParameters.conversion.parameters.topK = 1;
-    await writeFile(manifestPath, JSON.stringify(oldParameters));
+    const oldConverter = JSON.parse(await readFile(manifestPath, 'utf8'));
+    oldConverter.mtranserverVersion = '0.0.0';
+    oldConverter.converterRevision = 'old-converter';
+    await writeFile(manifestPath, JSON.stringify(oldConverter));
     await ensureConverted(root, 'de_en', input, repair);
     assert.equal(repairs, 4);
 
     await writeFile(sourceModel, 'invalid model');
     const invalid = JSON.parse(await readFile(manifestPath, 'utf8'));
     invalid.mtranserverVersion = '0.0.0';
-    invalid.conversion.parameters.topK = 1;
+    invalid.converterRevision = 'old-converter';
     await writeFile(manifestPath, JSON.stringify(invalid));
     await assert.rejects(ensureConverted(root, 'de_en', input, repair));
     assert.equal(await fileHash(a.model), expected);
