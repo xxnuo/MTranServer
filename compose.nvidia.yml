@@ -1,0 +1,13 @@
+# 需要宿主 NVIDIA 驱动，并通过 NVIDIA Container Toolkit 配置 Docker 的 nvidia runtime。
+# 使用 WebGPU/Vulkan；不包含 CUDA/TensorRT 推理依赖。
+services:
+  mtranserver:
+    extends:
+      file: compose.yml
+      service: mtranserver
+    platform: linux/amd64
+    runtime: nvidia
+    environment:
+      - MT_CPU_ONLY=false
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics

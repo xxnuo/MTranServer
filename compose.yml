@@ -12,6 +12,7 @@ services:
       - MT_CONFIG_DIR=/root/.config/mtran/server
       - MT_ENABLE_UI=true
       - MT_OFFLINE=false
+      - MT_CPU_ONLY=true
       # - MT_API_TOKEN=your_secret_token_here  # 取消注释以启用 API 认证
     volumes:
       - ./models:/app/models    # 翻译模型目录

@@ -7,6 +7,33 @@ import { Tokenizer } from '../src/core/tokenizer';
 
 afterEach(() => mock.restore());
 
+test('CPU-only mode skips GPU discovery and does not reuse a cached accelerator', async () => {
+  const previous = process.env.MT_CPU_ONLY;
+  const backends = spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }, { name: 'webgpu', bundled: true }]);
+  let clock = 0;
+  spyOn(performance, 'now').mockImplementation(() => clock);
+  spyOn(ort.InferenceSession, 'create').mockImplementation(async (_model: any, options: any) => ({
+    provider: options.executionProviders[0], release: async () => {},
+  }) as any);
+  const probe = async (session: any) => { clock += session.provider === 'cpu' ? 5 : .1; };
+  try {
+    process.env.MT_CPU_ONLY = 'false';
+    const gpu = await selectBackend('model.onnx', probe, 1, 'cpu-only-test');
+    expect(gpu.info.provider).toBe('webgpu');
+    await gpu.session.release();
+    backends.mockClear();
+    process.env.MT_CPU_ONLY = 'true';
+    const cpu = await selectBackend('model.onnx', probe, 1, 'cpu-only-test');
+    expect(cpu.info.provider).toBe('cpu');
+    expect(cpu.info.measurements.every(m => m.provider === 'cpu')).toBe(true);
+    expect(backends).not.toHaveBeenCalled();
+    await cpu.session.release();
+  } finally {
+    if (previous === undefined) delete process.env.MT_CPU_ONLY;
+    else process.env.MT_CPU_ONLY = previous;
+  }
+});
+
 test('calibration accepts bounded generation without EOS but real translation rejects incomplete output', async () => {
   spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }]);
   spyOn(Tokenizer, 'load').mockResolvedValue({ encode: () => [10, 11], eos: 0, close() {} } as any);

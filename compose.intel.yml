@@ -1,0 +1,11 @@
+# 需要宿主 Intel GPU 驱动和 /dev/dri；ONNX Node WebGPU 预编译包支持 Linux amd64。
+services:
+  mtranserver:
+    extends:
+      file: compose.yml
+      service: mtranserver
+    platform: linux/amd64
+    environment:
+      - MT_CPU_ONLY=false
+    devices:
+      - /dev/dri:/dev/dri

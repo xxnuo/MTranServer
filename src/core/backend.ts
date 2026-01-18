@@ -63,7 +63,8 @@ async function release(session?: ort.InferenceSession) {
 
 export async function selectBackend(model: string, probe: (session: ort.InferenceSession, short?: boolean) => Promise<void>, cpuThreads?: number, identity?: string) {
   if (cpuThreads !== undefined && (!Number.isInteger(cpuThreads) || cpuThreads < 0)) throw new Error('cpu-threads must be a non-negative integer');
-  const cacheKey = identity ? `${identity}:${cpuThreads ?? 'auto'}` : undefined;
+  const cpuOnly = process.env.MT_CPU_ONLY === 'true';
+  const cacheKey = identity ? `${identity}:${cpuThreads ?? 'auto'}:${cpuOnly}` : undefined;
   const cached = cacheKey ? selections.get(cacheKey) : undefined;
   if (cached) {
     let session: ort.InferenceSession | undefined;
@@ -127,7 +128,7 @@ export async function selectBackend(model: string, probe: (session: ort.Inferenc
   await measure('cpu', cpuThreads ?? 1, defaults);
   const require = createRequire(import.meta.url);
   const nativeDir = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch);
-  for (const backend of ort.listSupportedBackends()) {
+  for (const backend of cpuOnly ? [] : ort.listSupportedBackends()) {
     if (backend.name === 'cpu') continue;
     if (!backend.bundled && process.platform === 'linux'
       && ['cuda', 'tensorrt'].includes(backend.name)
