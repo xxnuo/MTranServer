@@ -65,15 +65,18 @@ export class TranslationEngine {
         const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity);
         let activeSession: InferenceSession = selected.session;
         let info = selected.info;
-        if (selected.info.provider === 'cpu' && selected.session.inputNames?.includes('candidate_ids')
-          && (config['cpu-threads'] === undefined || config['cpu-threads'] === 1)) {
-          const native = await createNativeSession(model.model);
+        const inputNames = selected.session.inputNames ?? ['X', 'eos_id'];
+        const isShortlist = inputNames.includes('candidate_ids');
+        if (selected.info.provider === 'cpu'
+          && (!isShortlist || config['cpu-threads'] === undefined || config['cpu-threads'] === 1)) {
+          const nativeThreads = isShortlist ? 1 : selected.info.cpuThreads;
+          const native = await createNativeSession(model.model, inputNames, nativeThreads);
           if (native) {
             try {
               await probe(native);
               const poolSize = Number.parseInt(process.env.UV_THREADPOOL_SIZE ?? '4', 10) || 4;
               activeSession = native;
-              info = { ...selected.info, runtime: 'native-async', cpuThreads: 1,
+              info = { ...selected.info, runtime: 'native-async', cpuThreads: nativeThreads,
                 tuning: { ...selected.info.tuning, executionMode: 'sequential', interOpNumThreads: 1,
                   graphOptimizationLevel: 'all', spinning: false, dynamicBlockBase: 0 },
                 maxConcurrentRuns: Math.min(config['max-concurrent-runs'] ?? Infinity, Math.max(1, poolSize), availableParallelism()) };

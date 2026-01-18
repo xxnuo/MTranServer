@@ -8,12 +8,12 @@ import * as logger from '../logger/index.js';
 export type InferenceSession = Pick<ort.InferenceSession, 'inputNames' | 'run' | 'release'>;
 export class NativeRunError extends Error {}
 interface NativeBinding {
-  init(model: string, library: string): Promise<object>;
-  run(handle: object, input: BigInt64Array, candidates: BigInt64Array, eos: bigint): Promise<BigInt64Array>;
+  init(model: string, library: string, cpuThreads: number): Promise<object>;
+  run(handle: object, input: BigInt64Array, candidates: BigInt64Array | null, eos: bigint): Promise<BigInt64Array>;
   close(handle: object): Promise<void>;
 }
 
-export async function createNativeSession(model: string): Promise<InferenceSession | undefined> {
+export async function createNativeSession(model: string, inputNames: readonly string[], cpuThreads: number): Promise<InferenceSession | undefined> {
   if (!['linux', 'darwin'].includes(process.platform)) return;
   const filename = `onnx-async-${process.platform}-${process.arch}.node`;
   const candidates = [new URL(`./${filename}`, import.meta.url), new URL(`../../dist/${filename}`, import.meta.url)];
@@ -24,15 +24,15 @@ export async function createNativeSession(model: string): Promise<InferenceSessi
     const binding = require(fileURLToPath(addon)) as NativeBinding;
     const libraryName = process.platform === 'darwin' ? 'libonnxruntime.1.dylib' : 'libonnxruntime.so.1';
     const library = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch, libraryName);
-    const handle = await binding.init(model, library);
+    const handle = await binding.init(model, library, cpuThreads);
     let closed: Promise<void> | undefined;
     return {
-      inputNames: ['X', 'eos_id', 'candidate_ids'],
+      inputNames: [...inputNames],
       release: () => closed ??= binding.close(handle),
       run: async feeds => {
         if (closed) throw new Error('ONNX session is closing');
-        const input = feeds.X.data, ids = feeds.candidate_ids.data, eos = feeds.eos_id.data;
-        if (!(input instanceof BigInt64Array) || !(ids instanceof BigInt64Array) || !(eos instanceof BigInt64Array) || eos.length !== 1)
+        const input = feeds.X.data, ids = inputNames.includes('candidate_ids') ? feeds.candidate_ids?.data : null, eos = feeds.eos_id.data;
+        if (!(input instanceof BigInt64Array) || (ids !== null && !(ids instanceof BigInt64Array)) || !(eos instanceof BigInt64Array) || eos.length !== 1)
           throw new Error('Native translation requires int64 input, candidates and EOS');
         let output: BigInt64Array;
         try { output = await binding.run(handle, input, ids, eos[0]); }

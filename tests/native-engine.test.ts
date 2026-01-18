@@ -7,8 +7,8 @@ import {Shortlist} from '../src/core/shortlist';
 import * as ort from 'onnxruntime-node';
 const tuning={executionMode:'sequential',interOpNumThreads:1,graphOptimizationLevel:'all',enableCpuMemArena:true,enableMemPattern:true,spinning:true,dynamicBlockBase:0} as const;
 afterEach(()=>mock.restore());
-function setup(fails=false){
- const original={inputNames:['X','eos_id','candidate_ids'],release:mock(async()=>{}),run:mock(async()=>({Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])}))};
+function setup(fails=false,shortlist=true){
+ const original={inputNames:shortlist?['X','eos_id','candidate_ids']:['X','eos_id'],release:mock(async()=>{}),run:mock(async()=>({Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])}))};
  const parallel={...original,release:mock(async()=>{}),run:mock(async()=>{if(fails)throw new Error('native probe failed');return {Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])};})};
  spyOn(Tokenizer,'load').mockResolvedValue({encode:()=>[2],decode:()=> 'result',eos:0,close(){}} as any);
  spyOn(Shortlist,'load').mockResolvedValue({candidates:()=>[0,2,7]} as any);
@@ -17,6 +17,18 @@ function setup(fails=false){
  return {original,parallel};
 }
 const model={directory:'.',identity:'native-test',model:'fake.onnx',sourceVocab:'src',targetVocab:'dst',lex:'lex'};
+test('standard CPU uses shared execution without loading a shortlist',async()=>{
+ const {original,parallel}=setup(false,false);const engine=new TranslationEngine();
+ try{await engine.init({...model,lex:undefined});
+ expect(engine.backend?.runtime).toBe('native-async');
+ expect(native.createNativeSession).toHaveBeenCalledWith(model.model,['X','eos_id'],2);
+ expect(engine.backend?.cpuThreads).toBe(2);
+ expect(Shortlist.load).not.toHaveBeenCalled();
+ expect(await Promise.all(Array.from({length:8},()=>engine.translateAsync('hello')))).toEqual(Array(8).fill('result'));
+ expect(original.release).toHaveBeenCalledTimes(1);
+ for(const [feeds] of parallel.run.mock.calls as any[])expect(feeds.candidate_ids).toBeUndefined();
+ }finally{await engine.destroy();}
+});
 test('fast CPU uses the validated shared session and closes it after accepted work',async()=>{
  const {original,parallel}=setup();const engine=new TranslationEngine();
  try{await engine.init(model);expect(engine.backend?.runtime).toBe('native-async');expect(engine.backend?.maxConcurrentRuns).toBeGreaterThanOrEqual(1);expect(original.release).toHaveBeenCalledTimes(1);

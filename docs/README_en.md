@@ -156,49 +156,20 @@ Environment variables and the remaining options are in [API_en.md](API_en.md), o
 
 ## Performance
 
-Cache disabled. Median of three runs:
+Same-run CPU comparison, for reference. Lower ms and higher req/s are better.
 
-| Direction | Input (characters) | Backend | Concurrency | Average (ms) | Throughput (req/s) |
+| Direction | Input | Concurrency | Default | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| English → Chinese | Short 49–94 | CPU / 6 | 4 | 35.6 | 108.33 |
-| English → Chinese | Paragraph 234–344 | CPU / 6 | 1 | 27.7 | 36.31 |
-| German → English | Short 50–113 | CPU / 5 | 4 | 39.7 | 96.51 |
-| German → English | Paragraph 232–395 | CPU / 5 | 1 | 33.4 | 30.00 |
+| English → Chinese | Short | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
+| English → Chinese | Paragraph | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
+| Chinese → English | Short | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
+| Chinese → English | Paragraph | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
+| English → Chinese | Short | 8 | 317 req/s | 426 req/s | 537 req/s |
+| Chinese → English | Short | 8 | 173 req/s | 493 req/s | 534 req/s |
 
-| Direction | First load and translation (s) | Peak memory (MiB) | Model (MiB) |
-| --- | --- | --- | --- |
-| English → Chinese | 33.47 | 391.7 | 118.8 |
-| German → English | 26.44 | 345.1 | 71.9 |
+With both translation directions loaded: Default about 622 MiB, Fast 652 MiB, LinguaSpark 190 MiB.
 
-## Fast mode
-
-Disabled by default. Enable with `mtranserver --fast` or `MT_FAST=true mtranserver`; disable with `--no-fast`. Library configuration: `new MTran({ fast: true })`. Fast reduces output projection work using a lexical shortlist and may increase mistranslations. Models without a lexicon fall back to the original mode. The first request after switching may reconvert the model. The old `--lexical-shortlist` and `MT_LEXICAL_SHORTLIST` aliases remain supported.
-
-### Fast and LinguaSpark on the same machine
-
-Mean latency for sequential requests (ms, lower is better):
-
-| Direction / input | Original | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| EN→ZH short | 16.87 | 8.11 | 14.54 |
-| EN→ZH paragraph | 55.40 | 36.29 | 56.97 |
-| ZH→EN short | 34.68 | 11.18 | 18.89 |
-| ZH→EN paragraph | 121.05 | 27.15 | 59.43 |
-
-Short-text throughput at concurrency 8 (requests/s, higher is better):
-
-| Direction / input | Original | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| EN→ZH | 70.0 | 103.7 | 319.6 |
-| ZH→EN | 37.9 | 138.0 | 293.3 |
-
-Process RSS after the workload with both directions loaded (median of three rounds): Original **542.4 MiB**, Fast **575.9 MiB**, LinguaSpark **190.4 MiB**. This is not peak memory during initial conversion.
-
-2026-11-11, Intel Core i5-14400, Linux x64, restricted to CPUs 0–15. All three use the same Firefox EN/ZH models and inputs, with caching disabled. MTranServer selects CPU threads and concurrency automatically; LinguaSpark uses 16 workers (engine `269605c`). Only one engine runs at a time, with rotating order across three rounds. All 25 texts are warmed up first. Tables report the median of three round means/rates, excluding startup, conversion and warmup. Each direction has 10 short texts; there are 3 EN→ZH and 2 ZH→EN paragraphs. Sequential inputs repeat 3 times per round; concurrent inputs repeat 24 times. The older performance tables above are a separate measurement and cannot be directly compared across tables.
-
-Fast and LinguaSpark can both introduce terminology, place-name and syntax errors; see [25 three-engine quality comparisons](../tests/fixtures/translation-quality-regressions.json). These selected regressions do not estimate the overall error rate.
-
-Method and raw results: [Raw results](benchmarks/fast-linguaspark-2026-11-11.json) · [Inputs](benchmarks/fast-corpus.json) · [Benchmark script](../scripts/benchmark-engines.py).
+Both Default and Fast support concurrent acceleration. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
 ## Similar projects
 
@@ -208,7 +179,7 @@ Method and raw results: [Raw results](benchmarks/fast-linguaspark-2026-11-11.jso
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very high | Medium | [Community data](https://community.libretranslate.com/t/performance-benchmark-data/486): about 3 sentences/s on a mid-range CPU, about 15–20 on a high-end CPU |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | High | Fast | [CTranslate2 benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Other large models | Extremely high | Very slow | Good quality and high hardware requirements; vLLM is commonly used for high concurrency |
-| This project | About 392 MiB peak for English to Chinese | Extremely fast | CPU translation, cache disabled |
+| This project | Depends on models and concurrency | Extremely fast | CPU translation, cache disabled |
 
 ## More
 

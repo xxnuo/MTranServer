@@ -9,17 +9,17 @@ const root = path.resolve(import.meta.dir, '..');
 const supported = ['linux', 'darwin'].includes(process.platform) && ['x64', 'arm64'].includes(process.arch);
 
 // A real three-input model: Y = Gather(candidate_ids, X) + eos_id.
-function model() {
+function model(shortlist = true) {
   const value = (name: string, dim: number | string) => ({ name, type: { tensorType: {
     elemType: 7, shape: { dim: [typeof dim === 'string' ? { dimParam: dim } : { dimValue: dim }] },
   } } });
   const type = protobuf.Root.fromJSON(schema).lookupType('onnx.ModelProto');
   return type.encode(type.create({ irVersion: 8, opsetImport: [{ domain: '', version: 13 }], graph: {
-    name: 'native_async', input: [value('X', 'n'), value('candidate_ids', 'c'), value('eos_id', 1)],
-    output: [value('Y', 'n')], node: [
+    name: 'native_async', input: shortlist ? [value('X', 'n'), value('candidate_ids', 'c'), value('eos_id', 1)] : [value('X', 'n'), value('eos_id', 1)],
+    output: [value('Y', 'n')], node: shortlist ? [
       { opType: 'Gather', input: ['candidate_ids', 'X'], output: ['picked'] },
       { opType: 'Add', input: ['picked', 'eos_id'], output: ['Y'] },
-    ],
+    ] : [{ opType: 'Add', input: ['X', 'eos_id'], output: ['Y'] }],
   } })).finish();
 }
 
@@ -52,6 +52,8 @@ test.skipIf(!supported)('native async session supports queued runs, draining clo
   }
   const fixture = path.join(directory, 'three-input.onnx');
   writeFileSync(fixture, model());
+  const standardFixture = path.join(directory, 'two-input.onnx');
+  writeFileSync(standardFixture, model(false));
   const ortRoot = path.dirname(require.resolve('onnxruntime-node/package.json'));
   const library = path.join(ortRoot, 'bin/napi-v6', process.platform, process.arch,
     process.platform === 'darwin' ? 'libonnxruntime.1.dylib' : 'libonnxruntime.so.1');
@@ -63,6 +65,15 @@ test.skipIf(!supported)('native async session supports queued runs, draining clo
     (async () => {
       await assert.rejects(addon.init(model, library + '.missing'));
       await assert.rejects(addon.init(model + '.missing', library));
+      for (const bad of [-1, 1.5, NaN, Infinity, 2 ** 32, '2'])
+        await assert.rejects(addon.init(model, library, bad));
+      const standard = await addon.init(${JSON.stringify(standardFixture)}, library, 2);
+      await assert.rejects(addon.run(standard, BigInt64Array.of(0n), BigInt64Array.of(1n), 0n));
+      const normalRuns = Array.from({length: 32}, (_, i) => addon.run(standard, BigInt64Array.of(2n, 0n), null, BigInt(i)));
+      const standardClosing = addon.close(standard);
+      for (const [i, result] of (await Promise.all(normalRuns)).entries())
+        assert.deepEqual(result, BigInt64Array.of(2n + BigInt(i), BigInt(i)));
+      await standardClosing;
       const initializing = addon.init(model, library);
       assert(initializing instanceof Promise);
       let handle = await initializing;

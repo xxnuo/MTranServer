@@ -156,49 +156,20 @@ mtranserver --offline
 
 ## 性能
 
-关闭缓存，三轮中位数：
+同一轮 CPU 测试，仅供参考。毫秒越低越好，次/秒越高越好。
 
-| 方向 | 输入（字符） | 后端 | 并发 | 平均（ms） | 吞吐（次/秒） |
+| 方向 | 输入 | 并发 | 默认 | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| 英 → 中 | 短句 49–94 | CPU / 6 | 4 | 35.6 | 108.33 |
-| 英 → 中 | 段落 234–344 | CPU / 6 | 1 | 27.7 | 36.31 |
-| 德 → 英 | 短句 50–113 | CPU / 5 | 4 | 39.7 | 96.51 |
-| 德 → 英 | 段落 232–395 | CPU / 5 | 1 | 33.4 | 30.00 |
+| 英 → 中 | 短句 | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
+| 英 → 中 | 段落 | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
+| 中 → 英 | 短句 | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
+| 中 → 英 | 段落 | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
+| 英 → 中 | 短句 | 8 | 317 次/秒 | 426 次/秒 | 537 次/秒 |
+| 中 → 英 | 短句 | 8 | 173 次/秒 | 493 次/秒 | 534 次/秒 |
 
-| 方向 | 首次加载并翻译（秒） | 峰值内存（MiB） | 模型（MiB） |
-| --- | --- | --- | --- |
-| 英 → 中 | 33.47 | 391.7 | 118.8 |
-| 德 → 英 | 26.44 | 345.1 | 71.9 |
+同时加载英中、中英模型后，内存约为：普通 622 MiB、Fast 652 MiB、LinguaSpark 190 MiB。
 
-## Fast 模式
-
-默认关闭。使用 `mtranserver --fast` 或 `MT_FAST=true mtranserver` 开启，`--no-fast` 关闭；库配置为 `new MTran({ fast: true })`。Fast 使用候选词表减少输出层计算，可能增加误译；没有词典的模型自动使用原模式。切换模式后的首次请求可能需要重新转换模型。旧参数 `--lexical-shortlist` 和 `MT_LEXICAL_SHORTLIST` 继续兼容。
-
-### Fast 与 LinguaSpark 同机对比
-
-逐条请求平均延迟（ms，越低越好）：
-
-| 方向 / 输入 | 原模式 | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| 英→中短句 | 16.87 | 8.11 | 14.54 |
-| 英→中段落 | 55.40 | 36.29 | 56.97 |
-| 中→英短句 | 34.68 | 11.18 | 18.89 |
-| 中→英段落 | 121.05 | 27.15 | 59.43 |
-
-短句 8 并发吞吐（次/秒，越高越好）：
-
-| 方向 / 输入 | 原模式 | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| 英→中 | 70.0 | 103.7 | 319.6 |
-| 中→英 | 37.9 | 138.0 | 293.3 |
-
-完成上述负载、两个方向均已加载后的进程 RSS（三轮中位数）：原模式 **542.4 MiB**，Fast **575.9 MiB**，LinguaSpark **190.4 MiB**。这不是首次转换期间的峰值内存。
-
-2026-11-11，Intel Core i5-14400，Linux x64，限定 CPU 0–15。三者使用同一套 Firefox 英中/中英模型与相同文本，关闭缓存；MTranServer 自动选择 CPU 线程与并发，LinguaSpark 使用 16 workers（引擎 `269605c`）。每个引擎单独运行，三轮轮换顺序，先预热全部 25 段文本；表格取每轮平均延迟或吞吐的三轮中位数，不含启动、转换和预热。短句每方向 10 条，英中段落 3 条、中英段落 2 条；逐条每轮重复 3 次，并发每轮重复 24 次。以上旧性能表与本次是不同测量，不能跨表直接比较。
-
-Fast 与 LinguaSpark 均可能出现术语、地名和句法错误，见 [25 组三引擎质量对比](tests/fixtures/translation-quality-regressions.json)。这些是筛选出的退化样本，不代表总体错误率。
-
-方法与原始数据: [原始结果](docs/benchmarks/fast-linguaspark-2026-11-11.json) · [输入文本](docs/benchmarks/fast-corpus.json) · [复测脚本](scripts/benchmark-engines.py).
+普通模式和 Fast 均支持并发加速。`--fast` 开启 Fast，默认关闭；可能增加误译。[译文对比](tests/fixtures/translation-quality-regressions.json)。
 
 ## 同类项目
 
@@ -208,7 +179,7 @@ Fast 与 LinguaSpark 均可能出现术语、地名和句法错误，见 [25 组
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高 | 中等 | [社区数据](https://community.libretranslate.com/t/performance-benchmark-data/486)：中端 CPU 约 3 句/秒，高端约 15–20 句/秒 |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | 高 | 快 | [CTranslate2 基准](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | 其他大模型 | 超高 | 很慢 | 效果好，硬件要求高；高并发常用 vLLM |
-| 本项目 | 英译中峰值约 392 MiB | 超快 | CPU 翻译，无缓存状态 |
+| 本项目 | 随模型和并发变化 | 超快 | CPU 翻译，无缓存状态 |
 
 ## 更多
 

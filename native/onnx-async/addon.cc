@@ -1,6 +1,8 @@
 // ORT headers and LICENSE.onnxruntime are from microsoft/onnxruntime tag v1.30.0.
 #include "onnxruntime_c_api.h"
 #include <cstring>
+#include <cmath>
+#include <limits>
 #include <dlfcn.h>
 #include <memory>
 #include <mutex>
@@ -68,6 +70,8 @@ struct State {
   OrtEnv *env = nullptr;
   OrtSession *session = nullptr;
   OrtMemoryInfo *memory = nullptr;
+  size_t inputCount = 0;
+  int cpuThreads = 1;
   // Only the owning JS thread mutates lifecycle fields; jobs retain State.
   bool closing = false;
   size_t inflight = 0;
@@ -298,13 +302,16 @@ void executeWork(napi_env, void *data) noexcept {
       s.check(s.api->CreateSessionOptions(&options));
       std::unique_ptr<OrtSessionOptions, void (*)(OrtSessionOptions *)> opts(
           options, s.api->ReleaseSessionOptions);
-      s.check(s.api->SetIntraOpNumThreads(options, 1));
+      s.check(s.api->SetIntraOpNumThreads(options, s.cpuThreads));
       s.check(s.api->SetInterOpNumThreads(options, 1));
       s.check(s.api->AddSessionConfigEntry(options, "session.intra_op.allow_spinning", "0"));
       s.check(s.api->AddSessionConfigEntry(options, "session.inter_op.allow_spinning", "0"));
       s.check(s.api->SetSessionExecutionMode(options, ORT_SEQUENTIAL));
       s.check(s.api->SetSessionGraphOptimizationLevel(options, ORT_ENABLE_ALL));
       s.check(s.api->CreateSession(s.env, job.model.c_str(), options, &s.session));
+      s.check(s.api->SessionGetInputCount(s.session, &s.inputCount));
+      if (s.inputCount != 2 && s.inputCount != 3)
+        throw std::runtime_error("Expected translation graph with two or three inputs");
       s.check(s.api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &s.memory));
     } else {
       std::vector<std::unique_ptr<OrtValue, void (*)(OrtValue *)>> owned;
@@ -313,7 +320,7 @@ void executeWork(napi_env, void *data) noexcept {
       int64_t *ptrs[] = {job.x.data(), &job.eos, job.candidates.data()};
       int64_t lengths[] = {static_cast<int64_t>(job.x.size()), 1,
                            static_cast<int64_t>(job.candidates.size())};
-      for (int i = 0; i < 3; i++) {
+      for (size_t i = 0; i < s.inputCount; i++) {
         OrtValue *v = nullptr;
         s.check(s.api->CreateTensorWithDataAsOrtValue(s.memory, ptrs[i],
                                                       lengths[i] * sizeof(int64_t), &lengths[i], 1,
@@ -324,7 +331,7 @@ void executeWork(napi_env, void *data) noexcept {
       const char *names[] = {"X", "eos_id", "candidate_ids"};
       const char *output = "Y";
       OrtValue *raw = nullptr;
-      s.check(s.api->Run(s.session, nullptr, names, feeds, 3, &output, 1, &raw));
+      s.check(s.api->Run(s.session, nullptr, names, feeds, s.inputCount, &output, 1, &raw));
       std::unique_ptr<OrtValue, void (*)(OrtValue *)> out(raw, s.api->ReleaseValue);
       OrtTensorTypeAndShapeInfo *info = nullptr;
       s.check(s.api->GetTensorTypeAndShape(raw, &info));
@@ -494,10 +501,17 @@ napi_value invoke(napi_env env, napi_callback_info info, Operation operation) no
       job->context = context;
       job->deferred = deferred;
       if (operation == Operation::Init) {
-        if (count != 2)
-          throw std::runtime_error("init(modelPath, ortLibraryPath)");
+        if (count != 2 && count != 3)
+          throw std::runtime_error("init(modelPath, ortLibraryPath, cpuThreads?)");
         job->init = true;
         job->state = std::make_shared<State>();
+        if (count == 3) {
+          double threads;
+          checkNapi(napi_get_value_double(env, args[2], &threads));
+          if (!std::isfinite(threads) || threads < 0 || threads > std::numeric_limits<int>::max() || std::floor(threads) != threads)
+            throw std::runtime_error("cpuThreads must be a non-negative integer");
+          job->state->cpuThreads = static_cast<int>(threads);
+        }
         job->model = readString(env, args[0]);
         job->library = readString(env, args[1]);
         std::erase_if(context->states, [](const auto &previous) { return previous.expired(); });
@@ -510,7 +524,12 @@ napi_value invoke(napi_env env, napi_callback_info info, Operation operation) no
           throw std::runtime_error("Session is closing or closed");
         job->state = state;
         job->x = readTokens(env, args[1]);
-        job->candidates = readTokens(env, args[2]);
+        if (state->inputCount == 3) job->candidates = readTokens(env, args[2]);
+        else {
+          napi_valuetype type;
+          checkNapi(napi_typeof(env, args[2], &type));
+          if (type != napi_null) throw std::runtime_error("Standard graph requires null candidates");
+        }
         bool lossless = false;
         checkNapi(napi_get_value_bigint_int64(env, args[3], &job->eos, &lossless));
         if (!lossless || job->eos < 0)
