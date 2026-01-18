@@ -1,0 +1,1510 @@
+{
+  "decision": "Storage optimization is promising; batching scheduling regressions remain. Investigate original-model external data before adding a new backend.",
+  "initializerInventory": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "split",
+      "sharedTensors": 2,
+      "sharedBytes": 55296000,
+      "duplicateBytes": 104448000,
+      "groups": [
+        {
+          "type": 1,
+          "dims": [
+            32000,
+            384
+          ],
+          "bytes": 49152000,
+          "hash": "9eb6b5f19d2f11589b5a3b75410a8a8ea379e159c116794cce07b5c8d1d7c3c3",
+          "uses": [
+            {
+              "model": "step",
+              "initializer": "decoder_Wemb"
+            },
+            {
+              "model": "projection1",
+              "initializer": "decoder_Wemb"
+            },
+            {
+              "model": "projection2",
+              "initializer": "decoder_Wemb"
+            }
+          ]
+        },
+        {
+          "type": 2,
+          "dims": [
+            32000,
+            6,
+            32
+          ],
+          "bytes": 6144000,
+          "hash": "b863c6d875ebd80f839d997a983657d4005afda8acca234922bb29de6915ac5b",
+          "uses": [
+            {
+              "model": "projection1",
+              "initializer": "projection_Q4"
+            },
+            {
+              "model": "projection2",
+              "initializer": "projection_Q4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "hybrid",
+      "sharedTensors": 3,
+      "sharedBytes": 104448000,
+      "duplicateBytes": 208896000,
+      "groups": [
+        {
+          "type": 1,
+          "dims": [
+            32000,
+            384
+          ],
+          "bytes": 49152000,
+          "hash": "9eb6b5f19d2f11589b5a3b75410a8a8ea379e159c116794cce07b5c8d1d7c3c3",
+          "uses": [
+            {
+              "model": "full",
+              "initializer": "decoder_Wemb"
+            },
+            {
+              "model": "step",
+              "initializer": "decoder_Wemb"
+            },
+            {
+              "model": "projection1",
+              "initializer": "decoder_Wemb"
+            },
+            {
+              "model": "projection2",
+              "initializer": "decoder_Wemb"
+            }
+          ]
+        },
+        {
+          "type": 1,
+          "dims": [
+            32000,
+            384
+          ],
+          "bytes": 49152000,
+          "hash": "7d2ed12fc04cab07d079e5548cfa55cf4648ce6164fc14510b8147329fba3b9e",
+          "uses": [
+            {
+              "model": "full",
+              "initializer": "encoder_Wemb"
+            },
+            {
+              "model": "init",
+              "initializer": "encoder_Wemb"
+            }
+          ]
+        },
+        {
+          "type": 2,
+          "dims": [
+            32000,
+            6,
+            32
+          ],
+          "bytes": 6144000,
+          "hash": "b863c6d875ebd80f839d997a983657d4005afda8acca234922bb29de6915ac5b",
+          "uses": [
+            {
+              "model": "full",
+              "initializer": "projection_Q4"
+            },
+            {
+              "model": "projection1",
+              "initializer": "projection_Q4"
+            },
+            {
+              "model": "projection2",
+              "initializer": "projection_Q4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "split",
+      "sharedTensors": 3,
+      "sharedBytes": 112128000,
+      "duplicateBytes": 308736000,
+      "groups": [
+        {
+          "type": 1,
+          "dims": [
+            64000,
+            384
+          ],
+          "bytes": 98304000,
+          "hash": "d0e6cfb2de6214334d301abc39f8421fd17d830c425dfe146ede488bccdaa980",
+          "uses": [
+            {
+              "model": "init",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "step",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "projection1",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "projection2",
+              "initializer": "Wemb"
+            }
+          ]
+        },
+        {
+          "type": 2,
+          "dims": [
+            64000,
+            6,
+            32
+          ],
+          "bytes": 12288000,
+          "hash": "54883ad4dda8e643a3a1c27d22f23e6cdfc4019474406a8cec0928bdccaecdd9",
+          "uses": [
+            {
+              "model": "projection1",
+              "initializer": "projection_Q4"
+            },
+            {
+              "model": "projection2",
+              "initializer": "projection_Q4"
+            }
+          ]
+        },
+        {
+          "type": 1,
+          "dims": [
+            64000,
+            6
+          ],
+          "bytes": 1536000,
+          "hash": "778f41efbd3d25dc1dd7f98ef95c653b15435210c680b79c2c3acd1618bf2f6a",
+          "uses": [
+            {
+              "model": "projection1",
+              "initializer": "projection_scales"
+            },
+            {
+              "model": "projection2",
+              "initializer": "projection_scales"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "hybrid",
+      "sharedTensors": 3,
+      "sharedBytes": 112128000,
+      "duplicateBytes": 420864000,
+      "groups": [
+        {
+          "type": 1,
+          "dims": [
+            64000,
+            384
+          ],
+          "bytes": 98304000,
+          "hash": "d0e6cfb2de6214334d301abc39f8421fd17d830c425dfe146ede488bccdaa980",
+          "uses": [
+            {
+              "model": "full",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "init",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "step",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "projection1",
+              "initializer": "Wemb"
+            },
+            {
+              "model": "projection2",
+              "initializer": "Wemb"
+            }
+          ]
+        },
+        {
+          "type": 2,
+          "dims": [
+            64000,
+            6,
+            32
+          ],
+          "bytes": 12288000,
+          "hash": "54883ad4dda8e643a3a1c27d22f23e6cdfc4019474406a8cec0928bdccaecdd9",
+          "uses": [
+            {
+              "model": "full",
+              "initializer": "projection_Q4"
+            },
+            {
+              "model": "projection1",
+              "initializer": "projection_Q4"
+            },
+            {
+              "model": "projection2",
+              "initializer": "projection_Q4"
+            }
+          ]
+        },
+        {
+          "type": 1,
+          "dims": [
+            64000,
+            6
+          ],
+          "bytes": 1536000,
+          "hash": "778f41efbd3d25dc1dd7f98ef95c653b15435210c680b79c2c3acd1618bf2f6a",
+          "uses": [
+            {
+              "model": "full",
+              "initializer": "projection_scales"
+            },
+            {
+              "model": "projection1",
+              "initializer": "projection_scales"
+            },
+            {
+              "model": "projection2",
+              "initializer": "projection_scales"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sharingOnly": {
+    "scope": "Independent process, two corpus passes per loaded path; source bytes identical",
+    "cases": [
+      {
+        "round": 0,
+        "sharing": "none",
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 289196,
+        "rssAfterWarmKiB": 290240,
+        "peakRssKiB": 337120,
+        "initMs": 224.593,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "init",
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 193956,
+        "rssAfterWarmKiB": 197620,
+        "peakRssKiB": 297652,
+        "initMs": 282.78,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23824,
+        "rssAfterInitKiB": 184844,
+        "rssAfterWarmKiB": 188504,
+        "peakRssKiB": 296128,
+        "initMs": 270.846,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23900,
+        "rssAfterInitKiB": 423380,
+        "rssAfterWarmKiB": 424092,
+        "peakRssKiB": 471268,
+        "initMs": 434.318,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 0,
+        "sharing": "init",
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23824,
+        "rssAfterInitKiB": 232336,
+        "rssAfterWarmKiB": 237964,
+        "peakRssKiB": 336156,
+        "initMs": 498.532,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 222588,
+        "rssAfterWarmKiB": 223644,
+        "peakRssKiB": 326356,
+        "initMs": 501.324,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 224564,
+        "rssAfterWarmKiB": 225620,
+        "peakRssKiB": 328360,
+        "initMs": 491.182,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "init",
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 231524,
+        "rssAfterWarmKiB": 237148,
+        "peakRssKiB": 335344,
+        "initMs": 529.299,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23872,
+        "rssAfterInitKiB": 425540,
+        "rssAfterWarmKiB": 426244,
+        "peakRssKiB": 473428,
+        "initMs": 385.995,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23820,
+        "rssAfterInitKiB": 185000,
+        "rssAfterWarmKiB": 188656,
+        "peakRssKiB": 296220,
+        "initMs": 313.191,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 1,
+        "sharing": "init",
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23816,
+        "rssAfterInitKiB": 191624,
+        "rssAfterWarmKiB": 195292,
+        "peakRssKiB": 295320,
+        "initMs": 246.373,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23872,
+        "rssAfterInitKiB": 289964,
+        "rssAfterWarmKiB": 291008,
+        "peakRssKiB": 337880,
+        "initMs": 229.319,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23820,
+        "rssAfterInitKiB": 505580,
+        "rssAfterWarmKiB": 506620,
+        "peakRssKiB": 599996,
+        "initMs": 420.022,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "init",
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23872,
+        "rssAfterInitKiB": 226812,
+        "rssAfterWarmKiB": 227856,
+        "peakRssKiB": 418784,
+        "initMs": 521.543,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 226328,
+        "rssAfterWarmKiB": 227368,
+        "peakRssKiB": 418204,
+        "initMs": 495.5,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 649656,
+        "rssAfterWarmKiB": 650256,
+        "peakRssKiB": 744124,
+        "initMs": 598.646,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 0,
+        "sharing": "init",
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23812,
+        "rssAfterInitKiB": 272288,
+        "rssAfterWarmKiB": 272888,
+        "peakRssKiB": 464260,
+        "initMs": 684.212,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23816,
+        "rssAfterInitKiB": 257352,
+        "rssAfterWarmKiB": 257948,
+        "peakRssKiB": 449292,
+        "initMs": 738.744,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23864,
+        "rssAfterInitKiB": 258424,
+        "rssAfterWarmKiB": 259020,
+        "peakRssKiB": 450364,
+        "initMs": 726.84,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "init",
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23872,
+        "rssAfterInitKiB": 271328,
+        "rssAfterWarmKiB": 271928,
+        "peakRssKiB": 463236,
+        "initMs": 819.361,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23876,
+        "rssAfterInitKiB": 650144,
+        "rssAfterWarmKiB": 650744,
+        "peakRssKiB": 744596,
+        "initMs": 644.128,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23820,
+        "rssAfterInitKiB": 226316,
+        "rssAfterWarmKiB": 227360,
+        "peakRssKiB": 418192,
+        "initMs": 503.542,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 1,
+        "sharing": "init",
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 227200,
+        "rssAfterWarmKiB": 228240,
+        "peakRssKiB": 419108,
+        "initMs": 554.768,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 504988,
+        "rssAfterWarmKiB": 506032,
+        "peakRssKiB": 599400,
+        "initMs": 390.795,
+        "validatedTranslations": 38
+      }
+    ],
+    "finished": true,
+    "sourceHashes": {
+      "probe.cc": "eb91b0dca0cd50a5adb8d72e65d1e00a5472e1455d750909dd955af380e8a821",
+      "sharing.h": "d9f0a52b7e71c224d4f3d338fba6a8108349ff53fe835dbbdb1db753b6341b8e",
+      "export.mjs": "68825c81e243a90fe604a643d8c67906b1f38dc350f13b752dbe285ab3cd54ef"
+    }
+  },
+  "externalDataComparison": {
+    "scope": "Fresh process; VmHWM records current exec high water; ru_maxrss also retained",
+    "cases": [
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23868,
+        "rssAfterInitKiB": 289672,
+        "rssAfterWarmKiB": 290720,
+        "peakRssKiB": 337632,
+        "processHwmKiB": 337632,
+        "initMs": 254.804,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 184720,
+        "rssAfterWarmKiB": 188380,
+        "peakRssKiB": 295972,
+        "processHwmKiB": 295972,
+        "initMs": 314.984,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23836,
+        "rssAfterInitKiB": 139772,
+        "rssAfterWarmKiB": 233296,
+        "peakRssKiB": 233212,
+        "processHwmKiB": 233296,
+        "initMs": 100.654,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23864,
+        "rssAfterInitKiB": 185564,
+        "rssAfterWarmKiB": 189724,
+        "peakRssKiB": 203344,
+        "processHwmKiB": 203344,
+        "initMs": 109.128,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23904,
+        "rssAfterInitKiB": 424460,
+        "rssAfterWarmKiB": 425168,
+        "peakRssKiB": 472424,
+        "processHwmKiB": 472424,
+        "initMs": 443.97,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 224360,
+        "rssAfterWarmKiB": 225416,
+        "peakRssKiB": 328184,
+        "processHwmKiB": 328184,
+        "initMs": 627.511,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23876,
+        "rssAfterInitKiB": 129244,
+        "rssAfterWarmKiB": 304076,
+        "peakRssKiB": 304024,
+        "processHwmKiB": 304076,
+        "initMs": 188.567,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23820,
+        "rssAfterInitKiB": 222068,
+        "rssAfterWarmKiB": 223120,
+        "peakRssKiB": 223056,
+        "processHwmKiB": 223120,
+        "initMs": 199.481,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23820,
+        "rssAfterInitKiB": 224704,
+        "rssAfterWarmKiB": 225764,
+        "peakRssKiB": 225608,
+        "processHwmKiB": 225764,
+        "initMs": 279.429,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23816,
+        "rssAfterInitKiB": 129164,
+        "rssAfterWarmKiB": 304000,
+        "peakRssKiB": 303920,
+        "processHwmKiB": 304000,
+        "initMs": 171.243,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23824,
+        "rssAfterInitKiB": 220644,
+        "rssAfterWarmKiB": 221704,
+        "peakRssKiB": 324412,
+        "processHwmKiB": 324412,
+        "initMs": 460.949,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 425612,
+        "rssAfterWarmKiB": 426328,
+        "peakRssKiB": 473576,
+        "processHwmKiB": 473576,
+        "initMs": 450.236,
+        "validatedTranslations": 80
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23808,
+        "rssAfterInitKiB": 184804,
+        "rssAfterWarmKiB": 188212,
+        "peakRssKiB": 203320,
+        "processHwmKiB": 203320,
+        "initMs": 111.824,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23900,
+        "rssAfterInitKiB": 138108,
+        "rssAfterWarmKiB": 231628,
+        "peakRssKiB": 231552,
+        "processHwmKiB": 231628,
+        "initMs": 93.296,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 184716,
+        "rssAfterWarmKiB": 188376,
+        "peakRssKiB": 295968,
+        "processHwmKiB": 295968,
+        "initMs": 245.273,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "split",
+        "rssBeforeKiB": 23816,
+        "rssAfterInitKiB": 290636,
+        "rssAfterWarmKiB": 291688,
+        "peakRssKiB": 338488,
+        "processHwmKiB": 338488,
+        "initMs": 252.893,
+        "validatedTranslations": 40
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23896,
+        "rssAfterInitKiB": 504624,
+        "rssAfterWarmKiB": 505672,
+        "peakRssKiB": 599092,
+        "processHwmKiB": 599092,
+        "initMs": 495.58,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23824,
+        "rssAfterInitKiB": 227060,
+        "rssAfterWarmKiB": 228104,
+        "peakRssKiB": 418968,
+        "processHwmKiB": 418968,
+        "initMs": 469.09,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 106288,
+        "rssAfterWarmKiB": 224384,
+        "peakRssKiB": 224308,
+        "processHwmKiB": 224384,
+        "initMs": 69.9437,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 199256,
+        "rssAfterWarmKiB": 202920,
+        "peakRssKiB": 214236,
+        "processHwmKiB": 214236,
+        "initMs": 98.8323,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23872,
+        "rssAfterInitKiB": 647888,
+        "rssAfterWarmKiB": 648488,
+        "peakRssKiB": 742212,
+        "processHwmKiB": 742212,
+        "initMs": 645.47,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23864,
+        "rssAfterInitKiB": 259144,
+        "rssAfterWarmKiB": 259744,
+        "peakRssKiB": 452500,
+        "processHwmKiB": 452500,
+        "initMs": 676.742,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 0,
+        "sharing": "none",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23900,
+        "rssAfterInitKiB": 153176,
+        "rssAfterWarmKiB": 331852,
+        "peakRssKiB": 331852,
+        "processHwmKiB": 331852,
+        "initMs": 176.226,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 0,
+        "sharing": "packed",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23808,
+        "rssAfterInitKiB": 244472,
+        "rssAfterWarmKiB": 245072,
+        "peakRssKiB": 244944,
+        "processHwmKiB": 245072,
+        "initMs": 203.472,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 244372,
+        "rssAfterWarmKiB": 244972,
+        "peakRssKiB": 244848,
+        "processHwmKiB": 244972,
+        "initMs": 212.444,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23816,
+        "rssAfterInitKiB": 155384,
+        "rssAfterWarmKiB": 334056,
+        "peakRssKiB": 334056,
+        "processHwmKiB": 334056,
+        "initMs": 182.786,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 23844,
+        "rssAfterInitKiB": 257748,
+        "rssAfterWarmKiB": 258352,
+        "peakRssKiB": 449624,
+        "processHwmKiB": 449624,
+        "initMs": 673.358,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "hybrid",
+        "rssBeforeKiB": 26060,
+        "rssAfterInitKiB": 647596,
+        "rssAfterWarmKiB": 648200,
+        "peakRssKiB": 742112,
+        "processHwmKiB": 742112,
+        "initMs": 741.967,
+        "validatedTranslations": 76
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 198968,
+        "rssAfterWarmKiB": 202628,
+        "peakRssKiB": 213884,
+        "processHwmKiB": 213884,
+        "initMs": 102.198,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 105920,
+        "rssAfterWarmKiB": 224012,
+        "peakRssKiB": 223952,
+        "processHwmKiB": 224012,
+        "initMs": 67.4668,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 1,
+        "sharing": "packed",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 227068,
+        "rssAfterWarmKiB": 228112,
+        "peakRssKiB": 418976,
+        "processHwmKiB": 418976,
+        "initMs": 435.79,
+        "validatedTranslations": 38
+      },
+      {
+        "round": 1,
+        "sharing": "none",
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "split",
+        "rssBeforeKiB": 23836,
+        "rssAfterInitKiB": 504564,
+        "rssAfterWarmKiB": 505604,
+        "peakRssKiB": 598980,
+        "processHwmKiB": 598980,
+        "initMs": 456.497,
+        "validatedTranslations": 38
+      }
+    ],
+    "finished": true,
+    "sourceHashes": {
+      "probe.cc": "3ca4b2c831048b3cef49eb1b8ae363bc678ae1ccf42382822e1fe083fe80c35a",
+      "sharing.h": "0f72ca6b76d54e1869545035c2b5457de4d290494fffc24c04fb10fda914e08c",
+      "external.mjs": "e360298dd576023f7189cbabce59fe364576230b0fd88b4f43a6b6578d5de8aa"
+    }
+  },
+  "fullModelOnly": {
+    "scope": "Original full model only, no split sessions or initializer injection",
+    "cases": [
+      {
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "baseline",
+        "rssBeforeKiB": 23828,
+        "rssAfterInitKiB": 178732,
+        "rssAfterWarmKiB": 180980,
+        "peakRssKiB": 208264,
+        "processHwmKiB": 208264,
+        "initMs": 159.61,
+        "validatedTranslations": 40
+      },
+      {
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "baseline",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 82304,
+        "rssAfterWarmKiB": 146248,
+        "peakRssKiB": 146240,
+        "processHwmKiB": 146248,
+        "initMs": 109.494,
+        "validatedTranslations": 40
+      },
+      {
+        "external": true,
+        "pair": "en_zh-Hans",
+        "mode": "baseline",
+        "rssBeforeKiB": 23824,
+        "rssAfterInitKiB": 83452,
+        "rssAfterWarmKiB": 147400,
+        "peakRssKiB": 147388,
+        "processHwmKiB": 147400,
+        "initMs": 106.576,
+        "validatedTranslations": 40
+      },
+      {
+        "external": false,
+        "pair": "en_zh-Hans",
+        "mode": "baseline",
+        "rssBeforeKiB": 23908,
+        "rssAfterInitKiB": 179540,
+        "rssAfterWarmKiB": 181788,
+        "peakRssKiB": 208344,
+        "processHwmKiB": 208344,
+        "initMs": 155.346,
+        "validatedTranslations": 40
+      },
+      {
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "baseline",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 189164,
+        "rssAfterWarmKiB": 190912,
+        "peakRssKiB": 264424,
+        "processHwmKiB": 264424,
+        "initMs": 201.792,
+        "validatedTranslations": 38
+      },
+      {
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "baseline",
+        "rssBeforeKiB": 23836,
+        "rssAfterInitKiB": 93172,
+        "rssAfterWarmKiB": 153284,
+        "peakRssKiB": 153268,
+        "processHwmKiB": 153284,
+        "initMs": 110.637,
+        "validatedTranslations": 38
+      },
+      {
+        "external": true,
+        "pair": "zh-Hans_en",
+        "mode": "baseline",
+        "rssBeforeKiB": 23852,
+        "rssAfterInitKiB": 92896,
+        "rssAfterWarmKiB": 153016,
+        "peakRssKiB": 152992,
+        "processHwmKiB": 153016,
+        "initMs": 115.711,
+        "validatedTranslations": 38
+      },
+      {
+        "external": false,
+        "pair": "zh-Hans_en",
+        "mode": "baseline",
+        "rssBeforeKiB": 23832,
+        "rssAfterInitKiB": 189380,
+        "rssAfterWarmKiB": 191128,
+        "peakRssKiB": 264424,
+        "processHwmKiB": 264424,
+        "initMs": 213.846,
+        "validatedTranslations": 38
+      }
+    ],
+    "finished": true
+  },
+  "memoryProbeValidatedTranslations": 3588,
+  "concurrencyValidation": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "baseline",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 2027,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 0,
+      "pairedSteps": 0,
+      "singleSteps": 0,
+      "p50LatencyMs": 752.755,
+      "p95LatencyMs": 1977.31,
+      "p95QueueMs": 1973.73,
+      "p95ServiceMs": 82.259
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "baseline2",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 1151.08,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 0,
+      "singleSteps": 0,
+      "p50LatencyMs": 438.046,
+      "p95LatencyMs": 948.964,
+      "p95QueueMs": 940.182,
+      "p95ServiceMs": 82.6898
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "baseline4",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 1149.91,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 0,
+      "singleSteps": 0,
+      "p50LatencyMs": 419.469,
+      "p95LatencyMs": 906.856,
+      "p95QueueMs": 870.281,
+      "p95ServiceMs": 164.347
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "continuous",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 1689.59,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 832,
+      "singleSteps": 167,
+      "p50LatencyMs": 668.685,
+      "p95LatencyMs": 1441.31,
+      "p95QueueMs": 1432.85,
+      "p95ServiceMs": 116.653
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "adaptive",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 1762.48,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 832,
+      "singleSteps": 167,
+      "p50LatencyMs": 683.295,
+      "p95LatencyMs": 1473.2,
+      "p95QueueMs": 1454.98,
+      "p95ServiceMs": 125.372
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "continuous2",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 1077.85,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 772,
+      "singleSteps": 287,
+      "p50LatencyMs": 362.929,
+      "p95LatencyMs": 844.105,
+      "p95QueueMs": 818.657,
+      "p95ServiceMs": 191.05
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "continuous",
+      "scenario": "cancellation",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 938.051,
+      "tokens": 989,
+      "cancelled": 18,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 480,
+      "singleSteps": 29,
+      "p50LatencyMs": 335.947,
+      "p95LatencyMs": 888.995,
+      "p95QueueMs": 881.81,
+      "p95ServiceMs": 101.612
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "continuous2",
+      "scenario": "cancellation",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 595.514,
+      "tokens": 989,
+      "cancelled": 18,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 412,
+      "singleSteps": 165,
+      "p50LatencyMs": 192.119,
+      "p95LatencyMs": 437.118,
+      "p95QueueMs": 423.207,
+      "p95ServiceMs": 121.157
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "continuous2",
+      "scenario": "recovery",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 64,
+      "ms": 1144.96,
+      "tokens": 1831,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 838,
+      "singleSteps": 155,
+      "p50LatencyMs": 388.604,
+      "p95LatencyMs": 851.652,
+      "p95QueueMs": 814.753,
+      "p95ServiceMs": 143.551
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "baseline",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 2886.34,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 0,
+      "pairedSteps": 0,
+      "singleSteps": 0,
+      "p50LatencyMs": 1231.34,
+      "p95LatencyMs": 2791.38,
+      "p95QueueMs": 2785.24,
+      "p95ServiceMs": 149.398
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "baseline2",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 1971.46,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 0,
+      "singleSteps": 0,
+      "p50LatencyMs": 734.698,
+      "p95LatencyMs": 1591.16,
+      "p95QueueMs": 1573.31,
+      "p95ServiceMs": 147.283
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "baseline4",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 1970.8,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 0,
+      "singleSteps": 0,
+      "p50LatencyMs": 693.383,
+      "p95LatencyMs": 1536.67,
+      "p95QueueMs": 1456.85,
+      "p95ServiceMs": 308.655
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "continuous",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 2336.68,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 789,
+      "singleSteps": 142,
+      "p50LatencyMs": 915.434,
+      "p95LatencyMs": 1949.77,
+      "p95QueueMs": 1924.85,
+      "p95ServiceMs": 176.63
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "adaptive",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 2383,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 789,
+      "singleSteps": 142,
+      "p50LatencyMs": 928.559,
+      "p95LatencyMs": 2002.43,
+      "p95QueueMs": 1979.76,
+      "p95ServiceMs": 196.596
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "continuous2",
+      "scenario": "warmup",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 1654.93,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 746,
+      "singleSteps": 228,
+      "p50LatencyMs": 552.829,
+      "p95LatencyMs": 1229.32,
+      "p95QueueMs": 1168.73,
+      "p95ServiceMs": 243.546
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "continuous",
+      "scenario": "cancellation",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 1716.24,
+      "tokens": 1219,
+      "cancelled": 18,
+      "matched": true,
+      "maxActive": 2,
+      "pairedSteps": 533,
+      "singleSteps": 153,
+      "p50LatencyMs": 416.838,
+      "p95LatencyMs": 1325.79,
+      "p95QueueMs": 1315.96,
+      "p95ServiceMs": 183.843
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "continuous2",
+      "scenario": "cancellation",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 1227.97,
+      "tokens": 1219,
+      "cancelled": 18,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 464,
+      "singleSteps": 291,
+      "p50LatencyMs": 300.954,
+      "p95LatencyMs": 767.245,
+      "p95QueueMs": 734.138,
+      "p95ServiceMs": 235.023
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "continuous2",
+      "scenario": "recovery",
+      "round": -1,
+      "intervalMs": 0,
+      "requests": 61,
+      "ms": 1631.29,
+      "tokens": 1720,
+      "cancelled": 0,
+      "matched": true,
+      "maxActive": 4,
+      "pairedSteps": 744,
+      "singleSteps": 232,
+      "p50LatencyMs": 543.092,
+      "p95LatencyMs": 1203.08,
+      "p95QueueMs": 1151.56,
+      "p95ServiceMs": 241.583
+    }
+  ],
+  "sanitizer": "Initial shared zh run reports an additional unresolved 152-byte ORT allocation, total 166 bytes. One shared repeat and one unshared control report only the known 14-byte environment leak. No out-of-bounds/UB report; ORT not instrumented; no thread sanitizer.",
+  "latestSources": {
+    "probe.cc": "b0ced71cfd5402869dec18fee67a2de6c711c92a2b35f1b0c0476d8b5d2036f7",
+    "sharing.h": "0f72ca6b76d54e1869545035c2b5457de4d290494fffc24c04fb10fda914e08c",
+    "external.mjs": "e360298dd576023f7189cbabce59fe364576230b0fd88b4f43a6b6578d5de8aa",
+    "concurrent.cc": "2d590cdac391db141485ab0fec0f2d616a995257d60879caa31d7ce29e8e9d6d"
+  }
+}
