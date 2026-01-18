@@ -199,14 +199,12 @@ jobs:
       - name: Determine Release Tag
         id: tag
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            LATEST_TAG=$(git describe --tags --abbrev=0)
-            echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
-            echo "Using latest tag: $LATEST_TAG"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            TAG=${GITHUB_REF#refs/tags/}
           else
-            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "Using ref name: ${{ github.ref_name }}"
+            TAG="v$(node -p 'require("./package.json").version')"
           fi
+          echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Generate Checksums
         run: |
@@ -291,8 +289,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
           tag_name: ${{ steps.tag.outputs.tag_name }}
           name: ${{ steps.tag.outputs.tag_name }}
+          target_commitish: ${{ github.sha }}
           body_path: release_body.md
           files: release-assets/*
           draft: false
