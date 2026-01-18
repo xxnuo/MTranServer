@@ -2,6 +2,7 @@
 # 使用 WebGPU/Vulkan；不包含 CUDA/TensorRT 推理依赖。
 services:
   mtranserver:
+    image: xxnuo/mtranserver:webgpu
     extends:
       file: compose.yml
       service: mtranserver

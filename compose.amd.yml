@@ -1,6 +1,7 @@
 # 使用 Mesa Vulkan（非 ROCm）；需要宿主 AMD GPU 驱动和 /dev/dri。
 services:
   mtranserver:
+    image: xxnuo/mtranserver:webgpu
     extends:
       file: compose.yml
       service: mtranserver

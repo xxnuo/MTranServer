@@ -12,6 +12,17 @@ permissions:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: cpu
+            platforms: linux/amd64,linux/arm64
+            suffix: ""
+            latest: latest
+          - target: webgpu
+            platforms: linux/amd64
+            suffix: -webgpu
+            latest: webgpu
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -54,10 +65,10 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=semver,pattern={{version}},value=${{ steps.latest_tag.outputs.tag }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.latest_tag.outputs.tag }}
-            type=semver,pattern={{major}},value=${{ steps.latest_tag.outputs.tag }}
-            type=raw,value=latest
+            type=semver,pattern={{version}},value=${{ steps.latest_tag.outputs.tag }},suffix=${{ matrix.suffix }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.latest_tag.outputs.tag }},suffix=${{ matrix.suffix }}
+            type=semver,pattern={{major}},value=${{ steps.latest_tag.outputs.tag }},suffix=${{ matrix.suffix }}
+            type=raw,value=${{ matrix.latest }}
 
       - name: Get version
         id: version
@@ -73,12 +84,13 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          target: ${{ matrix.target }}
+          platforms: ${{ matrix.platforms }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION=${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.target }}
           provenance: false

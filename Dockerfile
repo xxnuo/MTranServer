@@ -34,10 +34,10 @@ COPY native/ssru ./native/ssru
 RUN bun scripts/build-native.ts && \
     node -e 'const a=require("./dist/onnx-async-linux-"+process.arch+".node"); if(a.ssruVersion!==1) process.exit(1)'
 
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libvulkan1 mesa-vulkan-drivers libtcmalloc-minimal4 \
+    ca-certificates libtcmalloc-minimal4 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -57,3 +57,10 @@ ENV MT_HOST=0.0.0.0 \
 EXPOSE 8989
 
 CMD ["node", "main.js"]
+
+FROM runtime AS webgpu
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libvulkan1 mesa-vulkan-drivers \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM runtime AS cpu

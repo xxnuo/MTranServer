@@ -1,6 +1,7 @@
 # 需要宿主 Intel GPU 驱动和 /dev/dri；ONNX Node WebGPU 预编译包支持 Linux amd64。
 services:
   mtranserver:
+    image: xxnuo/mtranserver:webgpu
     extends:
       file: compose.yml
       service: mtranserver
