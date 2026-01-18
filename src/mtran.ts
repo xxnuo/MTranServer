@@ -42,7 +42,7 @@ export class MTran {
   }
 
   /**
-   * Ensure model is downloaded for a language pair
+   * Download and prepare translation files for a language pair
    * @param from Source language
    * @param to Target language
    */

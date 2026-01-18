@@ -12,9 +12,19 @@
 | MT_HOST               | Server host address                      | 0.0.0.0 | Any IP address              |
 | MT_PORT               | Server port                              | 8989    | 1-65535                     |
 | MT_ENABLE_UI          | Enable Web UI                            | true    | true, false                 |
-| MT_OFFLINE            | Offline mode, disable automatic download of new language models, only use downloaded models | false   | true, false                 |
-| MT_WORKER_IDLE_TIMEOUT| Worker idle timeout (seconds)            | 300     | Any positive integer        |
+| MT_OFFLINE | Use previously prepared translation files offline | false | true, false |
+| MT_WORKER_IDLE_TIMEOUT | Release an idle translation engine after this many seconds | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN          | API access token                         | empty   | Any string                  |
+| MT_CACHE_SIZE | Recent translation results to keep; 0 disables caching | 1000 | 0, 1, 2, ... |
+| MT_MAX_SENTENCE_LENGTH | Long-text splitting limit | 512 | 8, 9, 10, ... |
+| MT_FULLWIDTH_ZH_PUNCTUATION | Use fullwidth commas in Chinese output | true | true, false |
+| MT_LOG_DIR | Log directory | ~/.config/mtran/logs | Any path |
+| MT_LOG_TO_FILE | Write logs to files | false | true, false |
+| MT_LOG_CONSOLE | Show console logs | true | true, false |
+| MT_LOG_REQUESTS | Log requests | false | true, false |
+| MT_CHECK_UPDATE | Check for updates at startup | true | true, false |
+
+An existing local `models` folder is used by default. Prepare the required translation directions online before going offline, and keep both the configuration and model folders.
 
 Example:
 
@@ -26,7 +36,7 @@ export MT_LOG_LEVEL=debug
 export MT_PORT=9000
 
 # Start the server
-./mtranserver
+mtranserver
 ```
 
 ### API Documentation
@@ -46,6 +56,7 @@ export MT_PORT=9000
 | Endpoint | Method | Description | Auth Required |
 | -------- | ------ | ----------- | ------------- |
 | `/languages` | GET | Get supported language list | Yes |
+| `/detect` | POST | Detect text language | Yes |
 | `/translate` | POST | Single text translation | Yes |
 | `/translate/batch` | POST | Batch translation | Yes |
 

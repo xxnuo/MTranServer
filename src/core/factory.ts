@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import { createHash } from 'node:crypto'
 import { decompress } from 'fzstd'
+import { VERSION } from '@/version/index.js'
 
 export interface DownloadOptions {
   url: string
@@ -37,7 +38,7 @@ export class Downloader {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'MTranServer/4.0.0'
+          'User-Agent': `MTranServer/${VERSION}`
         }
       })
 

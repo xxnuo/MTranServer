@@ -1,3 +1,19 @@
+## v5.0.0
+
+- 更换翻译引擎，首次使用或升级后可能需要重新准备翻译文件，请耐心等待。
+- 下载翻译文件时会自动完成准备，之后可重复使用。
+- 离线使用前，请先联网试译需要使用的每个翻译方向；迁移时保留配置和翻译模型两个文件夹。
+- 服务端使用 Docker 或命令行安装，暂不提供单文件可执行程序。
+- 更新使用说明和界面提示，修正设置说明，移除无效的每语言工作数设置和旧版性能数据。
+
+### English
+
+- Updated the translation engine. First use or an upgrade may require preparing translation files again; please wait for this to finish.
+- Downloading translation files now also prepares them for reuse.
+- Try each required translation direction online before going offline. Keep both configuration and translation model folders when moving files.
+- Use Docker or a command-line installation for the server. Standalone server executables are not currently available.
+- Updated guides and interface messages, corrected settings descriptions, and removed the ineffective workers-per-language setting and old performance figures.
+
 ## v4.0.31
 
 - 添加中文输出标点全角化功能，默认开启
@@ -22,19 +38,6 @@
 - 添加 DeepLX 兼容接口
 - 增大断句长度，提升了翻译质量，建议升级
 - 修复译文标点符号格式错误的问题
-
-## v4.0.20
-
-- 发布到 npm，现在可以通过 `npm i -g mtranserver` 安装或者 `npx mtranserver` 来运行服务器啦！
-- 修复语言检测的内存安全问题
-- 修复混合语言检测的逻辑问题，现在能够正常翻译混合语言文本为目标语言了
-- 新增 `--download` 命令，支持通过命令行批量下载语言对模型 (例如 `mtranserver --download en_zh zh_en`)
-- 新增 `--languages` 命令，列出所有可下载的语言对
-- UI：新增宽屏模式按钮
-- UI：新增多面板并排翻译的功能
-- UI：新增记忆语言、主题等功能开关的功能
-- UI：新增副标题文档地址按钮
-- UI：修复历史记录没有滚动条的问题
 
 ## v4.0.20
 

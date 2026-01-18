@@ -29,7 +29,6 @@ type FormState = {
     enableWebUI: boolean
     enableOfflineMode: boolean
     workerIdleTimeout: string
-    workersPerLanguage: string
     apiToken: string
     logDir: string
     logToFile: boolean
@@ -53,7 +52,6 @@ function toForm(config: DesktopConfig): FormState {
       enableWebUI: config.server.enableWebUI,
       enableOfflineMode: config.server.enableOfflineMode,
       workerIdleTimeout: String(config.server.workerIdleTimeout),
-      workersPerLanguage: String(config.server.workersPerLanguage),
       apiToken: config.server.apiToken,
       logDir: config.server.logDir,
       logToFile: config.server.logToFile,
@@ -120,7 +118,6 @@ export function DesktopSettingsPage() {
         enableWebUI: form.server.enableWebUI,
         enableOfflineMode: form.server.enableOfflineMode,
         workerIdleTimeout: toNumber(form.server.workerIdleTimeout, config.server.workerIdleTimeout),
-        workersPerLanguage: toNumber(form.server.workersPerLanguage, config.server.workersPerLanguage),
         apiToken: form.server.apiToken,
         logDir: form.server.logDir,
         logToFile: form.server.logToFile,
@@ -322,10 +319,6 @@ export function DesktopSettingsPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('workerIdleTimeout')}</label>
                 <Input value={form.server.workerIdleTimeout} onChange={(e) => setForm({ ...form, server: { ...form.server, workerIdleTimeout: e.target.value } })} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">{t('workersPerLanguage')}</label>
-                <Input value={form.server.workersPerLanguage} onChange={(e) => setForm({ ...form, server: { ...form.server, workersPerLanguage: e.target.value } })} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('maxSentenceLength')}</label>

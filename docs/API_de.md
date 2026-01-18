@@ -12,9 +12,19 @@
 | MT_HOST | Server-Abhöradresse | 0.0.0.0 | Beliebige IP-Adresse |
 | MT_PORT | Server-Port | 8989 | 1-65535 |
 | MT_ENABLE_UI | Web-UI aktivieren | true | true, false |
-| MT_OFFLINE | Offline-Modus, neue Sprachmodelle nicht automatisch herunterladen, nur heruntergeladene Modelle verwenden | false | true, false |
-| MT_WORKER_IDLE_TIMEOUT | Worker-Leerlauf-Timeout (Sekunden) | 300 | Beliebige positive ganze Zahl |
+| MT_OFFLINE | Vorbereitete Übersetzungsdateien offline verwenden | false | true, false |
+| MT_WORKER_IDLE_TIMEOUT | Sekunden bis zur Freigabe einer inaktiven Übersetzungsengine | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN | API-Zugriffstoken | Leer | Beliebige Zeichenfolge |
+| MT_CACHE_SIZE | Zu speichernde Ergebnisse; 0 deaktiviert den Cache | 1000 | 0, 1, 2, ... |
+| MT_MAX_SENTENCE_LENGTH | Grenze für die Aufteilung langer Texte | 512 | 8, 9, 10, ... |
+| MT_FULLWIDTH_ZH_PUNCTUATION | Vollbreite Kommas in chinesischen Übersetzungen | true | true, false |
+| MT_LOG_DIR | Protokollordner | ~/.config/mtran/logs | Beliebiger Pfad |
+| MT_LOG_TO_FILE | Protokolle in Dateien speichern | false | true, false |
+| MT_LOG_CONSOLE | Protokolle in der Konsole anzeigen | true | true, false |
+| MT_LOG_REQUESTS | Anfragen protokollieren | false | true, false |
+| MT_CHECK_UPDATE | Beim Start nach Updates suchen | true | true, false |
+
+Ein vorhandener lokaler Ordner `models` wird standardmäßig verwendet. Bereiten Sie die benötigten Sprachrichtungen online vor und behalten Sie sowohl den Konfigurations- als auch den Modellordner.
 
 Beispiel:
 
@@ -26,7 +36,7 @@ export MT_LOG_LEVEL=debug
 export MT_PORT=9000
 
 # Dienst starten
-./mtranserver
+mtranserver
 ```
 
 ### API-Schnittstellenbeschreibung
@@ -46,6 +56,7 @@ export MT_PORT=9000
 | Schnittstelle | Methode | Beschreibung | Authentifizierung |
 | ------------- | ------- | ------------ | ----------------- |
 | `/languages` | GET | Liste der unterstützten Sprachen abrufen | Ja |
+| `/detect` | POST | Textsprache erkennen | Ja |
 | `/translate` | POST | Einzeltextübersetzung | Ja |
 | `/translate/batch` | POST | Stapelübersetzung | Ja |
 

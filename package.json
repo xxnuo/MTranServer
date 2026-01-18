@@ -1,6 +1,6 @@
 {
   "name": "mtranserver",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "type": "module",
   "description": "Translation server",
   "main": "./dist/index.js",
@@ -26,7 +26,6 @@
     "prepublishOnly": "bun scripts/build.ts --lib",
     "push": "npm publish --registry=https://registry.npmjs.org",
     "build": "bun scripts/build.ts --node",
-    "build:all": "bun scripts/build.ts --all",
     "build:docker": "docker build -t xxnuo/mtranserver:latest .",
     "build:node": "bun scripts/build.ts --node",
     "build:dev": "bun scripts/build.ts --dev",

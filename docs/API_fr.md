@@ -12,9 +12,19 @@
 | MT_HOST | Adresse d'écoute du serveur | 0.0.0.0 | Toute adresse IP |
 | MT_PORT | Port du serveur | 8989 | 1-65535 |
 | MT_ENABLE_UI | Activer l'interface Web | true | true, false |
-| MT_OFFLINE | Mode hors ligne, ne pas télécharger automatiquement les nouveaux modèles de langue, utiliser uniquement les modèles téléchargés | false | true, false |
-| MT_WORKER_IDLE_TIMEOUT | Délai d'inactivité du Worker (secondes) | 300 | Tout entier positif |
+| MT_OFFLINE | Utiliser hors ligne les fichiers de traduction déjà préparés | false | true, false |
+| MT_WORKER_IDLE_TIMEOUT | Secondes avant de libérer un moteur de traduction inactif | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN | Jeton d'accès API | Vide | Toute chaîne de caractères |
+| MT_CACHE_SIZE | Résultats récents à conserver ; 0 désactive le cache | 1000 | 0, 1, 2, ... |
+| MT_MAX_SENTENCE_LENGTH | Limite de découpage des textes longs | 512 | 8, 9, 10, ... |
+| MT_FULLWIDTH_ZH_PUNCTUATION | Virgules pleine chasse dans les traductions chinoises | true | true, false |
+| MT_LOG_DIR | Dossier des journaux | ~/.config/mtran/logs | Tout chemin |
+| MT_LOG_TO_FILE | Écrire les journaux dans des fichiers | false | true, false |
+| MT_LOG_CONSOLE | Afficher les journaux dans la console | true | true, false |
+| MT_LOG_REQUESTS | Journaliser les requêtes | false | true, false |
+| MT_CHECK_UPDATE | Vérifier les mises à jour au démarrage | true | true, false |
+
+Un dossier local `models` existant est utilisé par défaut. Préparez les sens de traduction nécessaires en ligne avant de vous déconnecter et conservez les dossiers de configuration et de modèles.
 
 Exemple :
 
@@ -26,7 +36,7 @@ export MT_LOG_LEVEL=debug
 export MT_PORT=9000
 
 # Démarrer le service
-./mtranserver
+mtranserver
 ```
 
 ### Description de l'interface API
@@ -46,6 +56,7 @@ export MT_PORT=9000
 | Interface | Méthode | Description | Authentification |
 | --------- | ------- | ----------- | ---------------- |
 | `/languages` | GET | Obtenir la liste des langues supportées | Oui |
+| `/detect` | POST | Détecter la langue du texte | Oui |
 | `/translate` | POST | Traduction de texte unique | Oui |
 | `/translate/batch` | POST | Traduction par lots | Oui |
 

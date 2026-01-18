@@ -2,11 +2,11 @@
 
 [中文](../README.md) | [English](README_en.md) | [日本語](README_ja.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
-超低リソース消費、超高速なオフライン翻訳モデルサーバーです。グラフィックカードは不要です。リクエストあたりの平均応答時間は 50 ミリ秒です。世界の主要言語の翻訳をサポートしています。
+自分のパソコンで動作する無料のオフライン翻訳サービスです。グラフィックカードは不要です。複数の言語に対応し、ブラウザーやエディターのプラグインと組み合わせて使えます。速度とメモリ使用量は、パソコンの性能、言語、文章の長さによって変わります。
 
-注意：このモデルサーバーは、`オフライン翻訳`、`応答速度`、`クロスプラットフォーム展開`、`ローカル実行`による`無制限の無料翻訳`という設計目標に焦点を当てており、モデルサイズと最適化の制限により、翻訳品質は大モデル翻訳の効果には及びません。高品質な翻訳が必要な場合は、オンラインの大規模言語モデル API の使用をお勧めします。
+日常の読書や文章の大意をつかむために利用できます。誤訳の可能性があるため、重要な内容は原文と照らし合わせて確認してください。
 
-> v4 ではメモリ使用量が最適化され、速度がさらに向上し、安定性が強化されました。古いバージョンを使用している場合は、すぐにアップグレードすることをお勧めします！
+> v5 では翻訳エンジンを変更しました。更新後、各翻訳方向を初めて使う際に翻訳ファイルの再準備が必要になることがあります。完了までお待ちください。
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -42,7 +42,7 @@
 
 ### サーバー版
 
-デスクトップ版または Docker でのデプロイをお勧めします。パフォーマンスが良く、使いやすいです。サーバー版の手動デプロイは上級ユーザー向けです。
+一般の方には、インストールして起動できるデスクトップ版をお勧めします。サーバーでは Docker またはコマンドラインからのインストールを利用できます。v5 では現在、サーバー用の単一実行ファイルを提供していません。
 
 #### クイックスタート
 
@@ -54,9 +54,7 @@ npx mtranserver@latest
 
 > `npx` は `bunx`、`pnpx` など、好きなパッケージマネージャーに置き換え可能です。
 
-> **重要：**
->
-> 初めて特定の言語ペアを翻訳する場合、サーバーは対応する翻訳モデルを自動的にダウンロードします（オフラインモードが有効でない場合）。このプロセスには、ネットワーク速度とモデルサイズに応じて時間がかかる場合があります。モデルのダウンロード完了後、その後の翻訳リクエストはミリ秒レベルの応答速度になります。正式に使用する前に一度翻訳をテストし、サーバーにモデルを事前にダウンロードしてロードさせることをお勧めします。プログラムは頻繁に更新されます。問題が発生した場合は、最新バージョンに更新してみてください。
+> 各翻訳方向を初めて使う際には、必要なファイルをダウンロードして準備します。インターネットに接続したまま、完了までお待ちください。準備済みのファイルは次回以降も利用されます。まず短い文章を翻訳して動作を確認してください。初回や更新後の準備には、通常の翻訳より時間がかかります。
 
 #### クイックインストール
 
@@ -83,16 +81,28 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
+      - MT_MODEL_DIR=/app/models
+      - MT_CONFIG_DIR=/root/.config/mtran/server
       - MT_OFFLINE=false
       # - MT_API_TOKEN=your_secret_token_here
     volumes:
       - ./models:/app/models
+      - ./config:/root/.config/mtran
 ```
 
 ```bash
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+### 更新とオフライン利用
+
+1. 更新時には、既存の設定フォルダーと翻訳モデルフォルダーを残してください。
+2. 更新後はインターネットに接続し、必要な翻訳方向をそれぞれ試して、準備の完了を待ってください。
+3. その後、設定でオフラインモードを有効にしてから接続を切ります。オフラインでは準備済みの翻訳方向だけを利用できます。
+4. 別のパソコンや Docker に移行する場合は、設定と翻訳モデルの両方のフォルダーを保存してください。モデルフォルダーだけでは不十分です。
+
+上の Docker の例では、現在のディレクトリの `config` と `models` に保存されます。まずオンラインで準備を終え、`MT_OFFLINE` を `true` に変更して再起動してください。
 
 ## エコシステム
 
@@ -129,19 +139,12 @@ TODO: 開発中です。
 | `/deepl`                        | POST     | DeepL API v2 互換インターフェース                           | DeepL API 対応クライアント                                                  |
 | `/deeplx`                       | POST     | DeepLX 互換インターフェース                                 | DeepLX API 対応クライアント                                                 |
 | `/hcfy`                         | POST     | 划词翻译（Selection Translator）互換インターフェース        | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy`                         | POST     | 划词翻译（Selection Translator）互換インターフェース        | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST     | Google Translate API v2 互換インターフェース                | Google Translate API 対応クライアント                                       |
 | `/google/translate_a/single`    | GET      | Google translate_a/single 互換インターフェース              | Google ウェブ翻訳対応クライアント                                           |
 
 **プラグイン設定説明：**
 
-> 注：
->
-> - [没入型翻訳](https://immersivetranslate.com/docs/services/custom/)：`設定`ページの開発者モードで`Beta`機能を有効にすると、`翻訳サービス`の中に`カスタムAPI設定`が表示されます（[公式画像付きチュートリアル](https://immersivetranslate.com/docs/services/custom/)）。その後、`カスタムAPI設定`の`秒間最大リクエスト数`を高く設定して、サーバーの性能を最大限に引き出してください。私は`秒間最大リクエスト数`を`512`、`リクエストごとの最大段落数`を`1`に設定しています。サーバーの構成に合わせて調整してください。
->
-> - [Kiss Translator](https://github.com/fishjar/kiss-translator)：`設定`ページでインターフェース設定を下にスクロールすると、カスタムインターフェース `Custom` が表示されます。同様に、`最大同時リクエスト数`と`リクエスト間隔時間`を設定してサーバーの性能を引き出してください。私は`最大同時リクエスト数`を`100`、`リクエスト間隔時間`を`1`に設定しています。サーバーの構成に合わせて調整してください。
->
-> 次に、以下の表に従ってプラグインのカスタムインターフェースアドレスを設定します。
+> 下の表のアドレスをプラグインの設定に入力してください。リクエスト頻度や同時翻訳数は、まず初期設定で試してください。タイムアウトやパソコンへの負荷が大きい場合は、設定値を下げてください。
 
 | 名前                              | URL                                                  | プラグイン設定                                                                 |
 | --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -159,42 +162,30 @@ TODO: 開発中です。
 ### コマンドライン引数
 
 ```bash
-./mtranserver [オプション]
+mtranserver --help
 
-オプション：
-  -version, -v          バージョン情報を表示
-  -log-level string     ログレベル (debug, info, warn, error) (デフォルト "warn")
-  -config-dir string    設定ディレクトリ (デフォルト "~/.config/mtran/server")
-  -model-dir string     モデルディレクトリ (デフォルト "~/.config/mtran/models")
-  -host string          サーバーリッスンアドレス (デフォルト "0.0.0.0")
-  -port string          サーバーポート (デフォルト "8989")
-  -ui                   Web UI を有効にする (デフォルト true)
-  -offline              オフラインモードを有効にする（新しいモデルを自動ダウンロードしない） (デフォルト false)
-  -worker-idle-timeout int  Worker アイドルタイムアウト（秒） (デフォルト 300)
-  --download pairs...   指定した言語ペアのモデルをダウンロード (例: --download en_zh zh_en)
-  --languages           ダウンロード可能な言語ペア一覧を表示
+  --help                              ヘルプを表示
+  --host <ip>                         待ち受けアドレス、初期値 0.0.0.0
+  --port <port>                       ポート、初期値 8989
+  --ui / --no-ui                      Web UI を有効または無効にする
+  --offline                           準備済みの翻訳ファイルを使用
+  --worker-idle-timeout <seconds>      待機中の翻訳エンジンを解放、初期値 60 秒
+  --cache-size <count>                最近の翻訳結果を保存、初期値 1000 件；0 で無効
+  --download en_zh zh_en              指定した翻訳方向をダウンロードして準備
+  --languages [filter]                利用可能な翻訳方向を表示
 
-注意：`--download` と `--languages` はネットワーク接続が必要で、オフラインモードでは動作しません。
-
-例：
-  ./mtranserver --host 127.0.0.1 --port 8080
-  ./mtranserver --ui --offline
-  ./mtranserver -v
+  mtranserver --host 127.0.0.1 --port 8080
+  mtranserver --download en_zh zh_en
+  mtranserver --offline
 ```
 
 ## 類似プロジェクト
 
-同様の機能を持つプロジェクトをいくつか挙げます。他のニーズがある場合は、これらのプロジェクトを試してみてください。
+速度、メモリ使用量、翻訳品質は、機器、言語、文章によって変わります。旧版の測定値は v5 を表していないため、性能ランキングは掲載していません。次のプロジェクトも参考にしてください：
 
-| プロジェクト名                                                     | メモリ使用量 | 同時実行性能 | 翻訳品質   | 速度       | その他情報                                                                                                                                         |
-| ------------------------------------------------------------------ | ------------ | ------------ | ---------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | 非常に高い   | 悪い         | 普通       | 遅い       | Android 移植版の [RTranslator](https://github.com/niedev/RTranslator) は多くの最適化がありますが、それでもリソース使用量が高く、高速ではありません |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い   | 普通         | 普通       | 中程度     | ミドルレンジ CPU で毎秒 3 文、ハイエンド CPU で毎秒 15-20 文処理。[詳細](https://community.libretranslate.com/t/performance-benchmark-data/486)    |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | 高い         | 普通         | やや悪い   | 速い       | [性能テスト](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                    |
-| その他大規模モデル                                                 | 超高い       | 動的         | 非常に良い | 非常に遅い | ハードウェア要件が高い。高同時実行翻訳が必要な場合は、vllm フレームワークの使用をお勧めします。                                                    |
-| 本プロジェクト                                                     | 低           | 高い         | 普通       | 極めて速い | リクエストあたり平均応答時間 50ms。                                                                                                                |
-
-> 表のデータは CPU、英中翻訳シナリオでの簡易テストであり、厳密なテストではなく、非量子化バージョンの比較です。参考程度にしてください。
+- [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)
+- [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)
+- [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT)
 
 # 高度な設定説明
 
@@ -206,6 +197,8 @@ TODO: 開発中です。
 
 ## Thanks
 
-[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
+[Bergamot Project](https://browser.mt/) for the inspiration for local translation.
+
+[ONNX Runtime](https://github.com/microsoft/onnxruntime) for the translation runtime.
 
 [Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).

@@ -2,6 +2,17 @@ import { readFile, writeFile } from 'node:fs/promises';
 const [corpus, output, baseline, candidate] = process.argv.slice(2);
 if (!candidate) throw new Error('Usage: benchmark-service corpus.jsonl output.json baseline-url candidate-url');
 const rows = (await readFile(corpus, 'utf8')).trim().split('\n').slice(0, 64).map(s => JSON.parse(s));
+const servers: Record<string, { version: string; cacheSize: number }> = {};
+for (const url of [baseline, candidate]) {
+  const response = await fetch(url + '/ui/api/settings', { signal: AbortSignal.timeout(120000) });
+  if (!response.ok) throw new Error(`Cannot verify cache settings for ${url}: HTTP ${response.status}`);
+  const settings = await response.json() as { version: string; config?: { server?: { cacheSize?: number } } };
+  const cacheSize = settings.config?.server?.cacheSize;
+  if (typeof cacheSize !== 'number' || cacheSize > 0) {
+    throw new Error(`Restart ${url} with MT_CACHE_SIZE=0 before benchmarking; repeated texts must run translation instead of returning cached results`);
+  }
+  servers[url] = { version: settings.version, cacheSize };
+}
 const request = async (url: string, text: string) => {
   const response = await fetch(url + '/translate', { method: 'POST', headers: {'content-type':'application/json'}, body:JSON.stringify({from:'de',to:'en',text}), signal:AbortSignal.timeout(120000) });
   if (!response.ok) throw new Error(`${url}: ${response.status} ${await response.text()}`);
@@ -15,4 +26,4 @@ for(let round=0;round<3;round++) for(const url of round%2?[candidate,baseline]:[
   const rate=rows.length/((performance.now()-started)/1000);results[url].rounds.push(rate); console.log(url,round,rate.toFixed(2),'sentences/s');
 }
 const summary=Object.fromEntries(Object.entries(results).map(([url,r])=>[url,{...r,median:[...r.rounds].sort((a,b)=>a-b)[1],p95:[...r.times].sort((a,b)=>a-b)[Math.floor(r.times.length*.95)]}]));
-await writeFile(output,JSON.stringify(summary,null,2));console.log(JSON.stringify(Object.fromEntries(Object.entries(summary).map(([k,v])=>[k,{median:v.median,p95:v.p95}]))));
+await writeFile(output,JSON.stringify({ servers, results: summary },null,2));console.log(JSON.stringify(Object.fromEntries(Object.entries(summary).map(([k,v])=>[k,{median:v.median,p95:v.p95}]))));

@@ -77,7 +77,7 @@ export function TranslationPanel({
       return []
     }
   })
-  const firstTranslateTipKey = 'firstTranslateTipShown'
+  const firstTranslateTipKey = `firstTranslateTipShown:v5:${sourceLang}:${targetLang}`
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const recognitionRef = useRef<any>(null)
 

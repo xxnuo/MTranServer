@@ -12,10 +12,19 @@
 | MT_HOST               | 服务器监听地址                           | 0.0.0.0| 任意 IP 地址                |
 | MT_PORT               | 服务器端口                               | 8989   | 1-65535                     |
 | MT_ENABLE_UI          | 启用 Web UI                              | true   | true, false                 |
-| MT_OFFLINE            | 离线模式，不自动下载新语言的模型，仅使用已下载的模型 | false  | true, false                 |
-| MT_WORKER_IDLE_TIMEOUT| Worker 空闲超时时间（秒）                | 300    | 任意正整数                  |
+| MT_OFFLINE | 离线使用已准备好的翻译文件 | false | true, false |
+| MT_WORKER_IDLE_TIMEOUT | 翻译引擎空闲多久后释放内存（秒） | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN          | API 访问令牌                             | 空     | 任意字符串                  |
-| MT_CACHE_SIZE         | 缓存大小（缓存最近的多少次翻译）              | 0      | 任意正整数                  |
+| MT_CACHE_SIZE | 保存最近多少条翻译结果；0 为关闭 | 1000 | 0, 1, 2, ... |
+| MT_MAX_SENTENCE_LENGTH | 长文本分段长度 | 512 | 8, 9, 10, ... |
+| MT_FULLWIDTH_ZH_PUNCTUATION | 中文输出逗号全角化 | true | true, false |
+| MT_LOG_DIR | 日志目录 | ~/.config/mtran/logs | 任意路径 |
+| MT_LOG_TO_FILE | 将日志写入文件 | false | true, false |
+| MT_LOG_CONSOLE | 在控制台显示日志 | true | true, false |
+| MT_LOG_REQUESTS | 记录请求日志 | false | true, false |
+| MT_CHECK_UPDATE | 启动时检查更新 | true | true, false |
+
+有本地 `models` 文件夹时会优先使用它。离线使用前，请先联网准备需要的翻译方向，并保留配置和模型两个文件夹。
 
 示例：
 
@@ -27,7 +36,7 @@ export MT_LOG_LEVEL=debug
 export MT_PORT=9000
 
 # 启动服务
-./mtranserver
+mtranserver
 ```
 
 ### API 接口说明
@@ -47,6 +56,7 @@ export MT_PORT=9000
 | 接口 | 方法 | 说明 | 认证 |
 | ---- | ---- | ---- | ---- |
 | `/languages` | GET | 获取支持的语言列表 | 是 |
+| `/detect` | POST | 检测文本语言 | 是 |
 | `/translate` | POST | 单文本翻译 | 是 |
 | `/translate/batch` | POST | 批量翻译 | 是 |
 

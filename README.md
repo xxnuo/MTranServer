@@ -4,11 +4,11 @@
 
 <!-- <img src="./images/icon.png" width="64px" height="64px" align="right" alt="MTran"> -->
 
-一个超低资源消耗速度超快的离线翻译模型服务器，无需显卡。单个请求平均响应时间 50 毫秒。支持全世界主要语言的翻译。
+一个在自己电脑上运行的免费离线翻译服务，无需显卡。支持多种语言，可搭配浏览器和编辑器插件使用。翻译速度和内存占用取决于电脑配置、语言和文本长度。
 
-注意本模型服务器专注于`离线翻译`、`响应速度`、`跨平台部署`、`本地运行` 达到 `无限免费翻译` 的设计目标，受限于模型大小和优化程度，所以翻译质量肯定是不如大模型翻译的效果。需要高质量的翻译建议使用在线大模型 API。
+适合日常阅读和理解大意。翻译结果可能有误，重要内容请核对原文。
 
-> v4 优化了内存占用，速度进一步提升，增强了稳定性，如果你在使用旧版建议立即升级！
+> v5 更换了翻译引擎。升级后首次使用某种翻译方向时，可能需要重新准备翻译文件，请耐心等待。
 
 <img src="./images/preview.png" width="auto" height="460">
 
@@ -44,7 +44,7 @@
 
 ### 服务端
 
-推荐使用桌面端或者 Docker 部署，性能更佳使用方便。服务端手动部署供专业用户使用。
+普通用户建议使用桌面端，安装后即可启动。服务器用户可以使用 Docker 或通过命令行安装。v5 暂不提供服务端单文件可执行程序。
 
 #### 快速开始
 
@@ -56,10 +56,7 @@ npx mtranserver@latest
 
 > `npx` 可以替换为你喜欢的任意一个包管理器，比如 `bunx`、`pnpx` 等。
 
-> **重要提示：**
->
-> 首次翻译某个语言对时，服务器会自动下载对应的翻译模型（除非启用了离线模式），这个过程可能需要等待一段时间（取决于网络速度和模型大小）。
-> 模型下载完成后，翻译请求将享受毫秒级的响应速度。建议在正式使用前先测试一次翻译，让服务器预先下载和加载模型。程序经常更新，如果遇到问题，可以尝试更新到最新版本。
+> 首次翻译某种语言到另一种语言时，程序会自动下载并准备所需文件，需要联网并等待完成。之后会重复使用已准备好的文件。建议先翻译一小段文字，确认能正常使用。首次使用和升级后准备文件时，耗时与平时翻译不同。
 
 #### 快速安装
 
@@ -86,16 +83,28 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
+      - MT_MODEL_DIR=/app/models
+      - MT_CONFIG_DIR=/root/.config/mtran/server
       - MT_OFFLINE=false
       # - MT_API_TOKEN=your_secret_token_here
     volumes:
       - ./models:/app/models
+      - ./config:/root/.config/mtran
 ```
 
 ```bash
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+### 升级与离线使用
+
+1. 升级前保留原来的配置和翻译模型文件夹。
+2. 升级后保持联网，先试译一次需要使用的每个翻译方向，等待文件准备完成。
+3. 准备好后可在设置中开启离线模式，再断开网络。离线时只能使用已经准备好的翻译方向。
+4. 更换电脑或迁移 Docker 时，同时保存配置和翻译模型两个文件夹。只复制模型文件夹不够。
+
+上面的 Docker 示例会把这两个文件夹保存为当前目录下的 `config` 和 `models`。离线部署前先联网完成准备，再将 `MT_OFFLINE` 改为 `true` 并重新启动。
 
 ## 生态项目
 
@@ -132,19 +141,12 @@ TODO: 火热开发中
 | `/deepl`                        | POST | DeepL API v2 兼容接口              | 支持 DeepL API 的客户端                                                     |
 | `/deeplx`                       | POST | DeepLX 兼容接口                    | 支持 DeepLX 接口的客户端                                                    |
 | `/hcfy`                         | POST | 划词翻译兼容接口                   | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy`                         | POST | 划词翻译兼容接口                   | [划词翻译](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST | Google Translate API v2 兼容接口   | 支持 Google Translate API 的客户端                                          |
 | `/google/translate_a/single`    | GET  | Google translate_a/single 兼容接口 | 支持 Google 网页翻译的客户端                                                |
 
 **插件配置说明：**
 
-> 注：
->
-> - [沉浸式翻译](https://immersivetranslate.com/zh-Hans/docs/services/custom/) 在`设置`页面，开发者模式中启用`Beta`特性，即可在`翻译服务`中看到`自定义 API 设置`([官方图文教程](https://immersivetranslate.com/zh-Hans/docs/services/custom/))。然后将`自定义 API 设置`的`每秒最大请求数`拉高以充分发挥服务器性能准备体验飞一般的感觉。我设置的是`每秒最大请求数`为`512`，`每次请求最大段落数`为`1`。你可以根据自己服务器配置设置。
->
-> - [简约翻译](https://github.com/fishjar/kiss-translator) 在`设置`页面，接口设置中滚动到下面，即可看到自定义接口 `Custom`。同理，设置`最大请求并发数量`、`每次请求间隔时间`以充分发挥服务器性能。我设置的是`最大请求并发数量`为`100`，`每次请求间隔时间`为`1`。你可以根据自己服务器配置设置。
->
-> 接下来按下表的设置方法设置插件的自定义接口地址。
+> 将下面表格中的地址填入插件设置。请求速度、同时翻译数量等选项建议先保持默认；如果翻译超时或电脑负担过大，可以降低这些设置。
 
 | 名称             | URL                                                  | 插件设置                                                        |
 | ---------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
@@ -162,42 +164,30 @@ TODO: 火热开发中
 ### 命令行参数
 
 ```bash
-./mtranserver [选项]
+mtranserver --help
 
-选项：
-  -version, -v          显示版本信息
-  -log-level string     日志级别 (debug, info, warn, error) (默认 "warn")
-  -config-dir string    配置目录 (默认 "~/.config/mtran/server")
-  -model-dir string     模型目录 (默认 "~/.config/mtran/models")
-  -host string          服务器监听地址 (默认 "0.0.0.0")
-  -port string          服务器端口 (默认 "8989")
-  -ui                   启用 Web UI (默认 true)
-  -offline              启用离线模式，不自动下载新模型 (默认 false)
-  -worker-idle-timeout int  Worker 空闲超时时间（秒） (默认 300)
-  --download pairs...   下载指定语言对的模型 (例如 --download en_zh zh_en)
-  --languages           列出所有支持下载的语言对
+  --help                              查看帮助
+  --host <ip>                         监听地址，默认 0.0.0.0
+  --port <port>                       端口，默认 8989
+  --ui / --no-ui                      显示或关闭网页界面
+  --offline                           使用已经准备好的翻译文件
+  --worker-idle-timeout <seconds>      空闲后释放翻译引擎，默认 60 秒
+  --cache-size <count>                保存最近的翻译结果，默认 1000 条；0 为关闭
+  --download en_zh zh_en              下载并准备指定翻译方向
+  --languages [filter]                列出可下载的翻译方向
 
-注意：`--download` 和 `--languages` 命令需要联网，无法在离线模式下工作。
-
-示例：
-  ./mtranserver --host 127.0.0.1 --port 8080
-  ./mtranserver --ui --offline
-  ./mtranserver -v
+  mtranserver --host 127.0.0.1 --port 8080
+  mtranserver --download en_zh zh_en
+  mtranserver --offline
 ```
 
 ## 同类项目
 
-列出一些同类功能的项目，如果有其他需求的用户可以尝试这些项目：
+翻译速度、内存占用和效果会随设备、语言和文本而变化。旧版测试数字不代表 v5，因此暂不提供性能排名。也可以了解以下项目：
 
-| 项目名称                                                           | 内存占用 | 并发性能 | 翻译效果 | 速度 | 其他信息                                                                                                                          |
-| ------------------------------------------------------------------ | -------- | -------- | -------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | 很高     | 差       | 一般     | 慢   | 大佬移植到了 Android 的 [RTranslator](https://github.com/niedev/RTranslator) 有很多优化，但占用仍然高，速度也不快                 |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高     | 一般     | 一般     | 中等 | 中端 CPU 每秒处理 3 句，高端 CPU 每秒处理 15-20 句，[详情](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | 高       | 一般     | 略差     | 快   | [性能测试](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                     |
-| 其他大模型                                                         | 超高     | 动态     | 非常好   | 很慢 | 对硬件要求很高，如果需要高并发翻译建议使用 vllm 框架                                                                              |
-| 本项目                                                             | 低       | 高       | 一般     | 极快 | 单个请求平均响应时间 50ms                                                                                                         |
-
-> 表中为 CPU、英译中场景下的简单测试，非严格测试，非量化版本对比，仅供参考。
+- [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)
+- [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)
+- [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT)
 
 # 高级配置说明
 
@@ -209,6 +199,8 @@ TODO: 火热开发中
 
 ## Thanks
 
-[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
+[Bergamot Project](https://browser.mt/) for the inspiration for local translation.
+
+[ONNX Runtime](https://github.com/microsoft/onnxruntime) for the translation runtime.
 
 [Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).

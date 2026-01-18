@@ -16,7 +16,7 @@ async function main() {
     const toLang = 'zh';
     const text = 'Hello world! This is a library test.';
 
-    // 3. (Optional) Ensure the model is downloaded.
+    // 3. (Optional) Download and prepare the translation files.
     // .translate() will error if the model is missing in offline mode,
     // or attempt to download it if online (default).
     // Calling downloadModel explicitly is good for pre-warming.
@@ -43,7 +43,7 @@ Translating: "${text}"`);
     console.error('An error occurred:', error);
   } finally {
     // 6. Cleanup
-    // Important: Stops background worker threads to allow process to exit cleanly
+    // Waits for pending translations and releases loaded engines.
     console.log('\nCleaning up...');
     await mtran.close();
   }

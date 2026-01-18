@@ -8,13 +8,16 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
+      - MT_MODEL_DIR=/app/models
+      - MT_CONFIG_DIR=/root/.config/mtran/server
       - MT_ENABLE_UI=true
       - MT_OFFLINE=false
       # - MT_API_TOKEN=your_secret_token_here  # 取消注释以启用 API 认证
     volumes:
       - ./models:/app/models    # 翻译模型目录
+      - ./config:/root/.config/mtran    # 配置和语言列表
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8989/health"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8989/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 3s
       retries: 3

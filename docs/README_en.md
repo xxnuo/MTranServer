@@ -2,11 +2,11 @@
 
 [中文](../README.md) | [English](README_en.md) | [日本語](README_ja.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
-A high-performance offline translation model server with minimal resource requirements - no GPU needed. Average response time of 50ms per request. Supports translation of major languages worldwide.
+A free offline translation service that runs on your own computer, with no GPU required. Supports multiple languages and browser and editor plugins. Speed and memory use depend on your computer, languages, and text length.
 
-Note: This model server focuses on `offline translation`, `response speed`, `cross-platform deployment`, and `local execution` to achieve `unlimited free translation`. Due to model size and optimization constraints, the translation quality will not match that of large language models. For high-quality translation, consider using online large language model APIs.
+Useful for everyday reading and understanding the main meaning. Translations can contain mistakes; check important content against the original.
 
-> v4 has optimized memory usage, further improved speed, and enhanced stability. If you are using an old version, it is recommended to upgrade immediately!
+> v5 uses a new translation engine. After upgrading, the first translation in a language direction may require preparing the translation files again. Please wait for this to finish.
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -42,7 +42,7 @@ Preview (latest version has updates):
 
 ### Server
 
-It is recommended to use the desktop app or Docker deployment for better performance and convenience. Manual server deployment is for advanced users.
+For everyday use, install the desktop app and launch it. Server users can use Docker or install from the command line. v5 does not currently provide standalone server executables.
 
 #### Quick Start
 
@@ -54,9 +54,7 @@ npx mtranserver@latest
 
 > `npx` can be replaced with any package manager you prefer, such as `bunx`, `pnpx`, etc.
 
-> **Important Note:**
->
-> When translating a language pair for the first time, the server will automatically download the corresponding translation model (unless offline mode is enabled). This process may take some time depending on your network speed and model size. After the model is downloaded, subsequent translation requests will enjoy millisecond-level response speeds. It is recommended to test a translation once before formal use to allow the server to pre-download and load the model. The program is frequently updated. If you encounter problems, please try updating to the latest version.
+> The first translation in each language direction downloads and prepares the required files. Stay online and wait for this to finish. Prepared files are reused afterward. Try a short text first to check that translation works. File preparation on first use or after an upgrade takes extra time.
 
 #### Quick Install
 
@@ -83,16 +81,28 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
+      - MT_MODEL_DIR=/app/models
+      - MT_CONFIG_DIR=/root/.config/mtran/server
       - MT_OFFLINE=false
       # - MT_API_TOKEN=your_secret_token_here
     volumes:
       - ./models:/app/models
+      - ./config:/root/.config/mtran
 ```
 
 ```bash
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+### Upgrading and Offline Use
+
+1. Keep your existing configuration and translation model folders when upgrading.
+2. Stay online after upgrading and try each translation direction you need. Wait for file preparation to finish.
+3. Then enable offline mode in settings before disconnecting. Offline mode can only use translation directions that are already prepared.
+4. When moving to another computer or migrating Docker, save both the configuration and translation model folders. Copying only the model folder is not enough.
+
+The Docker example above saves these folders as `config` and `models` in the current directory. Prepare files online first, then set `MT_OFFLINE` to `true` and restart for offline use.
 
 ## Ecosystem Projects
 
@@ -129,19 +139,12 @@ The server provides compatible endpoints for multiple translation plugins:
 | `/deepl`                        | POST   | DeepL API v2 compatible endpoint              | Clients supporting DeepL API                                                            |
 | `/deeplx`                       | POST   | DeepLX compatible endpoint                    | Clients supporting DeepLX API                                                           |
 | `/hcfy`                         | POST   | Selection Translator compatible endpoint      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy`                         | POST   | Selection Translator compatible endpoint      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST   | Google Translate API v2 compatible endpoint   | Clients supporting Google Translate API                                                 |
 | `/google/translate_a/single`    | GET    | Google translate_a/single compatible endpoint | Clients supporting Google web translation                                               |
 
 **Plugin Configuration Guide:**
 
-> Note:
->
-> - [Immersive Translation](https://immersivetranslate.com/docs/services/custom/) - Enable `Beta` features in developer mode in `Settings` to see `Custom API Settings` under `Translation Services` ([official tutorial with images](https://immersivetranslate.com/docs/services/custom/)). Then increase the `Maximum Requests per Second` in `Custom API Settings` to fully utilize server performance. I set `Maximum Requests per Second` to `512` and `Maximum Paragraphs per Request` to `1`. You can adjust based on your server hardware.
->
-> - [Kiss Translator](https://github.com/fishjar/kiss-translator) - Scroll down in `Settings` page to find the custom interface `Custom`. Similarly, set `Maximum Concurrent Requests` and `Request Interval Time` to fully utilize server performance. I set `Maximum Concurrent Requests` to `100` and `Request Interval Time` to `1`. You can adjust based on your server configuration.
->
-> Configure the plugin's custom interface address according to the table below.
+> Enter the addresses in the table below in your plugin settings. Start with the default request rate and simultaneous translation settings. Lower them if translations time out or your computer is overloaded.
 
 | Name                                  | URL                                                  | Plugin Setting                                                  |
 | ------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
@@ -159,42 +162,30 @@ The server provides compatible endpoints for multiple translation plugins:
 ### Command Line Options
 
 ```bash
-./mtranserver [options]
+mtranserver --help
 
-Options:
-  -version, -v          Show version information
-  -log-level string     Log level (debug, info, warn, error) (default "warn")
-  -config-dir string    Configuration directory (default "~/.config/mtran/server")
-  -model-dir string     Model directory (default "~/.config/mtran/models")
-  -host string          Server host address (default "0.0.0.0")
-  -port string          Server port (default "8989")
-  -ui                   Enable Web UI (default true)
-  -offline              Enable offline mode, disable automatic model download (default false)
-  -worker-idle-timeout int  Worker idle timeout in seconds (default 300)
-  --download pairs...   Download models for specific language pairs (e.g. --download en_zh zh_en)
-  --languages           List all supported language pairs for download
+  --help                              Show help
+  --host <ip>                         Listen address, default 0.0.0.0
+  --port <port>                       Port, default 8989
+  --ui / --no-ui                      Enable or disable the web interface
+  --offline                           Use previously prepared translation files
+  --worker-idle-timeout <seconds>      Release idle translation engine, default 60 seconds
+  --cache-size <count>                Store recent results, default 1000; 0 disables caching
+  --download en_zh zh_en              Download and prepare translation directions
+  --languages [filter]                List available translation directions
 
-Note: `--download` and `--languages` require network access and do not work in offline mode.
-
-Examples:
-  ./mtranserver --host 127.0.0.1 --port 8080
-  ./mtranserver --ui --offline
-  ./mtranserver -v
+  mtranserver --host 127.0.0.1 --port 8080
+  mtranserver --download en_zh zh_en
+  mtranserver --offline
 ```
 
 ## Comparison with Similar Projects
 
-Here are some similar projects, you can try them if you have other needs:
+Speed, memory use, and translation quality vary by device, language, and text. Old test numbers do not represent v5, so performance rankings have been removed. You can also explore these projects:
 
-| Project Name                                                       | Memory Usage   | Concurrency | Translation Quality | Speed      | Additional Info                                                                                                                                                   |
-| ------------------------------------------------------------------ | -------------- | ----------- | ------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | Very High      | Poor        | Average             | Slow       | Android port [RTranslator](https://github.com/niedev/RTranslator) has many optimizations, but still has high resource usage and is not fast                       |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very High      | Average     | Average             | Medium     | Mid-range CPU processes 3 sentences/s, high-end CPU processes 15-20 sentences/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486) |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | High           | Average     | Below Average       | Fast       | [Performance Tests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                            |
-| Any LLM                                                            | Extremely High | Dynamic     | Very Good           | Very Slow  | High hardware requirements. If you need high concurrency translation, it is recommended to use vllm framework.                                                    |
-| MTranServer (This Project)                                         | Low            | High        | Average             | Ultra Fast | 50ms average response time per request.                                                                                                                           |
-
-> Table data is for CPU, English to Chinese scenarios simple testing, not strict testing, non-quantized version comparison, for reference only.
+- [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)
+- [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)
+- [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT)
 
 # Advanced Configuration Guide
 
@@ -206,6 +197,8 @@ Please refer to [API_en.md](API_en.md) and the API documentation after startup.
 
 ## Thanks
 
-[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
+[Bergamot Project](https://browser.mt/) for the inspiration for local translation.
+
+[ONNX Runtime](https://github.com/microsoft/onnxruntime) for the translation runtime.
 
 [Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).

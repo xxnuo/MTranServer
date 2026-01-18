@@ -2,11 +2,11 @@
 
 [中文](../README.md) | [English](README_en.md) | [日本語](README_ja.md) | [Français](README_fr.md) | [Deutsch](README_de.md)
 
-Ein ultraschneller Offline-Übersetzungsmodell-Server mit minimalem Ressourcenverbrauch. Keine Grafikkarte erforderlich. Durchschnittliche Antwortzeit von 50 ms pro Anfrage. Unterstützt die Übersetzung der weltweit wichtigsten Sprachen.
+Ein kostenloser Offline-Übersetzungsdienst für Ihren eigenen Computer, ohne Grafikkarte. Unterstützt mehrere Sprachen sowie Browser- und Editor-Erweiterungen. Geschwindigkeit und Speicherbedarf hängen vom Computer, den Sprachen und der Textlänge ab.
 
-Beachten Sie, dass dieser Modellserver auf die Designziele `Offline-Übersetzung`, `Reaktionsgeschwindigkeit`, `plattformübergreifende Bereitstellung` und `lokale Ausführung` fokussiert ist, um `unbegrenzte kostenlose Übersetzungen` zu erreichen. Aufgrund von Einschränkungen bei der Modellgröße und Optimierung wird die Übersetzungsqualität sicherlich nicht so gut sein wie die von großen Sprachmodellen. Für qualitativ hochwertige Übersetzungen wird die Verwendung von Online-APIs für große Sprachmodelle empfohlen.
+Geeignet für das alltägliche Lesen und das Verständnis der Kernaussage. Übersetzungen können Fehler enthalten; prüfen Sie wichtige Inhalte anhand des Originals.
 
-> v4 hat den Speicherverbrauch optimiert, die Geschwindigkeit weiter erhöht und die Stabilität verbessert. Wenn Sie eine alte Version verwenden, wird ein sofortiges Upgrade empfohlen!
+> v5 verwendet eine neue Übersetzungsengine. Nach dem Update müssen die Übersetzungsdateien beim ersten Einsatz einer Sprachrichtung möglicherweise erneut vorbereitet werden. Bitte warten Sie, bis dies abgeschlossen ist.
 
 <img src="../images/preview.png" width="auto" height="460">
 
@@ -42,7 +42,7 @@ Vorschau (in der neuesten Version aktualisiert):
 
 ### Server
 
-Es wird empfohlen, die Desktop-App oder Docker-Bereitstellung zu verwenden, da diese bessere Leistung und einfachere Bedienung bieten. Die manuelle Server-Bereitstellung ist für fortgeschrittene Benutzer gedacht.
+Für den alltäglichen Gebrauch installieren und starten Sie die Desktop-App. Auf einem Server können Sie Docker oder eine Installation über die Kommandozeile nutzen. v5 bietet derzeit keine eigenständige Server-Programmdatei an.
 
 #### Schnellstart
 
@@ -54,9 +54,7 @@ npx mtranserver@latest
 
 > `npx` kann durch einen beliebigen Paketmanager ersetzt werden, z. B. `bunx`, `pnpx` usw.
 
-> **Wichtiger Hinweis:**
->
-> Bei der erstmaligen Übersetzung eines Sprachpaares lädt der Server automatisch das entsprechende Übersetzungsmodell herunter (sofern der Offline-Modus nicht aktiviert ist). Dieser Vorgang kann je nach Netzwerkgeschwindigkeit und Modellgröße einige Zeit in Anspruch nehmen. Nach dem Herunterladen des Modells profitieren nachfolgende Übersetzungsanfragen von einer Antwortzeit im Millisekundenbereich. Es wird empfohlen, vor der eigentlichen Verwendung eine Übersetzung zu testen, damit der Server das Modell vorab herunterladen und laden kann. Das Programm wird häufig aktualisiert. Wenn Sie auf Probleme stoßen, versuchen Sie, auf die neueste Version zu aktualisieren.
+> Bei der ersten Übersetzung in jeder Sprachrichtung werden die benötigten Dateien heruntergeladen und vorbereitet. Bleiben Sie online und warten Sie, bis dies abgeschlossen ist. Vorbereitete Dateien werden wiederverwendet. Testen Sie zunächst einen kurzen Text. Die Vorbereitung beim ersten Einsatz oder nach einem Update dauert länger als eine normale Übersetzung.
 
 #### Schnellinstallation
 
@@ -83,16 +81,28 @@ services:
     environment:
       - MT_HOST=0.0.0.0
       - MT_PORT=8989
+      - MT_MODEL_DIR=/app/models
+      - MT_CONFIG_DIR=/root/.config/mtran/server
       - MT_OFFLINE=false
       # - MT_API_TOKEN=ihr_geheimer_token_hier
     volumes:
       - ./models:/app/models
+      - ./config:/root/.config/mtran
 ```
 
 ```bash
 docker pull xxnuo/mtranserver:latest
 docker compose up -d
 ```
+
+### Updates und Offline-Nutzung
+
+1. Behalten Sie beim Update die vorhandenen Konfigurations- und Übersetzungsmodellordner.
+2. Bleiben Sie nach dem Update online und testen Sie jede benötigte Sprachrichtung. Warten Sie, bis die Vorbereitung abgeschlossen ist.
+3. Aktivieren Sie anschließend den Offline-Modus in den Einstellungen, bevor Sie die Verbindung trennen. Offline sind nur bereits vorbereitete Sprachrichtungen verfügbar.
+4. Speichern Sie beim Wechsel des Computers oder einer Docker-Migration beide Ordner. Nur den Modellordner zu kopieren reicht nicht aus.
+
+Das Docker-Beispiel oben speichert diese Ordner als `config` und `models` im aktuellen Verzeichnis. Bereiten Sie die Dateien zunächst online vor, setzen Sie dann `MT_OFFLINE` auf `true` und starten Sie den Dienst neu.
 
 ## Ökosystem-Projekte
 
@@ -129,19 +139,12 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 | `/deepl`                        | POST    | DeepL API v2 kompatible Schnittstelle              | Clients, die die DeepL API unterstützen                                                 |
 | `/deeplx`                       | POST    | DeepLX kompatible Schnittstelle                    | Clients, die die DeepLX API unterstützen                                                |
 | `/hcfy`                         | POST    | Selection Translator kompatible Schnittstelle      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
-| `/hcfy`                         | POST    | Selection Translator kompatible Schnittstelle      | [Selection Translator](https://github.com/Selection-Translator/crx-selection-translate) |
 | `/google/language/translate/v2` | POST    | Google Translate API v2 kompatible Schnittstelle   | Clients, die die Google Translate API unterstützen                                      |
 | `/google/translate_a/single`    | GET     | Google translate_a/single kompatible Schnittstelle | Clients, die Google Web Translate unterstützen                                          |
 
 **Plugin-Konfigurationsanleitung:**
 
-> Hinweis:
->
-> - [Immersive Translate](https://immersivetranslate.com/docs/services/custom/): Aktivieren Sie im Entwicklermodus auf der Seite `Einstellungen` die `Beta`-Funktionen, dann sehen Sie unter `Übersetzungsdienste` die `Benutzerdefinierte API-Einstellungen` ([offizielles Tutorial mit Bildern](https://immersivetranslate.com/docs/services/custom/)). Erhöhen Sie dann die `Maximale Anfragen pro Sekunde` in den `Benutzerdefinierte API-Einstellungen`, um die Serverleistung voll auszuschöpfen. Ich habe `Maximale Anfragen pro Sekunde` auf `512` und `Maximale Absätze pro Anfrage` auf `1` eingestellt. Sie können dies entsprechend Ihrer Serverkonfiguration anpassen.
->
-> - [Kiss Translator](https://github.com/fishjar/kiss-translator): Scrollen Sie auf der Seite `Einstellungen` nach unten zu den Schnittstelleneinstellungen, dort sehen Sie die benutzerdefinierte Schnittstelle `Custom`. Stellen Sie ebenfalls die `Maximale Anzahl gleichzeitiger Anfragen` und das `Anfrageintervall` ein, um die Serverleistung voll auszuschöpfen. Ich habe die `Maximale Anzahl gleichzeitiger Anfragen` auf `100` und das `Anfrageintervall` auf `1` eingestellt. Sie können dies entsprechend Ihrer Serverkonfiguration anpassen.
->
-> Konfigurieren Sie anschließend die Adresse der benutzerdefinierten Schnittstelle des Plugins gemäß der untenstehenden Tabelle.
+> Tragen Sie die Adressen aus der Tabelle unten in Ihre Erweiterung ein. Beginnen Sie bei der Anfragerate und der Anzahl gleichzeitiger Übersetzungen mit den Standardwerten. Senken Sie diese bei Zeitüberschreitungen oder hoher Computerlast.
 
 | Name                                | URL                                                  | Plugin-Einstellung                                                                      |
 | ----------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -159,42 +162,30 @@ Der Server bietet kompatible Schnittstellen für mehrere Übersetzungs-Plugins:
 ### Befehlszeilenparameter
 
 ```bash
-./mtranserver [Optionen]
+mtranserver --help
 
-Optionen:
-  -version, -v          Versionsinformationen anzeigen
-  -log-level string     Protokollierungsgrad (debug, info, warn, error) (Standard "warn")
-  -config-dir string    Konfigurationsverzeichnis (Standard "~/.config/mtran/server")
-  -model-dir string     Modellverzeichnis (Standard "~/.config/mtran/models")
-  -host string          Server-Abhöradresse (Standard "0.0.0.0")
-  -port string          Server-Port (Standard "8989")
-  -ui                   Web-UI aktivieren (Standard true)
-  -offline              Offline-Modus aktivieren, neue Modelle nicht automatisch herunterladen (Standard false)
-  -worker-idle-timeout int  Worker-Leerlauf-Timeout (Sekunden) (Standard 300)
-  --download pairs...   Modelle für bestimmte Sprachpaare herunterladen (z. B. --download en_zh zh_en)
-  --languages           Alle unterstützten Sprachpaare zum Download auflisten
+  --help                              Hilfe anzeigen
+  --host <ip>                         Listen-Adresse, Standard 0.0.0.0
+  --port <port>                       Port, Standard 8989
+  --ui / --no-ui                      Web-Oberfläche aktivieren oder deaktivieren
+  --offline                           Bereits vorbereitete Übersetzungsdateien verwenden
+  --worker-idle-timeout <seconds>      Inaktive Engine freigeben, Standard 60 Sekunden
+  --cache-size <count>                Letzte Ergebnisse speichern, Standard 1000; 0 deaktiviert den Cache
+  --download en_zh zh_en              Sprachrichtungen herunterladen und vorbereiten
+  --languages [filter]                Verfügbare Sprachrichtungen anzeigen
 
-Hinweis: `--download` und `--languages` benötigen eine Netzwerkverbindung und funktionieren nicht im Offline-Modus.
-
-Beispiele:
-  ./mtranserver --host 127.0.0.1 --port 8080
-  ./mtranserver --ui --offline
-  ./mtranserver -v
+  mtranserver --host 127.0.0.1 --port 8080
+  mtranserver --download en_zh zh_en
+  mtranserver --offline
 ```
 
 ## Ähnliche Projekte
 
-Hier sind einige Projekte mit ähnlichen Funktionen. Wenn Sie andere Bedürfnisse haben, können Sie diese Projekte ausprobieren:
+Geschwindigkeit, Speicherbedarf und Übersetzungsqualität hängen von Gerät, Sprachen und Text ab. Alte Messwerte gelten nicht für v5, deshalb wurden die Leistungsranglisten entfernt. Sie können auch diese Projekte ansehen:
 
-| Projektname                                                        | Speicherverbrauch | Nebenläufigkeitsleistung | Übersetzungsqualität | Geschwindigkeit | Weitere Informationen                                                                                                                                                          |
-| ------------------------------------------------------------------ | ----------------- | ------------------------ | -------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)      | Sehr hoch         | Schlecht                 | Durchschnittlich     | Langsam         | Die Android-Portierung [RTranslator](https://github.com/niedev/RTranslator) hat viele Optimierungen, aber der Ressourcenverbrauch ist immer noch hoch und es ist nicht schnell |
-| [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch         | Durchschnittlich         | Durchschnittlich     | Mittel          | Mittelklasse-CPU verarbeitet 3 Sätze/s, High-End-CPU 15-20 Sätze/s. [Details](https://community.libretranslate.com/t/performance-benchmark-data/486)                           |
-| [OPUS-MT](https://github.com/OpenNMT/CTranslate2#benchmarks)       | Hoch              | Durchschnittlich         | Eher schlecht        | Schnell         | [Leistungstests](https://github.com/OpenNMT/CTranslate2#benchmarks)                                                                                                            |
-| Andere große Modelle                                               | Extrem hoch       | Dynamisch                | Sehr gut             | Sehr langsam    | Hohe Hardwareanforderungen. Wenn Sie eine Übersetzung mit hoher Nebenläufigkeit benötigen, wird empfohlen, das vllm-Framework zu verwenden.                                    |
-| Dieses Projekt                                                     | Niedrig           | Hoch                     | Durchschnittlich     | Extrem schnell  | Durchschnittliche Antwortzeit von 50 ms pro Anfrage.                                                                                                                           |
-
-> Die Daten in der Tabelle beziehen sich auf einfache Tests mit CPU, Englisch-Chinesisch-Szenarien, keine strengen Tests, Vergleich von nicht quantisierten Versionen, nur als Referenz.
+- [NLLB](https://github.com/facebookresearch/fairseq/tree/nllb)
+- [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate)
+- [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT)
 
 # Erweiterte Konfigurationsanleitung
 
@@ -206,6 +197,8 @@ Bitte beachten Sie die Datei [API_de.md](API_de.md) und die API-Dokumentation na
 
 ## Thanks
 
-[Bergamot Project](https://browser.mt/) for awesome idea of local translation.
+[Bergamot Project](https://browser.mt/) for the inspiration for local translation.
+
+[ONNX Runtime](https://github.com/microsoft/onnxruntime) for the translation runtime.
 
 [Mozilla](https://github.com/mozilla) for the [models](https://github.com/mozilla/firefox-translations-models).
