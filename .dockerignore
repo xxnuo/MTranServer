@@ -16,5 +16,3 @@ coverage
 .venv
 release
 models
-
-models-onnx

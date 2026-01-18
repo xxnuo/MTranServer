@@ -4,7 +4,7 @@ import path from 'path';
 import { createDownloader } from '@/core/factory.js';
 import { getConfig } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
-import { ensureConverted } from '../converter/cache.js';
+import { ensureConverted, type SourceFiles } from '../converter/cache.js';
 import { getLargestVersion } from '@/utils/version.js';
 
 const RECORDS_URL = 'https://firefox.settings.services.mozilla.com/v1/buckets/main-preview/collections/translations-models-v2/records';
@@ -235,7 +235,7 @@ export async function getModelFiles(
   fromLang: string,
   toLang: string,
   version?: string
-): Promise<Record<string, string>> {
+): Promise<SourceFiles> {
   if (!globalRecords) {
     await initRecords();
   }
@@ -244,20 +244,21 @@ export async function getModelFiles(
     throw new Error('Records not initialized');
   }
 
+  const records = selectRecords(fromLang, toLang, version);
+  const files = resolveModelFiles(modelDir, fromLang, toLang, records);
+  for (const file of new Set(Object.values(files))) await fs.access(file);
+  return files;
+}
+
+function resolveModelFiles(modelDir: string, fromLang: string, toLang: string, records: RecordItem[]): SourceFiles {
   const langPairDir = path.join(modelDir, `${fromLang}_${toLang}`);
   const fileTypeMap = new Map<string, string>();
 
-  for (const record of selectRecords(fromLang, toLang, version)) {
+  for (const record of records) {
     if (record.sourceLanguage === fromLang && record.targetLanguage === toLang) {
       const filename = record.attachment.filename.replace(/\.zst$/, '');
       if (path.basename(filename) !== filename) throw new Error('Invalid model filename');
-      const fullPath = path.join(langPairDir, filename);
-
-      try {
-        await fs.access(fullPath);
-        fileTypeMap.set(record.fileType, fullPath);
-      } catch {
-      }
+      fileTypeMap.set(record.fileType, path.join(langPairDir, filename));
     }
   }
 
@@ -290,17 +291,19 @@ export async function getModelFiles(
     files.vocab_trg = trgVocabPath;
   }
 
-  return files;
+  return { model: files.model, vocab_src: files.vocab_src, vocab_trg: files.vocab_trg, ...(files.lex ? { lex: files.lex } : {}) };
 }
 
 export async function prepareModel(toLang: string, fromLang: string, version?: string) {
   if (!globalRecords) await initRecords();
   const config = getConfig();
-  if (path.resolve(config.convertedModelDir) === path.resolve(config.modelDir)) throw new Error('Converted and original model directories must differ');
-  return ensureConverted(config.convertedModelDir, `${fromLang}_${toLang}`, async () => {
+  const records = selectRecords(fromLang, toLang, version);
+  const files = resolveModelFiles(config.modelDir, fromLang, toLang, records);
+  const manifestRecords = records.map(record => ({ ...record, url: `${ATTACHMENTS_BASE_URL}/${record.attachment.location}` }));
+  return ensureConverted(config.modelDir, `${fromLang}_${toLang}`, { files, records: manifestRecords }, async () => {
     if (!config.enableOfflineMode) await downloadRawModel(toLang, fromLang, version);
-    const files = await getModelFiles(config.modelDir, fromLang, toLang, version);
-    return { files: { model: files.model, vocab_src: files.vocab_src, vocab_trg: files.vocab_trg }, records: selectRecords(fromLang, toLang, version).map(record => ({ ...record, url: `${ATTACHMENTS_BASE_URL}/${record.attachment.location}` })) };
+    const repaired = await getModelFiles(config.modelDir, fromLang, toLang, version);
+    return { model: repaired.model, vocab_src: repaired.vocab_src, vocab_trg: repaired.vocab_trg, lex: repaired.lex };
   });
 }
 

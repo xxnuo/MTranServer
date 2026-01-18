@@ -52,7 +52,7 @@ async function getOrCreateSingleEngine(
   const existing = engines.get(key);
   if (existing) {
     resetIdleTimer(existing);
-    const manifestPath = path.join(getConfig().convertedModelDir, `${fromLang}_${toLang}`, 'manifest.json');
+    const manifestPath = path.join(getConfig().modelDir, `${fromLang}_${toLang}`, 'manifest.json');
     const identity = await readFile(manifestPath, 'utf8').then(s => JSON.parse(s).identity).catch(() => null);
     if (identity !== existing.engine.identity) {
       if (existing.timer) clearTimeout(existing.timer);
