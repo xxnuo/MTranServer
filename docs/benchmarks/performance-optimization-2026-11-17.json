@@ -1,0 +1,943 @@
+{
+  "version": "5.4.3",
+  "date": "2026-11-17",
+  "ci_run_id": 43922145281,
+  "quality_gate": {
+    "samples_per_platform": 4098,
+    "fast_samples_per_platform": 2049,
+    "standard_samples_per_platform": 2049,
+    "token_differences_all_6_platforms_and_4_physical_hosts": 0
+  },
+  "physical_hosts": [
+    {
+      "target": "apple-m4",
+      "environment_type": "physical",
+      "cpu": "Apple M4",
+      "preferred_backend": "packed-sdot",
+      "addon_sha256": "6f3ece9468ddf4e3c42ba01a89b4c6b7a9ec735b45fb9856cfd28a6024408a98",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 154.04,
+          "candidate_rps": 231.31,
+          "gain_pct": 50.16,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 262.06,
+          "candidate_rps": 918.93,
+          "gain_pct": 250.65,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 125.71,
+          "candidate_rps": 181.44,
+          "gain_pct": 44.33,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 263.68,
+          "candidate_rps": 404.66,
+          "gain_pct": 53.46,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 186.64,
+          "candidate_rps": 268.02,
+          "gain_pct": 43.6,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 333.9,
+          "candidate_rps": 917.17,
+          "gain_pct": 174.69,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 97.39,
+          "candidate_rps": 143.19,
+          "gain_pct": 47.03,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 172.0,
+          "candidate_rps": 272.86,
+          "gain_pct": 58.64,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "core-i5-14400",
+      "environment_type": "physical",
+      "cpu": "Intel(R) Core(TM) i5-14400",
+      "preferred_backend": "packed-avxvnni",
+      "addon_sha256": "c1fc1831048ae5511fc716c1c8ac1dc2c7149a4cbbd0ec905c6219c6fa4146da",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 46.18,
+          "candidate_rps": 94.21,
+          "gain_pct": 103.98,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 116.1,
+          "candidate_rps": 375.28,
+          "gain_pct": 223.22,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 32.77,
+          "candidate_rps": 60.22,
+          "gain_pct": 83.78,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 87.38,
+          "candidate_rps": 120.17,
+          "gain_pct": 37.53,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 74.76,
+          "candidate_rps": 120.29,
+          "gain_pct": 60.9,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 151.43,
+          "candidate_rps": 467.6,
+          "gain_pct": 208.79,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 21.87,
+          "candidate_rps": 35.86,
+          "gain_pct": 64.0,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 49.7,
+          "candidate_rps": 59.44,
+          "gain_pct": 19.6,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "jetson-agx-thor",
+      "environment_type": "physical",
+      "cpu": "NVIDIA Jetson AGX Thor",
+      "preferred_backend": "packed-sdot",
+      "addon_sha256": "76fbc32f22dc1e7d371afcaf538254cdf9c8edeaff85080752c6dfc5ead8d4b9",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 65.96,
+          "candidate_rps": 90.79,
+          "gain_pct": 37.64,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 261.67,
+          "candidate_rps": 501.29,
+          "gain_pct": 91.58,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 42.4,
+          "candidate_rps": 66.01,
+          "gain_pct": 55.68,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 148.54,
+          "candidate_rps": 175.26,
+          "gain_pct": 17.98,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 75.12,
+          "candidate_rps": 104.59,
+          "gain_pct": 39.23,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 291.76,
+          "candidate_rps": 561.27,
+          "gain_pct": 92.37,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 32.64,
+          "candidate_rps": 59.32,
+          "gain_pct": 81.72,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 89.89,
+          "candidate_rps": 95.98,
+          "gain_pct": 6.77,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "core-i7-8550u",
+      "environment_type": "physical",
+      "cpu": "Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz",
+      "preferred_backend": "packed-avx2-ort",
+      "addon_sha256": "c1fc1831048ae5511fc716c1c8ac1dc2c7149a4cbbd0ec905c6219c6fa4146da",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 52.07,
+          "candidate_rps": 68.36,
+          "gain_pct": 31.3,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 139.74,
+          "candidate_rps": 232.54,
+          "gain_pct": 66.41,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 27.07,
+          "candidate_rps": 38.7,
+          "gain_pct": 42.98,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 76.03,
+          "candidate_rps": 85.9,
+          "gain_pct": 12.99,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 53.69,
+          "candidate_rps": 71.1,
+          "gain_pct": 32.43,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 146.46,
+          "candidate_rps": 235.27,
+          "gain_pct": 60.64,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 21.42,
+          "candidate_rps": 34.22,
+          "gain_pct": 59.77,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 49.57,
+          "candidate_rps": 56.15,
+          "gain_pct": 13.26,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    }
+  ],
+  "hosted_runners": [
+    {
+      "target": "linux-x64",
+      "environment_type": "hosted_runner_vm",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "preferred_backend": "packed-avx2",
+      "addon_sha256": "a3017149680d159db06dd75e9626466a0142addffd8c452e64a6b16a8263a68f",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 106.64,
+          "candidate_rps": 132.22,
+          "gain_pct": 23.99,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 219.57,
+          "candidate_rps": 304.35,
+          "gain_pct": 38.61,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 66.97,
+          "candidate_rps": 71.34,
+          "gain_pct": 6.52,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 141.14,
+          "candidate_rps": 120.53,
+          "gain_pct": -14.6,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 126.96,
+          "candidate_rps": 153.33,
+          "gain_pct": 20.78,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 267.82,
+          "candidate_rps": 345.03,
+          "gain_pct": 28.83,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 43.89,
+          "candidate_rps": 60.21,
+          "gain_pct": 37.17,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 94.49,
+          "candidate_rps": 88.97,
+          "gain_pct": -5.84,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "linux-arm64",
+      "environment_type": "hosted_runner_vm",
+      "cpu": "ARM64 Hosted Runner",
+      "preferred_backend": "packed-sdot",
+      "addon_sha256": "76fbc32f22dc1e7d371afcaf538254cdf9c8edeaff85080752c6dfc5ead8d4b9",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 60.52,
+          "candidate_rps": 90.56,
+          "gain_pct": 49.63,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 187.9,
+          "candidate_rps": 322.65,
+          "gain_pct": 71.72,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 42.85,
+          "candidate_rps": 73.48,
+          "gain_pct": 71.5,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 117.99,
+          "candidate_rps": 153.94,
+          "gain_pct": 30.47,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 70.8,
+          "candidate_rps": 103.87,
+          "gain_pct": 46.71,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 199.44,
+          "candidate_rps": 372.84,
+          "gain_pct": 86.94,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 32.68,
+          "candidate_rps": 68.36,
+          "gain_pct": 109.19,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 76.63,
+          "candidate_rps": 90.49,
+          "gain_pct": 18.07,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "win32-x64",
+      "environment_type": "hosted_runner_vm",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "preferred_backend": "packed-avx2",
+      "addon_sha256": "6032954c590e00cf034ec2a3984c9bda2d536e45abe59a9c0164214679d578bc",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 87.51,
+          "candidate_rps": 120.15,
+          "gain_pct": 37.31,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 201.0,
+          "candidate_rps": 262.64,
+          "gain_pct": 30.66,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 56.67,
+          "candidate_rps": 70.5,
+          "gain_pct": 24.4,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 127.11,
+          "candidate_rps": 122.58,
+          "gain_pct": -3.56,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 101.61,
+          "candidate_rps": 138.23,
+          "gain_pct": 36.04,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 222.97,
+          "candidate_rps": 321.32,
+          "gain_pct": 44.11,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 41.15,
+          "candidate_rps": 59.04,
+          "gain_pct": 43.47,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 83.25,
+          "candidate_rps": 94.91,
+          "gain_pct": 14.0,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "win32-arm64",
+      "environment_type": "hosted_runner_vm",
+      "cpu": "Cobalt 100",
+      "preferred_backend": "packed-sdot",
+      "addon_sha256": "511c95e2629ddd51cf2f1e03298ce026fd47876c0c2138b2f10c24c021fe14c7",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 50.17,
+          "candidate_rps": 76.09,
+          "gain_pct": 51.67,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 117.09,
+          "candidate_rps": 186.18,
+          "gain_pct": 59.01,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 35.62,
+          "candidate_rps": 65.66,
+          "gain_pct": 84.31,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 102.96,
+          "candidate_rps": 140.3,
+          "gain_pct": 36.27,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 60.43,
+          "candidate_rps": 95.66,
+          "gain_pct": 58.3,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 172.0,
+          "candidate_rps": 318.52,
+          "gain_pct": 85.19,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 27.38,
+          "candidate_rps": 45.21,
+          "gain_pct": 65.14,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 56.93,
+          "candidate_rps": 73.31,
+          "gain_pct": 28.78,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "darwin-arm64",
+      "environment_type": "hosted_runner_vm",
+      "cpu": "Apple M1 (Virtual)",
+      "preferred_backend": "packed-sdot",
+      "addon_sha256": "cc3c2485c7be570830e0e7b4c9c1ae08151562f3560627831982dddf3e8567fb",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 52.8,
+          "candidate_rps": 68.47,
+          "gain_pct": 29.68,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 108.5,
+          "candidate_rps": 193.47,
+          "gain_pct": 78.32,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 32.03,
+          "candidate_rps": 42.79,
+          "gain_pct": 33.6,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 60.86,
+          "candidate_rps": 109.34,
+          "gain_pct": 79.65,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 52.85,
+          "candidate_rps": 89.05,
+          "gain_pct": 68.51,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 117.21,
+          "candidate_rps": 260.54,
+          "gain_pct": 122.28,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 46.3,
+          "candidate_rps": 41.68,
+          "gain_pct": -9.97,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 73.13,
+          "candidate_rps": 79.35,
+          "gain_pct": 8.5,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    },
+    {
+      "target": "darwin-x64",
+      "environment_type": "hosted_runner_vm",
+      "cpu": "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+      "preferred_backend": "packed-avx2-ort",
+      "addon_sha256": "2644c32ee5847004b6378604dd2fa4681a2b86f116bc36331239c28df68ec938",
+      "total_samples": 4098,
+      "total_token_exact": 4098,
+      "benchmarks": [
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 28.13,
+          "candidate_rps": 40.51,
+          "gain_pct": 44.0,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 72.09,
+          "candidate_rps": 151.28,
+          "gain_pct": 109.83,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 20.3,
+          "candidate_rps": 33.42,
+          "gain_pct": 64.64,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "en_zh-Hans",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 54.2,
+          "candidate_rps": 69.6,
+          "gain_pct": 28.42,
+          "token_exact": 1025,
+          "samples": 1025
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 1,
+          "baseline_rps": 35.38,
+          "candidate_rps": 49.17,
+          "gain_pct": 38.98,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "fast",
+          "concurrency": 8,
+          "baseline_rps": 87.0,
+          "candidate_rps": 177.2,
+          "gain_pct": 103.68,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 1,
+          "baseline_rps": 17.68,
+          "candidate_rps": 26.81,
+          "gain_pct": 51.63,
+          "token_exact": 1024,
+          "samples": 1024
+        },
+        {
+          "pair": "zh-Hans_en",
+          "mode": "standard",
+          "concurrency": 8,
+          "baseline_rps": 34.43,
+          "candidate_rps": 52.25,
+          "gain_pct": 51.74,
+          "token_exact": 1024,
+          "samples": 1024
+        }
+      ]
+    }
+  ],
+  "rejected_candidates": [
+    {
+      "name": "fexipro_svd_vocab_pruning",
+      "reason": "Adds >1.8s startup SVD/projection setup and ~98 MB extra matrix memory while two-pass residual bound is slower than sequential 12.5 MB 4-bit block scan at dim=384."
+    },
+    {
+      "name": "full_vocab_q4_16col_avxvnni_unroll",
+      "reason": "16 YMM accumulators spill to stack on 16-register x64 AVX2/AVX-VNNI, regressing scan latency by 9%-14% vs 8-column unroll."
+    },
+    {
+      "name": "encoder_qkv_kv_concat_split",
+      "reason": "ORT Split strided column copies offset operator dispatch savings (-2% to +0.5% net HTTP delta)."
+    },
+    {
+      "name": "unspun_per_token_cv_wakeup",
+      "reason": "Per-token futex sleep migrated helper threads to 800 MHz E-cores on hybrid i5-14400 (SHORT_ZH c=1 -31.1%, p95 61.9ms); fixed via bounded intra-sentence cpuRelax spin."
+    }
+  ]
+}

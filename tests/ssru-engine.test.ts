@@ -67,7 +67,7 @@ test.each([undefined, '1', 'true', 'false', ''])('Fast CPU selects SSRU by defau
   const engine = new TranslationEngine();
   try {
     await engine.init(model);
-    expect(capability).toHaveBeenCalledTimes(1); expect(convert).toHaveBeenCalledWith(model);
+    expect(capability).toHaveBeenCalledTimes(1); expect(convert).toHaveBeenCalledWith(model, true);
     expect(create).toHaveBeenCalledWith(custom.model, ['X', 'eos_id', 'candidate_ids'], 1, true);
     expect(engine.backend?.runtime).toBe('native-ssru');
   } finally { await engine.destroy(); }
@@ -89,10 +89,32 @@ test.each([['cuda', true], ['dml', true], ['cpu', false]] as const)('SSRU requir
   const { convert, capability } = setup(provider, shortlist);
   delete process.env.MT_NATIVE_SSRU;
   const engine = new TranslationEngine();
+  const candidateModel = shortlist ? model : { ...model, lex: undefined, sourceModel: undefined };
   try {
-    await engine.init(model);
+    await engine.init(candidateModel);
     expect(convert).not.toHaveBeenCalled(); expect(capability).not.toHaveBeenCalled();
     expect(engine.backend?.runtime).not.toBe('native-ssru');
+  } finally { await engine.destroy(); }
+});
+
+test('Standard CPU with sourceModel selects full-vocab SSRU and supports runRaw', async () => {
+  const { convert, create, candidate, original } = setup('cpu', false);
+  delete process.env.MT_NATIVE_SSRU;
+  const stdModel = { ...model, lex: undefined };
+  const rawCalls: Array<{ input: number; cands: BigInt64Array | null; eos: bigint }> = [];
+  (candidate as any).runRaw = mock(async (input: BigInt64Array, cands: BigInt64Array | null, eos: bigint) => {
+    rawCalls.push({ input: input.length, cands, eos });
+    return BigInt64Array.of(7n, 0n);
+  });
+  const engine = new TranslationEngine();
+  try {
+    await engine.init(stdModel);
+    expect(convert).toHaveBeenCalledWith(stdModel, false);
+    expect(create).toHaveBeenCalledWith(custom.model, ['X', 'eos_id'], 1, true);
+    expect(engine.backend?.runtime).toBe('native-ssru');
+    expect(original.release).toHaveBeenCalledTimes(1);
+    expect(await engine.translateAsync('hello')).toBe('result');
+    expect(rawCalls.at(-1)).toEqual({ input: 41, cands: null, eos: 0n });
   } finally { await engine.destroy(); }
 });
 
@@ -119,7 +141,7 @@ test('supported SSRU is selected after ordinary Fast and successful probes, keep
   const engine = new TranslationEngine();
   try {
     await engine.init(model, { 'cpu-threads': 2, 'max-concurrent-runs': 2 });
-    expect(convert).toHaveBeenCalledWith(model);
+    expect(convert).toHaveBeenCalledWith(model, true);
     expect(create).toHaveBeenCalledWith(custom.model, ['X', 'eos_id', 'candidate_ids'], 2, true);
     expect(engine.backend?.runtime).toBe('native-ssru'); expect(engine.identity).toBe(model.identity);
     expect(engine.backend?.cpuThreads).toBe(2); expect(engine.backend?.maxConcurrentRuns).toBeLessThanOrEqual(2);

@@ -63,85 +63,120 @@ for (const fixture of fixtures) {
     return path.join(directory, source.path);
   };
   const { weights, config } = await readRelease(file('source-model'));
-  const baselinePath = path.join(directory, 'fast.onnx');
-  const candidatePath = path.join(directory, 'ssru.onnx');
-  await writeFile(baselinePath, buildModel(weights, config, 'qall', true));
-  await writeFile(candidatePath, buildModel(weights, config, 'qall', true, true));
+  const modelSha256 = hash(await readFile(file('source-model')));
   const source = await Tokenizer.load(file('source-srcvocab'));
   const target = await Tokenizer.load(file('source-trgvocab'));
   const shortlist = await Shortlist.load(file('source-lex'), file('source-srcvocab'), file('source-trgvocab'));
-  const baseline = await addon.init(baselinePath, library, 1);
-  const candidate = await addon.init(candidatePath, library, 1);
   try {
     const rows = corpus.filter((row: { from: string }) => fixture.pair.startsWith(row.from === 'en' ? 'en_' : 'zh-Hans_'));
-    const prepared = rows.map((row: { text: string }) => {
-      const ids = [...source.encode(row.text), source.eos];
-      return { text: row.text, x: BigInt64Array.from(ids, BigInt), c: BigInt64Array.from(shortlist.candidates(ids), BigInt) };
-    });
-    const run = (handle: object, item: typeof prepared[number]) => addon.run(handle, item.x, item.c, BigInt(target.eos)) as Promise<BigInt64Array>;
-    const expected: BigInt64Array[] = [];
-    const actual: BigInt64Array[] = [];
-    const differences: unknown[] = [];
-    for (const item of prepared) {
-      const a = await run(baseline, item), b = await run(candidate, item);
-      assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'Generation limit is not a successful translation');
-      if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
-        mismatches++;
-        differences.push({ source: item.text, baseline: Array.from(a, Number), candidate: Array.from(b, Number),
-          baseline_text: target.decode(Array.from(a, Number).filter(id => id !== target.eos)),
-          candidate_text: target.decode(Array.from(b, Number).filter(id => id !== target.eos)) });
-      }
-      expected.push(a);
-      actual.push(b);
-    }
-    const measurements: unknown[] = [];
-    for (let round = 0; round < 3; round++) {
-      for (const name of round % 2 ? ['candidate', 'fast'] : ['fast', 'candidate']) {
-        const handle = name === 'candidate' ? candidate : baseline;
-        for (const concurrency of [1, 8]) {
-          let next = 0;
-          const latencies: number[] = [];
-          const count = prepared.length * 3, start = performance.now();
-          await Promise.all(Array.from({ length: concurrency }, async () => {
-            while (next < count) {
-              const index = next++ % prepared.length;
-              const started = performance.now();
-              assert.deepEqual(await run(handle, prepared[index]), name === 'candidate' ? actual[index] : expected[index], 'Non-deterministic concurrent output');
-              latencies.push(performance.now() - started);
+    const language = fixture.pair.startsWith('en_') ? 'eng_Latn' : 'zho_Hans';
+    const floresLines = flores
+      ? (await readFile(path.join(work, `flores200_dataset/devtest/${language}.devtest`), 'utf8')).trim().split('\n')
+      : [];
+    if (flores) assert.equal(floresLines.length, 1012, 'Unexpected FLORES devtest size');
+    for (const useShortlist of [true, false]) {
+      const mode = useShortlist ? 'fast' : 'standard';
+      const baselinePath = path.join(directory, useShortlist ? 'fast.onnx' : 'standard.onnx');
+      const candidatePath = path.join(directory, useShortlist ? 'ssru.onnx' : 'ssru-standard.onnx');
+      await writeFile(baselinePath, buildModel(weights, config, 'qall', useShortlist));
+      await writeFile(candidatePath, buildModel(weights, config, 'qall', useShortlist, true));
+      const baseline = await addon.init(baselinePath, library, 1);
+      const candidate = await addon.init(candidatePath, library, 1);
+      try {
+        const encodeItem = (text: string) => {
+          const ids = [...source.encode(text), source.eos];
+          return {
+            text,
+            x: BigInt64Array.from(ids, BigInt),
+            c: useShortlist ? BigInt64Array.from(shortlist.candidates(ids), BigInt) : null,
+          };
+        };
+        const prepared = rows.map((row: { text: string }) => encodeItem(row.text));
+        const run = (handle: object, item: ReturnType<typeof encodeItem>) =>
+          addon.run(handle, item.x, item.c, BigInt(target.eos)) as Promise<BigInt64Array>;
+        const expected: BigInt64Array[] = [];
+        const actual: BigInt64Array[] = [];
+        const differences: unknown[] = [];
+        for (const item of prepared) {
+          const a = await run(baseline, item), b = await run(candidate, item);
+          assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'Generation limit is not a successful translation');
+          if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
+            mismatches++;
+            differences.push({ mode, source: item.text, baseline: Array.from(a, Number), candidate: Array.from(b, Number),
+              baseline_text: target.decode(Array.from(a, Number).filter(id => id !== target.eos)),
+              candidate_text: target.decode(Array.from(b, Number).filter(id => id !== target.eos)) });
+          }
+          expected.push(a);
+          actual.push(b);
+        }
+        const measurements: unknown[] = [];
+        const baseLabel = useShortlist ? 'fast' : 'standard';
+        for (let round = 0; round < 3; round++) {
+          for (const name of round % 2 ? ['candidate', baseLabel] : [baseLabel, 'candidate']) {
+            const handle = name === 'candidate' ? candidate : baseline;
+            for (const concurrency of [1, 8]) {
+              let next = 0;
+              const latencies: number[] = [];
+              const count = prepared.length * (useShortlist ? 3 : 1), start = performance.now();
+              await Promise.all(Array.from({ length: concurrency }, async () => {
+                while (next < count) {
+                  const index = next++ % prepared.length;
+                  const started = performance.now();
+                  assert.deepEqual(await run(handle, prepared[index]), name === 'candidate' ? actual[index] : expected[index], 'Non-deterministic concurrent output');
+                  latencies.push(performance.now() - started);
+                }
+              }));
+              const ms = performance.now() - start;
+              const sorted = [...latencies].sort((a, b) => a - b), percentile = .95 * (sorted.length - 1);
+              const p95 = sorted[Math.floor(percentile)] + (sorted[Math.ceil(percentile)] - sorted[Math.floor(percentile)]) * (percentile % 1);
+              measurements.push({ round, mode, name, concurrency, requests: count, wall_ms: ms, rps: count * 1000 / ms,
+                latencies_ms: latencies, p95_ms: p95, memory: process.memoryUsage() });
+            }
+          }
+        }
+        let qualitySamples = 0;
+        if (flores) {
+          const floresItems = floresLines.map(encodeItem);
+          const baseOutputs = new Array<BigInt64Array>(floresItems.length);
+          const candOutputs = new Array<BigInt64Array>(floresItems.length);
+          let nextBase = 0;
+          await Promise.all(Array.from({ length: 8 }, async () => {
+            while (nextBase < floresItems.length) {
+              const idx = nextBase++;
+              baseOutputs[idx] = await run(baseline, floresItems[idx]);
             }
           }));
-          const ms = performance.now() - start;
-          const sorted = [...latencies].sort((a, b) => a - b), percentile = .95 * (sorted.length - 1);
-          const p95 = sorted[Math.floor(percentile)] + (sorted[Math.ceil(percentile)] - sorted[Math.floor(percentile)]) * (percentile % 1);
-          measurements.push({ round, name, concurrency, requests: count, wall_ms: ms, rps: count * 1000 / ms,
-            latencies_ms: latencies, p95_ms: p95, memory: process.memoryUsage() });
+          for (let idx = 0; idx < Math.min(128, floresItems.length); idx++) {
+            candOutputs[idx] = await run(candidate, floresItems[idx]);
+          }
+          let nextCand = 128;
+          await Promise.all(Array.from({ length: 8 }, async () => {
+            while (nextCand < floresItems.length) {
+              const idx = nextCand++;
+              candOutputs[idx] = await run(candidate, floresItems[idx]);
+            }
+          }));
+          for (let idx = 0; idx < floresItems.length; idx++) {
+            const a = baseOutputs[idx], b = candOutputs[idx];
+            assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'FLORES generation limit');
+            if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
+              mismatches++;
+              differences.push({ mode, corpus: 'FLORES-200 devtest', index: idx, source: floresItems[idx].text,
+                baseline_text: target.decode(Array.from(a, Number).filter(id => id !== target.eos)),
+                candidate_text: target.decode(Array.from(b, Number).filter(id => id !== target.eos)) });
+            }
+            qualitySamples++;
+          }
         }
+        results.push({ pair: fixture.pair, mode, samples: expected.length + qualitySamples,
+          token_exact: expected.length + qualitySamples - differences.length,
+          flores_devtest_samples: qualitySamples,
+          differences, model_sha256: modelSha256, measurements });
+      } finally {
+        await addon.close(candidate); await addon.close(baseline);
       }
     }
-    let qualitySamples = 0;
-    if (flores) {
-      const language = fixture.pair.startsWith('en_') ? 'eng_Latn' : 'zho_Hans';
-      const lines = (await readFile(path.join(work, `flores200_dataset/devtest/${language}.devtest`), 'utf8')).trim().split('\n');
-      assert.equal(lines.length, 1012, 'Unexpected FLORES devtest size');
-      for (const text of lines) {
-        const ids = [...source.encode(text), source.eos];
-        const item = { text, x: BigInt64Array.from(ids, BigInt), c: BigInt64Array.from(shortlist.candidates(ids), BigInt) };
-        const a = await run(baseline, item), b = await run(candidate, item);
-        assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'FLORES generation limit');
-        if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
-          mismatches++;
-          differences.push({ corpus: 'FLORES-200 devtest', index: qualitySamples, source: text,
-            baseline_text: target.decode(Array.from(a, Number).filter(id => id !== target.eos)),
-            candidate_text: target.decode(Array.from(b, Number).filter(id => id !== target.eos)) });
-        }
-        qualitySamples++;
-      }
-    }
-    results.push({ pair: fixture.pair, samples: expected.length + qualitySamples, token_exact: expected.length + qualitySamples - differences.length,
-      flores_devtest_samples: qualitySamples,
-      differences, model_sha256: hash(await readFile(file('source-model'))), measurements });
   } finally {
-    await addon.close(candidate); await addon.close(baseline);
     source.close(); target.close();
   }
 }

@@ -5,6 +5,7 @@
 #include "../ssru/packed.h"
 #endif
 #include <algorithm>
+#include <atomic>
 #include <bit>
 #if defined(__APPLE__) && defined(__aarch64__)
 #include <sys/sysctl.h>
@@ -18,6 +19,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#ifdef _MSC_VER
+#pragma fp_contract(off)
+#endif
 
 namespace {
 void check(const OrtApi* api, OrtStatus* status) {
@@ -32,6 +36,8 @@ struct Value {
   explicit Value(const OrtApi* a) : api(a) {}
   Value(const Value&) = delete;
   Value& operator=(const Value&) = delete;
+  Value(Value&& other) noexcept : api(other.api), value(other.value) { other.value = nullptr; }
+  Value& operator=(Value&&) = delete;
   ~Value() { if (value) api->ReleaseValue(value); }
 };
 struct Shape {
@@ -170,16 +176,19 @@ struct Kernel {
   std::unique_ptr<mtran::ssru::Decoder> decoder;
 #ifdef MTRAN_SSRU_PACKED
   std::unique_ptr<const mtran::ssru::packed::ShortlistTable> shortlist;
+  std::unique_ptr<const mtran::ssru::packed::FullVocabQ4> fullVocab;
 #endif
   std::unordered_map<std::string, std::unique_ptr<Quantized>> matrices;
   size_t inputCount = 0;
   bool kleidi = false;
+  std::atomic<uint32_t> activeRuns{0};
 
   explicit Kernel(const OrtApi* a) : api(a) {}
   ~Kernel() {
     decoder.reset();
 #ifdef MTRAN_SSRU_PACKED
     shortlist.reset();
+    fullVocab.reset();
 #endif
     matrices.clear();
     if (dqmm) api->ReleaseOp(dqmm);
@@ -251,10 +260,19 @@ struct Kernel {
       if (!matrices.emplace(names[i], std::move(q)).second) throw std::runtime_error("Duplicate SSRU weight");
     }
     decoder = std::make_unique<mtran::ssru::Decoder>(config, weights);
+    int constCand = 0; const OrtValue* candVal = nullptr;
+    const bool hasConstCand = api->KernelInfoGetConstantInput_tensor(info, 2, &constCand, &candVal) == nullptr && constCand && candVal;
+    const bool isFullVocabGraph = hasConstCand && shape(api, candVal).size == 0;
 #ifdef MTRAN_SSRU_PACKED
-    if (usePacked && embData && outBias) {
+    if (isFullVocabGraph) {
+      if (!usePacked || !embData || !outBias) throw std::runtime_error("Full-vocab SSRU requires packed backend");
+      if (vocabSize < 9) throw std::runtime_error("Full-vocab SSRU requires vocabulary >= 9");
+      fullVocab = std::make_unique<const mtran::ssru::packed::FullVocabQ4>(embData, outBias, vocabSize, config.dim, kleidi);
+    } else if (usePacked && embData && outBias) {
       shortlist = std::make_unique<const mtran::ssru::packed::ShortlistTable>(embData, outBias, vocabSize, config.dim, kleidi);
     }
+#else
+    if (isFullVocabGraph) throw std::runtime_error("Full-vocab SSRU requires packed backend");
 #endif
     const char* namesDQ[] = {"T1", "T2"};
     ONNXTensorElementDataType typesDQ[] = {ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8};
@@ -285,8 +303,28 @@ struct Kernel {
     api->ReleaseOpAttr(attr);check(api,status);
 
   }
+  struct SentenceTensors {
+    const OrtApi* api;
+    float oneVal = 1.0f, zeroVal = 0.0f;
+    Value oneTensor, zeroTensor, sigIn, sigOut, normIn, normOut, sinIn, sinOut, attnQ, attnOut, attnScaled, attnProbs;
+    const float* sigInPtr = nullptr;
+    const float* normInPtr = nullptr;
+    const float* sinInPtr = nullptr;
+    const float* attnQPtr = nullptr;
+    float* attnOutPtr = nullptr;
+    std::vector<const float*> keyPtrs, valPtrs;
+    std::vector<Value> keyVals, valVals;
+    explicit SentenceTensors(const OrtApi* a)
+        : api(a), oneTensor(a), zeroTensor(a), sigIn(a), sigOut(a), normIn(a), normOut(a), sinIn(a), sinOut(a),
+          attnQ(a), attnOut(a), attnScaled(a), attnProbs(a) {}
+    static void rewrap(Kernel& k, Value& v, void* ptr, size_t bytes, const int64_t* dims, size_t rank) {
+      if (v.value) { k.api->ReleaseValue(v.value); v.value = nullptr; }
+      k.wrap(v, ptr, bytes, dims, rank, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    }
+  };
   struct Invocation {
     Kernel* kernel; OrtKernelContext* context;
+    SentenceTensors* tensors = nullptr;
     std::vector<float> alignA, scaled, probs;
 #ifdef MTRAN_SSRU_PACKED
     std::unique_ptr<mtran::ssru::packed::Workspace> workspace;
@@ -306,6 +344,33 @@ struct Kernel {
     const bool fuseFma = false;
 #endif
     linearImpl(raw, weight, input, rows, output, fuseFma ? bias : nullptr, dynamic, fuseFma ? nullptr : bias);
+  }
+  static void linearPair(void* raw, const mtran::ssru::Matrix& w1, const float* b1, bool separate1, float* out1,
+                         const mtran::ssru::Matrix& w2, float* out2, const float* input, size_t rows) {
+#ifdef MTRAN_SSRU_PACKED
+    auto& invocation = *static_cast<Invocation*>(raw); auto& k = *invocation.kernel;
+    const auto f1 = k.matrices.find(w1.name), f2 = k.matrices.find(w2.name);
+    if ((!k.kleidi || (w1.name.find("_rnn_") != std::string::npos && w2.name.find("_rnn_") != std::string::npos)) &&
+        f1 != k.matrices.end() && f2 != k.matrices.end() && f1->second->packed && f2->second->packed &&
+        w1.rows == w2.rows && f1->second->rows == w1.rows && f1->second->cols == w1.cols &&
+        f2->second->rows == w2.rows && f2->second->cols == w2.cols) {
+      if (!invocation.workspace) invocation.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
+      auto* activation = invocation.workspace->resize(rows * w1.rows);
+      float scale = 0; uint8_t zero = 0;
+      mtran::ssru::packed::quantizeLinearU8(input, rows, w1.rows, activation, scale, zero);
+#if defined(__linux__) && defined(__aarch64__)
+      const bool fuseFma = !separate1 && b1 != nullptr;
+#else
+      const bool fuseFma = false;
+#endif
+      f1->second->packed->multiply(activation, rows, scale, zero, out1, fuseFma ? b1 : nullptr, fuseFma ? nullptr : b1);
+      f2->second->packed->multiply(activation, rows, scale, zero, out2, nullptr, nullptr);
+      return;
+    }
+#endif
+    if (b1) linearBias(raw, w1, input, rows, b1, separate1, out1);
+    else linear(raw, w1, input, rows, out1);
+    linear(raw, w2, input, rows, out2);
   }
   static void linearImpl(void* raw, const mtran::ssru::Matrix& weight, const float* input,
                          size_t rows, float* output, const float* bias, bool kleidi = false, const float* separateBias = nullptr) {
@@ -368,57 +433,71 @@ struct Kernel {
     }
   }
   static void sigmoidAligned(void* raw, float* x, size_t dim) {
-    auto& v=*static_cast<Invocation*>(raw); auto& k=*v.kernel;
-    v.alignA.resize(dim);
-    const int64_t dims[]={1,1,1,static_cast<int64_t>(dim)};
-    Value a(k.api),y(k.api);
-    k.wrap(a,x,dim*4,dims,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(y,v.alignA.data(),dim*4,dims,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    const OrtValue* inputs[]={a.value}; OrtValue* outputs[]={y.value};
+    auto& v=*static_cast<Invocation*>(raw); auto& k=*v.kernel; auto& st=*v.tensors;
+    if (st.sigInPtr != x) {
+      const int64_t dims[]={1,1,1,static_cast<int64_t>(dim)};
+      SentenceTensors::rewrap(k, st.sigIn, x, dim * 4, dims, 4);
+      st.sigInPtr = x;
+    }
+    const OrtValue* inputs[]={st.sigIn.value}; OrtValue* outputs[]={st.sigOut.value};
     check(k.api,k.api->InvokeOp(v.context,k.sigmoidOp,inputs,1,outputs,1));
     std::copy_n(v.alignA.data(),dim,x);
   }
   static void normalizeAligned(void* raw, float* x, size_t dim, const float* gamma, const float* beta) {
-    auto& v=*static_cast<Invocation*>(raw); auto& k=*v.kernel;
-    v.alignA.resize(dim);
-    const int64_t dims[]={1,1,static_cast<int64_t>(dim)},oneDim[]={1};
-    float one=1,zero=0;
-    Value a(k.api),n(k.api),scale(k.api),bias(k.api);
-    k.wrap(a,x,dim*4,dims,3,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(n,v.alignA.data(),dim*4,dims,3,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(scale,&one,4,oneDim,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(bias,&zero,4,oneDim,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    const OrtValue* ni[]={a.value,scale.value,bias.value};OrtValue* no[]={n.value};
+    auto& v=*static_cast<Invocation*>(raw); auto& k=*v.kernel; auto& st=*v.tensors;
+    if (st.normInPtr != x) {
+      const int64_t dims[]={1,1,static_cast<int64_t>(dim)};
+      SentenceTensors::rewrap(k, st.normIn, x, dim * 4, dims, 3);
+      st.normInPtr = x;
+    }
+    const OrtValue* ni[]={st.normIn.value,st.oneTensor.value,st.zeroTensor.value};OrtValue* no[]={st.normOut.value};
     check(k.api,k.api->InvokeOp(v.context,k.normOp,ni,3,no,1));
     for (size_t i = 0; i < dim; ++i) x[i] = (v.alignA[i] * gamma[i]) + beta[i];
   }
   static void sinAligned(void* raw,float* x,size_t dim) {
-    auto& v=*static_cast<Invocation*>(raw);auto& k=*v.kernel;
-    v.alignA.resize(dim);const int64_t dims[]={static_cast<int64_t>(dim)};
-    Value a(k.api),y(k.api);
-    k.wrap(a,x,dim*4,dims,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(y,v.alignA.data(),dim*4,dims,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    const OrtValue* inputs[]={a.value};OrtValue* outputs[]={y.value};
+    auto& v=*static_cast<Invocation*>(raw);auto& k=*v.kernel; auto& st=*v.tensors;
+    if (st.sinInPtr != x) {
+      const int64_t dims[]={static_cast<int64_t>(dim)};
+      SentenceTensors::rewrap(k, st.sinIn, x, dim * 4, dims, 1);
+      st.sinInPtr = x;
+    }
+    const OrtValue* inputs[]={st.sinIn.value};OrtValue* outputs[]={st.sinOut.value};
     check(k.api,k.api->InvokeOp(v.context,k.sinOp,inputs,1,outputs,1));
     std::copy_n(v.alignA.data(),dim,x);
   }
   static void attentionAligned(void* raw,const float* query,const float* keys,const float* values,size_t heads,size_t width,size_t length,float* output){
-    auto& v=*static_cast<Invocation*>(raw);auto& k=*v.kernel;
-    const size_t count=heads*length;
-    v.scaled.resize(count);v.probs.resize(count);
-    const int64_t qs[]={1,int64_t(heads),1,int64_t(width)},ks[]={1,int64_t(heads),int64_t(width),int64_t(length)},vs[]={1,int64_t(heads),int64_t(length),int64_t(width)},ss[]={1,int64_t(heads),1,int64_t(length)};
-    Value q(k.api),key(k.api),value(k.api),scaled(k.api),probs(k.api),out(k.api);
-    k.wrap(q,const_cast<float*>(query),heads*width*4,qs,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(key,const_cast<float*>(keys),heads*width*length*4,ks,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(value,const_cast<float*>(values),heads*length*width*4,vs,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(scaled,v.scaled.data(),count*4,ss,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(probs,v.probs.data(),count*4,ss,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(out,output,heads*width*4,qs,4,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    const OrtValue* qi[]={q.value,key.value};OrtValue* qo[]={scaled.value};
+    auto& v=*static_cast<Invocation*>(raw);auto& k=*v.kernel; auto& st=*v.tensors;
+    if (st.attnQPtr != query) {
+      const int64_t qs[]={1,int64_t(heads),1,int64_t(width)};
+      SentenceTensors::rewrap(k, st.attnQ, const_cast<float*>(query), heads * width * 4, qs, 4);
+      st.attnQPtr = query;
+    }
+    if (st.attnOutPtr != output) {
+      const int64_t qs[]={1,int64_t(heads),1,int64_t(width)};
+      SentenceTensors::rewrap(k, st.attnOut, output, heads * width * 4, qs, 4);
+      st.attnOutPtr = output;
+    }
+    const OrtValue* keyVal = nullptr;
+    const OrtValue* valVal = nullptr;
+    for (size_t i = 0; i < st.keyPtrs.size(); ++i) {
+      if (st.keyPtrs[i] == keys && st.valPtrs[i] == values) {
+        keyVal = st.keyVals[i].value;
+        valVal = st.valVals[i].value;
+        break;
+      }
+    }
+    Value fallbackKey(k.api), fallbackVal(k.api);
+    if (!keyVal) {
+      const int64_t ks[]={1,int64_t(heads),int64_t(width),int64_t(length)}, vs[]={1,int64_t(heads),int64_t(length),int64_t(width)};
+      k.wrap(fallbackKey, const_cast<float*>(keys), heads * width * length * 4, ks, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+      k.wrap(fallbackVal, const_cast<float*>(values), heads * length * width * 4, vs, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+      keyVal = fallbackKey.value; valVal = fallbackVal.value;
+    }
+    const OrtValue* qi[]={st.attnQ.value, keyVal};OrtValue* qo[]={st.attnScaled.value};
     check(k.api,k.api->InvokeOp(v.context,k.qkOp,qi,2,qo,1));
-    const OrtValue* si[]={scaled.value};OrtValue* so[]={probs.value};
+    const OrtValue* si[]={st.attnScaled.value};OrtValue* so[]={st.attnProbs.value};
     check(k.api,k.api->InvokeOp(v.context,k.softmaxOp,si,1,so,1));
-    const OrtValue* vi[]={probs.value,value.value};OrtValue* vo[]={out.value};
+    const OrtValue* vi[]={st.attnProbs.value, valVal};OrtValue* vo[]={st.attnOut.value};
     check(k.api,k.api->InvokeOp(v.context,k.mm,vi,2,vo,1));
   }
   void compute(OrtKernelContext* context) {
@@ -430,12 +509,13 @@ struct Kernel {
     const auto xs = shape(api, x), es = shape(api, eos), cs = shape(api, candidates);
     if (xs.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || xs.dims.size() != 1 || xs.size == 0 ||
         es.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || es.dims != std::vector<int64_t>{1} ||
-        cs.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || cs.dims.size() != 1 || cs.size == 0) throw std::runtime_error("Invalid SSRU token input shape");
+        cs.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || cs.dims.size() != 1) throw std::runtime_error("Invalid SSRU token input shape");
     mtran::ssru::Request request;
     request.source_length = xs.size;
     request.eos_id = *static_cast<const int64_t*>(data(api, eos));
-    request.candidate_ids = static_cast<const int64_t*>(data(api, candidates)); request.candidate_count = cs.size;
-    const auto depth = decoder->config().depth;
+    request.candidate_ids = cs.size ? static_cast<const int64_t*>(data(api, candidates)) : nullptr; request.candidate_count = cs.size;
+    const auto& cfg = decoder->config();
+    const auto depth = cfg.depth;
     for (size_t i = 0; i < depth; ++i) { request.keys.push_back(floatView(api, get(3 + i))); request.values.push_back(floatView(api, get(3 + depth + i))); }
     struct ThreadScratch {
       mtran::ssru::Workspace workspace;
@@ -444,23 +524,72 @@ struct Kernel {
     thread_local ThreadScratch scratch;
     auto& workspace = scratch.workspace;
     auto& invocation = scratch.invocation;
-    invocation.kernel = this; invocation.context = context;
+
+    const size_t dim = cfg.dim, heads = cfg.heads, width = dim / heads, length = request.source_length;
+    if (heads > SIZE_MAX / length) throw std::runtime_error("SSRU attention score size overflow");
+    const size_t attnCount = heads * length;
+    invocation.alignA.resize(dim);
+    invocation.scaled.resize(attnCount);
+    invocation.probs.resize(attnCount);
+
+    SentenceTensors st(api);
+    const int64_t d4[] = {1, 1, 1, static_cast<int64_t>(dim)};
+    const int64_t d3[] = {1, 1, static_cast<int64_t>(dim)};
+    const int64_t d1[] = {static_cast<int64_t>(dim)}, oneDim[] = {1};
+    wrap(st.oneTensor, &st.oneVal, sizeof(float), oneDim, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    wrap(st.zeroTensor, &st.zeroVal, sizeof(float), oneDim, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    const int64_t ss[] = {1, static_cast<int64_t>(heads), 1, static_cast<int64_t>(length)};
+    const int64_t ks[] = {1, static_cast<int64_t>(heads), static_cast<int64_t>(width), static_cast<int64_t>(length)};
+    const int64_t vs[] = {1, static_cast<int64_t>(heads), static_cast<int64_t>(length), static_cast<int64_t>(width)};
+    wrap(st.sigOut, invocation.alignA.data(), dim * sizeof(float), d4, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    wrap(st.normOut, invocation.alignA.data(), dim * sizeof(float), d3, 3, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    wrap(st.sinOut, invocation.alignA.data(), dim * sizeof(float), d1, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    wrap(st.attnScaled, invocation.scaled.data(), attnCount * sizeof(float), ss, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    wrap(st.attnProbs, invocation.probs.data(), attnCount * sizeof(float), ss, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+    st.keyPtrs.reserve(depth); st.valPtrs.reserve(depth);
+    st.keyVals.reserve(depth); st.valVals.reserve(depth);
+    const size_t kvBytes = dim * length * sizeof(float);
+    for (size_t i = 0; i < depth; ++i) {
+      if (request.keys[i].size == dim * length && request.values[i].size == dim * length &&
+          request.keys[i].data && request.values[i].data) {
+        st.keyPtrs.push_back(request.keys[i].data);
+        st.valPtrs.push_back(request.values[i].data);
+        st.keyVals.emplace_back(api);
+        st.valVals.emplace_back(api);
+        wrap(st.keyVals.back(), const_cast<float*>(request.keys[i].data), kvBytes, ks, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+        wrap(st.valVals.back(), const_cast<float*>(request.values[i].data), kvBytes, vs, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+      }
+    }
+
+    activeRuns.fetch_add(1, std::memory_order_relaxed);
+    invocation.kernel = this; invocation.context = context; invocation.tensors = &st;
     struct ResetGuard {
       Invocation& inv;
-      ~ResetGuard() { inv.kernel = nullptr; inv.context = nullptr; }
-    } guard{invocation};
+      std::atomic<uint32_t>& active;
+      ~ResetGuard() {
+        active.fetch_sub(1, std::memory_order_relaxed);
+        inv.kernel = nullptr; inv.context = nullptr; inv.tensors = nullptr;
+      }
+    } guard{invocation, activeRuns};
     mtran::ssru::LinearBackend backend{&invocation, linear};
 #ifdef MTRAN_SSRU_PACKED
-    if (shortlist) {
+    if (cs.size > 0 && shortlist) {
       backend.argmax_shortlist = [](void* raw, const float* x_vec, size_t, const float*, const float*,
                                     const int64_t* cids, size_t ccount) {
         auto& inv = *static_cast<Invocation*>(raw);
         if (!inv.workspace) inv.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
-        return inv.kernel->shortlist->argmax(x_vec, cids, ccount, *inv.workspace);
+        return inv.kernel->shortlist->argmax(x_vec, cids, ccount, *inv.workspace, true);
+      };
+    } else if (cs.size == 0 && fullVocab) {
+      backend.argmax_full = [](void* raw, const float* x_vec, size_t) {
+        auto& inv = *static_cast<Invocation*>(raw);
+        if (!inv.workspace) inv.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
+        return inv.kernel->fullVocab->argmax(x_vec, *inv.workspace, inv.kernel->activeRuns.load(std::memory_order_relaxed) <= 1);
       };
     }
 #endif
     backend.matmul_bias = linearBias;
+    backend.matmul_pair = linearPair;
     decoder->decode(request, backend, workspace,
                     {&invocation, normalizeAligned, sigmoidAligned, sinAligned, attentionAligned});
     const auto& tokens = workspace.tokens();

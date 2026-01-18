@@ -91,6 +91,10 @@ test('missing source/lex or a source checksum mismatch is rejected before conver
   await expect(ensureNativeSsru({ ...model, lex: undefined })).rejects.toThrow('shortlist');
   await expect(ensureNativeSsru({ ...model, sourceModelSha256: 'bad' })).rejects.toThrow('checksum mismatch');
   expect(convert).not.toHaveBeenCalled();
+  const std = await ensureNativeSsru({ ...model, lex: undefined }, false);
+  const fast = await ensureNativeSsru(model, true);
+  expect(std.identity).not.toBe(fast.identity);
+  expect(convert).toHaveBeenCalledTimes(2);
 });
 
 test('independent processes share one conversion and atomically publish the same cache', async () => {

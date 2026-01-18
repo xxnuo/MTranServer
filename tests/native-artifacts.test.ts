@@ -39,7 +39,7 @@ test('release assembly requires matching binary hashes and all six passing platf
       writeFileSync(path.join(directory, `${target}.json`), JSON.stringify({ platform, arch, ort: '1.30.0',
         addon_sha256: createHash('sha256').update(bytes).digest('hex'),
         source_sha256: nativeInputHashes(),
-        results: [0, 1].map(() => ({ samples: 1024, token_exact: 1024, flores_devtest_samples: 1012, differences: [] })) }));
+        results: [0, 1, 2, 3].map(i => ({ mode: i % 2 ? 'standard' : 'fast', samples: 1024, token_exact: 1024, flores_devtest_samples: 1012, differences: [] })) }));
       for (const host of ['node-http', 'electron-http', ...(platform === 'linux' ? ['electron-http-2', 'electron-http-3'] : [])])
         writeFileSync(path.join(directory, `${target}-${host}.json`), JSON.stringify({ platform, arch, status: 'passed',
           addon_sha256: createHash('sha256').update(bytes).digest('hex'),

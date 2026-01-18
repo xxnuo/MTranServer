@@ -47,9 +47,12 @@ struct LinearBackend {
   // Optional fused quantized bias; separate_bias preserves first-step constant folding.
   void (*matmul_bias)(void* context, const Matrix& weight, const float* input,
                       std::size_t rows, const float* bias, bool separate_bias, float* output) = nullptr;
+  void (*matmul_pair)(void* context, const Matrix& w1, const float* b1, bool separate_b1, float* out1,
+                      const Matrix& w2, float* out2, const float* input, std::size_t rows) = nullptr;
   std::size_t (*argmax_shortlist)(void* context, const float* x, std::size_t dim,
                                   const float* embedding, const float* output_bias,
                                   const std::int64_t* candidate_ids, std::size_t candidate_count) = nullptr;
+  std::size_t (*argmax_full)(void* context, const float* x, std::size_t dim) = nullptr;
 };
 
 // Optional synchronous math operations, independent of the matrix backend.

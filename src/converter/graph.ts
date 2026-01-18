@@ -163,7 +163,7 @@ function dynamicInt8(root: Graph, mode: Mode) {
   rewrite(root); prune(root);
 }
 export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qall', shortlist = false, nativeSsru = false): Uint8Array {
-  if (nativeSsru && (mode !== 'qall' || shortlist !== true)) throw new Error('nativeSsru requires mode=qall and shortlist=true');
+  if (nativeSsru && (mode !== 'qall' || typeof shortlist !== 'boolean')) throw new Error('nativeSsru requires mode=qall and boolean shortlist');
   const g = graph('mozilla_release_greedy'), b = new Builder(g, g, { n: 0 }, c, weights, mode, shortlist);
   if (nativeSsru && (!Number.isInteger(b.dim) || b.dim < 4 || b.dim % 2 || !Number.isInteger(b.headsCount) || b.headsCount < 1 || b.dim % b.headsCount || ['enc-depth', 'dec-depth', 'transformer-ffn-depth'].some(k => !Number.isInteger(c[k]) || c[k] < 1))) throw new Error('Invalid nativeSsru model dimensions');
   const emb = weights.get(b.emb);
@@ -177,7 +177,7 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
   const frequency = new Float32Array(b.dim), offsets = new Float32Array(b.dim);
   for (let i = 0; i < b.dim; i++) { frequency[i] = Math.pow(1e-4, (i % (b.dim / 2)) / (b.dim / 2 - 1)); offsets[i] = Math.floor(i / (b.dim / 2)) * Math.PI / 2; }
   g.initializer.push(ft('position_frequency', [b.dim], frequency), ft('position_offset', [b.dim], offsets));
-  if (!shortlist) {
+  if (!shortlist && !nativeSsru) {
     const n = emb.dims[0], pt = new Float32Array(emb.values.length);
     for (let i = 0; i < n; i++) for (let j = 0; j < b.dim; j++) pt[j * n + i] = emb.values[i * b.dim + j];
     if (mode === 'fp32') g.initializer.push(ft('projection_T', [b.dim, n], pt));
@@ -201,7 +201,8 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
   for (let i = 1; i <= b.depth; i++) { const p = `decoder_l${i}_context`; b.keys.push(b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2)); b.vals.push(b.heads(b.linear(x, p + '_Wv', p + '_bv'))); }
   if (nativeSsru) {
     const names = g.initializer.map(t => t.name).filter(name => name === b.emb || name === 'decoder_ff_logit_out_b' || name === 'position_frequency' || name === 'position_offset' || /^decoder_l\d+_/.test(name)).sort();
-    g.node.push({ name: 'native_ssru', opType: 'SsruDecode', domain: 'com.mtran', input: ['X', 'eos_id', 'candidate_ids', ...b.keys, ...b.vals, ...names], output: ['Y'], attribute: [ia('dim', b.dim), ia('heads', b.headsCount), ia('depth', b.depth), ia('ffn_depth', c['transformer-ffn-depth']), { name: 'weight_names', type: 8, strings: names.map(name => Buffer.from(name, 'utf8')) }] });
+    const candInput = shortlist ? 'candidate_ids' : b.icon([0]);
+    g.node.push({ name: 'native_ssru', opType: 'SsruDecode', domain: 'com.mtran', input: ['X', 'eos_id', candInput, ...b.keys, ...b.vals, ...names], output: ['Y'], attribute: [ia('dim', b.dim), ia('heads', b.headsCount), ia('depth', b.depth), ia('ffn_depth', c['transformer-ffn-depth']), { name: 'weight_names', type: 8, strings: names.map(name => Buffer.from(name, 'utf8')) }] });
   } else {
     const zero = b.fc([1, 1, 1, b.dim], ...new Float32Array(b.dim));
     const [hidden, cells] = b.decode(zero, b.fc([], 0), Array(b.depth).fill(zero)), first = b.project(hidden);
