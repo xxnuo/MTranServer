@@ -172,26 +172,8 @@ export async function selectBackend(model: string, probe: (session: ort.Inferenc
       session = await createSession(model, 'cpu', winner.cpuThreads, winner.tuning);
       await probe(session);
     }
-    const activeSession = session;
-    let maxConcurrentRuns = 1;
-    if (winner.provider === 'cpu') {
-      const poolSize = Math.max(1, Number.parseInt(process.env.UV_THREADPOOL_SIZE ?? '4', 10) || 4);
-      // Runs share this session's native thread pools; they do not each allocate another pool.
-      const limit = Math.min(poolSize, budget);
-      let bestRate = 1000 / winner.medianMs!;
-      for (let concurrency = 2; concurrency <= limit; concurrency++) {
-        const times: number[] = [];
-        await Promise.all(Array.from({ length: concurrency }, () => probe(activeSession)));
-        for (let i = 0; i < 3; i++) {
-          const started = performance.now();
-          await Promise.all(Array.from({ length: concurrency }, () => probe(activeSession)));
-          times.push(performance.now() - started);
-        }
-        const medianMs = times.sort((a, b) => a - b)[1], requestsPerSecond = concurrency * 1000 / medianMs;
-        measurements.push({ ...winner, concurrency, medianMs, requestsPerSecond });
-        if (requestsPerSecond > bestRate * 1.03) { bestRate = requestsPerSecond; maxConcurrentRuns = concurrency; }
-      }
-    }
+    // onnxruntime-node 1.30 runs binding.run synchronously inside setImmediate.
+    const maxConcurrentRuns = 1;
     const info: BackendInfo = { provider: winner.provider, cpuThreads: winner.cpuThreads, tuning: winner.tuning!, maxConcurrentRuns, measurements,
       ...(fallbackReason ? { fallbackReason } : {}) };
     const result = { info, fallbackCpuThreads: fallback.cpuThreads, fallbackCpuTuning: fallback.tuning! };

@@ -20,6 +20,7 @@ test('CPU-only mode skips GPU discovery and does not reuse a cached accelerator'
     process.env.MT_CPU_ONLY = 'false';
     const gpu = await selectBackend('model.onnx', probe, 1, 'cpu-only-test');
     expect(gpu.info.provider).toBe('webgpu');
+    expect(gpu.info.maxConcurrentRuns).toBe(1);
     await gpu.session.release();
     backends.mockClear();
     process.env.MT_CPU_ONLY = 'true';
@@ -130,12 +131,15 @@ test('model identity reuses backend selection and failed cached candidates trigg
   expect(probes).toBe(calibrationProbes + 1);
   expect(cached.info.selectionCached).toBe(true);
   expect(cached.info.tuning).toEqual(first.info.tuning);
+  expect(first.info.maxConcurrentRuns).toBe(1);
+  expect(cached.info.maxConcurrentRuns).toBe(1);
   expect(create.mock.calls.at(-1)?.[1]?.executionMode).toBe(first.info.tuning.executionMode);
   await cached.session.release();
   create.mockRejectedValueOnce(new Error('Cached device unavailable'));
   const recovered = await selectBackend('model.onnx', probe, 1, 'cached-test-model');
   expect(probes).toBe(calibrationProbes * 2 + 1);
   expect(recovered.info.selectionCached).not.toBe(true);
+  expect(recovered.info.maxConcurrentRuns).toBe(1);
   await recovered.session.release();
   const changedModel = await selectBackend('model.onnx', probe, 1, 'different-model-identity');
   expect(probes).toBe(calibrationProbes * 3 + 1);
@@ -155,7 +159,8 @@ test('native session settings retain CPU auto threads and DirectML safety constr
   await expect(selectBackend('model.onnx', async () => {}, -1)).rejects.toThrow('non-negative integer');
 });
 
-test('calibration keeps faster native settings and bounds useful CPU concurrency by available workers', async () => {
+test.each(['1', '4', '128'])('calibration keeps faster native settings without concurrent probes with UV_THREADPOOL_SIZE=%s', async poolSize => {
+  const previous = process.env.UV_THREADPOOL_SIZE;
   spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }]);
   let clock = 0;
   spyOn(performance, 'now').mockImplementation(() => clock);
@@ -163,17 +168,29 @@ test('calibration keeps faster native settings and bounds useful CPU concurrency
     cost: options.extra.session.dynamic_block_base === '4' ? 5 : 20,
     release: async () => {},
   }) as any);
-  const selected = await selectBackend('model.onnx', async (session: any) => {
-    const end = clock + session.cost;
-    await Promise.resolve();
-    clock = Math.max(clock, end);
-  }, 2);
-  expect(selected.info.tuning.dynamicBlockBase).toBe(4);
-  expect(selected.info.tuning.graphOptimizationLevel).toBe('all');
-  expect(selected.info.tuning.spinning).toBe(true);
-  expect(selected.fallbackCpuTuning).toEqual(selected.info.tuning);
-  expect(selected.info.maxConcurrentRuns).toBe(Math.min(4, availableParallelism()));
-  await selected.session.release();
+  let active = 0, peak = 0;
+  try {
+    process.env.UV_THREADPOOL_SIZE = poolSize;
+    const selected = await selectBackend('model.onnx', async (session: any) => {
+      active++;
+      peak = Math.max(peak, active);
+      try {
+        clock += session.cost;
+        await Promise.resolve();
+      } finally { active--; }
+    }, 2);
+    expect(selected.info.tuning.dynamicBlockBase).toBe(4);
+    expect(selected.info.tuning.graphOptimizationLevel).toBe('all');
+    expect(selected.info.tuning.spinning).toBe(true);
+    expect(selected.fallbackCpuTuning).toEqual(selected.info.tuning);
+    expect(selected.info.maxConcurrentRuns).toBe(1);
+    expect(peak).toBe(1);
+    expect(selected.info.measurements.every(m => m.concurrency === undefined && m.requestsPerSecond === undefined)).toBe(true);
+    await selected.session.release();
+  } finally {
+    if (previous === undefined) delete process.env.UV_THREADPOOL_SIZE;
+    else process.env.UV_THREADPOOL_SIZE = previous;
+  }
 });
 
 test('clearly slower accelerators stop after the short probe', async () => {
@@ -206,6 +223,7 @@ test('an accelerator that disappears after calibration falls back to the measure
   expect(selected.info.provider).toBe('cpu');
   expect(selected.info.tuning).toEqual(selected.fallbackCpuTuning);
   expect(selected.info.fallbackReason).toContain('device disappeared');
+  expect(selected.info.maxConcurrentRuns).toBe(1);
   await selected.session.release();
 });
 
