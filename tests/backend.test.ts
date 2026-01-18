@@ -3,8 +3,48 @@ import * as ort from 'onnxruntime-node';
 import { availableParallelism } from 'node:os';
 import { createSession, selectBackend } from '../src/core/backend';
 import { TranslationEngine } from '../src/core/engine';
+import { Tokenizer } from '../src/core/tokenizer';
 
 afterEach(() => mock.restore());
+
+test('calibration accepts bounded generation without EOS but real translation rejects incomplete output', async () => {
+  spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }]);
+  spyOn(Tokenizer, 'load').mockResolvedValue({ encode: () => [10, 11], eos: 0, close() {} } as any);
+  let clock = 0;
+  spyOn(performance, 'now').mockImplementation(() => clock);
+  const inputs: number[][] = [];
+  const dispose = mock(() => {}), release = mock(async () => {});
+  spyOn(ort.InferenceSession, 'create').mockImplementation(async () => ({
+    release, run: async ({ X }: any) => {
+      inputs.push(Array.from(X.data, Number));
+      clock += 5;
+      return { Y: { data: BigInt64Array.of(12n, 13n), dispose } };
+    },
+  }) as any);
+  const engine = new TranslationEngine();
+  try {
+    await engine.init({ directory: '.', model: 'model.onnx', sourceVocab: 'src', targetVocab: 'dst', identity: 'bounded-probe' }, { 'cpu-threads': 1 });
+    expect(engine.backend?.provider).toBe('cpu');
+    expect(inputs.every(ids => JSON.stringify(ids) === '[10,11,0]')).toBe(true);
+    await expect(engine.translateAsync('test')).rejects.toThrow('Translation exceeded generation limit');
+    expect(dispose).toHaveBeenCalledTimes(inputs.length);
+  } finally { await engine.destroy(); }
+});
+
+test('calibration still rejects malformed model output and releases its tensors', async () => {
+  spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }]);
+  spyOn(Tokenizer, 'load').mockResolvedValue({ encode: () => [10], eos: 0, close() {} } as any);
+  const dispose = mock(() => {});
+  spyOn(ort.InferenceSession, 'create').mockResolvedValue({
+    release: async () => {}, run: async () => ({ Y: { data: Float32Array.of(1), dispose } }),
+  } as any);
+  const engine = new TranslationEngine();
+  try {
+    await expect(engine.init({ directory: '.', model: 'model.onnx', sourceVocab: 'src', targetVocab: 'dst', identity: 'malformed-probe' }, { 'cpu-threads': 1 }))
+      .rejects.toThrow('Invalid translation output');
+    expect(dispose).toHaveBeenCalled();
+  } finally { await engine.destroy(); }
+});
 
 test('automatic selection measures CPU and accelerator candidates and releases slower sessions', async () => {
   spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }, { name: 'webgpu', bundled: true }]);
