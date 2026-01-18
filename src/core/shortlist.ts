@@ -1,22 +1,121 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { endianness } from 'node:os';
 import protobuf from 'protobufjs';
+
+const littleEndian = endianness() === 'LE';
 
 export interface Lexicon { first: number; offsets: number[]; targets: number[] }
 export class Shortlist {
-  private constructor(private lex: Lexicon, private targetSize: number, private shared: boolean, private eos: number, private byteIds: number[]) {}
+  private readonly wordCount: number;
+  private readonly baseWords: Uint32Array;
+  private readonly scratch: Uint32Array;
+  private readonly offsets: Int32Array;
+  private readonly targets: Uint32Array;
+  private readonly baseCount: number;
+
+  private constructor(private lex: Lexicon, private targetSize: number, private shared: boolean, eos: number, byteIds: number[]) {
+    assert(Number.isSafeInteger(targetSize) && targetSize > 1, 'invalid target size');
+    assert(Number.isSafeInteger(eos) && eos >= 0 && eos < targetSize && eos !== 1, 'invalid EOS');
+    this.wordCount = (targetSize + 31) >>> 5;
+    this.baseWords = new Uint32Array(this.wordCount);
+    this.scratch = new Uint32Array(this.wordCount);
+    this.offsets = Int32Array.from(lex.offsets);
+    this.targets = Uint32Array.from(lex.targets);
+    let count = 0;
+    const addBase = (id: number) => {
+      const idx = id >>> 5, bit = 1 << (id & 31);
+      if ((this.baseWords[idx] & bit) === 0) { this.baseWords[idx] |= bit; count++; }
+    };
+    const firstLimit = Math.min(lex.first, targetSize);
+    for (let id = 0; id < firstLimit; id++) addBase(id);
+    addBase(eos);
+    for (const id of byteIds) {
+      assert(Number.isSafeInteger(id) && id >= 0 && id < targetSize, 'invalid byte ID');
+      addBase(id);
+    }
+    this.baseCount = count;
+  }
   static async load(lexPath: string, sourceVocab: string, targetVocab: string): Promise<Shortlist> {
     const [lexBytes, sourceBytes, targetBytes] = await Promise.all([readFile(lexPath), readFile(sourceVocab), readFile(targetVocab)]);
     const source = vocabularyInfo(sourceBytes), target = vocabularyInfo(targetBytes);
     assert(Number.isSafeInteger(target.eos) && target.eos >= 0 && target.eos < target.size && target.eos !== 1, 'invalid EOS');
     const lex = parseLexicon(lexBytes, target.size, source.size);
-    const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
-    return new Shortlist(lex, target.size, hash(sourceBytes) === hash(targetBytes), target.eos, target.byteIds);
+    const shared = sourceBytes.length === targetBytes.length && Buffer.compare(sourceBytes, targetBytes) === 0;
+    return new Shortlist(lex, target.size, shared, target.eos, target.byteIds);
+  }
+  private fillBitset(source: ArrayLike<number | bigint>): number {
+    assert(source.length > 0, 'invalid source IDs');
+    const words = this.scratch;
+    words.set(this.baseWords);
+    let count = this.baseCount;
+    const { offsets, targets, targetSize, shared } = this;
+    const maxSource = offsets.length - 1;
+    for (let i = 0; i < source.length; i++) {
+      const raw = source[i];
+      const id = typeof raw === 'bigint' ? Number(raw) : raw;
+      assert(Number.isSafeInteger(id) && id >= 0 && id < maxSource, 'invalid source ID');
+      if (shared && id < targetSize) {
+        const idx = id >>> 5, bit = 1 << (id & 31);
+        if ((words[idx] & bit) === 0) { words[idx] |= bit; count++; }
+      }
+      const start = offsets[id], end = offsets[id + 1];
+      for (let j = start; j < end; j++) {
+        const tid = targets[j];
+        const idx = tid >>> 5, bit = 1 << (tid & 31);
+        if ((words[idx] & bit) === 0) { words[idx] |= bit; count++; }
+      }
+    }
+    for (let id = this.lex.first; id < targetSize && (count & 7) !== 0; id++) {
+      const idx = id >>> 5, bit = 1 << (id & 31);
+      if ((words[idx] & bit) === 0) { words[idx] |= bit; count++; }
+    }
+    return count;
   }
   candidates(ids: number[]): number[] {
-    assert(ids.length > 0, 'invalid source IDs');
-    return generateCandidates(this.lex, ids, this.targetSize, this.shared, this.eos, this.byteIds);
+    const count = this.fillBitset(ids);
+    const out = new Array<number>(count);
+    const words = this.scratch;
+    let pos = 0;
+    for (let i = 0; i < words.length; i++) {
+      let w = words[i];
+      const base = i << 5;
+      while (w !== 0) {
+        const lsb = w & -w;
+        out[pos++] = base + (31 - Math.clz32(lsb));
+        w ^= lsb;
+      }
+    }
+    return out;
+  }
+  candidatesBigInt(ids: ArrayLike<number | bigint>): BigInt64Array {
+    const count = this.fillBitset(ids);
+    const out = new BigInt64Array(count);
+    const words = this.scratch;
+    let pos = 0;
+    if (littleEndian) {
+      const i32 = new Int32Array(out.buffer);
+      for (let i = 0; i < words.length; i++) {
+        let w = words[i];
+        const base = i << 5;
+        while (w !== 0) {
+          const lsb = w & -w;
+          i32[(pos++) << 1] = base + (31 - Math.clz32(lsb));
+          w ^= lsb;
+        }
+      }
+    } else {
+      for (let i = 0; i < words.length; i++) {
+        let w = words[i];
+        const base = i << 5;
+        while (w !== 0) {
+          const lsb = w & -w;
+          out[pos++] = BigInt(base + (31 - Math.clz32(lsb)));
+          w ^= lsb;
+        }
+      }
+    }
+    return out;
   }
 }
 export function checksum(bytes: Buffer): bigint {

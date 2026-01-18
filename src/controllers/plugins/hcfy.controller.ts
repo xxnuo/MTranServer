@@ -122,17 +122,11 @@ export class HcfyController extends Controller {
     }
 
     const paragraphs = body.text.split('\n');
-    const results: string[] = [];
-
-    for (const paragraph of paragraphs) {
-      if (!paragraph.trim()) {
-        results.push('');
-        continue;
-      }
-
-      const result = await translateWithPivot(detectedSourceLang, targetLang, paragraph, false);
-      results.push(result);
-    }
+    const results = await Promise.all(
+      paragraphs.map(paragraph =>
+        paragraph.trim() ? translateWithPivot(detectedSourceLang, targetLang, paragraph, false) : Promise.resolve('')
+      )
+    );
 
     return {
       text: body.text,

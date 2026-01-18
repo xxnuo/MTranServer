@@ -1,6 +1,6 @@
 import * as ort from 'onnxruntime-node';
 import { availableParallelism } from 'node:os';
-import { createNativeSession, hasNativeSsru, NativeRunError, type InferenceSession } from './native.js';
+import { createNativeSession, hasNativeAddon, hasNativeSsru, NativeRunError, type InferenceSession } from './native.js';
 import { parseFragment } from 'parse5';
 import { createMetalWorker, getMetalRuntime, type MetalWorker, type MetalInput } from './metal.js';
 import { Tokenizer } from './tokenizer.js';
@@ -13,8 +13,9 @@ import * as logger from '../logger/index.js';
 export interface TranslationOptions { sourceLang?: string; targetLang?: string; cacheSize?: number }
 export interface TranslateOptions { qualityScores?: boolean; alignment?: boolean; html?: boolean }
 export interface TranslationConfig { 'cpu-threads'?: number; 'max-length-break'?: number; 'max-concurrent-runs'?: number }
+const sentenceSegmenter = new Intl.Segmenter(undefined, { granularity: 'sentence' });
 function splitSentences(content: string): string[] {
-  const sentences = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(content)].map(s => s.segment);
+  const sentences = [...sentenceSegmenter.segment(content)].map(s => s.segment);
   if (sentences.length === 1) {
     const chars = Array.from(content);
     if (chars.length < 2) throw new Error('Single character exceeds model input limit');
@@ -85,7 +86,8 @@ export class TranslationEngine {
           // A bounded timing probe need not finish a translation; user requests still require EOS.
           for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos, false);
         };
-        const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity, !!getMetalRuntime(model));
+        const skipCpuSweep = !!model.lex && config['cpu-threads'] === undefined && hasNativeAddon();
+        const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity, !!getMetalRuntime(model), skipCpuSweep);
         let activeSession: InferenceSession = selected.session;
         let info = selected.info;
         const inputNames = selected.session.inputNames ?? ['X', 'eos_id'];
@@ -211,7 +213,7 @@ export class TranslationEngine {
     const [, before, content, after] = match;
     const ids = this.src!.encode(content);
     if (ids.length + 1 > this.tokenLimit || content.length > this.tokenLimit) {
-      if (parallel && this.running === 1 && !this.metalBusy && !this.metalDisabled && this.converted) {
+      if (parallel && !this.metalBusy && !this.metalDisabled && this.converted && (this.running === 1 || this.metalSelections.size > 0)) {
         const accelerated = await this.translateMetal(content);
         if (accelerated !== undefined) return before + accelerated + after;
       }
@@ -232,11 +234,13 @@ export class TranslationEngine {
       if (failed) throw failure;
       return before + out.join('') + after;
     }
-    ids.push(this.src!.eos);
-    const input = new ort.Tensor('int64', BigInt64Array.from(ids.map(BigInt)), [ids.length]);
+    const inputIds = new BigInt64Array(ids.length + 1);
+    for (let i = 0; i < ids.length; i++) inputIds[i] = BigInt(ids[i]);
+    inputIds[ids.length] = BigInt(this.src!.eos);
+    const input = new ort.Tensor('int64', inputIds, [inputIds.length]);
     const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst!.eos)), [1]);
     try {
-      let tokens: number[];
+      let tokens: number[] | Int32Array;
       try { tokens = await this.infer(this.session!, input, eos); }
       catch (error) {
         if (!this.backend || (this.backend.provider === 'cpu' && !(error instanceof NativeRunError))) throw error;
@@ -279,6 +283,7 @@ export class TranslationEngine {
     const batchSize = Math.min(32, leaves.length);
     const key = `${batchSize}:${maxTokens}`;
     if (this.metalSelections.get(key) === false) return;
+    if (!this.metalSelections.has(key) && this.running !== 1) return;
     this.metalBusy = true;
     let worker: MetalWorker | undefined;
     try {
@@ -356,8 +361,10 @@ export class TranslationEngine {
       const feeds: Record<string, ort.Tensor> = { X: input, eos_id: eos };
       if (session.inputNames?.includes('candidate_ids')) {
         if (!this.shortlist) throw new Error('Shortlist ONNX graph requires a validated lexicon (ConvertedModel.lex)');
-        const ids = this.shortlist.candidates(Array.from(input.data as BigInt64Array, Number));
-        feeds.candidate_ids = candidates = new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
+        const rawCandidates = typeof (this.shortlist as any).candidatesBigInt === 'function'
+          ? this.shortlist.candidatesBigInt(input.data as BigInt64Array)
+          : BigInt64Array.from(this.shortlist.candidates(Array.from(input.data as BigInt64Array, Number)), BigInt);
+        feeds.candidate_ids = candidates = new ort.Tensor('int64', rawCandidates, [rawCandidates.length]);
       }
       const { outputs, wasNative } = await this.runInference(session, feeds);
       try {
@@ -365,11 +372,19 @@ export class TranslationEngine {
         const invalid = () => new (wasNative ? NativeRunError : Error)('Invalid translation output');
         if (y?.type !== 'int64' || !(y.data instanceof BigInt64Array) || !Array.isArray(y.dims) || y.dims.length !== 1
           || y.dims[0] !== y.data.length || y.data.length < 1 || y.data.length > 1 + 3 * input.data.length) throw invalid();
-        const tokens = Array.from(y.data, Number);
-        if (tokens.some(token => !Number.isSafeInteger(token) || token < 0 || token >= this.dst!.size)) throw invalid();
-        const end = tokens.indexOf(this.dst!.eos);
+        const raw = y.data;
+        const size = BigInt(this.dst!.size), eosId = BigInt(this.dst!.eos);
+        let end = -1;
+        for (let i = 0; i < raw.length; i++) {
+          const token = raw[i];
+          if (token < 0n || token >= size) throw invalid();
+          if (end < 0 && token === eosId) end = i;
+        }
         if (end < 0 && requireEos) throw new Error('Translation exceeded generation limit');
-        return end < 0 ? tokens : tokens.slice(0, end);
+        const length = end < 0 ? raw.length : end;
+        const tokens = new Int32Array(length);
+        for (let i = 0; i < length; i++) tokens[i] = Number(raw[i]);
+        return tokens;
       } finally { for (const tensor of Object.values(outputs)) tensor.dispose(); }
     } finally { candidates?.dispose(); }
   }

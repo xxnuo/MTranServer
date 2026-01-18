@@ -1,5 +1,6 @@
 import path from 'path';
 import { parseFragment } from 'parse5';
+import { readFileSync, statSync } from 'fs';
 import { access, readFile, readdir } from 'fs/promises';
 import { TranslationEngine } from '@/core/engine.js';
 import { getConfig } from '@/config/index.js';
@@ -21,10 +22,38 @@ interface EngineInfo {
 const engines = new Map<string, EngineInfo>();
 const inFlightTranslations = new WeakMap<TranslationEngine, Map<string, Promise<string>>>();
 const loadingPromises = new Map<string, { lexicalShortlist: boolean; workersPerLanguage: number; promise: Promise<EngineInfo> }>();
+const manifestIdentityCache = new Map<string, { ino: bigint; size: bigint; mtimeNs: bigint; ctimeNs: bigint; identity: unknown }>();
 let warmupPromise: Promise<void> | undefined;
 let warmupController: AbortController | undefined;
 const zhCommaTest = /,/;
 const zhCommaGlobal = /,/g;
+
+function readManifestIdentitySync(manifestPath: string): unknown {
+  try {
+    const st = statSync(manifestPath, { bigint: true, throwIfNoEntry: false });
+    if (!st) {
+      manifestIdentityCache.delete(manifestPath);
+      return null;
+    }
+    const settled = Number(st.mtimeMs) + 25 < Date.now();
+    const cached = manifestIdentityCache.get(manifestPath);
+    if (settled && cached && cached.ino === st.ino && cached.size === st.size
+      && cached.mtimeNs === st.mtimeNs && cached.ctimeNs === st.ctimeNs) {
+      return cached.identity;
+    }
+    const identity = JSON.parse(readFileSync(manifestPath, 'utf8')).identity;
+    if (settled) {
+      if (manifestIdentityCache.size >= 128) manifestIdentityCache.delete(manifestIdentityCache.keys().next().value!);
+      manifestIdentityCache.set(manifestPath, { ino: st.ino, size: st.size, mtimeNs: st.mtimeNs, ctimeNs: st.ctimeNs, identity });
+    } else {
+      manifestIdentityCache.delete(manifestPath);
+    }
+    return identity;
+  } catch {
+    manifestIdentityCache.delete(manifestPath);
+    return null;
+  }
+}
 
 function formatChinesePunctuation(text: string, toLang: string, isHTML: boolean, enabled: boolean): string {
   if (!enabled || isHTML || !toLang.startsWith('zh')) {
@@ -61,9 +90,20 @@ async function getOrCreateSingleEngine(
     signal?.throwIfAborted();
     let loading = loadingPromises.get(key);
     if (!loading) {
+      const fastConfig = getConfig();
+      const existingFast = engines.get(key);
+      if (existingFast && existingFast.lexicalShortlist === (fastConfig.lexicalShortlist === true)
+        && existingFast.workersPerLanguage === fastConfig.workersPerLanguage) {
+        const manifestPath = path.join(fastConfig.modelDir, `${fromLang}_${toLang}`, 'manifest.json');
+        if (readManifestIdentitySync(manifestPath) === existingFast.engine.identity) {
+          existingFast.lastUsed = new Date();
+          resetIdleTimer(existingFast);
+          return existingFast.engine;
+        }
+      }
       const request = {
-        lexicalShortlist: getConfig().lexicalShortlist === true,
-        workersPerLanguage: getConfig().workersPerLanguage,
+        lexicalShortlist: fastConfig.lexicalShortlist === true,
+        workersPerLanguage: fastConfig.workersPerLanguage,
         promise: Promise.resolve().then(async (): Promise<EngineInfo> => {
           const config = getConfig();
           request.lexicalShortlist = config.lexicalShortlist === true;
@@ -197,15 +237,15 @@ async function translateSingleLanguageText(
   const engine = await getOrCreateSingleEngine(fromLang, toLang, text);
   const cacheKey = () => [fromLang, toLang, engine.identity, engine.backend?.provider, engine.backend?.runtime, engine.backend?.cpuThreads, engine.backend?.tuning, text, isHTML];
   const startKey = cacheKey();
-  const key = JSON.stringify(startKey);
   const cached = readCache(startKey);
   if (cached !== null) return cached;
+  if (getConfig().cacheSize <= 0) return engine.translateAsync(text, { html: isHTML });
+  const key = JSON.stringify(startKey);
   const translate = async () => {
     const result = await engine.translateAsync(text, { html: isHTML });
     if (JSON.stringify(cacheKey()) === key) writeCache(result, startKey);
     return result;
   };
-  if (getConfig().cacheSize <= 0) return translate();
 
   let pending = inFlightTranslations.get(engine);
   if (!pending) {

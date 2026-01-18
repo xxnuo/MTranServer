@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <limits>
 #include <stdexcept>
 #include <unordered_map>
@@ -27,9 +28,13 @@ void validate(const TensorView& tensor, const char* name) {
 }
 
 void finite(const float* data, std::size_t size, const char* name) {
-  for (std::size_t i = 0; i < size; ++i)
-    if (!std::isfinite(data[i]))
-      throw std::runtime_error(std::string("SSRU nonfinite value: ") + name);
+  std::uint32_t bad = 0;
+  for (std::size_t i = 0; i < size; ++i) {
+    std::uint32_t bits;
+    std::memcpy(&bits, &data[i], sizeof(bits));
+    bad |= ((bits & 0x7f800000u) == 0x7f800000u);
+  }
+  if (bad) throw std::runtime_error(std::string("SSRU nonfinite value: ") + name);
 }
 
 void normalize(float* x, std::size_t dim, const float* scale, const float* bias) {
@@ -180,14 +185,17 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
     w.ffn_a_.resize(max_ffn_width_);
     w.ffn_b_.resize(max_ffn_width_);
     w.scores_.resize(r.source_length);
-    w.projection_.resize(multiply(dim, r.candidate_count));
-    w.bias_.resize(r.candidate_count);
-    w.logits_.resize(r.candidate_count);
-    for (std::size_t j = 0; j < r.candidate_count; ++j) {
-      const auto token = static_cast<std::size_t>(r.candidate_ids[j]);
-      w.bias_[j] = token == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[token];
-      for (std::size_t k = 0; k < dim; ++k)
-        w.projection_[k * r.candidate_count + j] = embedding_.data[token * dim + k];
+    multiply(dim, r.candidate_count);
+    if (!backend.argmax_shortlist) {
+      w.projection_.resize(multiply(dim, r.candidate_count));
+      w.bias_.resize(r.candidate_count);
+      w.logits_.resize(r.candidate_count);
+      for (std::size_t j = 0; j < r.candidate_count; ++j) {
+        const auto token = static_cast<std::size_t>(r.candidate_ids[j]);
+        w.bias_[j] = token == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[token];
+        for (std::size_t k = 0; k < dim; ++k)
+          w.projection_[k * r.candidate_count + j] = embedding_.data[token * dim + k];
+      }
     }
     const Matrix projection{"shortlist_projection_T", w.projection_.data(), dim, r.candidate_count};
     const auto matmul = [&](const Matrix& matrix, const float* input, float* output) {
@@ -200,10 +208,12 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
         finite(output, l.weight.cols, "linear fused bias");
         return;
       }
-      matmul(l.weight, input, output);
+      backend.matmul(backend.context, l.weight, input, 1, output);
       if (l.bias) {
         for (std::size_t j = 0; j < l.weight.cols; ++j) output[j] += l.bias[j];
         finite(output, l.weight.cols, "linear bias");
+      } else {
+        finite(output, l.weight.cols, l.weight.name.c_str());
       }
     };
     const float embedding_scale = static_cast<float>(std::sqrt(static_cast<double>(dim)));
@@ -284,13 +294,19 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
           finite(w.x_.data(), dim, "callback normalization");
         } else normalize(w.x_.data(), dim, layer.ffn_norm.scale, layer.ffn_norm.bias);
       }
-      matmul(projection, w.x_.data(), w.logits_.data());
       std::size_t best = 0;
-      for (std::size_t j = 0; j < r.candidate_count; ++j) {
-        w.logits_[j] += w.bias_[j];
-        if (!std::isfinite(w.logits_[j]) && !(w.logits_[j] == -std::numeric_limits<float>::infinity() && r.candidate_ids[j] == 1))
-          throw std::runtime_error("SSRU nonfinite logit");
-        if (w.logits_[j] > w.logits_[best]) best = j;
+      if (backend.argmax_shortlist) {
+        best = backend.argmax_shortlist(backend.context, w.x_.data(), dim,
+                                        embedding_.data, output_bias_, r.candidate_ids, r.candidate_count);
+        if (best >= r.candidate_count) throw std::runtime_error("SSRU invalid shortlist index");
+      } else {
+        matmul(projection, w.x_.data(), w.logits_.data());
+        for (std::size_t j = 0; j < r.candidate_count; ++j) {
+          w.logits_[j] += w.bias_[j];
+          if (!std::isfinite(w.logits_[j]) && !(w.logits_[j] == -std::numeric_limits<float>::infinity() && r.candidate_ids[j] == 1))
+            throw std::runtime_error("SSRU nonfinite logit");
+          if (w.logits_[j] > w.logits_[best]) best = j;
+        }
       }
       w.tokens_.push_back(r.candidate_ids[best]);
       if (w.tokens_.back() == r.eos_id) { w.ended_with_eos_ = true; break; }

@@ -31,10 +31,14 @@ class Workspace {
   Workspace();
   ~Workspace();
   std::uint8_t* resize(std::size_t size);
+  float* resizeFloats(std::size_t count);
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
+
+void quantizeLinearU8(const float* input, std::size_t rows, std::size_t cols,
+                      std::uint8_t* output, float& scale, std::uint8_t& zero_point);
 
 // Immutable once constructed from row-major FP32 [K,N]. No bias.
 // Requires K % 32 == 0, N % 8 == 0 and K <= INT32_MAX / (255 * 128).
@@ -44,7 +48,22 @@ class Weight {
   Weight(const float* data, std::size_t k, std::size_t n);
   ~Weight();
   void multiply(const std::uint8_t* activation, std::size_t rows,
-                float activation_scale, std::uint8_t zero_point, float* output, const float* fused_bias = nullptr) const;
+                float activation_scale, std::uint8_t zero_point, float* output,
+                const float* fused_bias = nullptr, const float* separate_bias = nullptr) const;
+ private:
+  struct Impl;
+  std::unique_ptr<const Impl> impl_;
+};
+
+// Two-stage L3-resident per-row INT8 shortlist filter with exact FP32 margin reranking.
+// Falls back to exact FP32 row dot products when dim % 32 != 0 or INT8 kernels do not apply.
+class ShortlistTable {
+ public:
+  ShortlistTable(const float* embedding, const float* output_bias, std::size_t vocab, std::size_t dim,
+                 bool sequential_fma = false);
+  ~ShortlistTable();
+  std::size_t argmax(const float* x, const std::int64_t* candidate_ids,
+                     std::size_t candidate_count, Workspace& workspace) const;
  private:
   struct Impl;
   std::unique_ptr<const Impl> impl_;

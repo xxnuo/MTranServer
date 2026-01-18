@@ -30,14 +30,12 @@ export class KissController extends Controller {
     const toLang = NormalizeLanguageCode(body.to);
 
     if (body.texts && Array.isArray(body.texts) && body.texts.length > 0) {
-      const translations = [];
-      for (const text of body.texts) {
-        const result = await translateWithPivot(fromLang, toLang, text, false);
-        translations.push({
-          text: result,
+      const translations = await Promise.all(
+        body.texts.map(async text => ({
+          text: await translateWithPivot(fromLang, toLang, text, false),
           src: body.from,
-        });
-      }
+        }))
+      );
       return { translations };
     }
 

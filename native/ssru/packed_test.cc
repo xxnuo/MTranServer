@@ -15,6 +15,8 @@
 
 using mtran::ssru::packed::Weight;
 using mtran::ssru::packed::Workspace;
+using mtran::ssru::packed::ShortlistTable;
+using mtran::ssru::packed::quantizeLinearU8;
 
 template<class F> static void rejects(F f) {
   bool threw = false;
@@ -23,7 +25,8 @@ template<class F> static void rejects(F f) {
 }
 static void golden(const Weight& weight, const std::vector<float>& original,
                    std::size_t k, std::size_t n, std::size_t rows,
-                   float activation_scale, std::uint8_t zero_point, bool extreme, bool fused_bias = false) {
+                   float activation_scale, std::uint8_t zero_point, bool extreme,
+                   bool fused_bias = false, bool separate_bias = false) {
   float maximum = 0;
   for (float x : original) maximum = std::max(maximum, std::abs(x));
   float weight_scale = (maximum * 2.f) / 254.f;
@@ -38,7 +41,8 @@ static void golden(const Weight& weight, const std::vector<float>& original,
   std::vector<float> output(rows * n + 2, 123456.f);
   std::vector<float> bias(n);
   for (std::size_t col = 0; col < n; ++col) bias[col] = static_cast<float>(int(col % 19) - 9) / 7.f;
-  weight.multiply(activation, rows, activation_scale, zero_point, output.data() + 1, fused_bias ? bias.data() : nullptr);
+  weight.multiply(activation, rows, activation_scale, zero_point, output.data() + 1,
+                  fused_bias ? bias.data() : nullptr, separate_bias ? bias.data() : nullptr);
   const bool ortSaturation = std::string_view(mtran::ssru::packed::backend()) == "packed-avx2-ort";
   for (std::size_t row = 0; row < rows; ++row) {
     for (std::size_t col = 0; col < n; ++col) {
@@ -54,7 +58,8 @@ static void golden(const Weight& weight, const std::vector<float>& original,
           reference += (std::int64_t(activation[row * k + j]) - zero_point) * quantized[j * n + col];
       }
       const float expected = fused_bias ? std::fma(static_cast<float>(reference), activation_scale * weight_scale, bias[col])
-                                       : static_cast<float>(reference) * (activation_scale * weight_scale);
+                                       : separate_bias ? (static_cast<float>(reference) * (activation_scale * weight_scale)) + bias[col]
+                                                       : static_cast<float>(reference) * (activation_scale * weight_scale);
       assert(std::bit_cast<std::uint32_t>(output[1 + row * n + col]) == std::bit_cast<std::uint32_t>(expected));
     }
   }
@@ -113,6 +118,88 @@ static void kleidiGolden() {
   input[0] = std::numeric_limits<float>::denorm_min();
   rejects([&] { mtran::ssru::kleidi::quantize(input.data(), 32, activation, zero); });
 }
+static void dqlAndShortlistGolden() {
+  Workspace workspace;
+  for (std::size_t n : {1, 6, 16, 33, 384}) {
+    std::vector<float> input(n);
+    for (std::size_t i = 0; i < n; ++i) input[i] = static_cast<float>(int(i * 37 % 51) - 25) * 0.125f;
+    auto* out = workspace.resize(n);
+    float scale = 0; std::uint8_t zp = 0;
+    quantizeLinearU8(input.data(), 1, n, out, scale, zp);
+    float lo = 0, hi = 0;
+    for (float v : input) { lo = std::min(lo, v); hi = std::max(hi, v); }
+    const float ref_scale = hi == lo ? 1.f : (hi - lo) / 255.f;
+    const auto ref_zp = static_cast<std::uint8_t>(std::nearbyint(std::clamp(0.f - lo / ref_scale, 0.f, 255.f)));
+    assert(std::bit_cast<std::uint32_t>(scale) == std::bit_cast<std::uint32_t>(ref_scale) && zp == ref_zp);
+    for (std::size_t i = 0; i < n; ++i) {
+      const float clamped = std::clamp(input[i] / ref_scale, float(-int(ref_zp)), float(255 - int(ref_zp)));
+      const auto expected = static_cast<std::uint8_t>(int(std::nearbyint(clamped)) + int(ref_zp));
+      assert(out[i] == expected);
+    }
+  }
+  const float ties[] = {-127.5f, 127.5f, -0.5f, 0.5f, -1.5f, 1.5f};
+  auto* out_ties = workspace.resize(6);
+  float scale_ties = 0; std::uint8_t zp_ties = 0;
+  quantizeLinearU8(ties, 1, 6, out_ties, scale_ties, zp_ties);
+  const std::uint8_t exp_ties[] = {0, 255, 128, 128, 126, 130};
+  assert(scale_ties == 1.f && zp_ties == 128 && std::equal(out_ties, out_ties + 6, exp_ties));
+
+  // Test ShortlistTable across non-32 fallback (4, 20) and Q8+FP32 rerank (32, 64), including
+  // adversarial [-128,-128] x [255,255] pairs, ties (earliest wins), and token-1 -inf masking.
+  for (std::size_t dim : {4, 20, 32, 64}) {
+    constexpr std::size_t vocab = 29;
+    std::vector<float> emb(vocab * dim), bias(vocab, 0.f);
+    for (std::size_t r = 0; r < vocab; ++r) {
+      bias[r] = static_cast<float>(int(r % 7) - 3) * 0.03f;
+      for (std::size_t k = 0; k < dim; ++k)
+        emb[r * dim + k] = static_cast<float>(int((r * 19 + k * 11) % 255) - 128) * 0.25f;
+    }
+    bias[1] = -std::numeric_limits<float>::infinity();
+    // Token 1 wants to win by huge dot product, must be masked by bias[1] = -inf.
+    std::fill_n(emb.data() + dim, dim, 100.f);
+    // Adversarially set rows 10 and 18 to identical vectors + biases so earlier candidate wins tie,
+    // and construct extreme negative pairs that would saturate naive int16 maddubs.
+    std::fill_n(emb.data() + 5 * dim, dim, -128.f);
+    std::copy_n(emb.data() + 10 * dim, dim, emb.data() + 18 * dim);
+    bias[18] = bias[10];
+    ShortlistTable table(emb.data(), bias.data(), vocab, dim);
+    std::vector<std::int64_t> cids;
+    for (std::size_t r = 0; r < vocab; ++r) cids.push_back(static_cast<std::int64_t>(r));
+    for (int trial = 0; trial < 8; ++trial) {
+      std::vector<float> x(dim);
+      for (std::size_t k = 0; k < dim; ++k)
+        x[k] = trial == 0 ? 100.f : (trial == 1 ? ((k == 0) ? -1.f : 255.f) : std::sin(float(trial * 13 + k)) * 5.f);
+      if (trial == 2) {
+        // Force tie between candidate 10 and 18 to be global maximum.
+        for (std::size_t k = 0; k < dim; ++k) x[k] = emb[10 * dim + k];
+        bias[10] = bias[18] = 1e5f;
+      }
+      for (bool fma_mode : {false, true}) {
+        ShortlistTable current(emb.data(), bias.data(), vocab, dim, fma_mode);
+        const std::size_t got = current.argmax(x.data(), cids.data(), cids.size(), workspace);
+        std::size_t ref_best = 0;
+        float ref_logit = -std::numeric_limits<float>::infinity();
+        for (std::size_t j = 0; j < cids.size(); ++j) {
+          const auto t = static_cast<std::size_t>(cids[j]);
+          float dot = 0.f;
+          for (std::size_t k = 0; k < dim; ++k)
+            dot = fma_mode ? std::fma(x[k], emb[t * dim + k], dot) : (dot + x[k] * emb[t * dim + k]);
+          const float val = dot + (t == 1 ? -std::numeric_limits<float>::infinity() : bias[t]);
+          if (j == 0 || val > ref_logit) { ref_logit = val; ref_best = j; }
+        }
+        assert(got == ref_best);
+        if (trial == 2) assert(got == 10);
+      }
+    }
+    std::vector<float> x_ok(dim, 1.f);
+    std::int64_t bad_cid = static_cast<std::int64_t>(vocab);
+    rejects([&] { table.argmax(x_ok.data(), &bad_cid, 1, workspace); });
+    bad_cid = -1;
+    rejects([&] { table.argmax(x_ok.data(), &bad_cid, 1, workspace); });
+    x_ok[0] = std::numeric_limits<float>::quiet_NaN();
+    rejects([&] { table.argmax(x_ok.data(), cids.data(), cids.size(), workspace); });
+  }
+}
 int main() {
   cpuOsGolden();
   if (!mtran::ssru::packed::backend()) {
@@ -124,6 +211,7 @@ int main() {
   std::cout << "Backend: " << mtran::ssru::packed::backend() << "\n";
   std::fesetround(FE_TONEAREST);
   kleidiGolden();
+  dqlAndShortlistGolden();
   for (std::size_t k : {32, 64, 512, 2048}) for (std::size_t n : {8, 24, 32, 64}) {
     std::vector<float> original(k * n, 127.f);
     const Weight positive(original.data(), k, n);
@@ -147,6 +235,7 @@ int main() {
     const Weight scaled(original.data(), k, n);
     golden(scaled, original, k, n, 1, .007f, 128, false);
     golden(scaled, original, k, n, 3, .007f, 128, false, true);
+    golden(scaled, original, k, n, 3, .007f, 128, false, false, true);
   }
   {
     constexpr std::size_t k = (std::size_t(INT32_MAX) / (255 * 128)) & ~std::size_t(31);
