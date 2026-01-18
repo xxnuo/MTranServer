@@ -158,7 +158,7 @@ export class TranslationEngine {
     for (let i = 0; i < protectedParts.length; i++) translated.push(i % 2 ? protectedParts[i] : await this.translatePlain(protectedParts[i]));
     return translated.join('');
   }
-  private async translatePlain(text: string): Promise<string> {
+  private async translatePlain(text: string, parallel = true): Promise<string> {
     if (!text.trim()) return text;
     const match = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
     const [, before, content, after] = match;
@@ -172,7 +172,20 @@ export class TranslationEngine {
         for (let i = midpoint; i > midpoint / 2; i--) if (/\s/.test(chars[i])) { midpoint = i + 1; break; }
         sentences.splice(0, 1, chars.slice(0, midpoint).join(''), chars.slice(midpoint).join(''));
       }
-      const out: string[] = []; for (const sentence of sentences) out.push(await this.translatePlain(sentence));
+      await Promise.resolve();
+      const out: string[] = new Array(sentences.length);
+      let next = 0, failed = false, failure: unknown;
+      // Nested splits stay serial; all leaves still share the engine inference budget.
+      const workers = parallel ? Math.min(sentences.length, this.backend?.maxConcurrentRuns ?? 1) : 1;
+      await Promise.all(Array.from({ length: workers }, async (_, worker) => {
+        while (!failed && next < sentences.length) {
+          if (worker > 0 && this.running > 1) return;
+          const index = next++;
+          try { out[index] = await this.translatePlain(sentences[index], false); }
+          catch (error) { if (!failed) { failed = true; failure = error; } }
+        }
+      }));
+      if (failed) throw failure;
       return before + out.join('') + after;
     }
     ids.push(this.src!.eos);
