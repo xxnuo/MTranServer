@@ -10,7 +10,7 @@ afterEach(()=>mock.restore());
 function setup(fails=false,shortlist=true){
  const original={inputNames:shortlist?['X','eos_id','candidate_ids']:['X','eos_id'],release:mock(async()=>{}),run:mock(async()=>({Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])}))};
  const parallel={...original,release:mock(async()=>{}),run:mock(async()=>{if(fails)throw new Error('native probe failed');return {Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])};})};
- spyOn(Tokenizer,'load').mockResolvedValue({encode:()=>[2],decode:()=> 'result',eos:0,close(){}} as any);
+ spyOn(Tokenizer,'load').mockResolvedValue({size:64,encode:()=>[2],decode:()=> 'result',eos:0,close(){}} as any);
  spyOn(Shortlist,'load').mockResolvedValue({candidates:()=>[0,2,7]} as any);
  spyOn(backend,'selectBackend').mockResolvedValue({session:original,info:{provider:'cpu',cpuThreads:2,tuning,maxConcurrentRuns:1,measurements:[]},fallbackCpuThreads:2,fallbackCpuTuning:tuning} as any);
  spyOn(native,'createNativeSession').mockResolvedValue(parallel as any);

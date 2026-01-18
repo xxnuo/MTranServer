@@ -8,12 +8,15 @@ import * as logger from '../logger/index.js';
 export type InferenceSession = Pick<ort.InferenceSession, 'inputNames' | 'run' | 'release'>;
 export class NativeRunError extends Error {}
 interface NativeBinding {
+  ssruVersion?: number;
   init(model: string, library: string, cpuThreads: number): Promise<object>;
   run(handle: object, input: BigInt64Array, candidates: BigInt64Array | null, eos: bigint): Promise<BigInt64Array>;
   close(handle: object): Promise<void>;
 }
 
-export async function createNativeSession(model: string, inputNames: readonly string[], cpuThreads: number): Promise<InferenceSession | undefined> {
+let loadedBinding: NativeBinding | undefined;
+function loadBinding(): NativeBinding | undefined {
+  if (loadedBinding) return loadedBinding;
   if (!['linux', 'darwin'].includes(process.platform)) return;
   const filename = `onnx-async-${process.platform}-${process.arch}.node`;
   const candidates = [new URL(`./${filename}`, import.meta.url), new URL(`../../dist/${filename}`, import.meta.url)];
@@ -21,7 +24,19 @@ export async function createNativeSession(model: string, inputNames: readonly st
   if (!addon) return;
   try {
     const require = createRequire(import.meta.url);
-    const binding = require(fileURLToPath(addon)) as NativeBinding;
+    return loadedBinding = require(fileURLToPath(addon)) as NativeBinding;
+  } catch (error) {
+    logger.warn(`Native ONNX binding unavailable; using standard runtime: ${error}`);
+  }
+}
+
+export function hasNativeSsru() { return loadBinding()?.ssruVersion === 1; }
+
+export async function createNativeSession(model: string, inputNames: readonly string[], cpuThreads: number, requireSsru = false): Promise<InferenceSession | undefined> {
+  const binding = loadBinding();
+  if (!binding || (requireSsru && binding.ssruVersion !== 1)) return;
+  try {
+    const require = createRequire(import.meta.url);
     const libraryName = process.platform === 'darwin' ? 'libonnxruntime.1.dylib' : 'libonnxruntime.so.1';
     const library = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch, libraryName);
     const handle = await binding.init(model, library, cpuThreads);

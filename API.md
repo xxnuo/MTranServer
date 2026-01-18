@@ -15,6 +15,7 @@
 | MT_OFFLINE | 离线使用已准备好的翻译文件 | false | true, false |
 | MT_FAST | 快速模式；更快但可能降低翻译准确性 | false | true, false |
 | MT_LEXICAL_SHORTLIST | MT_FAST 的兼容别名 | false | true, false |
+| MT_NATIVE_SSRU | Fast CPU 的实验性原生解码器；需配套原生插件 | 关闭 | 1 开启，其他值关闭 |
 | MT_WORKER_IDLE_TIMEOUT | 翻译引擎空闲多久后释放内存（秒） | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN          | API 访问令牌                             | 空     | 任意字符串                  |
 | MT_CACHE_SIZE | 保存最近多少条翻译结果；0 为关闭 | 1000 | 0, 1, 2, ... |

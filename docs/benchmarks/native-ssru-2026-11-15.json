@@ -1,0 +1,3758 @@
+{
+  "version": "5.3.0",
+  "cpu": "Intel(R) Core(TM) i5-14400",
+  "platform": "Linux x64",
+  "rounds": 3,
+  "method": "Node keep-alive HTTP client; rotated candidate/Fast/LinguaSpark; cache disabled; GPU disabled; all host CPUs allowed.",
+  "thread_budget": {
+    "allowed_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "uv_threadpool_size": "16",
+    "linguaspark_workers": 16,
+    "runtime_selections": [
+      {
+        "round": 0,
+        "engine": "candidate",
+        "runtimes": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-ssru",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-ssru",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ]
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "runtimes": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ]
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "runtimes": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ]
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "runtimes": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-ssru",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-ssru",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "runtimes": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-ssru",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-ssru",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "runtimes": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 16,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "quality": [
+    {
+      "pair": "en_zh-Hans",
+      "samples": 1012,
+      "source_reference_aligned": true,
+      "baseline_chrfpp": 25.111610410659953,
+      "candidate_chrfpp": 25.111610410659953,
+      "chrfpp_delta": 0.0,
+      "paired_95ci": [
+        0.0,
+        0.0
+      ],
+      "baseline_bleu": 38.98037885687323,
+      "candidate_bleu": 38.98037885687323,
+      "token_exact": 1012,
+      "baseline_no_eos": 0,
+      "candidate_no_eos": 0
+    },
+    {
+      "pair": "zh-Hans_en",
+      "samples": 1012,
+      "source_reference_aligned": true,
+      "baseline_chrfpp": 54.78408097156178,
+      "candidate_chrfpp": 54.78408097156178,
+      "chrfpp_delta": 0.0,
+      "paired_95ci": [
+        0.0,
+        0.0
+      ],
+      "baseline_bleu": 27.421675851606462,
+      "candidate_bleu": 27.421675851606462,
+      "token_exact": 1012,
+      "baseline_no_eos": 0,
+      "candidate_no_eos": 0
+    }
+  ],
+  "short_summary": [
+    {
+      "engine": "candidate",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 26.16898566666667,
+      "requests_per_second": 38.0015034661488,
+      "requests_total": 27
+    },
+    {
+      "engine": "candidate",
+      "group": "PARA_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 44.23504644444444,
+      "requests_per_second": 76.19020851693939,
+      "requests_total": 27
+    },
+    {
+      "engine": "candidate",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 27.746166999999996,
+      "requests_per_second": 35.81063208833413,
+      "requests_total": 18
+    },
+    {
+      "engine": "candidate",
+      "group": "PARA_ZH",
+      "concurrency": 4,
+      "mean_latency_ms": 41.480647166666664,
+      "requests_per_second": 74.1462293398483,
+      "requests_total": 18
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 6.871414,
+      "requests_per_second": 143.8781411997345,
+      "requests_total": 90
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_EN",
+      "concurrency": 2,
+      "mean_latency_ms": 7.499251699999999,
+      "requests_per_second": 259.5503767295853,
+      "requests_total": 90
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 8.980315099999999,
+      "requests_per_second": 408.12511254900244,
+      "requests_total": 90
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 14.349617983333333,
+      "requests_per_second": 548.9031417180316,
+      "requests_total": 720
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 6.034957433333331,
+      "requests_per_second": 163.4819145434585,
+      "requests_total": 90
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_ZH",
+      "concurrency": 2,
+      "mean_latency_ms": 6.660118700000002,
+      "requests_per_second": 292.4471972694088,
+      "requests_total": 90
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_ZH",
+      "concurrency": 4,
+      "mean_latency_ms": 8.009117233333335,
+      "requests_per_second": 467.99514576715006,
+      "requests_total": 90
+    },
+    {
+      "engine": "candidate",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "mean_latency_ms": 12.316891804166668,
+      "requests_per_second": 633.3065894117773,
+      "requests_total": 720
+    },
+    {
+      "engine": "fast",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 28.469284111111108,
+      "requests_per_second": 34.95237321662555,
+      "requests_total": 27
+    },
+    {
+      "engine": "fast",
+      "group": "PARA_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 56.89780588888889,
+      "requests_per_second": 60.78907132454685,
+      "requests_total": 27
+    },
+    {
+      "engine": "fast",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 31.857855500000007,
+      "requests_per_second": 31.21524296501419,
+      "requests_total": 18
+    },
+    {
+      "engine": "fast",
+      "group": "PARA_ZH",
+      "concurrency": 4,
+      "mean_latency_ms": 57.261109499999996,
+      "requests_per_second": 56.46548162999547,
+      "requests_total": 18
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 8.48646,
+      "requests_per_second": 116.62357036996264,
+      "requests_total": 90
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_EN",
+      "concurrency": 2,
+      "mean_latency_ms": 9.449573,
+      "requests_per_second": 207.49904308357966,
+      "requests_total": 90
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 10.7998106,
+      "requests_per_second": 353.0537424644061,
+      "requests_total": 90
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 19.383736916666667,
+      "requests_per_second": 406.1990325466247,
+      "requests_total": 720
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 6.764632266666667,
+      "requests_per_second": 146.01414315379424,
+      "requests_total": 90
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_ZH",
+      "concurrency": 2,
+      "mean_latency_ms": 7.796611466666666,
+      "requests_per_second": 243.8672329231299,
+      "requests_total": 90
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_ZH",
+      "concurrency": 4,
+      "mean_latency_ms": 10.4636508,
+      "requests_per_second": 358.18792585037124,
+      "requests_total": 90
+    },
+    {
+      "engine": "fast",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "mean_latency_ms": 15.930995375,
+      "requests_per_second": 491.5548138466764,
+      "requests_total": 720
+    },
+    {
+      "engine": "linguaspark",
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 48.065793000000006,
+      "requests_per_second": 20.735784761890624,
+      "requests_total": 27
+    },
+    {
+      "engine": "linguaspark",
+      "group": "PARA_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 49.496016777777776,
+      "requests_per_second": 65.03286338201715,
+      "requests_total": 27
+    },
+    {
+      "engine": "linguaspark",
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 50.95233733333334,
+      "requests_per_second": 19.56158873785607,
+      "requests_total": 18
+    },
+    {
+      "engine": "linguaspark",
+      "group": "PARA_ZH",
+      "concurrency": 4,
+      "mean_latency_ms": 52.6937035,
+      "requests_per_second": 56.24850695369355,
+      "requests_total": 18
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 11.052023166666666,
+      "requests_per_second": 89.8186841898688,
+      "requests_total": 90
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_EN",
+      "concurrency": 2,
+      "mean_latency_ms": 10.824894333333335,
+      "requests_per_second": 181.23683008592275,
+      "requests_total": 90
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 11.967031266666666,
+      "requests_per_second": 309.37194988261035,
+      "requests_total": 90
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 16.042386429166665,
+      "requests_per_second": 485.69814654308817,
+      "requests_total": 720
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "mean_latency_ms": 10.23449656666667,
+      "requests_per_second": 96.92091962742604,
+      "requests_total": 90
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_ZH",
+      "concurrency": 2,
+      "mean_latency_ms": 10.426117500000002,
+      "requests_per_second": 186.6980827264432,
+      "requests_total": 90
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_ZH",
+      "concurrency": 4,
+      "mean_latency_ms": 11.239785766666666,
+      "requests_per_second": 328.2508180256574,
+      "requests_total": 90
+    },
+    {
+      "engine": "linguaspark",
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "mean_latency_ms": 16.171273279166666,
+      "requests_per_second": 486.6972342813179,
+      "requests_total": 720
+    }
+  ],
+  "short_p95": [
+    {
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "engine": "candidate",
+      "p95_ms": 31.505909999999993,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "engine": "fast",
+      "p95_ms": 35.611557000000005,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "PARA_EN",
+      "concurrency": 1,
+      "engine": "linguaspark",
+      "p95_ms": 58.79802800000001,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "PARA_EN",
+      "concurrency": 4,
+      "engine": "candidate",
+      "p95_ms": 52.724997,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "PARA_EN",
+      "concurrency": 4,
+      "engine": "fast",
+      "p95_ms": 66.795724,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "PARA_EN",
+      "concurrency": 4,
+      "engine": "linguaspark",
+      "p95_ms": 57.269085999999994,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "engine": "candidate",
+      "p95_ms": 36.256609,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "engine": "fast",
+      "p95_ms": 41.832624,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "PARA_ZH",
+      "concurrency": 1,
+      "engine": "linguaspark",
+      "p95_ms": 55.18831399999999,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "PARA_ZH",
+      "concurrency": 4,
+      "engine": "candidate",
+      "p95_ms": 49.120062,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "PARA_ZH",
+      "concurrency": 4,
+      "engine": "fast",
+      "p95_ms": 71.035865,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "PARA_ZH",
+      "concurrency": 4,
+      "engine": "linguaspark",
+      "p95_ms": 58.30476899999999,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "engine": "candidate",
+      "p95_ms": 8.11694399999999,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "engine": "fast",
+      "p95_ms": 14.837176,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 1,
+      "engine": "linguaspark",
+      "p95_ms": 13.898649999999975,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 2,
+      "engine": "candidate",
+      "p95_ms": 10.957110999999998,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 2,
+      "engine": "fast",
+      "p95_ms": 13.592188999999998,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 2,
+      "engine": "linguaspark",
+      "p95_ms": 13.447779999999995,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 4,
+      "engine": "candidate",
+      "p95_ms": 13.256688000000004,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 4,
+      "engine": "fast",
+      "p95_ms": 16.978403,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 4,
+      "engine": "linguaspark",
+      "p95_ms": 15.368797999999998,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "engine": "candidate",
+      "p95_ms": 21.159564999999986,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "engine": "fast",
+      "p95_ms": 26.400768000000028,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_EN",
+      "concurrency": 8,
+      "engine": "linguaspark",
+      "p95_ms": 32.86008199999998,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "engine": "candidate",
+      "p95_ms": 7.822697000000005,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "engine": "fast",
+      "p95_ms": 8.918267,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 1,
+      "engine": "linguaspark",
+      "p95_ms": 13.358769999999993,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 2,
+      "engine": "candidate",
+      "p95_ms": 9.295295999999993,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 2,
+      "engine": "fast",
+      "p95_ms": 12.149771000000015,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 2,
+      "engine": "linguaspark",
+      "p95_ms": 14.506119999999996,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 4,
+      "engine": "candidate",
+      "p95_ms": 10.820028,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 4,
+      "engine": "fast",
+      "p95_ms": 16.984032,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 4,
+      "engine": "linguaspark",
+      "p95_ms": 17.388956000000007,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "engine": "candidate",
+      "p95_ms": 18.44548499999999,
+      "rss_mib": 725.74609375,
+      "peak_mib": 896.81640625
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "engine": "fast",
+      "p95_ms": 22.887833,
+      "rss_mib": 691.79296875,
+      "peak_mib": 789.1875
+    },
+    {
+      "group": "SHORT_ZH",
+      "concurrency": 8,
+      "engine": "linguaspark",
+      "p95_ms": 30.61855399999999,
+      "rss_mib": 191.7578125,
+      "peak_mib": 191.7578125
+    }
+  ],
+  "source_models": {
+    "en_zh-Hans": {
+      "source-lex": "4a5e5827788060f1d718a8132b69440929387514a045796e9b77f935db68c055",
+      "source-srcvocab": "bd9b65504acc6d9726dd281f7defc2adb7c2c22d0688fe2f84697de25197c8c5",
+      "source-trgvocab": "aded6993c36e440284d11cec3f6b8aef9c0e43188a772d80be342a713adf223d",
+      "source-model": "4e5accc141373565ddc8fa1565bceaa8d0c3482a82cab8131c719ebcc6c2157c"
+    },
+    "zh-Hans_en": {
+      "source-vocab": "dff594318ab7d8b7b60b844ab98ebe6b932ae8045fab15235404c787715965b3",
+      "source-lex": "8524dd4c93ffd7f0ae7be32f77a7c14fea7cdbbebe34ea6ad0ec368d5ddd8b13",
+      "source-model": "5cd149601802fc8a18124a1c1306144dbbedc058630c4ddb2d53aa76fa9c7c06"
+    }
+  },
+  "artifacts": {
+    "native_addon_sha256": "eed018423753c7ca81e45f4b92ac0a69ed8b9891641a880592f496e7dfa3c33c",
+    "mtran_main_sha256": "d607216343c4f74ff4ade04f579d4ae0df69a425437a21757dd6b3b273a63b3d",
+    "mtran_worker_sha256": "165fea473cd27859dd112b5e5642fdcbaa7f4655eb463b76d32486e1cdac500b",
+    "linguaspark_binary_sha256": "19ba6f9cda6867c09e12b2b11cd1dd2806b3c60dd8ddf6c74c0bbbb93fd61849",
+    "linguaspark_revision": "edd16a674b1484490a4a29d588dab9c1a191e6c3",
+    "corpus_sha256": "e087f55d4a9b46f8a1d5e9b657c8128256702fd579128147644993b87e85a637"
+  },
+  "limits": [
+    "Linux x86_64 Intel i5-14400 only; no cross-platform performance claim.",
+    "AVXVNNI is runtime gated; unsupported hosts/shapes retain InvokeOp or ordinary ONNX fallback.",
+    "LinguaSpark and MTran share CPU affinity, not identical internal threading or scheduling.",
+    "Repeated 25-text corpus is not production traffic.",
+    "Core sanitizer tests do not instrument the shipped ORT shared library.",
+    "SSRU stays opt-in; increased memory and workload-dependent gains prevent a universal default claim.",
+    "Shared workstation, no exclusive CPU reservation.",
+    "Long corpus: one independent 32-sentence text per direction, repeated six times at c1 and 24 times at c4/c8 per round; repetitions are not independent quality samples.",
+    "RSS is process aggregate after all scenarios; raw/quantized/packed/workspace attribution is not separately measured."
+  ],
+  "long_summary": [
+    {
+      "engine": "candidate",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 108.03437866666665,
+      "requests_per_second": 9.238970238235703,
+      "requests_total": 18
+    },
+    {
+      "engine": "candidate",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 373.34095741666664,
+      "requests_per_second": 10.597212984911312,
+      "requests_total": 72
+    },
+    {
+      "engine": "candidate",
+      "group": "LONG_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 717.9083165416666,
+      "requests_per_second": 10.85024705522023,
+      "requests_total": 72
+    },
+    {
+      "engine": "candidate",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "mean_latency_ms": 138.1628655,
+      "requests_per_second": 7.2286854769190905,
+      "requests_total": 18
+    },
+    {
+      "engine": "candidate",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "mean_latency_ms": 478.785472125,
+      "requests_per_second": 8.310985103048512,
+      "requests_total": 72
+    },
+    {
+      "engine": "candidate",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 8,
+      "mean_latency_ms": 932.278476125,
+      "requests_per_second": 8.393431905776652,
+      "requests_total": 72
+    },
+    {
+      "engine": "fast",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 130.64457966666663,
+      "requests_per_second": 7.642009913156671,
+      "requests_total": 18
+    },
+    {
+      "engine": "fast",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 496.364342625,
+      "requests_per_second": 7.8959737334038005,
+      "requests_total": 72
+    },
+    {
+      "engine": "fast",
+      "group": "LONG_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 973.7569875,
+      "requests_per_second": 8.121524421964356,
+      "requests_total": 72
+    },
+    {
+      "engine": "fast",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "mean_latency_ms": 170.961692,
+      "requests_per_second": 5.842536018117168,
+      "requests_total": 18
+    },
+    {
+      "engine": "fast",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "mean_latency_ms": 635.3264207916667,
+      "requests_per_second": 6.271546426911383,
+      "requests_total": 72
+    },
+    {
+      "engine": "fast",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 8,
+      "mean_latency_ms": 1220.8416107083333,
+      "requests_per_second": 6.460642676037391,
+      "requests_total": 72
+    },
+    {
+      "engine": "linguaspark",
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "mean_latency_ms": 478.556671,
+      "requests_per_second": 2.088857077251215,
+      "requests_total": 18
+    },
+    {
+      "engine": "linguaspark",
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "mean_latency_ms": 796.488015625,
+      "requests_per_second": 5.009590354556439,
+      "requests_total": 72
+    },
+    {
+      "engine": "linguaspark",
+      "group": "LONG_EN",
+      "concurrency": 8,
+      "mean_latency_ms": 1360.3300985833334,
+      "requests_per_second": 5.428066529338062,
+      "requests_total": 72
+    },
+    {
+      "engine": "linguaspark",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "mean_latency_ms": 565.7938855,
+      "requests_per_second": 1.766911200079664,
+      "requests_total": 18
+    },
+    {
+      "engine": "linguaspark",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "mean_latency_ms": 958.7316660416666,
+      "requests_per_second": 4.160976589693993,
+      "requests_total": 72
+    },
+    {
+      "engine": "linguaspark",
+      "group": "LONG_ZH-HANS",
+      "concurrency": 8,
+      "mean_latency_ms": 1678.09656425,
+      "requests_per_second": 4.408345946892263,
+      "requests_total": 72
+    }
+  ],
+  "long_p95": [
+    {
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "engine": "candidate",
+      "p95_ms": 115.58357300000002,
+      "rss_mib": 775.00390625,
+      "peak_mib": 1380.44140625
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "engine": "fast",
+      "p95_ms": 136.02939225,
+      "rss_mib": 811.296875,
+      "peak_mib": 850.56640625
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 1,
+      "engine": "linguaspark",
+      "p95_ms": 487.14270225,
+      "rss_mib": 772.5390625,
+      "peak_mib": 828.83984375
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "engine": "candidate",
+      "p95_ms": 391.79387255000006,
+      "rss_mib": 775.00390625,
+      "peak_mib": 1380.44140625
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "engine": "fast",
+      "p95_ms": 565.4148835999999,
+      "rss_mib": 811.30078125,
+      "peak_mib": 850.56640625
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 4,
+      "engine": "linguaspark",
+      "p95_ms": 860.5864597500002,
+      "rss_mib": 772.5390625,
+      "peak_mib": 828.83984375
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 8,
+      "engine": "candidate",
+      "p95_ms": 794.7430820499999,
+      "rss_mib": 775.00390625,
+      "peak_mib": 1380.44140625
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 8,
+      "engine": "fast",
+      "p95_ms": 1052.32761615,
+      "rss_mib": 811.30078125,
+      "peak_mib": 850.56640625
+    },
+    {
+      "group": "LONG_EN",
+      "concurrency": 8,
+      "engine": "linguaspark",
+      "p95_ms": 2021.2996381499997,
+      "rss_mib": 772.5390625,
+      "peak_mib": 828.83984375
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "engine": "candidate",
+      "p95_ms": 142.70054324999998,
+      "rss_mib": 775.00390625,
+      "peak_mib": 1380.44140625
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "engine": "fast",
+      "p95_ms": 178.11659474999996,
+      "rss_mib": 811.30078125,
+      "peak_mib": 850.56640625
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 1,
+      "engine": "linguaspark",
+      "p95_ms": 581.46695175,
+      "rss_mib": 772.5390625,
+      "peak_mib": 828.83984375
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "engine": "candidate",
+      "p95_ms": 554.23208235,
+      "rss_mib": 775.00390625,
+      "peak_mib": 1380.44140625
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "engine": "fast",
+      "p95_ms": 744.6495817,
+      "rss_mib": 811.30078125,
+      "peak_mib": 850.56640625
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 4,
+      "engine": "linguaspark",
+      "p95_ms": 982.5234901500004,
+      "rss_mib": 772.5390625,
+      "peak_mib": 828.83984375
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 8,
+      "engine": "candidate",
+      "p95_ms": 985.1657617499999,
+      "rss_mib": 775.00390625,
+      "peak_mib": 1380.44140625
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 8,
+      "engine": "fast",
+      "p95_ms": 1328.51431255,
+      "rss_mib": 811.30078125,
+      "peak_mib": 850.56640625
+    },
+    {
+      "group": "LONG_ZH-HANS",
+      "concurrency": 8,
+      "engine": "linguaspark",
+      "p95_ms": 2503.88856405,
+      "rss_mib": 772.5390625,
+      "peak_mib": 828.83984375
+    }
+  ],
+  "long_runtime_selections": [
+    {
+      "round": 0,
+      "engine": "candidate",
+      "runtimes": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "engine": "fast",
+      "runtimes": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-async",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-async",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "engine": "fast",
+      "runtimes": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-async",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-async",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "engine": "candidate",
+      "runtimes": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "engine": "candidate",
+      "runtimes": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-ssru",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "engine": "fast",
+      "runtimes": [
+        {
+          "from": "en",
+          "to": "zh-Hans",
+          "provider": "cpu",
+          "runtime": "native-async",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        },
+        {
+          "from": "zh-Hans",
+          "to": "en",
+          "provider": "cpu",
+          "runtime": "native-async",
+          "cpuThreads": 1,
+          "maxConcurrentRuns": 16,
+          "tuning": {
+            "executionMode": "sequential",
+            "interOpNumThreads": 1,
+            "graphOptimizationLevel": "all",
+            "enableCpuMemArena": true,
+            "enableMemPattern": true,
+            "spinning": false,
+            "dynamicBlockBase": 0
+          }
+        }
+      ]
+    }
+  ],
+  "long_artifacts": {
+    "ssru_capability": {
+      "version": 1,
+      "preferredHostBackend": "packed-avxvnni"
+    },
+    "finished_at": "2026-11-15T04:40:24Z",
+    "linguaspark_revision": "edd16a674b1484490a4a29d588dab9c1a191e6c3",
+    "linguaspark_binary_sha256": "19ba6f9cda6867c09e12b2b11cd1dd2806b3c60dd8ddf6c74c0bbbb93fd61849",
+    "mtran_main_sha256": "d607216343c4f74ff4ade04f579d4ae0df69a425437a21757dd6b3b273a63b3d",
+    "client_sha256": "08dd958c621d7adec53a97dff3ff2f83755130de856373d0f235b16805529f75",
+    "script_sha256": "58809be2230240b34c9cc36f28e1b29a0f18e38cc2efb58df84917868dedff56",
+    "native_addon_sha256": "eed018423753c7ca81e45f4b92ac0a69ed8b9891641a880592f496e7dfa3c33c",
+    "mtran_worker_sha256": "165fea473cd27859dd112b5e5642fdcbaa7f4655eb463b76d32486e1cdac500b",
+    "corpus_sha256": "354e90f2cfe3db62109c8155f9f46a6d775507c318d621f87142f922f0baecba",
+    "node_version": "v26.13.1",
+    "onnxruntime_version": "1.30.0",
+    "script_hash_scope": "File on completion; first-use-only instrumentation was added during this run, without changing measured workloads. This run has no first_use records."
+  },
+  "per_round": {
+    "short": [
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 226.17691299999998,
+        "requests_per_second": 39.7918597465339,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 116.65610600000001,
+        "requests_per_second": 77.1498407464415,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 167.548006,
+        "requests_per_second": 35.81063208833413,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 84.997186,
+        "requests_per_second": 70.59057225729802,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 194.02008,
+        "requests_per_second": 154.62317096251067,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 115.584498,
+        "requests_per_second": 259.5503767295853,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 73.50687099999999,
+        "requests_per_second": 408.12511254900244,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 437.04883,
+        "requests_per_second": 549.137724496368,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 180.409593,
+        "requests_per_second": 166.2882749256022,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 99.72663500000002,
+        "requests_per_second": 300.82234299793623,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 66.29791499999999,
+        "requests_per_second": 452.50291807819303,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 383.531019,
+        "requests_per_second": 625.764248810342,
+        "memory_after_all_scenarios": {
+          "rss_mib": 778.10546875,
+          "peak_mib": 1353.4765625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 257.493245,
+        "requests_per_second": 34.95237321662555,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 148.052928,
+        "requests_per_second": 60.78907132454685,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 192.213785,
+        "requests_per_second": 31.21524296501419,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 143.471589,
+        "requests_per_second": 41.820126492082004,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 272.427463,
+        "requests_per_second": 110.1210563341773,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 154.364653,
+        "requests_per_second": 194.34500979962039,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 154.06866,
+        "requests_per_second": 194.7183807531006,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 704.902819,
+        "requests_per_second": 340.4724644745675,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 246.598321,
+        "requests_per_second": 121.65532951864664,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 134.83941099999998,
+        "requests_per_second": 222.48688107959774,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 104.86171000000002,
+        "requests_per_second": 286.0910812917317,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 530.515346,
+        "requests_per_second": 452.3903065378998,
+        "memory_after_all_scenarios": {
+          "rss_mib": 695.89453125,
+          "peak_mib": 794.33984375
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 445.662191,
+        "requests_per_second": 20.19466802827795,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 141.324642,
+        "requests_per_second": 63.68316149705866,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 308.68973800000003,
+        "requests_per_second": 19.43699210370252,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 106.669498,
+        "requests_per_second": 56.24850695369355,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 342.18633700000004,
+        "requests_per_second": 87.67153084782574,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 164.753149,
+        "requests_per_second": 182.09060149739534,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 96.970653,
+        "requests_per_second": 309.37194988261035,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 488.22564199999994,
+        "requests_per_second": 491.57598322129917,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 294.24422,
+        "requests_per_second": 101.956123386213,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 154.871542,
+        "requests_per_second": 193.70892555586488,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 91.39352699999999,
+        "requests_per_second": 328.2508180256574,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 507.86129800000003,
+        "requests_per_second": 472.56997322918664,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.06640625,
+          "peak_mib": 191.06640625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 262.90197,
+        "requests_per_second": 34.23329235608239,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 188.562438,
+        "requests_per_second": 47.72954834196618,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 197.44863600000002,
+        "requests_per_second": 30.387649778446683,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 106.25960899999998,
+        "requests_per_second": 56.46548162999547,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 257.23787999999996,
+        "requests_per_second": 116.62357036996264,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 144.57898,
+        "requests_per_second": 207.49904308357966,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 84.97289900000001,
+        "requests_per_second": 353.0537424644061,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 590.843357,
+        "requests_per_second": 406.1990325466247,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 205.45954899999998,
+        "requests_per_second": 146.01414315379424,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 123.01775700000002,
+        "requests_per_second": 243.8672329231299,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 76.569654,
+        "requests_per_second": 391.8001248902078,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 488.246668,
+        "requests_per_second": 491.5548138466764,
+        "memory_after_all_scenarios": {
+          "rss_mib": 691.79296875,
+          "peak_mib": 789.1875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 434.032283,
+        "requests_per_second": 20.735784761890624,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 138.391569,
+        "requests_per_second": 65.03286338201715,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 298.984871,
+        "requests_per_second": 20.067905041255415,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 106.752748,
+        "requests_per_second": 56.20464215122594,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 334.00622899999996,
+        "requests_per_second": 89.8186841898688,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 170.67929,
+        "requests_per_second": 175.76824932890216,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 97.20972699999999,
+        "requests_per_second": 308.61109197436593,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 500.666061,
+        "requests_per_second": 479.36143209036095,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 309.53069899999997,
+        "requests_per_second": 96.92091962742604,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 160.687242,
+        "requests_per_second": 186.6980827264432,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 89.892022,
+        "requests_per_second": 333.73373223265577,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 493.119712,
+        "requests_per_second": 486.6972342813179,
+        "memory_after_all_scenarios": {
+          "rss_mib": 191.7578125,
+          "peak_mib": 191.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 236.832735,
+        "requests_per_second": 38.0015034661488,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 118.125415,
+        "requests_per_second": 76.19020851693939,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 148.663873,
+        "requests_per_second": 40.35950280940145,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 72.791019,
+        "requests_per_second": 82.42775114880585,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 212.072285,
+        "requests_per_second": 141.46120036382877,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 114.989227,
+        "requests_per_second": 260.8940053140804,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 79.25283999999999,
+        "requests_per_second": 378.53533072127135,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 437.23561,
+        "requests_per_second": 548.9031417180316,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 184.692852,
+        "requests_per_second": 162.43184116297041,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 103.170169,
+        "requests_per_second": 290.78172780738583,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 64.103229,
+        "requests_per_second": 467.99514576715006,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 362.471287,
+        "requests_per_second": 662.121411012619,
+        "memory_after_all_scenarios": {
+          "rss_mib": 697.7890625,
+          "peak_mib": 837.7578125
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 429.737458,
+        "requests_per_second": 20.94301958662398,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 137.724696,
+        "requests_per_second": 65.34775723883246,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 306.72355300000004,
+        "requests_per_second": 19.56158873785607,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 105.403303,
+        "requests_per_second": 56.924212327577635,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 327.165098,
+        "requests_per_second": 91.69682274604976,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 165.529269,
+        "requests_per_second": 181.23683008592275,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 93.996946,
+        "requests_per_second": 319.1593054523282,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 494.13406599999996,
+        "requests_per_second": 485.69814654308817,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 312.786831,
+        "requests_per_second": 95.91196631932372,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 161.428584,
+        "requests_per_second": 185.84069349205217,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 99.10801,
+        "requests_per_second": 302.70005421357973,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 486.07078800000005,
+        "requests_per_second": 493.7552429091871,
+        "memory_after_all_scenarios": {
+          "rss_mib": 192.015625,
+          "peak_mib": 192.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 241.03633199999996,
+        "requests_per_second": 37.33876932710709,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 119.040196,
+        "requests_per_second": 75.60471422610897,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 193.608071,
+        "requests_per_second": 30.990443575051167,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 80.921175,
+        "requests_per_second": 74.1462293398483,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 208.509783,
+        "requests_per_second": 143.8781411997345,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 117.2997,
+        "requests_per_second": 255.75512980851613,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 72.752757,
+        "requests_per_second": 412.3555070222287,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 464.22858099999996,
+        "requests_per_second": 516.9866953969386,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 183.506537,
+        "requests_per_second": 163.4819145434585,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 102.58262100000002,
+        "requests_per_second": 292.4471972694088,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 63.335545999999994,
+        "requests_per_second": 473.6676620739956,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 378.963371,
+        "requests_per_second": 633.3065894117773,
+        "memory_after_all_scenarios": {
+          "rss_mib": 725.74609375,
+          "peak_mib": 896.81640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "requests": 9,
+        "wall_ms": 251.02196600000005,
+        "requests_per_second": 35.853436029578376,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "requests": 9,
+        "wall_ms": 140.923272,
+        "requests_per_second": 63.86454041458816,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 170.19067,
+        "requests_per_second": 35.25457652878386,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "requests": 6,
+        "wall_ms": 99.135506,
+        "requests_per_second": 60.52321960206668,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 215.472971,
+        "requests_per_second": 139.22859958152245,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 128.18619,
+        "requests_per_second": 234.0345711187765,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 82.989784,
+        "requests_per_second": 361.4902769237235,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 570.277869,
+        "requests_per_second": 420.8474728658986,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "requests": 30,
+        "wall_ms": 200.08018800000002,
+        "requests_per_second": 149.93988310326856,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "requests": 30,
+        "wall_ms": 118.27834,
+        "requests_per_second": 253.63900102081243,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "requests": 30,
+        "wall_ms": 83.754917,
+        "requests_per_second": 358.18792585037124,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "requests": 240,
+        "wall_ms": 486.17851800000005,
+        "requests_per_second": 493.645834018524,
+        "memory_after_all_scenarios": {
+          "rss_mib": 683.84375,
+          "peak_mib": 782.015625
+        }
+      }
+    ],
+    "long": [
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 727.719224,
+        "requests_per_second": 8.244938160380382,
+        "memory_after_all_scenarios": {
+          "rss_mib": 806.74609375,
+          "peak_mib": 1380.44140625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2319.57209,
+        "requests_per_second": 10.346735979221062,
+        "memory_after_all_scenarios": {
+          "rss_mib": 806.74609375,
+          "peak_mib": 1380.44140625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2216.6229350000003,
+        "requests_per_second": 10.827281275964962,
+        "memory_after_all_scenarios": {
+          "rss_mib": 806.74609375,
+          "peak_mib": 1380.44140625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 824.5449689999999,
+        "requests_per_second": 7.276740778949559,
+        "memory_after_all_scenarios": {
+          "rss_mib": 806.74609375,
+          "peak_mib": 1380.44140625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2796.992099,
+        "requests_per_second": 8.58064633381719,
+        "memory_after_all_scenarios": {
+          "rss_mib": 806.74609375,
+          "peak_mib": 1380.44140625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2812.5234840000003,
+        "requests_per_second": 8.533262081732719,
+        "memory_after_all_scenarios": {
+          "rss_mib": 806.74609375,
+          "peak_mib": 1380.44140625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 785.1337629999999,
+        "requests_per_second": 7.642009913156671,
+        "memory_after_all_scenarios": {
+          "rss_mib": 811.296875,
+          "peak_mib": 831.21875
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 3772.833212,
+        "requests_per_second": 6.361267156911361,
+        "memory_after_all_scenarios": {
+          "rss_mib": 811.30078125,
+          "peak_mib": 831.21875
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2955.110242,
+        "requests_per_second": 8.121524421964356,
+        "memory_after_all_scenarios": {
+          "rss_mib": 811.30078125,
+          "peak_mib": 831.21875
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 1026.9513069999998,
+        "requests_per_second": 5.842536018117168,
+        "memory_after_all_scenarios": {
+          "rss_mib": 811.30078125,
+          "peak_mib": 831.21875
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 4038.8110579999993,
+        "requests_per_second": 5.94234284677944,
+        "memory_after_all_scenarios": {
+          "rss_mib": 811.30078125,
+          "peak_mib": 831.21875
+        }
+      },
+      {
+        "round": 0,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 3752.1340920000002,
+        "requests_per_second": 6.396359887875776,
+        "memory_after_all_scenarios": {
+          "rss_mib": 811.30078125,
+          "peak_mib": 831.21875
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 2892.582022,
+        "requests_per_second": 2.0742713445516947,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.5390625,
+          "peak_mib": 772.5390625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 4790.810885000001,
+        "requests_per_second": 5.009590354556439,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.5390625,
+          "peak_mib": 772.5390625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 4619.65704,
+        "requests_per_second": 5.195190853388545,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.5390625,
+          "peak_mib": 772.5390625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 3452.017041,
+        "requests_per_second": 1.7381142470437765,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.5390625,
+          "peak_mib": 772.5390625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 5767.876719,
+        "requests_per_second": 4.160976589693993,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.5390625,
+          "peak_mib": 772.5390625
+        }
+      },
+      {
+        "round": 0,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 5410.277889999999,
+        "requests_per_second": 4.436001345579681,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.5390625,
+          "peak_mib": 772.5390625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 773.992096,
+        "requests_per_second": 7.7520171472138655,
+        "memory_after_all_scenarios": {
+          "rss_mib": 788.83203125,
+          "peak_mib": 818.32421875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2982.400789,
+        "requests_per_second": 8.047208171523858,
+        "memory_after_all_scenarios": {
+          "rss_mib": 788.83203125,
+          "peak_mib": 818.32421875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2794.644942,
+        "requests_per_second": 8.587853018217153,
+        "memory_after_all_scenarios": {
+          "rss_mib": 788.83203125,
+          "peak_mib": 818.32421875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 1047.525387,
+        "requests_per_second": 5.727784810240595,
+        "memory_after_all_scenarios": {
+          "rss_mib": 788.83203125,
+          "peak_mib": 818.32421875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 3825.791505,
+        "requests_per_second": 6.273211691916284,
+        "memory_after_all_scenarios": {
+          "rss_mib": 788.83203125,
+          "peak_mib": 818.32421875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 3714.80071,
+        "requests_per_second": 6.460642676037391,
+        "memory_after_all_scenarios": {
+          "rss_mib": 788.83203125,
+          "peak_mib": 818.32421875
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 2872.384169,
+        "requests_per_second": 2.088857077251215,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.7109375,
+          "peak_mib": 772.7109375
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 4701.540045000001,
+        "requests_per_second": 5.10471032263642,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.7109375,
+          "peak_mib": 772.7109375
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 4406.230513,
+        "requests_per_second": 5.4468325996997145,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.7109375,
+          "peak_mib": 772.7109375
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 3395.7563910000003,
+        "requests_per_second": 1.766911200079664,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.7109375,
+          "peak_mib": 772.7109375
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 5641.806831,
+        "requests_per_second": 4.253956351027006,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.7109375,
+          "peak_mib": 772.7109375
+        }
+      },
+      {
+        "round": 1,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 5524.805788000001,
+        "requests_per_second": 4.3440441023517105,
+        "memory_after_all_scenarios": {
+          "rss_mib": 772.7109375,
+          "peak_mib": 772.7109375
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 644.694552,
+        "requests_per_second": 9.306732903801551,
+        "memory_after_all_scenarios": {
+          "rss_mib": 775.00390625,
+          "peak_mib": 907.03515625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2264.746404,
+        "requests_per_second": 10.597212984911312,
+        "memory_after_all_scenarios": {
+          "rss_mib": 775.00390625,
+          "peak_mib": 907.03515625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2188.964495,
+        "requests_per_second": 10.964088296005002,
+        "memory_after_all_scenarios": {
+          "rss_mib": 775.00390625,
+          "peak_mib": 907.03515625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 853.34198,
+        "requests_per_second": 7.031178754384027,
+        "memory_after_all_scenarios": {
+          "rss_mib": 775.00390625,
+          "peak_mib": 907.03515625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2917.959238,
+        "requests_per_second": 8.2249264100241,
+        "memory_after_all_scenarios": {
+          "rss_mib": 775.00390625,
+          "peak_mib": 907.03515625
+        }
+      },
+      {
+        "round": 1,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2859.378651,
+        "requests_per_second": 8.393431905776652,
+        "memory_after_all_scenarios": {
+          "rss_mib": 775.00390625,
+          "peak_mib": 907.03515625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 2837.064421,
+        "requests_per_second": 2.1148620932213933,
+        "memory_after_all_scenarios": {
+          "rss_mib": 752.828125,
+          "peak_mib": 828.83984375
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 5104.820307,
+        "requests_per_second": 4.70143874938946,
+        "memory_after_all_scenarios": {
+          "rss_mib": 752.828125,
+          "peak_mib": 828.83984375
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 4421.463862,
+        "requests_per_second": 5.428066529338062,
+        "memory_after_all_scenarios": {
+          "rss_mib": 752.828125,
+          "peak_mib": 828.83984375
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 3372.221149,
+        "requests_per_second": 1.779242740879922,
+        "memory_after_all_scenarios": {
+          "rss_mib": 752.828125,
+          "peak_mib": 828.83984375
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 5782.209913000001,
+        "requests_per_second": 4.150662179531287,
+        "memory_after_all_scenarios": {
+          "rss_mib": 752.828125,
+          "peak_mib": 828.83984375
+        }
+      },
+      {
+        "round": 2,
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 5444.218827,
+        "requests_per_second": 4.408345946892263,
+        "memory_after_all_scenarios": {
+          "rss_mib": 752.828125,
+          "peak_mib": 828.83984375
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 649.4230249999999,
+        "requests_per_second": 9.238970238235703,
+        "memory_after_all_scenarios": {
+          "rss_mib": 760.43359375,
+          "peak_mib": 869.25
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2208.558424,
+        "requests_per_second": 10.86681689702948,
+        "memory_after_all_scenarios": {
+          "rss_mib": 760.43359375,
+          "peak_mib": 869.25
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2211.9312010000003,
+        "requests_per_second": 10.85024705522023,
+        "memory_after_all_scenarios": {
+          "rss_mib": 760.43359375,
+          "peak_mib": 869.25
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 830.02643,
+        "requests_per_second": 7.2286854769190905,
+        "memory_after_all_scenarios": {
+          "rss_mib": 760.43359375,
+          "peak_mib": 869.25
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 2887.744317,
+        "requests_per_second": 8.310985103048512,
+        "memory_after_all_scenarios": {
+          "rss_mib": 760.43359375,
+          "peak_mib": 869.25
+        }
+      },
+      {
+        "round": 2,
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 3098.356014,
+        "requests_per_second": 7.74604335058831,
+        "memory_after_all_scenarios": {
+          "rss_mib": 760.43359375,
+          "peak_mib": 869.25
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 792.6070749999999,
+        "requests_per_second": 7.5699551382379475,
+        "memory_after_all_scenarios": {
+          "rss_mib": 818.7734375,
+          "peak_mib": 850.56640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 3039.5237890000003,
+        "requests_per_second": 7.8959737334038005,
+        "memory_after_all_scenarios": {
+          "rss_mib": 818.7734375,
+          "peak_mib": 850.56640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 2972.376845,
+        "requests_per_second": 8.074346306516192,
+        "memory_after_all_scenarios": {
+          "rss_mib": 818.7734375,
+          "peak_mib": 850.56640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "requests": 6,
+        "wall_ms": 1020.8598460000001,
+        "requests_per_second": 5.877398375016505,
+        "memory_after_all_scenarios": {
+          "rss_mib": 818.7734375,
+          "peak_mib": 850.56640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "requests": 24,
+        "wall_ms": 3826.8073560000003,
+        "requests_per_second": 6.271546426911383,
+        "memory_after_all_scenarios": {
+          "rss_mib": 818.7734375,
+          "peak_mib": 850.56640625
+        }
+      },
+      {
+        "round": 2,
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "requests": 24,
+        "wall_ms": 3699.8298649999997,
+        "requests_per_second": 6.48678476462863,
+        "memory_after_all_scenarios": {
+          "rss_mib": 818.7734375,
+          "peak_mib": 850.56640625
+        }
+      }
+    ]
+  },
+  "validation": {
+    "tests_passed": 237,
+    "typecheck": "passed",
+    "node_build": "passed",
+    "library_build": "passed",
+    "npm_tarball_real_translation": "passed",
+    "docker_image_real_http_native_ssru": "passed",
+    "production_ort_library_sanitized": false
+  },
+  "first_use": [
+    {
+      "round": 0,
+      "engine": "candidate",
+      "ready_ms": 469.5110280008521,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 7418.480953987455
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 8284.367896005278
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "engine": "fast",
+      "ready_ms": 353.3578210044652,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 5441.02344600833
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 6524.798011989333
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "engine": "linguaspark",
+      "ready_ms": 239.01081399526447,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 24.081484996713698
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 29.87112701521255
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "engine": "fast",
+      "ready_ms": 354.31279000476934,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 5639.353517995914
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 6799.231515993597
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "engine": "linguaspark",
+      "ready_ms": 237.3339869955089,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 25.884585978928953
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 25.878932006889954
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "engine": "candidate",
+      "ready_ms": 353.54343499056995,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 5794.440829980886
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 6802.811715024291
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "engine": "linguaspark",
+      "ready_ms": 237.09867801517248,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 26.75229700980708
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 25.43476998107508
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "engine": "candidate",
+      "ready_ms": 353.39050900074653,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 5903.725273004966
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 6634.469579992583
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "engine": "fast",
+      "ready_ms": 359.7720410034526,
+      "first_requests": [
+        {
+          "from": "en",
+          "to": "zh",
+          "latency_ms": 5583.204412017949
+        },
+        {
+          "from": "zh",
+          "to": "en",
+          "latency_ms": 6384.103299002163
+        }
+      ]
+    }
+  ],
+  "first_use_artifacts": {
+    "finished_at": "2026-11-15T04:42:07Z",
+    "linguaspark_binary_sha256": "19ba6f9cda6867c09e12b2b11cd1dd2806b3c60dd8ddf6c74c0bbbb93fd61849",
+    "mtran_main_sha256": "d607216343c4f74ff4ade04f579d4ae0df69a425437a21757dd6b3b273a63b3d",
+    "client_sha256": "08dd958c621d7adec53a97dff3ff2f83755130de856373d0f235b16805529f75",
+    "script_sha256": "58809be2230240b34c9cc36f28e1b29a0f18e38cc2efb58df84917868dedff56",
+    "native_addon_sha256": "eed018423753c7ca81e45f4b92ac0a69ed8b9891641a880592f496e7dfa3c33c",
+    "mtran_worker_sha256": "165fea473cd27859dd112b5e5642fdcbaa7f4655eb463b76d32486e1cdac500b",
+    "corpus_sha256": "de9f62609774eb7052fcbec7036cd0d953c9df75050e0208359bfa45bb224cc7"
+  },
+  "first_use_method": "Fresh process each round; copied prepared Fast model cache; first candidate round also converts its custom graph; OS page cache not cleared; MTran readiness does not imply loaded models; engine startup policies differ; first language request includes initialization and probes."
+}

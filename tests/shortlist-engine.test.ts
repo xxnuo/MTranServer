@@ -83,7 +83,7 @@ test.each([undefined, ['X', 'eos_id']])('legacy graph with inputNames %j skips l
   tokenizers();
   const session = { inputNames, release: mock(async () => {}), run: mock(async (feeds: any) => {
     expect(Object.keys(feeds)).toEqual(['X', 'eos_id']);
-    return { Y: { data: BigInt64Array.of(42n, 24n), dispose() {} } };
+    return { Y: { type:'int64', dims:[2], data: BigInt64Array.of(42n, 24n), dispose() {} } };
   }) };
   spyOn(backend, 'selectBackend').mockImplementation(async (_model, probe) => {
     await probe(session as any, true); await probe(session as any);
@@ -110,7 +110,7 @@ test.each(['device lost', 'invalid output', 'no EOS'])('shortlist feeds cover sh
     const dispose = mock(() => {}); outputDisposals.push(dispose);
     const data = !probing && provider === 'webgpu' && failure === 'invalid output' ? Float32Array.of(42)
       : probing || (provider === 'webgpu' && failure === 'no EOS') ? BigInt64Array.of(42n) : BigInt64Array.of(42n, 24n);
-    return { Y: { data, dispose } };
+    return { Y: { type:data instanceof BigInt64Array ? 'int64' : 'float32', dims:[data.length], data, dispose } };
   }) });
   const gpu = session('webgpu'), cpu = session('cpu');
   spyOn(backend, 'selectBackend').mockImplementation(async (_model, probe) => {

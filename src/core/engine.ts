@@ -1,11 +1,12 @@
 import * as ort from 'onnxruntime-node';
 import { availableParallelism } from 'node:os';
-import { createNativeSession, NativeRunError, type InferenceSession } from './native.js';
+import { createNativeSession, hasNativeSsru, NativeRunError, type InferenceSession } from './native.js';
 import { parseFragment } from 'parse5';
 import { createMetalWorker, getMetalRuntime, type MetalWorker, type MetalInput } from './metal.js';
 import { Tokenizer } from './tokenizer.js';
 import { Shortlist } from './shortlist.js';
 import type { ConvertedModel } from '../converter/cache.js';
+import { ensureNativeSsru } from '../converter/ssru-cache.js';
 import { createSession, selectBackend, type BackendInfo, type SessionTuning } from './backend.js';
 import * as logger from '../logger/index.js';
 
@@ -26,6 +27,7 @@ function splitSentences(content: string): string[] {
 
 export class TranslationEngine {
   private session?: InferenceSession;
+  private nativeSessions = new WeakSet<InferenceSession>();
   private converted?: ConvertedModel;
   private metal?: Promise<MetalWorker | undefined>;
   private metalBusy = false;
@@ -88,24 +90,44 @@ export class TranslationEngine {
         let info = selected.info;
         const inputNames = selected.session.inputNames ?? ['X', 'eos_id'];
         const isShortlist = inputNames.includes('candidate_ids');
+        const ssru = selected.info.provider === 'cpu' && isShortlist && process.env.MT_NATIVE_SSRU === '1' && hasNativeSsru();
         if (selected.info.provider === 'cpu'
-          && (!isShortlist || config['cpu-threads'] === undefined || config['cpu-threads'] === 1)) {
-          const nativeThreads = isShortlist ? 1 : selected.info.cpuThreads;
-          const native = await createNativeSession(model.model, inputNames, nativeThreads);
-          if (native) {
-            try {
+          && (ssru || !isShortlist || config['cpu-threads'] === undefined || config['cpu-threads'] === 1)) {
+          const nativeThreads = ssru ? config['cpu-threads'] ?? 1 : isShortlist ? 1 : selected.info.cpuThreads;
+          let native: InferenceSession | undefined;
+          try {
+            const nativeModel = ssru ? await ensureNativeSsru(model) : model;
+            native = ssru ? await createNativeSession(nativeModel.model, inputNames, nativeThreads, true)
+              : await createNativeSession(nativeModel.model, inputNames, nativeThreads);
+            if (native) {
+              this.nativeSessions.add(native);
               await probe(native);
+              if (ssru) {
+                const ids = sampleIds.length + 1 <= this.tokenLimit ? [...sampleIds] : this.src.encode('Hello.');
+                ids.push(this.src.eos);
+                const input = new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
+                try {
+                  let requireEos = true;
+                  try { await this.infer(selected.session, input, eos); }
+                  catch (error) {
+                    if (!(error instanceof Error) || error.message !== 'Translation exceeded generation limit') throw error;
+                    requireEos = false;
+                  }
+                  // Full-sentence completion is checked against Fast; numeric differences need independent quality review.
+                  await this.infer(native, input, eos, requireEos);
+                } finally { input.dispose(); }
+              }
               const poolSize = Number.parseInt(process.env.UV_THREADPOOL_SIZE ?? '4', 10) || 4;
               activeSession = native;
-              info = { ...selected.info, runtime: 'native-async', cpuThreads: nativeThreads,
+              info = { ...selected.info, runtime: ssru ? 'native-ssru' : 'native-async', cpuThreads: nativeThreads,
                 tuning: { ...selected.info.tuning, executionMode: 'sequential', interOpNumThreads: 1,
                   graphOptimizationLevel: 'all', spinning: false, dynamicBlockBase: 0 },
                 maxConcurrentRuns: Math.min(config['max-concurrent-runs'] ?? Infinity, Math.max(1, poolSize), availableParallelism()) };
               await selected.session.release().catch(error => logger.debug(`ONNX session release failed: ${error}`));
-            } catch (error) {
-              await native.release().catch(() => {});
-              logger.warn(`Native ONNX validation failed; using standard runtime: ${error}`);
             }
+          } catch (error) {
+            await native?.release().catch(() => {});
+            logger.warn(`Native ONNX${ssru ? ' SSRU' : ''} validation failed; using standard runtime: ${error}`);
           }
         }
         this.session = activeSession;
@@ -306,7 +328,14 @@ export class TranslationEngine {
       if (this.inferRunning >= (this.backend?.maxConcurrentRuns ?? 1)) await new Promise<void>(resolve => this.inferWaiters.push(resolve));
       else this.inferRunning++;
     }
-    try { return await session.run(feeds); }
+    // Queued requests may still hold the session that a concurrent failure retired.
+    const actual = gated ? this.session! : session;
+    const wasNative = this.nativeSessions.has(actual);
+    try { return { outputs: await actual.run(feeds), wasNative }; }
+    catch (error) {
+      if (wasNative && !(error instanceof NativeRunError)) throw new NativeRunError(String(error));
+      throw error;
+    }
     finally {
       if (gated) {
         this.inferRunning--;
@@ -326,13 +355,18 @@ export class TranslationEngine {
         const ids = this.shortlist.candidates(Array.from(input.data as BigInt64Array, Number));
         feeds.candidate_ids = candidates = new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
       }
-      const output = await this.runInference(session, feeds);
+      const { outputs, wasNative } = await this.runInference(session, feeds);
       try {
-        if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
-        const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
+        const y = outputs.Y;
+        const invalid = () => new (wasNative ? NativeRunError : Error)('Invalid translation output');
+        if (y?.type !== 'int64' || !(y.data instanceof BigInt64Array) || !Array.isArray(y.dims) || y.dims.length !== 1
+          || y.dims[0] !== y.data.length || y.data.length < 1 || y.data.length > 1 + 3 * input.data.length) throw invalid();
+        const tokens = Array.from(y.data, Number);
+        if (tokens.some(token => !Number.isSafeInteger(token) || token < 0 || token >= this.dst!.size)) throw invalid();
+        const end = tokens.indexOf(this.dst!.eos);
         if (end < 0 && requireEos) throw new Error('Translation exceeded generation limit');
         return end < 0 ? tokens : tokens.slice(0, end);
-      } finally { for (const tensor of Object.values(output)) tensor.dispose(); }
+      } finally { for (const tensor of Object.values(outputs)) tensor.dispose(); }
     } finally { candidates?.dispose(); }
   }
   destroy(): Promise<void> {

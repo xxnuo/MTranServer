@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,18 +31,37 @@ export function buildNative(): string | null {
   if (!include) return fallback('Node headers not found (set NODE_INCLUDE_DIR)');
   mkdirSync(path.dirname(output), { recursive: true });
   const native = path.join(root, 'native/onnx-async');
-  const result = spawnSync(compiler, [
-    '-std=c++20', '-O3', '-Wall', '-Wextra', '-shared', '-fPIC', '-pthread',
-    '-I', include, '-I', native, path.join(native, 'addon.cc'),
-    ...(process.platform === 'darwin' ? ['-undefined', 'dynamic_lookup'] : ['-ldl']),
-    '-o', temporary,
-  ], { encoding: 'utf8' });
-  if (result.status !== 0) {
-    return fallback(`Compilation failed: ${result.error?.message || result.stderr.trim() || `exit ${result.status}`}`);
+  mkdirSync(path.join(root, '.tmp'), { recursive: true });
+  const buildDirectory = mkdtempSync(path.join(root, '.tmp/native-build-'));
+  try {
+    const packed: string[] = [];
+    if (process.arch === 'x64') {
+      const object = path.join(buildDirectory, 'packed.o');
+      const result = spawnSync(compiler, [
+        '-std=c++20', '-O3', '-Wall', '-Wextra', '-fPIC', '-mavx2', '-mavxvnni', '-ffp-contract=off',
+        '-I', path.join(root, 'native/ssru/third_party/xsimd/include'),
+        '-c', path.join(root, 'native/ssru/packed.cc'), '-o', object,
+      ], { encoding: 'utf8', env: { ...process.env, TMPDIR: buildDirectory } });
+      if (result.status === 0) packed.push('-DMTRAN_SSRU_AVXVNNI', object);
+      else console.warn(`[native] AVXVNNI compilation unavailable; retaining InvokeOp: ${result.error?.message || result.stderr.trim()}`);
+    }
+    const result = spawnSync(compiler, [
+      '-std=c++20', '-O3', '-Wall', '-Wextra', '-shared', '-fPIC', '-pthread',
+      '-I', include, '-I', native, path.join(native, 'addon.cc'),
+      '-DMTRAN_NATIVE_SSRU', path.join(native, 'ssru_op.cc'), path.join(root, 'native/ssru/ssru.cc'),
+      ...packed,
+      ...(process.platform === 'darwin' ? ['-undefined', 'dynamic_lookup'] : ['-ldl']),
+      '-o', temporary,
+    ], { encoding: 'utf8', env: { ...process.env, TMPDIR: buildDirectory } });
+    if (result.status !== 0) {
+      return fallback(`Compilation failed: ${result.error?.message || result.stderr.trim() || `exit ${result.status}`}`);
+    }
+    renameSync(temporary, output);
+    console.log(`[native] Built ${path.relative(root, output)}`);
+    return output;
+  } finally {
+    rmSync(buildDirectory, { recursive: true, force: true });
   }
-  renameSync(temporary, output);
-  console.log(`[native] Built ${path.relative(root, output)}`);
-  return output;
 }
 
 if (import.meta.main) buildNative();

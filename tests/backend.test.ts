@@ -37,7 +37,7 @@ test('CPU-only mode skips GPU discovery and does not reuse a cached accelerator'
 
 test('calibration accepts bounded generation without EOS but real translation rejects incomplete output', async () => {
   spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }]);
-  spyOn(Tokenizer, 'load').mockResolvedValue({ encode: () => [10, 11], eos: 0, close() {} } as any);
+  spyOn(Tokenizer, 'load').mockResolvedValue({ size: 64, encode: () => [10, 11], eos: 0, close() {} } as any);
   let clock = 0;
   spyOn(performance, 'now').mockImplementation(() => clock);
   const inputs: number[][] = [];
@@ -46,7 +46,7 @@ test('calibration accepts bounded generation without EOS but real translation re
     release, run: async ({ X }: any) => {
       inputs.push(Array.from(X.data, Number));
       clock += 5;
-      return { Y: { data: BigInt64Array.of(12n, 13n), dispose } };
+      return { Y: { type: 'int64', dims: [2], data: BigInt64Array.of(12n, 13n), dispose } };
     },
   }) as any);
   const engine = new TranslationEngine();
@@ -61,10 +61,10 @@ test('calibration accepts bounded generation without EOS but real translation re
 
 test('calibration still rejects malformed model output and releases its tensors', async () => {
   spyOn(ort, 'listSupportedBackends').mockReturnValue([{ name: 'cpu', bundled: true }]);
-  spyOn(Tokenizer, 'load').mockResolvedValue({ encode: () => [10], eos: 0, close() {} } as any);
+  spyOn(Tokenizer, 'load').mockResolvedValue({ size: 64, encode: () => [10], eos: 0, close() {} } as any);
   const dispose = mock(() => {});
   spyOn(ort.InferenceSession, 'create').mockResolvedValue({
-    release: async () => {}, run: async () => ({ Y: { data: Float32Array.of(1), dispose } }),
+    release: async () => {}, run: async () => ({ Y: { type: 'float32', dims: [1], data: Float32Array.of(1), dispose } }),
   } as any);
   const engine = new TranslationEngine();
   try {
@@ -231,16 +231,16 @@ test.each(['device lost', 'invalid output'])('accelerator %s retries the request
   const engine = new TranslationEngine() as any;
   const dispose = mock(() => {}), release = mock(async () => {});
   engine.src = { encode: () => [10], eos: 0, close() {} };
-  engine.dst = { eos: 0, decode: () => 'Hello', close() {} };
+  engine.dst = { size: 64, eos: 0, decode: () => 'Hello', close() {} };
   engine.modelPath = 'model.onnx';
   engine.fallbackCpuThreads = 2;
   engine.backend = { provider: 'webgpu', cpuThreads: 1, measurements: [] };
   engine.session = { release, run: async () => {
     if (failure === 'device lost') throw new Error(failure);
-    return { Y: { data: Float32Array.of(1), dispose } };
+    return { Y: { type: 'float32', dims: [1], data: Float32Array.of(1), dispose } };
   } };
   const create = spyOn(ort.InferenceSession, 'create').mockResolvedValue({
-    release: async () => {}, run: async () => ({ Y: { data: BigInt64Array.of(1n, 0n), dispose } }),
+    release: async () => {}, run: async () => ({ Y: { type: 'int64', dims: [2], data: BigInt64Array.of(1n, 0n), dispose } }),
   } as any);
   expect(await engine.translateAsync('Hallo')).toBe('Hello');
   expect(engine.backend.provider).toBe('cpu');

@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { fileURLToPath } from 'node:url';
 
-test.each(['shared', 'html', 'failure', 'cache0', 'configuration', 'backend', 'tuning', 'fallback', 'cleanup'])('service in-flight deduplication: %s', async scenario => {
+test.each(['shared', 'html', 'failure', 'cache0', 'configuration', 'backend', 'runtime', 'tuning', 'fallback', 'runtime-fallback', 'cleanup'])('service in-flight deduplication: %s', async scenario => {
   // Child processes keep module mocks isolated from native engine tests.
   const script = `
     import { mock } from 'bun:test';
@@ -15,8 +15,9 @@ test.each(['shared', 'html', 'failure', 'cache0', 'configuration', 'backend', 't
     await mkdir(path.join(root, 'en_de'));
     await writeFile(path.join(root, 'en_de/manifest.json'), JSON.stringify({identity:'same-model'}));
     setConfig({modelDir:root, workersPerLanguage:1, workerIdleTimeout:3600, cacheSize:scenario === 'cache0' ? 0 : 1000});
-    let release, calls = 0, reads = 0;
+    let release, releaseOld, calls = 0, reads = 0;
     const gate = new Promise(resolve => release = resolve);
+    const oldGate = new Promise(resolve => releaseOld = resolve);
     const instances = [], cache = new Map(), requests = [];
     const key = args => JSON.stringify(args.map(String));
     mock.module('./src/utils/cache.ts', () => ({
@@ -25,16 +26,21 @@ test.each(['shared', 'html', 'failure', 'cache0', 'configuration', 'backend', 't
     }));
     mock.module('./src/core/engine.ts', () => ({ TranslationEngine: class {
       identity = 'same-model'; busy = false;
-      backend = {provider:'cuda', cpuThreads:1, tuning:{spinning:true}};
+      backend = {provider:scenario === 'runtime-fallback' ? 'cpu' : 'cuda', runtime:scenario === 'runtime-fallback' ? 'native-ssru' : undefined, cpuThreads:1, tuning:{spinning:true}};
       constructor() { this.id = instances.push(this); }
       async init() {}
       async translateAsync(text, options) {
         const attempt = ++calls;
+        const runtime = this.backend.runtime;
         this.busy = true;
         try {
-          await gate;
+          await (scenario === 'runtime-fallback' && text === 'old' && runtime === 'native-ssru' ? oldGate : gate);
           if (scenario === 'failure' && attempt === 1) throw new Error('translation failed');
           if (scenario === 'fallback') this.backend.provider = 'cpu';
+          if (scenario === 'runtime-fallback') {
+            if (text === 'trigger') this.backend = {...this.backend,runtime:undefined};
+            return (runtime === 'native-ssru' ? 'ssru:' : 'fast:') + text;
+          }
           return this.id + ':' + text + ':' + options.html;
         } finally { this.busy = false; }
       }
@@ -54,14 +60,26 @@ test.each(['shared', 'html', 'failure', 'cache0', 'configuration', 'backend', 't
       assert.ok(reads >= count, 'requests reached cache lookup');
     };
     try {
+      if (scenario === 'runtime-fallback') {
+        const old = translate(false,'old'); await waitForReads(1);
+        const trigger = translate(false,'trigger'); await waitForReads(2);
+        release(); await trigger;
+        assert.equal(instances[0].backend.runtime,undefined);
+        assert.equal(await translate(false,'old'),'fast:old');
+        assert.equal(calls,3,'post-fallback request does fresh inference');
+        releaseOld(); assert.equal(await old,'ssru:old');
+        assert.equal(await translate(false,'old'),'fast:old','late SSRU result cannot poison fallback cache');
+        assert.equal(calls,3); assert.equal(cache.size,1);
+      } else {
       const first = translate();
       await waitForReads(1);
       if (scenario === 'configuration') setConfig({workersPerLanguage:2});
       if (scenario === 'backend') instances[0].backend.cpuThreads = 2;
+      if (scenario === 'runtime') instances[0].backend.runtime = 'native-ssru';
       if (scenario === 'tuning') instances[0].backend.tuning = {spinning:false};
       const second = translate(scenario === 'html');
       await waitForReads(2);
-      const separate = ['html','cache0','configuration','backend','tuning'].includes(scenario);
+      const separate = ['html','cache0','configuration','backend','runtime','tuning'].includes(scenario);
       assert.equal(calls, separate ? 2 : 1, 'concurrent inference count');
       if (scenario === 'configuration') assert.equal(instances.length, 2);
       let closing;
@@ -83,15 +101,18 @@ test.each(['shared', 'html', 'failure', 'cache0', 'configuration', 'backend', 't
           assert.equal(calls, 2);
         } else if (scenario === 'shared' || scenario === 'fallback') {
           assert.equal(await translate(), '1:text:false');
-          assert.equal(calls, 1, 'successful translation uses the post-inference cache key');
+          assert.equal(calls, scenario === 'fallback' ? 2 : 1, 'backend changes skip caching until a stable inference');
+          assert.equal(await translate(), '1:text:false');
+          assert.equal(calls, scenario === 'fallback' ? 2 : 1, 'stable inference is cached');
         } else if (scenario === 'cache0') {
           assert.equal(await translate(), '1:text:false');
           assert.equal(calls, 3);
           assert.equal(cache.size, 0);
         }
       }
+      }
     } finally {
-      release();
+      release(); releaseOld();
       await Promise.allSettled(requests);
       await cleanupAllEngines();
       await rm(root, {recursive:true,force:true});

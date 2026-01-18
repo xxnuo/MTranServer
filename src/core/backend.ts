@@ -28,7 +28,7 @@ export interface BackendMeasurement {
 }
 export interface BackendInfo {
   documentAcceleration?: { provider: 'metal' | 'cuda'; runtime: 'mlx'; selected: boolean; batchSize?: number; maxTokens?: number; cpuMs?: number; gpuMs?: number; error?: string };
-  runtime?: 'native-async';
+  runtime?: 'native-async' | 'native-ssru';
   provider: string;
   cpuThreads: number;
   tuning: SessionTuning;

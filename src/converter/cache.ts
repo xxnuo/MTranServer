@@ -65,11 +65,11 @@ function sourceRevision(records: unknown, lexicalShortlist: boolean) {
   return hashJson(normalizedRecords(conversionInputs));
 }
 
-export function runWorker(model: string, sourceVocab: string, targetVocab: string, output: string, lexicalShortlist: boolean, lex?: string, metal?: { sourceEos: number; targetEos: number }) {
+export function runWorker(model: string, sourceVocab: string, targetVocab: string, output: string, lexicalShortlist: boolean, lex?: string, metal?: { sourceEos: number; targetEos: number }, nativeSsru = false) {
   const task = conversionQueue.then(() => new Promise<void>((resolve, reject) => {
     const bundled = new URL('./converter-worker.js', import.meta.url);
     const source = new URL('../../scripts/converter-worker.mjs', import.meta.url);
-    const worker = new Worker(existsSync(bundled) ? bundled : source, { execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')), workerData: { model, sourceVocab, targetVocab, output, lexicalShortlist, lex, metal } });
+    const worker = new Worker(existsSync(bundled) ? bundled : source, { execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')), workerData: { model, sourceVocab, targetVocab, output, lexicalShortlist, lex, metal, nativeSsru } });
     let responded = false;
     worker.once('message', message => { responded = true; if (message.error) reject(new Error(message.error)); else resolve(); });
     worker.once('error', reject);

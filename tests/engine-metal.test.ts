@@ -23,9 +23,9 @@ function setup(delay = 0) {
   engine.backend = { provider: 'cpu', maxConcurrentRuns: 4 };
   engine.converted = { directory: '.', sourceModel: 'fake', identity: 'test' };
   engine.src = { encode(text: string) { const id = next++; texts.set(id, text); return [id]; }, eos: 0, close() {} };
-  engine.dst = { eos: 0, decode: ([id]: number[]) => texts.get(id)!, close() {} };
+  engine.dst = { size:4096, eos: 0, decode: ([id]: number[]) => texts.get(id)!, close() {} };
   engine.session = {
-    run: async (feeds: any) => { cpuCalls++; await new Promise(resolve => setTimeout(resolve, 2)); return { Y: { data: BigInt64Array.of(feeds.X.data[0], 0n), dispose() {} } }; },
+    run: async (feeds: any) => { cpuCalls++; await new Promise(resolve => setTimeout(resolve, 2)); return { Y: { type:'int64', dims:[2], data: BigInt64Array.of(feeds.X.data[0], 0n), dispose() {} } }; },
     release: mock(async () => {}),
   };
   const text = '  ' + Array.from({ length: 16 }, (_, i) => `Sentence ${i}.\n`).join('') + '  ';
