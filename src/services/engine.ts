@@ -21,17 +21,17 @@ interface EngineInfo {
 
 const engines = new Map<string, EngineInfo>();
 const loadingPromises = new Map<string, Promise<TranslationEngine>>();
-const zhPunctTest = /[!-/:-@[-`{-~]/;
-const zhPunctGlobal = /[!-/:-@[-`{-~]/g;
+const zhCommaTest = /,/;
+const zhCommaGlobal = /,/g;
 
 function formatChinesePunctuation(text: string, toLang: string, isHTML: boolean, enabled: boolean): string {
   if (!enabled || isHTML || !toLang.startsWith('zh')) {
     return text;
   }
-  if (!zhPunctTest.test(text)) {
+  if (!zhCommaTest.test(text)) {
     return text;
   }
-  return text.replace(zhPunctGlobal, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0xFEE0));
+  return text.replace(zhCommaGlobal, '，');
 }
 
 function needsPivotTranslation(fromLang: string, toLang: string): boolean {
@@ -59,7 +59,6 @@ async function getOrCreateSingleEngine(
     return existing.engine;
   }
 
-  // Check if initialization is already in progress
   if (loadingPromises.has(key)) {
     logger.debug(`Waiting for existing engine initialization for ${key}...`);
     return loadingPromises.get(key)!;
@@ -234,75 +233,75 @@ export async function translateWithPivot(
     `TranslateWithPivot: ${fromLang} -> ${toLang}, text length: ${text.length}, isHTML: ${isHTML}`
   );
 
-  const config = getConfig();
-  const shouldFullwidth = config.fullwidthZhPunctuation ?? true;
+  let config: ReturnType<typeof getConfig> | null = null;
+  let result = text;
 
   if (fromLang !== 'auto' && fromLang === toLang) {
-    return formatChinesePunctuation(text, toLang, isHTML, shouldFullwidth);
-  }
+    result = text;
+  } else if (fromLang !== 'auto' && text.length <= 512) {
+    result = await translateSegment(fromLang, toLang, text, isHTML);
+  } else {
+    const segments = await detectMultipleLanguages(text);
 
-  if (fromLang !== 'auto' && text.length <= 512) {
-    const translated = await translateSegment(fromLang, toLang, text, isHTML);
-    return formatChinesePunctuation(translated, toLang, isHTML, shouldFullwidth);
-  }
-
-  const segments = await detectMultipleLanguages(text);
-
-  if (segments.length <= 1) {
-    let effectiveFromLang: string;
-    if (segments.length === 1) {
-      effectiveFromLang = segments[0].language;
-    } else if (fromLang === 'auto') {
-      const detected = await detectLanguage(text);
-      if (!detected) {
-        throw new Error('Failed to detect source language');
+    if (segments.length <= 1) {
+      let effectiveFromLang: string;
+      if (segments.length === 1) {
+        effectiveFromLang = segments[0].language;
+      } else if (fromLang === 'auto') {
+        const detected = await detectLanguage(text);
+        if (!detected) {
+          throw new Error('Failed to detect source language');
+        }
+        effectiveFromLang = detected;
+      } else {
+        effectiveFromLang = fromLang;
       }
-      effectiveFromLang = detected;
+
+      if (effectiveFromLang === toLang) {
+        result = text;
+      } else if (!isHTML) {
+        config = config ?? getConfig();
+        result = text.length > config.maxSentenceLength
+          ? await translateLongText(effectiveFromLang, toLang, text)
+          : await translateSegment(effectiveFromLang, toLang, text, isHTML);
+      } else {
+        result = await translateSegment(effectiveFromLang, toLang, text, isHTML);
+      }
     } else {
-      effectiveFromLang = fromLang;
-    }
+      logger.debug(`Detected ${segments.length} language segments`);
+      result = '';
+      let lastEnd = 0;
 
-    if (effectiveFromLang === toLang) {
-      return formatChinesePunctuation(text, toLang, isHTML, shouldFullwidth);
-    }
+      for (const seg of segments) {
+        if (seg.start > lastEnd) {
+          result += text.substring(lastEnd, seg.start);
+        }
 
-    if (text.length > config.maxSentenceLength && !isHTML) {
-      const translated = await translateLongText(effectiveFromLang, toLang, text);
-      return formatChinesePunctuation(translated, toLang, isHTML, shouldFullwidth);
-    }
+        if (seg.language === toLang) {
+          result += seg.text;
+        } else {
+          try {
+            const translated = await translateSegment(seg.language, toLang, seg.text, isHTML);
+            result += translated;
+          } catch (error) {
+            logger.error(`Failed to translate segment: ${error}`);
+            result += seg.text;
+          }
+        }
+        lastEnd = seg.end;
+      }
 
-    const translated = await translateSegment(effectiveFromLang, toLang, text, isHTML);
-    return formatChinesePunctuation(translated, toLang, isHTML, shouldFullwidth);
-  }
-
-  logger.debug(`Detected ${segments.length} language segments`);
-  let result = '';
-  let lastEnd = 0;
-
-  for (const seg of segments) {
-    if (seg.start > lastEnd) {
-      result += text.substring(lastEnd, seg.start);
-    }
-
-    if (seg.language === toLang) {
-      result += seg.text;
-    } else {
-      try {
-        const translated = await translateSegment(seg.language, toLang, seg.text, isHTML);
-        result += translated;
-      } catch (error) {
-        logger.error(`Failed to translate segment: ${error}`);
-        result += seg.text;
+      if (lastEnd < text.length) {
+        result += text.substring(lastEnd);
       }
     }
-    lastEnd = seg.end;
   }
 
-  if (lastEnd < text.length) {
-    result += text.substring(lastEnd);
+  if (!toLang.startsWith('zh')) {
+    return result;
   }
-
-  return formatChinesePunctuation(result, toLang, isHTML, shouldFullwidth);
+  config = config ?? getConfig();
+  return formatChinesePunctuation(result, toLang, isHTML, config.fullwidthZhPunctuation);
 }
 
 async function translateLongText(
