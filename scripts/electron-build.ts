@@ -32,6 +32,8 @@ async function main() {
     '--outfile', outfile,
     '--target', 'node',
     '--external', 'electron',
+    '--external', 'onnxruntime-node',
+    '--external', '@sctg/sentencepiece-js',
     '--format', 'esm',
     '--minify', '--bundle'
   ])
