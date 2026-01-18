@@ -16,9 +16,9 @@ Fast CPU 默认选择原生 SSRU，不再需要 `MT_NATIVE_SSRU=1`；设置 `MT_
 
 本地302项测试、类型检查、Node／携带六插件的library构建和packed ASan／UBSan通过。最终包23,590,705 bytes，SHA-256 `4febaa52a5b597b77fcccc34cabcbc5f520ae97943c5ae2580cc66abb68ada8e`。新原始报告在同名JSON的 `fix_5_4_1` 字段；以下表格与失败记录保留为5.4.0历史证据。
 
-Windows与Intel macOS实体设备访问尚未获得；托管原生架构运行器已通过，但不能宣称这些实体机项目完成。没有发布npm或部署现有服务。
+2026-11-16用户确认原生架构托管运行器满足本次验收要求，明确标注虚拟机即可。因此六平台适配、启动预热及运行验证已完成。运行器含虚拟机，额外实体设备为Linux三台及Apple M4；未测Windows与Intel Mac实体设备，不将托管运行结果称为这些实体机结果。没有发布npm或部署现有服务。
 
-## 平台与执行证据
+## 5.4.0 历史平台与执行证据
 
 [原生架构测试](https://github.com/xxnuo/MTranServer/actions/runs/43709749338)覆盖以下六目标，每目标完成双向2024条 FLORES-200 devtest、25条短句／段落，与同机原 Fast 的2049条输出逐 token 一致，全部生成 EOS。Node 22 与 Electron 39.2.7 均通过默认 Fast、关闭 SSRU、缺插件回退，以及双向短句／段落／HTML、并发和关闭排空。Linux 两架构各重复三轮全新 Electron 启动。
 
