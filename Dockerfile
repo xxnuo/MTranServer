@@ -49,6 +49,7 @@ COPY --from=builder /runtime/package.json ./package.json
 
 ENV MT_HOST=0.0.0.0 \
     MT_PORT=8989 \
+    MT_FAST=true \
     NODE_ENV=production \
     LD_PRELOAD=libtcmalloc_minimal.so.4 \
     TCMALLOC_AGGRESSIVE_DECOMMIT=1 \
