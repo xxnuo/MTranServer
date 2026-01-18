@@ -160,14 +160,14 @@ CPU-Vergleich aus demselben Testlauf, als Richtwert. Weniger ms und mehr Anfrage
 
 | Richtung | Eingabe | Parallelität | Standard | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| Englisch → Chinesisch | Kurz | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
-| Englisch → Chinesisch | Absatz | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
-| Chinesisch → Englisch | Kurz | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
-| Chinesisch → Englisch | Absatz | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
-| Englisch → Chinesisch | Kurz | 8 | 317 Anfragen/s | 426 Anfragen/s | 537 Anfragen/s |
-| Chinesisch → Englisch | Kurz | 8 | 173 Anfragen/s | 493 Anfragen/s | 534 Anfragen/s |
+| Englisch → Chinesisch | Kurz | 1 | 8.8 ms | 7.2 ms | 10.7 ms |
+| Englisch → Chinesisch | Absatz | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
+| Chinesisch → Englisch | Kurz | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
+| Chinesisch → Englisch | Absatz | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| Englisch → Chinesisch | Kurz | 8 | 273 Anfragen/s | 401 Anfragen/s | 491 Anfragen/s |
+| Chinesisch → Englisch | Kurz | 8 | 155 Anfragen/s | 453 Anfragen/s | 497 Anfragen/s |
 
-Mit beiden Übersetzungsrichtungen geladen: Standard etwa 622 MiB, Fast 652 MiB, LinguaSpark 190 MiB.
+Mit beiden Übersetzungsrichtungen geladen: Standard etwa 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 
 Standard und Fast unterstützen parallele Verarbeitung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 

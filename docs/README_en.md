@@ -160,14 +160,14 @@ Same-run CPU comparison, for reference. Lower ms and higher req/s are better.
 
 | Direction | Input | Concurrency | Default | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| English → Chinese | Short | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
-| English → Chinese | Paragraph | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
-| Chinese → English | Short | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
-| Chinese → English | Paragraph | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
-| English → Chinese | Short | 8 | 317 req/s | 426 req/s | 537 req/s |
-| Chinese → English | Short | 8 | 173 req/s | 493 req/s | 534 req/s |
+| English → Chinese | Short | 1 | 8.8 ms | 7.2 ms | 10.7 ms |
+| English → Chinese | Paragraph | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
+| Chinese → English | Short | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
+| Chinese → English | Paragraph | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| English → Chinese | Short | 8 | 273 req/s | 401 req/s | 491 req/s |
+| Chinese → English | Short | 8 | 155 req/s | 453 req/s | 497 req/s |
 
-With both translation directions loaded: Default about 622 MiB, Fast 652 MiB, LinguaSpark 190 MiB.
+With both translation directions loaded: Default about 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 
 Both Default and Fast support concurrent acceleration. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 

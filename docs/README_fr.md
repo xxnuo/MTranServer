@@ -160,14 +160,14 @@ Comparaison CPU issue du même test, à titre indicatif. Moins de ms et plus de 
 
 | Sens | Entrée | Concurrence | Défaut | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| Anglais → chinois | Courte | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
-| Anglais → chinois | Paragraphe | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
-| Chinois → anglais | Courte | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
-| Chinois → anglais | Paragraphe | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
-| Anglais → chinois | Courte | 8 | 317 req/s | 426 req/s | 537 req/s |
-| Chinois → anglais | Courte | 8 | 173 req/s | 493 req/s | 534 req/s |
+| Anglais → chinois | Courte | 1 | 8.8 ms | 7.2 ms | 10.7 ms |
+| Anglais → chinois | Paragraphe | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
+| Chinois → anglais | Courte | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
+| Chinois → anglais | Paragraphe | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| Anglais → chinois | Courte | 8 | 273 req/s | 401 req/s | 491 req/s |
+| Chinois → anglais | Courte | 8 | 155 req/s | 453 req/s | 497 req/s |
 
-Avec les deux sens de traduction chargés : Défaut environ 622 MiB, Fast 652 MiB, LinguaSpark 190 MiB.
+Avec les deux sens de traduction chargés : Défaut environ 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 
 Les modes Défaut et Fast prennent en charge le traitement concurrent. `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
 
