@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "private": true,
-  "version": "4.0.30",
+  "version": "4.0.31",
   "type": "module",
   "scripts": {
     "dev": "vite",
