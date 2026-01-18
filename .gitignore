@@ -28,3 +28,6 @@ src/assets/swagger.ts
 
 /.tmp/
 /benchmarks/
+/config
+pnpm-lock.yaml
+pnpm-workspace.yaml
