@@ -157,7 +157,7 @@ function dynamicInt8(root: Graph, mode: Mode) {
   };
   rewrite(root); prune(root);
 }
-export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qdecoder'): Uint8Array {
+export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qall'): Uint8Array {
   const g = graph('mozilla_release_greedy'), b = new Builder(g, g, { n: 0 }, c, weights, mode);
   const emb = weights.get(b.emb);
   if (!emb || emb.dims.length !== 2 || emb.dims[1] !== b.dim || emb.dims[0] < 9) throw new Error('Invalid target embedding');

@@ -7,7 +7,7 @@ import { Tokenizer } from '../core/tokenizer.js';
 
 try {
   const { weights, config } = await readRelease(workerData.model);
-  await writeFile(workerData.output, buildModel(weights, config));
+  await writeFile(workerData.output, buildModel(weights, config, 'qall'));
   const src = await Tokenizer.load(workerData.sourceVocab);
   let dst: Tokenizer | undefined, session: ort.InferenceSession | undefined;
   try {

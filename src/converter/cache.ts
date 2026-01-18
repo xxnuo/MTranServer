@@ -7,8 +7,8 @@ import { lock } from 'proper-lockfile';
 import * as logger from '../logger/index.js';
 import { VERSION } from '../version/index.js';
 
-export const CONVERSION_VERSION = 'marian-qdecoder-k9-v1';
-export const CONVERSION_PARAMETERS = { strategy: 'qdecoder', topK: 9, int4BlockSize: 64, int4AccuracyLevel: 4, int8WeightType: 'QInt8', perTensor: true, reduceRange: false, opset: 11, irVersion: 10 } as const;
+export const CONVERSION_VERSION = 'marian-qall-k9-v1';
+export const CONVERSION_PARAMETERS = { strategy: 'qall', topK: 9, int4BlockSize: 64, int4AccuracyLevel: 4, int8WeightType: 'QInt8', perTensor: true, reduceRange: false, opset: 11, irVersion: 10 } as const;
 
 export interface ConvertedModel { directory: string; identity: string; model: string; sourceVocab: string; targetVocab: string }
 export interface SourceFiles { model: string; vocab_src: string; vocab_trg: string; lex?: string }
