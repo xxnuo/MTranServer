@@ -1,0 +1,1818 @@
+{
+  "decision": "Promising isolated projection throughput; not adopted into production",
+  "javascript": {
+    "started": "2026-11-13T10:11:08.245Z",
+    "ort": {
+      "common": "1.30.0",
+      "node": "1.30.0"
+    },
+    "scope": "isolated projection; not service throughput",
+    "options": {
+      "executionProviders": [
+        "cpu"
+      ],
+      "intraOpNumThreads": 1,
+      "interOpNumThreads": 1,
+      "graphOptimizationLevel": "all",
+      "extra": {
+        "session": {
+          "intra_op": {
+            "allow_spinning": "0"
+          },
+          "inter_op": {
+            "allow_spinning": "0"
+          }
+        }
+      }
+    },
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "rows": 593,
+        "validation": [
+          {
+            "batch": 1,
+            "checked": 593,
+            "orderedTop9Equal": true
+          },
+          {
+            "batch": 2,
+            "checked": 593,
+            "orderedTop9Equal": true
+          },
+          {
+            "batch": 4,
+            "checked": 593,
+            "orderedTop9Equal": true
+          },
+          {
+            "batch": 8,
+            "checked": 593,
+            "orderedTop9Equal": true
+          }
+        ],
+        "blocks": [
+          {
+            "round": 0,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 484.30941299999995,
+            "usPerRow": 472.95841113281244
+          },
+          {
+            "round": 0,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 309.50573499999973,
+            "usPerRow": 302.25169433593726
+          },
+          {
+            "round": 0,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 583.4896180000005,
+            "usPerRow": 569.8140800781255
+          },
+          {
+            "round": 0,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 311.16815700000006,
+            "usPerRow": 303.87515332031256
+          },
+          {
+            "round": 1,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 328.9351740000002,
+            "usPerRow": 321.22575585937517
+          },
+          {
+            "round": 1,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 326.1633700000002,
+            "usPerRow": 318.5189160156252
+          },
+          {
+            "round": 1,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 336.39090000000033,
+            "usPerRow": 328.5067382812503
+          },
+          {
+            "round": 1,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 528.4568260000005,
+            "usPerRow": 516.0711191406256
+          },
+          {
+            "round": 2,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 503.02202600000055,
+            "usPerRow": 491.2324472656255
+          },
+          {
+            "round": 2,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 316.4810459999999,
+            "usPerRow": 309.06352148437486
+          },
+          {
+            "round": 2,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 302.0060739999999,
+            "usPerRow": 294.9278066406249
+          },
+          {
+            "round": 2,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 263.5525090000001,
+            "usPerRow": 257.3754970703126
+          },
+          {
+            "round": 3,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 361.5420840000006,
+            "usPerRow": 353.0684414062506
+          },
+          {
+            "round": 3,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 327.8755400000009,
+            "usPerRow": 320.1909570312509
+          },
+          {
+            "round": 3,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 305.9328970000006,
+            "usPerRow": 298.76259472656307
+          },
+          {
+            "round": 3,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 541.8968629999999,
+            "usPerRow": 529.1961552734374
+          },
+          {
+            "round": 4,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 549.3981699999986,
+            "usPerRow": 536.5216503906236
+          },
+          {
+            "round": 4,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 386.88344199999847,
+            "usPerRow": 377.8158613281235
+          },
+          {
+            "round": 4,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 364.11726500000077,
+            "usPerRow": 355.58326660156325
+          },
+          {
+            "round": 4,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 279.31683599999997,
+            "usPerRow": 272.77034765624995
+          },
+          {
+            "round": 5,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 301.6918889999997,
+            "usPerRow": 294.62098535156224
+          },
+          {
+            "round": 5,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 292.6421790000004,
+            "usPerRow": 285.7833779296879
+          },
+          {
+            "round": 5,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 335.59571099999994,
+            "usPerRow": 327.73018652343745
+          },
+          {
+            "round": 5,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 473.1841290000011,
+            "usPerRow": 462.0938759765636
+          },
+          {
+            "round": 6,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 480.20444699999825,
+            "usPerRow": 468.9496552734358
+          },
+          {
+            "round": 6,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 246.49007700000038,
+            "usPerRow": 240.7129658203129
+          },
+          {
+            "round": 6,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 294.94735500000024,
+            "usPerRow": 288.0345263671877
+          },
+          {
+            "round": 6,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 246.0428860000011,
+            "usPerRow": 240.27625585937608
+          },
+          {
+            "round": 7,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 258.4265489999998,
+            "usPerRow": 252.3696767578123
+          },
+          {
+            "round": 7,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 257.39878899999894,
+            "usPerRow": 251.36600488281147
+          },
+          {
+            "round": 7,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 234.77839999999924,
+            "usPerRow": 229.27578124999926
+          },
+          {
+            "round": 7,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 432.48489900000095,
+            "usPerRow": 422.34853417968844
+          }
+        ],
+        "summary": [
+          {
+            "batch": 1,
+            "medianUsPerRow": 491.2324472656255,
+            "pairedSpeedupMedian": 1,
+            "pairedSpeedupMin": 1,
+            "pairedSpeedupMax": 1
+          },
+          {
+            "batch": 2,
+            "medianUsPerRow": 309.06352148437486,
+            "pairedSpeedupMedian": 1.5894222809159975,
+            "pairedSpeedupMin": 1.4099826472454566,
+            "pairedSpeedupMax": 1.9481694875692603
+          },
+          {
+            "batch": 4,
+            "medianUsPerRow": 318.5189160156252,
+            "pairedSpeedupMedian": 1.628102232006786,
+            "pairedSpeedupMin": 0.8300223312627981,
+            "pairedSpeedupMax": 1.6802134177873025
+          },
+          {
+            "batch": 8,
+            "medianUsPerRow": 294.62098535156224,
+            "pairedSpeedupMedian": 1.6735312245337506,
+            "pairedSpeedupMin": 1.4988486457913957,
+            "pairedSpeedupMax": 1.9669353908906466
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "rows": 553,
+        "validation": [
+          {
+            "batch": 1,
+            "checked": 553,
+            "orderedTop9Equal": true
+          },
+          {
+            "batch": 2,
+            "checked": 553,
+            "orderedTop9Equal": true
+          },
+          {
+            "batch": 4,
+            "checked": 553,
+            "orderedTop9Equal": true
+          },
+          {
+            "batch": 8,
+            "checked": 553,
+            "orderedTop9Equal": true
+          }
+        ],
+        "blocks": [
+          {
+            "round": 0,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1799.1954719999994,
+            "usPerRow": 1757.0268281249994
+          },
+          {
+            "round": 0,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 921.8538490000028,
+            "usPerRow": 900.2478994140653
+          },
+          {
+            "round": 0,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 780.6584129999974,
+            "usPerRow": 762.3617314453099
+          },
+          {
+            "round": 0,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 664.3185699999995,
+            "usPerRow": 648.7486035156245
+          },
+          {
+            "round": 1,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 630.9157579999992,
+            "usPerRow": 616.1286699218742
+          },
+          {
+            "round": 1,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 815.5788199999988,
+            "usPerRow": 796.4636914062488
+          },
+          {
+            "round": 1,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 1182.2945400000026,
+            "usPerRow": 1154.5845117187525
+          },
+          {
+            "round": 1,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1917.0144569999975,
+            "usPerRow": 1872.0844306640602
+          },
+          {
+            "round": 2,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1623.319899000002,
+            "usPerRow": 1585.2733388671893
+          },
+          {
+            "round": 2,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 969.3332309999969,
+            "usPerRow": 946.6144833984345
+          },
+          {
+            "round": 2,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 778.3873250000033,
+            "usPerRow": 760.1438720703158
+          },
+          {
+            "round": 2,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 647.8794559999951,
+            "usPerRow": 632.6947812499952
+          },
+          {
+            "round": 3,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 615.4188829999985,
+            "usPerRow": 600.995002929686
+          },
+          {
+            "round": 3,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 801.7891440000021,
+            "usPerRow": 782.9972109375021
+          },
+          {
+            "round": 3,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 1026.294409999995,
+            "usPerRow": 1002.2406347656201
+          },
+          {
+            "round": 3,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1567.844309,
+            "usPerRow": 1531.0979580078126
+          },
+          {
+            "round": 4,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1497.605048000005,
+            "usPerRow": 1462.5049296875047
+          },
+          {
+            "round": 4,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 1107.7452860000049,
+            "usPerRow": 1081.7825058593799
+          },
+          {
+            "round": 4,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 775.970110000002,
+            "usPerRow": 757.7833105468769
+          },
+          {
+            "round": 4,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 626.2177669999946,
+            "usPerRow": 611.5407880859323
+          },
+          {
+            "round": 5,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 600.754200000003,
+            "usPerRow": 586.6740234375029
+          },
+          {
+            "round": 5,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 724.8732830000008,
+            "usPerRow": 707.8840654296882
+          },
+          {
+            "round": 5,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 924.0779150000017,
+            "usPerRow": 902.4198388671891
+          },
+          {
+            "round": 5,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1577.657530999997,
+            "usPerRow": 1540.6811826171847
+          },
+          {
+            "round": 6,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1628.8484690000041,
+            "usPerRow": 1590.6723330078166
+          },
+          {
+            "round": 6,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 946.1020969999954,
+            "usPerRow": 923.927829101558
+          },
+          {
+            "round": 6,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 725.1046579999966,
+            "usPerRow": 708.1100175781216
+          },
+          {
+            "round": 6,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 673.1476079999993,
+            "usPerRow": 657.3707109374993
+          },
+          {
+            "round": 7,
+            "batch": 8,
+            "rows": 1024,
+            "ms": 688.7698949999976,
+            "usPerRow": 672.6268505859352
+          },
+          {
+            "round": 7,
+            "batch": 4,
+            "rows": 1024,
+            "ms": 869.8214859999935,
+            "usPerRow": 849.4350449218687
+          },
+          {
+            "round": 7,
+            "batch": 2,
+            "rows": 1024,
+            "ms": 1301.0869040000034,
+            "usPerRow": 1270.5926796875033
+          },
+          {
+            "round": 7,
+            "batch": 1,
+            "rows": 1024,
+            "ms": 1531.7885739999983,
+            "usPerRow": 1495.8872792968734
+          }
+        ],
+        "summary": [
+          {
+            "batch": 1,
+            "medianUsPerRow": 1585.2733388671893,
+            "pairedSpeedupMedian": 1,
+            "pairedSpeedupMin": 1,
+            "pairedSpeedupMax": 1
+          },
+          {
+            "batch": 2,
+            "medianUsPerRow": 1002.2406347656201,
+            "pairedSpeedupMedian": 1.6746768263843903,
+            "pairedSpeedupMin": 1.1773145739079658,
+            "pairedSpeedupMax": 1.9517144436200038
+          },
+          {
+            "batch": 4,
+            "medianUsPerRow": 762.3617314453099,
+            "pairedSpeedupMedian": 2.1764597592431825,
+            "pairedSpeedupMin": 1.7610378665674968,
+            "pairedSpeedupMax": 2.3504956357253124
+          },
+          {
+            "batch": 8,
+            "medianUsPerRow": 632.6947812499952,
+            "pairedSpeedupMedian": 2.547605139051289,
+            "pairedSpeedupMin": 2.2239482084216293,
+            "pairedSpeedupMax": 3.0384634282664407
+          }
+        ]
+      }
+    ],
+    "finished": "2026-11-13T10:12:04.363Z",
+    "scriptSha256": "46eaf0bb881a1f9dc243b5aa1657737b6f737ab0aff3c31ec5fb0de1b14cb8f1"
+  },
+  "native": {
+    "started": 1794564761.16226,
+    "scope": "Native ORT synchronous Run with preallocated output, no JS dispatch or output allocation; batch-specific references checked bitwise",
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "blocks": [
+          {
+            "round": 0,
+            "batch": 1,
+            "usPerRow": 460.967,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 4343,
+            "elapsedSeconds": 2.00198,
+            "usPerProjection": 460.967,
+            "counters": {
+              "cycles": {
+                "raw": 8127314862,
+                "enabled": 2001709069,
+                "running": 2001709069,
+                "scaledPerRun": 1871360.0
+              },
+              "instructions": {
+                "raw": 21191837208,
+                "enabled": 2001719603,
+                "running": 2001719603,
+                "scaledPerRun": 4879540.0
+              },
+              "cache_references": {
+                "raw": 488579317,
+                "enabled": 2001721299,
+                "running": 2001721299,
+                "scaledPerRun": 112498
+              },
+              "cache_misses": {
+                "raw": 18995882,
+                "enabled": 2001724995,
+                "running": 2001724995,
+                "scaledPerRun": 4373.91
+              },
+              "branches": {
+                "raw": 586702512,
+                "enabled": 2001726749,
+                "running": 2001726749,
+                "scaledPerRun": 135092
+              },
+              "branch_misses": {
+                "raw": 1118194,
+                "enabled": 2001728745,
+                "running": 2001728745,
+                "scaledPerRun": 257.47
+              }
+            }
+          },
+          {
+            "round": 0,
+            "batch": 2,
+            "usPerRow": 211.778,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 4722,
+            "elapsedSeconds": 2.00003,
+            "usPerProjection": 423.556,
+            "counters": {
+              "cycles": {
+                "raw": 8121097813,
+                "enabled": 1999886341,
+                "running": 1999886341,
+                "scaledPerRun": 1719840.0
+              },
+              "instructions": {
+                "raw": 28049543046,
+                "enabled": 1999880751,
+                "running": 1999880751,
+                "scaledPerRun": 5940180.0
+              },
+              "cache_references": {
+                "raw": 599024321,
+                "enabled": 1999876854,
+                "running": 1999876854,
+                "scaledPerRun": 126858
+              },
+              "cache_misses": {
+                "raw": 19537097,
+                "enabled": 1999874629,
+                "running": 1999874629,
+                "scaledPerRun": 4137.46
+              },
+              "branches": {
+                "raw": 781696335,
+                "enabled": 1999874293,
+                "running": 1999874293,
+                "scaledPerRun": 165543
+              },
+              "branch_misses": {
+                "raw": 1229840,
+                "enabled": 1999873067,
+                "running": 1999873067,
+                "scaledPerRun": 260.449
+              }
+            }
+          },
+          {
+            "round": 0,
+            "batch": 8,
+            "usPerRow": 191.97875,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 1303,
+            "elapsedSeconds": 2.00119,
+            "usPerProjection": 1535.83,
+            "counters": {
+              "cycles": {
+                "raw": 8176205145,
+                "enabled": 2001056234,
+                "running": 2001056234,
+                "scaledPerRun": 6274910.0
+              },
+              "instructions": {
+                "raw": 30436076914,
+                "enabled": 2001059007,
+                "running": 2001059007,
+                "scaledPerRun": 23358500.0
+              },
+              "cache_references": {
+                "raw": 182221925,
+                "enabled": 2001057387,
+                "running": 2001057387,
+                "scaledPerRun": 139848
+              },
+              "cache_misses": {
+                "raw": 39850847,
+                "enabled": 2001061316,
+                "running": 2001061316,
+                "scaledPerRun": 30583.9
+              },
+              "branches": {
+                "raw": 776704935,
+                "enabled": 2001061569,
+                "running": 2001061569,
+                "scaledPerRun": 596090
+              },
+              "branch_misses": {
+                "raw": 1690024,
+                "enabled": 2001063061,
+                "running": 2001063061,
+                "scaledPerRun": 1297.03
+              }
+            }
+          },
+          {
+            "round": 1,
+            "batch": 8,
+            "usPerRow": 200.365,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 1248,
+            "elapsedSeconds": 2.00044,
+            "usPerProjection": 1602.92,
+            "counters": {
+              "cycles": {
+                "raw": 8125281699,
+                "enabled": 2000177318,
+                "running": 2000177318,
+                "scaledPerRun": 6510640.0
+              },
+              "instructions": {
+                "raw": 29151361582,
+                "enabled": 2000183532,
+                "running": 2000183532,
+                "scaledPerRun": 23358500.0
+              },
+              "cache_references": {
+                "raw": 174690283,
+                "enabled": 2000183736,
+                "running": 2000183736,
+                "scaledPerRun": 139976
+              },
+              "cache_misses": {
+                "raw": 42757766,
+                "enabled": 2000183387,
+                "running": 2000183387,
+                "scaledPerRun": 34261
+              },
+              "branches": {
+                "raw": 743920088,
+                "enabled": 2000185041,
+                "running": 2000185041,
+                "scaledPerRun": 596090
+              },
+              "branch_misses": {
+                "raw": 1622812,
+                "enabled": 2000183954,
+                "running": 2000183954,
+                "scaledPerRun": 1300.33
+              }
+            }
+          },
+          {
+            "round": 1,
+            "batch": 2,
+            "usPerRow": 195.3125,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 5120,
+            "elapsedSeconds": 2,
+            "usPerProjection": 390.625,
+            "counters": {
+              "cycles": {
+                "raw": 8112599877,
+                "enabled": 1999863561,
+                "running": 1999863561,
+                "scaledPerRun": 1584490.0
+              },
+              "instructions": {
+                "raw": 30413735430,
+                "enabled": 1999861283,
+                "running": 1999861283,
+                "scaledPerRun": 5940180.0
+              },
+              "cache_references": {
+                "raw": 649635880,
+                "enabled": 1999859449,
+                "running": 1999859449,
+                "scaledPerRun": 126882
+              },
+              "cache_misses": {
+                "raw": 14042807,
+                "enabled": 1999858137,
+                "running": 1999858137,
+                "scaledPerRun": 2742.74
+              },
+              "branches": {
+                "raw": 847582437,
+                "enabled": 1999857781,
+                "running": 1999857781,
+                "scaledPerRun": 165543
+              },
+              "branch_misses": {
+                "raw": 1330921,
+                "enabled": 1999855790,
+                "running": 1999855790,
+                "scaledPerRun": 259.946
+              }
+            }
+          },
+          {
+            "round": 1,
+            "batch": 1,
+            "usPerRow": 404.728,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 4942,
+            "elapsedSeconds": 2.00017,
+            "usPerProjection": 404.728,
+            "counters": {
+              "cycles": {
+                "raw": 8118360803,
+                "enabled": 2000069855,
+                "running": 2000069855,
+                "scaledPerRun": 1642730.0
+              },
+              "instructions": {
+                "raw": 24114680397,
+                "enabled": 2000062627,
+                "running": 2000062627,
+                "scaledPerRun": 4879540.0
+              },
+              "cache_references": {
+                "raw": 556616960,
+                "enabled": 2000059818,
+                "running": 2000059818,
+                "scaledPerRun": 112630
+              },
+              "cache_misses": {
+                "raw": 8125978,
+                "enabled": 2000058662,
+                "running": 2000058662,
+                "scaledPerRun": 1644.27
+              },
+              "branches": {
+                "raw": 667622015,
+                "enabled": 2000057622,
+                "running": 2000057622,
+                "scaledPerRun": 135091
+              },
+              "branch_misses": {
+                "raw": 1289964,
+                "enabled": 2000056082,
+                "running": 2000056082,
+                "scaledPerRun": 261.021
+              }
+            }
+          },
+          {
+            "round": 2,
+            "batch": 1,
+            "usPerRow": 416.2,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 4806,
+            "elapsedSeconds": 2.00026,
+            "usPerProjection": 416.2,
+            "counters": {
+              "cycles": {
+                "raw": 8114447170,
+                "enabled": 2000147195,
+                "running": 2000147195,
+                "scaledPerRun": 1688400.0
+              },
+              "instructions": {
+                "raw": 23451063259,
+                "enabled": 2000147893,
+                "running": 2000147893,
+                "scaledPerRun": 4879540.0
+              },
+              "cache_references": {
+                "raw": 541447139,
+                "enabled": 2000147386,
+                "running": 2000147386,
+                "scaledPerRun": 112661
+              },
+              "cache_misses": {
+                "raw": 8455737,
+                "enabled": 2000147444,
+                "running": 2000147444,
+                "scaledPerRun": 1759.41
+              },
+              "branches": {
+                "raw": 649249632,
+                "enabled": 2000147678,
+                "running": 2000147678,
+                "scaledPerRun": 135091
+              },
+              "branch_misses": {
+                "raw": 1255869,
+                "enabled": 2000147783,
+                "running": 2000147783,
+                "scaledPerRun": 261.313
+              }
+            }
+          },
+          {
+            "round": 2,
+            "batch": 2,
+            "usPerRow": 214.849,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 4655,
+            "elapsedSeconds": 2.00024,
+            "usPerProjection": 429.698,
+            "counters": {
+              "cycles": {
+                "raw": 8108532361,
+                "enabled": 2000155606,
+                "running": 2000155606,
+                "scaledPerRun": 1741900.0
+              },
+              "instructions": {
+                "raw": 27651550834,
+                "enabled": 2000159385,
+                "running": 2000159385,
+                "scaledPerRun": 5940180.0
+              },
+              "cache_references": {
+                "raw": 591275957,
+                "enabled": 2000159172,
+                "running": 2000159172,
+                "scaledPerRun": 127020
+              },
+              "cache_misses": {
+                "raw": 17328960,
+                "enabled": 2000159701,
+                "running": 2000159701,
+                "scaledPerRun": 3722.66
+              },
+              "branches": {
+                "raw": 770604951,
+                "enabled": 2000159757,
+                "running": 2000159757,
+                "scaledPerRun": 165543
+              },
+              "branch_misses": {
+                "raw": 1224368,
+                "enabled": 2000159268,
+                "running": 2000159268,
+                "scaledPerRun": 263.022
+              }
+            }
+          },
+          {
+            "round": 2,
+            "batch": 8,
+            "usPerRow": 198.0575,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 1263,
+            "elapsedSeconds": 2.00117,
+            "usPerProjection": 1584.46,
+            "counters": {
+              "cycles": {
+                "raw": 8131100908,
+                "enabled": 2000753223,
+                "running": 2000753223,
+                "scaledPerRun": 6437930.0
+              },
+              "instructions": {
+                "raw": 29501738496,
+                "enabled": 2000751921,
+                "running": 2000751921,
+                "scaledPerRun": 23358500.0
+              },
+              "cache_references": {
+                "raw": 176755259,
+                "enabled": 2000750426,
+                "running": 2000750426,
+                "scaledPerRun": 139949
+              },
+              "cache_misses": {
+                "raw": 42895731,
+                "enabled": 2000748999,
+                "running": 2000748999,
+                "scaledPerRun": 33963.4
+              },
+              "branches": {
+                "raw": 752861417,
+                "enabled": 2000748459,
+                "running": 2000748459,
+                "scaledPerRun": 596090
+              },
+              "branch_misses": {
+                "raw": 1644008,
+                "enabled": 2000747259,
+                "running": 2000747259,
+                "scaledPerRun": 1301.67
+              }
+            }
+          },
+          {
+            "round": 3,
+            "batch": 8,
+            "usPerRow": 209.935,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 1192,
+            "elapsedSeconds": 2.00194,
+            "usPerProjection": 1679.48,
+            "counters": {
+              "cycles": {
+                "raw": 8140868513,
+                "enabled": 2001733320,
+                "running": 2001733320,
+                "scaledPerRun": 6829590.0
+              },
+              "instructions": {
+                "raw": 27843287841,
+                "enabled": 2001734361,
+                "running": 2001734361,
+                "scaledPerRun": 23358500.0
+              },
+              "cache_references": {
+                "raw": 166968009,
+                "enabled": 2001733325,
+                "running": 2001733325,
+                "scaledPerRun": 140074
+              },
+              "cache_misses": {
+                "raw": 45645698,
+                "enabled": 2001733472,
+                "running": 2001733472,
+                "scaledPerRun": 38293.4
+              },
+              "branches": {
+                "raw": 710539164,
+                "enabled": 2001732863,
+                "running": 2001732863,
+                "scaledPerRun": 596090
+              },
+              "branch_misses": {
+                "raw": 1561028,
+                "enabled": 2001731694,
+                "running": 2001731694,
+                "scaledPerRun": 1309.59
+              }
+            }
+          },
+          {
+            "round": 3,
+            "batch": 2,
+            "usPerRow": 182.1885,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 5489,
+            "elapsedSeconds": 2.00007,
+            "usPerProjection": 364.377,
+            "counters": {
+              "cycles": {
+                "raw": 8118569495,
+                "enabled": 1999815515,
+                "running": 1999815515,
+                "scaledPerRun": 1479060.0
+              },
+              "instructions": {
+                "raw": 32605662669,
+                "enabled": 1999815027,
+                "running": 1999815027,
+                "scaledPerRun": 5940180.0
+              },
+              "cache_references": {
+                "raw": 694679344,
+                "enabled": 1999813551,
+                "running": 1999813551,
+                "scaledPerRun": 126558
+              },
+              "cache_misses": {
+                "raw": 11648407,
+                "enabled": 1999813332,
+                "running": 1999813332,
+                "scaledPerRun": 2122.14
+              },
+              "branches": {
+                "raw": 908667823,
+                "enabled": 1999812810,
+                "running": 1999812810,
+                "scaledPerRun": 165543
+              },
+              "branch_misses": {
+                "raw": 1415351,
+                "enabled": 1999811790,
+                "running": 1999811790,
+                "scaledPerRun": 257.852
+              }
+            }
+          },
+          {
+            "round": 3,
+            "batch": 1,
+            "usPerRow": 457.049,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 4377,
+            "elapsedSeconds": 2.0005,
+            "usPerProjection": 457.049,
+            "counters": {
+              "cycles": {
+                "raw": 8108910698,
+                "enabled": 2000187516,
+                "running": 2000187516,
+                "scaledPerRun": 1852620.0
+              },
+              "instructions": {
+                "raw": 21357741410,
+                "enabled": 2000195516,
+                "running": 2000195516,
+                "scaledPerRun": 4879540.0
+              },
+              "cache_references": {
+                "raw": 493269970,
+                "enabled": 2000198254,
+                "running": 2000198254,
+                "scaledPerRun": 112696
+              },
+              "cache_misses": {
+                "raw": 13391814,
+                "enabled": 2000198568,
+                "running": 2000198568,
+                "scaledPerRun": 3059.59
+              },
+              "branches": {
+                "raw": 591295583,
+                "enabled": 2000199243,
+                "running": 2000199243,
+                "scaledPerRun": 135092
+              },
+              "branch_misses": {
+                "raw": 1163469,
+                "enabled": 2000199518,
+                "running": 2000199518,
+                "scaledPerRun": 265.814
+              }
+            }
+          }
+        ],
+        "summary": [
+          {
+            "batch": 1,
+            "medianUsPerRow": 436.6245,
+            "pairedSpeedupMedian": 1.0,
+            "pairedSpeedupMin": 1.0,
+            "pairedSpeedupMax": 1.0
+          },
+          {
+            "batch": 2,
+            "medianUsPerRow": 203.54525,
+            "pairedSpeedupMedian": 2.1244296628688533,
+            "pairedSpeedupMin": 1.9371744806817812,
+            "pairedSpeedupMax": 2.508659986771942
+          },
+          {
+            "batch": 8,
+            "medianUsPerRow": 199.21125,
+            "pairedSpeedupMedian": 2.1392538085855923,
+            "pairedSpeedupMin": 2.019953584707908,
+            "pairedSpeedupMax": 2.4011355423451817
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "blocks": [
+          {
+            "round": 0,
+            "batch": 1,
+            "usPerRow": 1427.99,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 1401,
+            "elapsedSeconds": 2.00062,
+            "usPerProjection": 1427.99,
+            "counters": {
+              "cycles": {
+                "raw": 8124928840,
+                "enabled": 2000096157,
+                "running": 2000096157,
+                "scaledPerRun": 5799380.0
+              },
+              "instructions": {
+                "raw": 13651050517,
+                "enabled": 2000093315,
+                "running": 2000093315,
+                "scaledPerRun": 9743790.0
+              },
+              "cache_references": {
+                "raw": 312198440,
+                "enabled": 2000092068,
+                "running": 2000092068,
+                "scaledPerRun": 222840
+              },
+              "cache_misses": {
+                "raw": 104979647,
+                "enabled": 2000090722,
+                "running": 2000090722,
+                "scaledPerRun": 74931.9
+              },
+              "branches": {
+                "raw": 374547010,
+                "enabled": 2000089828,
+                "running": 2000089828,
+                "scaledPerRun": 267343
+              },
+              "branch_misses": {
+                "raw": 737348,
+                "enabled": 2000088812,
+                "running": 2000088812,
+                "scaledPerRun": 526.301
+              }
+            }
+          },
+          {
+            "round": 0,
+            "batch": 2,
+            "usPerRow": 873.4,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 1145,
+            "elapsedSeconds": 2.00009,
+            "usPerProjection": 1746.8,
+            "counters": {
+              "cycles": {
+                "raw": 8115017609,
+                "enabled": 1999790400,
+                "running": 1999790400,
+                "scaledPerRun": 7087350.0
+              },
+              "instructions": {
+                "raw": 13582774412,
+                "enabled": 1999780526,
+                "running": 1999780526,
+                "scaledPerRun": 11862700.0
+              },
+              "cache_references": {
+                "raw": 288314096,
+                "enabled": 1999776905,
+                "running": 1999776905,
+                "scaledPerRun": 251803
+              },
+              "cache_misses": {
+                "raw": 137436534,
+                "enabled": 1999775406,
+                "running": 1999775406,
+                "scaledPerRun": 120032
+              },
+              "branches": {
+                "raw": 375611504,
+                "enabled": 1999774066,
+                "running": 1999774066,
+                "scaledPerRun": 328045
+              },
+              "branch_misses": {
+                "raw": 606218,
+                "enabled": 1999772727,
+                "running": 1999772727,
+                "scaledPerRun": 529.448
+              }
+            }
+          },
+          {
+            "round": 0,
+            "batch": 8,
+            "usPerRow": 494.80375,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 506,
+            "elapsedSeconds": 2.00296,
+            "usPerProjection": 3958.43,
+            "counters": {
+              "cycles": {
+                "raw": 8155186537,
+                "enabled": 2002599145,
+                "running": 2002599145,
+                "scaledPerRun": 16117000.0
+              },
+              "instructions": {
+                "raw": 23622340281,
+                "enabled": 2002600557,
+                "running": 2002600557,
+                "scaledPerRun": 46684500.0
+              },
+              "cache_references": {
+                "raw": 140533901,
+                "enabled": 2002599407,
+                "running": 2002599407,
+                "scaledPerRun": 277735
+              },
+              "cache_misses": {
+                "raw": 102431182,
+                "enabled": 2002601146,
+                "running": 2002601146,
+                "scaledPerRun": 202433
+              },
+              "branches": {
+                "raw": 601048296,
+                "enabled": 2002601429,
+                "running": 2002601429,
+                "scaledPerRun": 1187840.0
+              },
+              "branch_misses": {
+                "raw": 1294887,
+                "enabled": 2002602187,
+                "running": 2002602187,
+                "scaledPerRun": 2559.07
+              }
+            }
+          },
+          {
+            "round": 1,
+            "batch": 8,
+            "usPerRow": 497.36375,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 503,
+            "elapsedSeconds": 2.00139,
+            "usPerProjection": 3978.91,
+            "counters": {
+              "cycles": {
+                "raw": 8137245006,
+                "enabled": 2000988265,
+                "running": 2000988265,
+                "scaledPerRun": 16177400.0
+              },
+              "instructions": {
+                "raw": 23482286902,
+                "enabled": 2000984845,
+                "running": 2000984845,
+                "scaledPerRun": 46684500.0
+              },
+              "cache_references": {
+                "raw": 139525893,
+                "enabled": 2000982339,
+                "running": 2000982339,
+                "scaledPerRun": 277387
+              },
+              "cache_misses": {
+                "raw": 108365712,
+                "enabled": 2000982798,
+                "running": 2000982798,
+                "scaledPerRun": 215439
+              },
+              "branches": {
+                "raw": 597484783,
+                "enabled": 2000982254,
+                "running": 2000982254,
+                "scaledPerRun": 1187840.0
+              },
+              "branch_misses": {
+                "raw": 1307089,
+                "enabled": 2000981183,
+                "running": 2000981183,
+                "scaledPerRun": 2598.59
+              }
+            }
+          },
+          {
+            "round": 1,
+            "batch": 2,
+            "usPerRow": 892.18,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 1121,
+            "elapsedSeconds": 2.00027,
+            "usPerProjection": 1784.36,
+            "counters": {
+              "cycles": {
+                "raw": 8119315856,
+                "enabled": 2000010921,
+                "running": 2000010921,
+                "scaledPerRun": 7242920.0
+              },
+              "instructions": {
+                "raw": 13298070001,
+                "enabled": 2000004666,
+                "running": 2000004666,
+                "scaledPerRun": 11862700.0
+              },
+              "cache_references": {
+                "raw": 282326160,
+                "enabled": 2000001539,
+                "running": 2000001539,
+                "scaledPerRun": 251852
+              },
+              "cache_misses": {
+                "raw": 139905879,
+                "enabled": 2000001192,
+                "running": 2000001192,
+                "scaledPerRun": 124805
+              },
+              "branches": {
+                "raw": 367738464,
+                "enabled": 2000000909,
+                "running": 2000000909,
+                "scaledPerRun": 328045
+              },
+              "branch_misses": {
+                "raw": 579064,
+                "enabled": 2000000253,
+                "running": 2000000253,
+                "scaledPerRun": 516.56
+              }
+            }
+          },
+          {
+            "round": 1,
+            "batch": 1,
+            "usPerRow": 1769.76,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 1131,
+            "elapsedSeconds": 2.0016,
+            "usPerProjection": 1769.76,
+            "counters": {
+              "cycles": {
+                "raw": 8114254519,
+                "enabled": 2001314119,
+                "running": 2001314119,
+                "scaledPerRun": 7174410.0
+              },
+              "instructions": {
+                "raw": 11020227731,
+                "enabled": 2001313198,
+                "running": 2001313198,
+                "scaledPerRun": 9743790.0
+              },
+              "cache_references": {
+                "raw": 252617541,
+                "enabled": 2001312025,
+                "running": 2001312025,
+                "scaledPerRun": 223358
+              },
+              "cache_misses": {
+                "raw": 124355533,
+                "enabled": 2001311360,
+                "running": 2001311360,
+                "scaledPerRun": 109952
+              },
+              "branches": {
+                "raw": 302364936,
+                "enabled": 2001310827,
+                "running": 2001310827,
+                "scaledPerRun": 267343
+              },
+              "branch_misses": {
+                "raw": 588887,
+                "enabled": 2001310120,
+                "running": 2001310120,
+                "scaledPerRun": 520.678
+              }
+            }
+          },
+          {
+            "round": 2,
+            "batch": 1,
+            "usPerRow": 2162.47,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 927,
+            "elapsedSeconds": 2.00461,
+            "usPerProjection": 2162.47,
+            "counters": {
+              "cycles": {
+                "raw": 8129118246,
+                "enabled": 2004120341,
+                "running": 2004120341,
+                "scaledPerRun": 8769280.0
+              },
+              "instructions": {
+                "raw": 9032494973,
+                "enabled": 2004124235,
+                "running": 2004124235,
+                "scaledPerRun": 9743790.0
+              },
+              "cache_references": {
+                "raw": 207080380,
+                "enabled": 2004124734,
+                "running": 2004124734,
+                "scaledPerRun": 223388
+              },
+              "cache_misses": {
+                "raw": 119198709,
+                "enabled": 2004126026,
+                "running": 2004126026,
+                "scaledPerRun": 128585
+              },
+              "branches": {
+                "raw": 247827381,
+                "enabled": 2004128191,
+                "running": 2004128191,
+                "scaledPerRun": 267343
+              },
+              "branch_misses": {
+                "raw": 487507,
+                "enabled": 2004128360,
+                "running": 2004128360,
+                "scaledPerRun": 525.898
+              }
+            }
+          },
+          {
+            "round": 2,
+            "batch": 2,
+            "usPerRow": 849.145,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 1178,
+            "elapsedSeconds": 2.00058,
+            "usPerProjection": 1698.29,
+            "counters": {
+              "cycles": {
+                "raw": 8112247139,
+                "enabled": 1999993598,
+                "running": 1999993598,
+                "scaledPerRun": 6886460.0
+              },
+              "instructions": {
+                "raw": 13974242921,
+                "enabled": 1999987320,
+                "running": 1999987320,
+                "scaledPerRun": 11862700.0
+              },
+              "cache_references": {
+                "raw": 296669613,
+                "enabled": 1999986168,
+                "running": 1999986168,
+                "scaledPerRun": 251842
+              },
+              "cache_misses": {
+                "raw": 138154679,
+                "enabled": 1999985867,
+                "running": 1999985867,
+                "scaledPerRun": 117279
+              },
+              "branches": {
+                "raw": 386436926,
+                "enabled": 1999984985,
+                "running": 1999984985,
+                "scaledPerRun": 328045
+              },
+              "branch_misses": {
+                "raw": 611356,
+                "enabled": 1999983664,
+                "running": 1999983664,
+                "scaledPerRun": 518.978
+              }
+            }
+          },
+          {
+            "round": 2,
+            "batch": 8,
+            "usPerRow": 531.65875,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 471,
+            "elapsedSeconds": 2.00329,
+            "usPerProjection": 4253.27,
+            "counters": {
+              "cycles": {
+                "raw": 8138948331,
+                "enabled": 2002910563,
+                "running": 2002910563,
+                "scaledPerRun": 17280100.0
+              },
+              "instructions": {
+                "raw": 21988384136,
+                "enabled": 2002914969,
+                "running": 2002914969,
+                "scaledPerRun": 46684500.0
+              },
+              "cache_references": {
+                "raw": 130938161,
+                "enabled": 2002914739,
+                "running": 2002914739,
+                "scaledPerRun": 278000
+              },
+              "cache_misses": {
+                "raw": 107573702,
+                "enabled": 2002915646,
+                "running": 2002915646,
+                "scaledPerRun": 228394
+              },
+              "branches": {
+                "raw": 559473961,
+                "enabled": 2002916839,
+                "running": 2002916839,
+                "scaledPerRun": 1187840.0
+              },
+              "branch_misses": {
+                "raw": 1250520,
+                "enabled": 2002916442,
+                "running": 2002916442,
+                "scaledPerRun": 2655.03
+              }
+            }
+          },
+          {
+            "round": 3,
+            "batch": 8,
+            "usPerRow": 983.0475,
+            "samples": 16,
+            "verifiedBitwise": true,
+            "runs": 256,
+            "elapsedSeconds": 2.01328,
+            "usPerProjection": 7864.38,
+            "counters": {
+              "cycles": {
+                "raw": 8013475348,
+                "enabled": 1988116782,
+                "running": 1988116782,
+                "scaledPerRun": 31302600.0
+              },
+              "instructions": {
+                "raw": 11951225340,
+                "enabled": 1988141306,
+                "running": 1988141306,
+                "scaledPerRun": 46684500.0
+              },
+              "cache_references": {
+                "raw": 71309271,
+                "enabled": 1988144486,
+                "running": 1988144486,
+                "scaledPerRun": 278552
+              },
+              "cache_misses": {
+                "raw": 65673801,
+                "enabled": 1988150785,
+                "running": 1988150785,
+                "scaledPerRun": 256538
+              },
+              "branches": {
+                "raw": 304088895,
+                "enabled": 1988151659,
+                "running": 1988151659,
+                "scaledPerRun": 1187850.0
+              },
+              "branch_misses": {
+                "raw": 742466,
+                "enabled": 1988155411,
+                "running": 1988155411,
+                "scaledPerRun": 2900.26
+              }
+            }
+          },
+          {
+            "round": 3,
+            "batch": 2,
+            "usPerRow": 3763.32,
+            "samples": 64,
+            "verifiedBitwise": true,
+            "runs": 266,
+            "elapsedSeconds": 2.00209,
+            "usPerProjection": 7526.64,
+            "counters": {
+              "cycles": {
+                "raw": 7897722979,
+                "enabled": 1968315496,
+                "running": 1968315496,
+                "scaledPerRun": 29690700.0
+              },
+              "instructions": {
+                "raw": 3155478215,
+                "enabled": 1968308274,
+                "running": 1968308274,
+                "scaledPerRun": 11862700.0
+              },
+              "cache_references": {
+                "raw": 67272316,
+                "enabled": 1968307012,
+                "running": 1968307012,
+                "scaledPerRun": 252903
+              },
+              "cache_misses": {
+                "raw": 66234346,
+                "enabled": 1968308201,
+                "running": 1968308201,
+                "scaledPerRun": 249001
+              },
+              "branches": {
+                "raw": 87262496,
+                "enabled": 1968309401,
+                "running": 1968309401,
+                "scaledPerRun": 328054
+              },
+              "branch_misses": {
+                "raw": 213875,
+                "enabled": 1968307757,
+                "running": 1968307757,
+                "scaledPerRun": 804.041
+              }
+            }
+          },
+          {
+            "round": 3,
+            "batch": 1,
+            "usPerRow": 6810.19,
+            "samples": 128,
+            "verifiedBitwise": true,
+            "runs": 294,
+            "elapsedSeconds": 2.0022,
+            "usPerProjection": 6810.19,
+            "counters": {
+              "cycles": {
+                "raw": 7116757364,
+                "enabled": 1783618486,
+                "running": 1783618486,
+                "scaledPerRun": 24206700.0
+              },
+              "instructions": {
+                "raw": 2864677598,
+                "enabled": 1783616706,
+                "running": 1783616706,
+                "scaledPerRun": 9743800.0
+              },
+              "cache_references": {
+                "raw": 65994170,
+                "enabled": 1783613769,
+                "running": 1783613769,
+                "scaledPerRun": 224470
+              },
+              "cache_misses": {
+                "raw": 65104848,
+                "enabled": 1783614818,
+                "running": 1783614818,
+                "scaledPerRun": 221445
+              },
+              "branches": {
+                "raw": 78600967,
+                "enabled": 1783615655,
+                "running": 1783615655,
+                "scaledPerRun": 267350
+              },
+              "branch_misses": {
+                "raw": 260348,
+                "enabled": 1783614859,
+                "running": 1783614859,
+                "scaledPerRun": 885.537
+              }
+            }
+          }
+        ],
+        "summary": [
+          {
+            "batch": 1,
+            "medianUsPerRow": 1966.1149999999998,
+            "pairedSpeedupMedian": 1.0,
+            "pairedSpeedupMin": 1.0,
+            "pairedSpeedupMax": 1.0
+          },
+          {
+            "batch": 2,
+            "medianUsPerRow": 882.79,
+            "pairedSpeedupMedian": 1.896629237702923,
+            "pairedSpeedupMin": 1.6349782459354247,
+            "pairedSpeedupMax": 2.546643977177043
+          },
+          {
+            "batch": 8,
+            "medianUsPerRow": 514.51125,
+            "pairedSpeedupMedian": 3.8128416471617386,
+            "pairedSpeedupMin": 2.885972468882865,
+            "pairedSpeedupMax": 6.927630658742329
+          }
+        ]
+      }
+    ],
+    "finished": 1794564815.565273
+  },
+  "localArtifactHashes": {
+    "controlled.mjs": "46eaf0bb881a1f9dc243b5aa1657737b6f737ab0aff3c31ec5fb0de1b14cb8f1",
+    "native.cc": "fdf95946281606515410d694b63760e76c54eed0548f78ce4f3f5c0b3605c45f",
+    "native-compare.py": "6da8529cefd1429f384898428d04c0a42eb3cbd05ace2c283e3bd4a2d0e9804e",
+    "references.mjs": "a0969a5bf78009e36226a342c86f5f1e89ac13ff95c3b571caa719ee75436c20"
+  }
+}
