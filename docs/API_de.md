@@ -13,6 +13,8 @@
 | MT_PORT | Server-Port | 8989 | 1-65535 |
 | MT_ENABLE_UI | Web-UI aktivieren | true | true, false |
 | MT_OFFLINE | Vorbereitete Übersetzungsdateien offline verwenden | false | true, false |
+| MT_FAST | Schnellmodus; schneller, aber möglicherweise geringere Übersetzungsgenauigkeit | false | true, false |
+| MT_LEXICAL_SHORTLIST | Kompatibler Alias für MT_FAST | false | true, false |
 | MT_WORKER_IDLE_TIMEOUT | Sekunden bis zur Freigabe einer inaktiven Übersetzungsengine | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN | API-Zugriffstoken | Leer | Beliebige Zeichenfolge |
 | MT_CACHE_SIZE | Zu speichernde Ergebnisse; 0 deaktiviert den Cache | 1000 | 0, 1, 2, ... |
@@ -38,6 +40,17 @@ export MT_PORT=9000
 # Dienst starten
 mtranserver
 ```
+
+### Schnellmodus
+
+Standardmäßig verwendet `fast: false` die ursprüngliche K9-Engine. Aktivierung: `mtranserver --fast`, `MT_FAST=true`, `"fast": true` in `~/.config/mtran/server.json` oder die Bibliothekskonfiguration `new MTran({ fast: true })`. Mit `--no-fast` oder `false` wird der Modus deaktiviert.
+
+Der Schnellmodus verwendet lexical shortlist und kann schneller sein, aber die Übersetzungsgenauigkeit verringern. Modelle ohne lex-Datei verwenden weiterhin die ursprüngliche K9-Engine. Bei einem Moduswechsel wird das Modell bei Bedarf erneut vorbereitet; die erste Vorbereitung kann eine Konvertierung erfordern.
+
+Kompatible alte Namen bleiben erhalten: `--lexical-shortlist` / `--no-lexical-shortlist`, `MT_LEXICAL_SHORTLIST` und das Bibliotheks-/Dateifeld `lexicalShortlist`. Priorität: CLI > Umgebung > Datei > Standardwert. Innerhalb derselben Ebene hat `fast` Vorrang vor dem alten Alias. Auch Bibliothekskonfiguration und `setConfig` bevorzugen explizites `fast`; beide Felder zeigen denselben angeforderten Modus.
+
+`GET /ui/api/settings` liefert `config.server.fast` und `config.server.cacheSize`. `fast` bezeichnet den angeforderten Modus und bleibt beim Rückfall ohne lex `true`. Änderungen sind über `POST /ui/api/settings/apply` mit `{"server":{"fast":true}}` möglich; ein zusätzliches UI-Steuerelement ist nicht erforderlich.
+
 
 ### API-Schnittstellenbeschreibung
 

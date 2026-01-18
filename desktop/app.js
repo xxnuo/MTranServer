@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { loadDesktopConfig, saveDesktopConfig, resetDesktopConfig, getDefaultDesktopConfig } from './config.js';
 import { resolveLocale, getMessages } from './i18n.js';
 import { getFreePort, isPortAvailable } from './ports.js';
-import { getServerStatus, startServerWithConfig, stopServerInstance } from './server.js';
+import { getServerStatus, startServerWithConfig, stopServerInstance, updateServerFastMode } from './server.js';
 import { createTray, updateTrayMenu } from './tray.js';
 import { registerIpcHandlers } from './ipc.js';
 
@@ -312,7 +312,21 @@ export async function startDesktop() {
 
   const getConfigResponse = async () => buildDesktopResponse();
   const applyConfig = async (config) => {
-    desktopConfig = await saveDesktopConfig(config);
+    const server = config?.server || {};
+    const fast = typeof server.fast === 'boolean' ? server.fast
+      : typeof server.lexicalShortlist === 'boolean' ? server.lexicalShortlist : undefined;
+    const fastOnly = fast !== undefined
+      && Object.keys(config).every(key => key === 'server')
+      && Object.keys(server).every(key => key === 'fast' || key === 'lexicalShortlist');
+    desktopConfig = await saveDesktopConfig({
+      ...desktopConfig,
+      ...config,
+      server: { ...desktopConfig.server, ...server, ...(fast === undefined ? {} : { fast }) }
+    });
+    if (fastOnly) {
+      await updateServerFastMode(fast);
+      return buildDesktopResponse();
+    }
     updateLocale(desktopConfig.locale);
     const ok = await restartServer();
     if (!ok) return buildDesktopResponse();

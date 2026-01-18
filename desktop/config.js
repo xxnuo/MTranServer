@@ -43,6 +43,7 @@ export function getDefaultDesktopConfig() {
       maxSentenceLength: 512,
       checkUpdate: true,
       cacheSize: 1000,
+      fast: false,
       modelDir: getDefaultModelDir(),
       configDir: serverConfigDir
     }
@@ -76,6 +77,7 @@ function normalizeConfig(input) {
         : defaults.server.maxSentenceLength,
       checkUpdate: typeof server.checkUpdate === 'boolean' ? server.checkUpdate : defaults.server.checkUpdate,
       cacheSize: Number.isFinite(Number(server.cacheSize)) ? Number(server.cacheSize) : defaults.server.cacheSize,
+      fast: typeof server.fast === 'boolean' ? server.fast : server.lexicalShortlist === true,
       modelDir: server.modelDir ?? defaults.server.modelDir,
       configDir: server.configDir ?? defaults.server.configDir
     }

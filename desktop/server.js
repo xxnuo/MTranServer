@@ -26,7 +26,11 @@ const booleanFlags = new Set([
   '--no-log-console',
   '--log-requests',
   '--check-update',
-  '--no-check-update'
+  '--no-check-update',
+  '--fast',
+  '--no-fast',
+  '--lexical-shortlist',
+  '--no-lexical-shortlist'
 ]);
 
 function stripServerArgs() {
@@ -73,6 +77,7 @@ function applyConfigToEnv(config) {
   process.env.MT_MAX_SENTENCE_LENGTH = String(config.maxSentenceLength);
   process.env.MT_CHECK_UPDATE = String(config.checkUpdate);
   process.env.MT_CACHE_SIZE = String(config.cacheSize);
+  process.env.MT_FAST = String(config.fast ?? config.lexicalShortlist ?? false);
   process.env.MT_MODEL_DIR = config.modelDir;
   process.env.MT_CONFIG_DIR = config.configDir;
 }
@@ -87,6 +92,12 @@ export async function startServerWithConfig(config) {
   stopServer = result.stop;
   status = 'running';
   return currentServer;
+}
+
+export async function updateServerFastMode(fast) {
+  const serverModule = await loadServerModule();
+  serverModule.setConfig({ fast });
+  process.env.MT_FAST = String(fast);
 }
 
 export async function stopServerInstance() {

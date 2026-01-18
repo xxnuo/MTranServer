@@ -85,7 +85,7 @@ test.each(['loaded', 'pending', 'pending-prepare', 'snapshot', 'missing-lex', 'p
         };
         const first = translate();
         await ready;
-        new MTran({lexicalShortlist:true});
+        new MTran({fast:true});
         const second = translate();
         resume();
         assert.deepEqual(await Promise.all([first,second]), ['shortlist','shortlist']);
@@ -99,7 +99,7 @@ test.each(['loaded', 'pending', 'pending-prepare', 'snapshot', 'missing-lex', 'p
         setConfig({lexicalShortlist:false});
         assert.equal(await translate(), 'K9');
         assert.equal(instances[0].destroyed, true);
-        new MTran({lexicalShortlist:true});
+        new MTran({fast:true});
         assert.equal(await translate(), expected);
         assert.equal(await translate(), expected);
         assert.deepEqual(prepared, [true,false,true]);

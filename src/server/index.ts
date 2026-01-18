@@ -59,6 +59,7 @@ export async function startServer({ handleSignals = true } = {}) {
           fullwidthZhPunctuation: current.fullwidthZhPunctuation,
           checkUpdate: current.checkUpdate,
           cacheSize: current.cacheSize,
+          fast: current.fast,
           modelDir: current.modelDir,
           configDir: current.configDir
         }
@@ -100,6 +101,7 @@ export async function startServer({ handleSignals = true } = {}) {
       fullwidthZhPunctuation: toBool(input.fullwidthZhPunctuation, current.fullwidthZhPunctuation),
       checkUpdate: toBool(input.checkUpdate, current.checkUpdate),
       cacheSize: toNumber(input.cacheSize, current.cacheSize),
+      fast: toBool(input.fast, toBool(input.lexicalShortlist, current.fast)),
       modelDir: toString(input.modelDir, current.modelDir),
       configDir: toString(input.configDir, current.configDir)
     };

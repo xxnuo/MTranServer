@@ -13,6 +13,8 @@
 | MT_PORT | Port du serveur | 8989 | 1-65535 |
 | MT_ENABLE_UI | Activer l'interface Web | true | true, false |
 | MT_OFFLINE | Utiliser hors ligne les fichiers de traduction déjà préparés | false | true, false |
+| MT_FAST | Mode rapide ; plus rapide mais précision de traduction potentiellement réduite | false | true, false |
+| MT_LEXICAL_SHORTLIST | Alias compatible de MT_FAST | false | true, false |
 | MT_WORKER_IDLE_TIMEOUT | Secondes avant de libérer un moteur de traduction inactif | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN | Jeton d'accès API | Vide | Toute chaîne de caractères |
 | MT_CACHE_SIZE | Résultats récents à conserver ; 0 désactive le cache | 1000 | 0, 1, 2, ... |
@@ -38,6 +40,17 @@ export MT_PORT=9000
 # Démarrer le service
 mtranserver
 ```
+
+### Mode rapide
+
+Par défaut, `fast: false` utilise le moteur K9 d’origine. Activez le mode avec `mtranserver --fast`, `MT_FAST=true`, `"fast": true` dans `~/.config/mtran/server.json`, ou la configuration de bibliothèque `new MTran({ fast: true })`. Utilisez `--no-fast` ou `false` pour le désactiver.
+
+Ce mode réutilise lexical shortlist et peut accélérer la traduction, mais aussi en réduire la précision. Sans fichier lex, le modèle revient au moteur K9 d’origine. Un changement de mode prépare à nouveau le modèle si nécessaire ; la première préparation peut nécessiter une conversion.
+
+Les anciens noms restent compatibles : `--lexical-shortlist` / `--no-lexical-shortlist`, `MT_LEXICAL_SHORTLIST` et le champ de bibliothèque/fichier `lexicalShortlist`. Priorité : CLI > environnement > fichier > valeur par défaut. À niveau égal, `fast` prime sur l’ancien alias. La configuration de bibliothèque et `setConfig` donnent aussi priorité à un `fast` explicite ; les deux champs reflètent le même mode demandé.
+
+`GET /ui/api/settings` expose `config.server.fast` et `config.server.cacheSize`. `fast` indique le mode demandé et reste donc `true` en cas de repli sans lex. Pour le modifier, envoyez `{"server":{"fast":true}}` à `POST /ui/api/settings/apply`, sans ajouter de commande à l’interface.
+
 
 ### Description de l'interface API
 
