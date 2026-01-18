@@ -50,6 +50,10 @@ async function main() {
   assert(!crossTargets.length || process.env.MTRAN_NATIVE_ARTIFACT_DIR,
     `Cross-target builds (including --all) require verified target addons and Intel ORT in MTRAN_NATIVE_ARTIFACT_DIR: ${crossTargets.join(', ')}`)
 
+  // Package managers may skip Electron's postinstall; its installer reuses an existing binary.
+  console.log('Ensuring the Electron runtime is installed...')
+  await run(bunBin, [require.resolve('electron/install.js')])
+
   // Build for Node (bundles dependencies, produces dist/main.js and dist/desktop.js)
   console.log('Building for Node with Bun...')
   await run(bunBin, ['run', 'build:node'])
