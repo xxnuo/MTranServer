@@ -14,6 +14,7 @@ if (isSingle || isAll) throw new Error('ONNX builds currently support --node or 
 console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
+await $`bun run scripts/build-native.ts`;
 
 if (isLib && fs.existsSync("ui/dist/assets")) {
   const entries = fs.readdirSync("ui/dist/assets");

@@ -34,7 +34,7 @@ export function getDefaultDesktopConfig() {
       enableWebUI: true,
       enableOfflineMode: false,
       workerIdleTimeout: 60,
-      workersPerLanguage: 1,
+      workersPerLanguage: 0,
       apiToken: '',
       logDir: path.join(configRoot, 'logs'),
       logToFile: false,
@@ -53,6 +53,11 @@ export function getDefaultDesktopConfig() {
 function normalizeConfig(input) {
   const defaults = getDefaultDesktopConfig();
   const server = input?.server || {};
+  const workers = server.workersPerLanguage === undefined ? defaults.server.workersPerLanguage : server.workersPerLanguage;
+  const workersPerLanguage = typeof workers === 'string' && workers.trim() ? Number(workers) : workers;
+  if (!Number.isSafeInteger(workersPerLanguage) || workersPerLanguage < 0) {
+    throw new Error('workersPerLanguage must be a non-negative safe integer');
+  }
   return {
     locale: input?.locale || defaults.locale,
     server: {
@@ -64,9 +69,7 @@ function normalizeConfig(input) {
       workerIdleTimeout: Number.isFinite(Number(server.workerIdleTimeout))
         ? Number(server.workerIdleTimeout)
         : defaults.server.workerIdleTimeout,
-      workersPerLanguage: Number.isFinite(Number(server.workersPerLanguage))
-        ? Number(server.workersPerLanguage)
-        : defaults.server.workersPerLanguage,
+      workersPerLanguage,
       apiToken: server.apiToken ?? defaults.server.apiToken,
       logDir: server.logDir ?? defaults.server.logDir,
       logToFile: typeof server.logToFile === 'boolean' ? server.logToFile : defaults.server.logToFile,

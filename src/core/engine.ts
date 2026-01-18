@@ -1,4 +1,6 @@
 import * as ort from 'onnxruntime-node';
+import { availableParallelism } from 'node:os';
+import { createNativeSession, NativeRunError, type InferenceSession } from './native.js';
 import { parseFragment } from 'parse5';
 import { Tokenizer } from './tokenizer.js';
 import { Shortlist } from './shortlist.js';
@@ -8,9 +10,9 @@ import * as logger from '../logger/index.js';
 
 export interface TranslationOptions { sourceLang?: string; targetLang?: string; cacheSize?: number }
 export interface TranslateOptions { qualityScores?: boolean; alignment?: boolean; html?: boolean }
-export interface TranslationConfig { 'cpu-threads'?: number; 'max-length-break'?: number }
+export interface TranslationConfig { 'cpu-threads'?: number; 'max-length-break'?: number; 'max-concurrent-runs'?: number }
 export class TranslationEngine {
-  private session?: ort.InferenceSession;
+  private session?: InferenceSession;
   private src?: Tokenizer;
   private dst?: Tokenizer;
   private shortlist?: Shortlist;
@@ -24,12 +26,20 @@ export class TranslationEngine {
   private modelPath = '';
   private fallbackCpuThreads = 1;
   private fallbackCpuTuning?: SessionTuning;
+  private fallback?: Promise<InferenceSession>;
+  private initializing?: Promise<void>;
   backend?: BackendInfo;
   identity = '';
   constructor(private options: TranslationOptions = {}) {}
   get busy() { return this.pending > 0; }
-  async init(model: ConvertedModel, config: TranslationConfig = {}, sampleText = 'Hello, this is a translation test.') {
+  init(model: ConvertedModel, config: TranslationConfig = {}, sampleText = 'Hello, this is a translation test.') {
+    if (this.closing) return Promise.reject(new Error('Engine is closing'));
+    return this.initializing ??= this.initialize(model, config, sampleText);
+  }
+  private async initialize(model: ConvertedModel, config: TranslationConfig, sampleText: string) {
     if (this.session) return;
+    const limit = config['max-concurrent-runs'];
+    if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1)) throw new Error('max-concurrent-runs must be a positive integer');
     this.tokenLimit = Math.max(8, config['max-length-break'] ?? 512);
     try {
       this.src = await Tokenizer.load(model.sourceVocab);
@@ -43,7 +53,7 @@ export class TranslationEngine {
       });
       const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst.eos)), [1]);
       try {
-        const selected = await selectBackend(model.model, async (session, short) => {
+        const probe = async (session: InferenceSession, short?: boolean) => {
           if (session.inputNames?.includes('candidate_ids')) {
             shortlist ??= model.lex ? Shortlist.load(model.lex, model.sourceVocab, model.targetVocab)
               : Promise.reject(new Error('Shortlist ONNX graph requires ConvertedModel.lex'));
@@ -51,9 +61,31 @@ export class TranslationEngine {
           }
           // A bounded timing probe need not finish a translation; user requests still require EOS.
           for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos, false);
-        }, config['cpu-threads'], model.identity);
-        this.session = selected.session;
-        this.backend = selected.info;
+        };
+        const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity);
+        let activeSession: InferenceSession = selected.session;
+        let info = selected.info;
+        if (selected.info.provider === 'cpu' && selected.session.inputNames?.includes('candidate_ids')
+          && (config['cpu-threads'] === undefined || config['cpu-threads'] === 1)) {
+          const native = await createNativeSession(model.model);
+          if (native) {
+            try {
+              await probe(native);
+              const poolSize = Number.parseInt(process.env.UV_THREADPOOL_SIZE ?? '4', 10) || 4;
+              activeSession = native;
+              info = { ...selected.info, runtime: 'native-async', cpuThreads: 1,
+                tuning: { ...selected.info.tuning, executionMode: 'sequential', interOpNumThreads: 1,
+                  graphOptimizationLevel: 'all', spinning: false, dynamicBlockBase: 0 },
+                maxConcurrentRuns: Math.min(config['max-concurrent-runs'] ?? Infinity, Math.max(1, poolSize), availableParallelism()) };
+              await selected.session.release().catch(error => logger.debug(`ONNX session release failed: ${error}`));
+            } catch (error) {
+              await native.release().catch(() => {});
+              logger.warn(`Native ONNX validation failed; using standard runtime: ${error}`);
+            }
+          }
+        }
+        this.session = activeSession;
+        this.backend = info;
         this.fallbackCpuThreads = selected.fallbackCpuThreads;
         this.fallbackCpuTuning = selected.fallbackCpuTuning;
         this.modelPath = model.model;
@@ -70,8 +102,11 @@ export class TranslationEngine {
       try { return await (options.html ? this.translateHTML(text) : this.translateText(text)); }
       finally {
         this.pending--;
-        const next = this.waiters.shift();
-        if (next) next(); else this.running--;
+        this.running--;
+        while (this.waiters.length && this.running < (this.backend?.maxConcurrentRuns ?? 1)) {
+          this.running++;
+          this.waiters.shift()!();
+        }
       }
     })();
     this.tasks.add(task);
@@ -129,20 +164,24 @@ export class TranslationEngine {
       let tokens: number[];
       try { tokens = await this.infer(this.session!, input, eos); }
       catch (error) {
-        if (!this.backend || this.backend.provider === 'cpu') throw error;
-        const session = await createSession(this.modelPath, 'cpu', this.fallbackCpuThreads, this.fallbackCpuTuning);
-        const previous = this.session!;
-        this.session = session;
-        this.backend = { ...this.backend, provider: 'cpu', cpuThreads: this.fallbackCpuThreads,
-          tuning: this.fallbackCpuTuning ?? this.backend.tuning, maxConcurrentRuns: 1, fallbackReason: String(error) };
-        await previous.release().catch(releaseError => logger.debug(`ONNX accelerator release failed: ${releaseError}`));
-        logger.warn(`ONNX accelerator failed, falling back to CPU: ${error}`);
+        if (!this.backend || (this.backend.provider === 'cpu' && !(error instanceof NativeRunError))) throw error;
+        this.fallback ??= (async () => {
+          const session = await createSession(this.modelPath, 'cpu', this.fallbackCpuThreads, this.fallbackCpuTuning);
+          const previous = this.session!;
+          this.session = session;
+          this.backend = { ...this.backend!, runtime: undefined, provider: 'cpu', cpuThreads: this.fallbackCpuThreads,
+            tuning: this.fallbackCpuTuning ?? this.backend!.tuning, maxConcurrentRuns: 1, fallbackReason: String(error) };
+          await previous.release().catch(releaseError => logger.debug(`ONNX session release failed: ${releaseError}`));
+          logger.warn(`ONNX execution failed, falling back to standard CPU runtime: ${error}`);
+          return session;
+        })().catch(error => { this.fallback = undefined; throw error; });
+        const session = await this.fallback;
         tokens = await this.infer(session, input, eos);
       }
       return before + this.dst!.decode(tokens) + after;
     } finally { input.dispose(); eos.dispose(); }
   }
-  private async infer(session: ort.InferenceSession, input: ort.Tensor, eos: ort.Tensor, requireEos = true) {
+  private async infer(session: InferenceSession, input: ort.Tensor, eos: ort.Tensor, requireEos = true) {
     let candidates: ort.Tensor | undefined;
     try {
       const feeds: Record<string, ort.Tensor> = { X: input, eos_id: eos };
@@ -163,9 +202,11 @@ export class TranslationEngine {
   destroy(): Promise<void> {
     if (this.closed) return this.closed;
     this.closing = true;
-    this.closed = Promise.allSettled([...this.tasks]).then(async () => {
+    this.closed = (async () => {
+      await this.initializing?.catch(() => {});
+      await Promise.allSettled([...this.tasks]);
       try { await this.session?.release(); } finally { this.session = undefined; this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; this.shortlist = undefined; }
-    });
+    })();
     return this.closed;
   }
 }

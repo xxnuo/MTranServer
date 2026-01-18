@@ -1,6 +1,78 @@
 import { expect, test, spyOn } from 'bun:test';
 import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
 import { getConfig, resetConfig, setConfig, saveConfigFile } from '../src/config';
+
+test('workers default to auto, preserve explicit counts and reject invalid config values', () => {
+  const argv = process.argv;
+  const env = process.env.MT_WORKERS_PER_LANGUAGE;
+  const read = spyOn(fs, 'readFileSync');
+  const write = spyOn(fs, 'writeFileSync').mockImplementation(() => {});
+  const mkdir = spyOn(fs, 'mkdirSync').mockImplementation(() => undefined);
+  const configure = (file: unknown, environment: string | undefined, flags: string[]) => {
+    read.mockReturnValue(JSON.stringify(file));
+    process.argv = ['bun', 'fixture', ...flags];
+    if (environment === undefined) delete process.env.MT_WORKERS_PER_LANGUAGE;
+    else process.env.MT_WORKERS_PER_LANGUAGE = environment;
+    resetConfig();
+  };
+  try {
+    for (const [file, environment, flags, expected] of [
+      [{}, undefined, [], 0], [{ workersPerLanguage: 1 }, undefined, [], 1],
+      [{ workersPerLanguage: 8 }, '1', [], 1],
+      [{ workersPerLanguage: 1 }, '4', ['--workers-per-language', '0'], 0],
+      [{}, '0', ['--workers-per-language=1'], 1], [{}, undefined, ['--workers-per-language=16'], 16],
+    ] as const) {
+      configure(file, environment, [...flags]);
+      expect(getConfig().workersPerLanguage).toBe(expected);
+    }
+    for (const value of ['1.5', '-1', 'NaN', 'Infinity', '1junk', '', '9007199254740992', '1=oops']) {
+      for (const flags of [['--workers-per-language', value], [`--workers-per-language=${value}`]]) {
+        configure({}, undefined, flags);
+        expect(() => getConfig()).toThrow('non-negative safe integer');
+      }
+      configure({}, value, []);
+      expect(() => getConfig()).toThrow('non-negative safe integer');
+    }
+    for (const value of [-1, 1.5, Number.MAX_SAFE_INTEGER + 1, null, '1', true]) {
+      configure({ workersPerLanguage: value }, undefined, []);
+      expect(() => getConfig()).toThrow('non-negative safe integer');
+    }
+    configure({}, undefined, []);
+    for (const value of [0, 1, 16]) {
+      setConfig({ workersPerLanguage: value });
+      expect(getConfig().workersPerLanguage).toBe(value);
+      saveConfigFile({ workersPerLanguage: value });
+    }
+    for (const value of [-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => setConfig({ workersPerLanguage: value })).toThrow('non-negative safe integer');
+      expect(() => saveConfigFile({ workersPerLanguage: value })).toThrow('non-negative safe integer');
+      expect(getConfig().workersPerLanguage).toBe(16);
+    }
+  } finally {
+    read.mockRestore(); write.mockRestore(); mkdir.mockRestore();
+    process.argv = argv;
+    if (env === undefined) delete process.env.MT_WORKERS_PER_LANGUAGE;
+    else process.env.MT_WORKERS_PER_LANGUAGE = env;
+    resetConfig();
+  }
+});
+
+test('desktop workers default to auto and validate explicit counts before persistence', async () => {
+  const { getDefaultDesktopConfig, saveDesktopConfig } = await import('../desktop/config.js');
+  const mkdir = spyOn(fsPromises, 'mkdir').mockResolvedValue(undefined);
+  const write = spyOn(fsPromises, 'writeFile').mockResolvedValue(undefined);
+  const unlink = spyOn(fsPromises, 'unlink').mockResolvedValue(undefined);
+  try {
+    expect(getDefaultDesktopConfig().server.workersPerLanguage).toBe(0);
+    for (const value of [0, 1, 16, '1']) {
+      expect((await saveDesktopConfig({ server: { workersPerLanguage: value } })).server.workersPerLanguage).toBe(Number(value));
+    }
+    for (const value of [-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, '1.5', '1junk', '', null, true]) {
+      await expect(saveDesktopConfig({ server: { workersPerLanguage: value } })).rejects.toThrow('non-negative safe integer');
+    }
+  } finally { mkdir.mockRestore(); write.mockRestore(); unlink.mockRestore(); }
+});
 
 test('lexical shortlist defaults off and CLI overrides environment overrides file for true and false', () => {
   const argv = process.argv;

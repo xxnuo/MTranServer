@@ -11,6 +11,7 @@ import { readCache, writeCache } from '@/utils/cache.js';
 interface EngineInfo {
   engine: TranslationEngine;
   lexicalShortlist: boolean;
+  workersPerLanguage: number;
   lastUsed: Date;
   fromLang: string;
   toLang: string;
@@ -18,7 +19,7 @@ interface EngineInfo {
 }
 
 const engines = new Map<string, EngineInfo>();
-const loadingPromises = new Map<string, { lexicalShortlist: boolean; promise: Promise<EngineInfo> }>();
+const loadingPromises = new Map<string, { lexicalShortlist: boolean; workersPerLanguage: number; promise: Promise<EngineInfo> }>();
 const zhCommaTest = /,/;
 const zhCommaGlobal = /,/g;
 
@@ -56,13 +57,18 @@ async function getOrCreateSingleEngine(
     if (!loading) {
       const request = {
         lexicalShortlist: getConfig().lexicalShortlist === true,
+        workersPerLanguage: getConfig().workersPerLanguage,
         promise: Promise.resolve().then(async (): Promise<EngineInfo> => {
+          const config = getConfig();
+          request.lexicalShortlist = config.lexicalShortlist === true;
+          request.workersPerLanguage = config.workersPerLanguage;
           const existing = engines.get(key);
           if (existing) {
             resetIdleTimer(existing);
             const manifestPath = path.join(getConfig().modelDir, `${fromLang}_${toLang}`, 'manifest.json');
             const identity = await readFile(manifestPath, 'utf8').then(s => JSON.parse(s).identity).catch(() => null);
-            if (identity === existing.engine.identity && existing.lexicalShortlist === (getConfig().lexicalShortlist === true)) {
+            if (identity === existing.engine.identity && existing.lexicalShortlist === request.lexicalShortlist
+              && existing.workersPerLanguage === request.workersPerLanguage) {
               existing.lastUsed = new Date();
               resetIdleTimer(existing);
               return existing;
@@ -72,16 +78,18 @@ async function getOrCreateSingleEngine(
             await existing.engine.destroy();
           }
 
-          const config = getConfig();
-          request.lexicalShortlist = config.lexicalShortlist === true;
           logger.info(`Creating new engine for ${fromLang} -> ${toLang}`);
           const model = await models.prepareModel(toLang, fromLang, undefined, request.lexicalShortlist);
           const engine = new TranslationEngine({ sourceLang: fromLang, targetLang: toLang });
-          await engine.init(model, { 'max-length-break': config.maxSentenceLength }, sampleText);
+          await engine.init(model, {
+            'max-length-break': config.maxSentenceLength,
+            'max-concurrent-runs': request.workersPerLanguage === 0 ? undefined : request.workersPerLanguage,
+          }, sampleText);
           const info: EngineInfo = {
             engine,
             // Keep the requested mode even when a model without lex falls back to K9.
             lexicalShortlist: request.lexicalShortlist,
+            workersPerLanguage: request.workersPerLanguage,
             lastUsed: new Date(),
             fromLang,
             toLang,
@@ -98,9 +106,11 @@ async function getOrCreateSingleEngine(
 
     try {
       const info = await loading.promise;
-      if (info.lexicalShortlist === (getConfig().lexicalShortlist === true)) return info.engine;
+      if (info.lexicalShortlist === (getConfig().lexicalShortlist === true)
+        && info.workersPerLanguage === getConfig().workersPerLanguage) return info.engine;
     } catch (error) {
-      if (loading.lexicalShortlist === (getConfig().lexicalShortlist === true)) throw error;
+      if (loading.lexicalShortlist === (getConfig().lexicalShortlist === true)
+        && loading.workersPerLanguage === getConfig().workersPerLanguage) throw error;
     }
     // Configuration changed while waiting; prepare again before serving a translation.
   }
