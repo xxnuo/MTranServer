@@ -1,0 +1,187 @@
+{
+  "scores": [
+    {
+      "pair": "en_zh-Hans",
+      "split": "dev",
+      "samples": 997,
+      "scores": {
+        "chrfpp": {
+          "baseline": 24.87584172055613,
+          "candidate": 24.75607912329692,
+          "delta": -0.11976259725921068,
+          "signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.5.1"
+        },
+        "bleu": {
+          "baseline": 38.079512543882146,
+          "candidate": 37.855785894162025,
+          "delta": -0.22372664972012046,
+          "signature": "nrefs:1|case:mixed|eff:no|tok:zh|smooth:exp|version:2.5.1"
+        }
+      },
+      "chrfpp_paired_bootstrap95": [
+        -0.324605340080403,
+        0.07308731814408276
+      ],
+      "different": 663,
+      "baselineFailures": 0,
+      "candidateFailures": 0,
+      "throughputChangePercent": -3.394940325943685,
+      "sacrebleu": "2.5.1"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "split": "dev",
+      "samples": 997,
+      "scores": {
+        "chrfpp": {
+          "baseline": 55.06263397014305,
+          "candidate": 54.93170513409636,
+          "delta": -0.13092883604668515,
+          "signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.5.1"
+        },
+        "bleu": {
+          "baseline": 28.035552847984892,
+          "candidate": 27.71808640825598,
+          "delta": -0.31746643972891064,
+          "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.5.1"
+        }
+      },
+      "chrfpp_paired_bootstrap95": [
+        -0.3950783169446268,
+        0.09875294812578517
+      ],
+      "different": 623,
+      "baselineFailures": 0,
+      "candidateFailures": 0,
+      "throughputChangePercent": -6.876630188758115,
+      "sacrebleu": "2.5.1"
+    }
+  ],
+  "pilot": [
+    {
+      "pair": "en_zh-Hans",
+      "split": "dev",
+      "samples": 100,
+      "scores": {
+        "chrfpp": {
+          "baseline": 24.81220024415129,
+          "candidate": 24.42762751056479,
+          "delta": -0.38457273358649857,
+          "signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.5.1"
+        },
+        "bleu": {
+          "baseline": 38.026142131492065,
+          "candidate": 37.37800531107306,
+          "delta": -0.6481368204190048,
+          "signature": "nrefs:1|case:mixed|eff:no|tok:zh|smooth:exp|version:2.5.1"
+        }
+      },
+      "chrfpp_paired_bootstrap95": [
+        -0.9172676835712181,
+        0.14460216160399497
+      ],
+      "different": 67,
+      "baselineFailures": 0,
+      "candidateFailures": 0,
+      "throughputChangePercent": 4.790512604223784,
+      "sacrebleu": "2.5.1"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "split": "dev",
+      "samples": 100,
+      "scores": {
+        "chrfpp": {
+          "baseline": 56.63114542535064,
+          "candidate": 56.162475618433405,
+          "delta": -0.4686698069172337,
+          "signature": "nrefs:1|case:mixed|eff:yes|nc:6|nw:2|space:no|version:2.5.1"
+        },
+        "bleu": {
+          "baseline": 30.462976895520136,
+          "candidate": 29.88449882031094,
+          "delta": -0.578478075209194,
+          "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.5.1"
+        }
+      },
+      "chrfpp_paired_bootstrap95": [
+        -1.3110550981833953,
+        0.30406767687091474
+      ],
+      "different": 64,
+      "baselineFailures": 0,
+      "candidateFailures": 0,
+      "throughputChangePercent": -2.6764380044446923,
+      "sacrebleu": "2.5.1"
+    }
+  ],
+  "dataset": {
+    "url": "https://dl.fbaipublicfiles.com/nllb/flores200_dataset.tar.gz",
+    "sha256": "b8b0b76783024b85797e5cc75064eb83fc5288b41e9654dabc7be6ae944011f6"
+  },
+  "devFiles": {
+    "eng_Latn.dev": "51a25f527fd81f428b6933d85a2f5e5544af92aa82042c7fbf0c4120327fba0a",
+    "zho_Hans.dev": "ae677073476a27d6d11db642df5c18b86ca5dfcbbeefeba7d99ec93b7f5bd177"
+  },
+  "timingBlocks": [
+    {
+      "pair": "en_zh-Hans",
+      "split": "dev",
+      "selection": "entire dev",
+      "rows": null,
+      "blocks": [
+        {
+          "variant": "baseline",
+          "ms": 10914.142164000037
+        },
+        {
+          "variant": "candidate",
+          "ms": 11603.196329999924
+        },
+        {
+          "variant": "candidate",
+          "ms": 11434.995004999979
+        },
+        {
+          "variant": "baseline",
+          "ms": 11341.916322999889
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "split": "dev",
+      "selection": "entire dev",
+      "rows": null,
+      "blocks": [
+        {
+          "variant": "baseline",
+          "ms": 11929.723757000014
+        },
+        {
+          "variant": "candidate",
+          "ms": 12836.997247
+        },
+        {
+          "variant": "candidate",
+          "ms": 12634.429249999914
+        },
+        {
+          "variant": "baseline",
+          "ms": 11790.12693599987
+        }
+      ]
+    }
+  ],
+  "sourceHashes": {
+    "export.ts": "a3fc2010ff487ce9d9da13877276d7e4981351eae552de646a318e85c2feff43",
+    "pilot.ts": "189cf691fe8223b55a8d6429ba1a2583271e21d67ac32e2f2798b1737f0430bd",
+    "score.py": "411d7acc73e4e541c206fb34a5c89ca12f31923546f0b010f00e2bd150115be8"
+  },
+  "modelHashes": {
+    ".tmp/onnx-production/en_zh-Hans.onnx": "e23eac4afa287ca0668625f0f6315adf566f9d1f29db94d9d14690d0056f0a99",
+    ".tmp/ffn-q4/en_zh-Hans.onnx": "17f94e95b194ed5628ed931894037cc9ac6b0bdfc144c79f1935c76f0a2b7d4b",
+    ".tmp/onnx-production/zh-Hans_en.onnx": "ceac8dc6a63438d13a09d2cbd1b2fea09863610d0405ea9910e0311551474a60",
+    ".tmp/ffn-q4/zh-Hans_en.onnx": "9cc9ffa20fd80f02dea3b0332518a833ceb8b4f5d88467f364e6721f9bc1fb83"
+  }
+}
