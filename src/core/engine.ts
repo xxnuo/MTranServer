@@ -232,7 +232,7 @@ export class TranslationEngine {
   }
   private async translateMetal(content: string): Promise<string | undefined> {
     // CPU keeps short inputs and competing requests; only documents can amortize GPU dispatch.
-    if (this.backend?.provider !== 'cpu' || process.platform !== 'darwin' || process.arch !== 'arm64' || process.env.MT_CPU_ONLY === 'true') return;
+    if (this.backend?.provider !== 'cpu' || !this.converted || !getMetalRuntime(this.converted)) return;
     const leaves: Array<MetalInput & { text: string; before: string; after: string }> = [];
     const parts: Array<string | number> = [];
     const collect = (text: string) => {
@@ -282,7 +282,7 @@ export class TranslationEngine {
         const selected = gpuMs < cpuMs * .9;
         this.metalSelections.set(key, selected);
         if (this.backend) this.backend = { ...this.backend, documentAcceleration: {
-          provider: 'metal', runtime: 'mlx', batchSize, maxTokens, cpuMs, gpuMs, selected,
+          provider: process.platform === 'linux' ? 'cuda' : 'metal', runtime: 'mlx', batchSize, maxTokens, cpuMs, gpuMs, selected,
         } };
         if (!selected) { await worker.close(); this.metal = undefined; return; }
       }
@@ -291,9 +291,9 @@ export class TranslationEngine {
     } catch (error) {
       this.metalDisabled = true;
       await worker?.close().catch(() => {});
-      logger.warn(`Metal document acceleration unavailable; using CPU: ${error}`);
+      logger.warn(`GPU document acceleration unavailable; using CPU: ${error}`);
       if (this.backend) this.backend = { ...this.backend, documentAcceleration: {
-        provider: 'metal', runtime: 'mlx', selected: false, error: String(error),
+        provider: process.platform === 'linux' ? 'cuda' : 'metal', runtime: 'mlx', selected: false, error: String(error),
       } };
       return;
     } finally { this.metalBusy = false; }

@@ -2,6 +2,7 @@ import { $ } from "bun";
 import fs from "fs";
 import pkg from "../package.json";
 import { buildMetal } from './build-metal';
+import { buildCuda } from './build-cuda';
 
 const version = pkg.version;
 const args = new Set(Bun.argv.slice(2));
@@ -17,6 +18,7 @@ await $`rm -rf dist`;
 await $`mkdir -p dist`;
 await $`bun run scripts/build-native.ts`;
 buildMetal();
+buildCuda();
 
 if (isLib && fs.existsSync("ui/dist/assets")) {
   const entries = fs.readdirSync("ui/dist/assets");

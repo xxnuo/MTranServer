@@ -45,7 +45,14 @@ class Model {
   array frequency{0.0f}, offset{0.0f};
   std::function<Arrays(const Arrays &)> encoder, contexts, chunk;
   array quantized(const array &x, const Arrays &p) {
+#if defined(MTRAN_CUDA)
+    // CUDA's optimized Q8 matrix kernels require half-precision activations.
+    return mx::astype(mx::quantized_matmul(mx::astype(x, mx::float16), p[0],
+                       mx::astype(p[1], mx::float16), mx::astype(p[2], mx::float16),
+                       true, 64, 8), mx::float32);
+#else
     return mx::quantized_matmul(x, p[0], p[1], p[2], true, 64, 8);
+#endif
   }
   array linear(const array &x, const std::string &p,
                const std::string &bias = "") {
@@ -191,7 +198,7 @@ public:
     require(in.peek() == std::char_traits<char>::eof(), "Trailing model data");
     for (auto &[name, value] : w)
       if (std::regex_search(name, std::regex("_W([0-9]+|[qkvfo])?$")))
-        q.emplace(name, mx::quantize(mx::transpose(value), 64, 8));
+        q.emplace(name, mx::quantize(mx::contiguous(mx::transpose(value)), 64, 8));
     projection = mx::quantize(w.at(emb), 64, 8);
     std::vector<float> freq(dim), off(dim);
     for (int i = 0; i < dim; i++) {
@@ -313,8 +320,30 @@ public:
 };
 int main(int argc, char **argv) {
   try {
+#if defined(MTRAN_CUDA)
+    if (argc == 2 && std::string(argv[1]) == "--check") {
+      mx::set_default_device(mx::Device::gpu);
+      auto weights = mx::reshape(mx::arange(256 * 256, mx::float32), {256, 256}) / array(65536.0f);
+      auto packed = mx::quantize(mx::contiguous(mx::transpose(weights)), 64, 8);
+      auto restored = mx::dequantize(packed[0], packed[1], packed[2], 64, 8);
+      require(mx::take(restored, array(0), 0).shape(0) == 256, "CUDA gather self-check failed");
+      mx::eval(mx::take(restored, array(0), 0));
+      require(mx::max(mx::abs(restored - mx::transpose(weights))).item<float>() < .001f,
+              "CUDA weight quantization self-check failed");
+      auto x = mx::ones({16, 256}, mx::float16);
+      auto y = mx::quantized_matmul(x, packed[0], mx::astype(packed[1], mx::float16),
+                                    mx::astype(packed[2], mx::float16), true, 64, 8);
+      auto expected = mx::matmul(mx::astype(x, mx::float32), mx::transpose(restored));
+      require(mx::max(mx::abs(mx::astype(y, mx::float32) - expected)).item<float>() < .25f,
+              "CUDA matrix self-check failed");
+      std::cout << "CUDA_RUNTIME_OK\n";
+      return 0;
+    }
+#endif
     require(argc == 3, "Expected model and metallib paths");
+#if defined(__APPLE__)
     mx::metal::set_metallib_path(argv[2]);
+#endif
     mx::set_default_device(mx::Device::gpu);
     mx::set_memory_limit(size_t(2) << 30);
     Model model(argv[1]);

@@ -30,6 +30,7 @@ for (const mode of ['crash', 'truncated', 'wrong-count', 'invalid-token']) test(
   const w = worker(mode), row = [{ ids: [2, 0], candidates: [] }];
   const results = await Promise.allSettled([w.translate(row, false), w.translate(row, false)]);
   expect(results.every(r => r.status === 'rejected')).toBe(true);
+  if (mode === 'crash') expect((results[0] as PromiseRejectedResult).reason.message).toContain('exited (7)');
   await w.close();
 });
 
@@ -45,6 +46,20 @@ test('Metal initialization deadline rejects without an uncaught timer exception'
   const timer = spyOn(globalThis, 'setTimeout').mockImplementation(((fn: (...args: any[]) => void, ms: number, ...args: any[]) => original(fn, ms === 30_000 ? 30 : ms, ...args)) as any);
   try { const w = worker('no-ready'); await expect(w.ready).rejects.toThrow('timed out'); await w.close(); }
   finally { timer.mockRestore(); }
+});
+
+test('a stalled first GPU translation is terminated and queued work rejects', async () => {
+  const w = worker('no-result');
+  await w.ready;
+  const original = globalThis.setTimeout;
+  const timer = spyOn(globalThis, 'setTimeout').mockImplementation(((fn: (...args: any[]) => void, ms: number, ...args: any[]) => original(fn, ms === 180_000 || ms === 30_000 ? 30 : ms, ...args)) as any);
+  try {
+    const first = w.translate([{ ids: [3, 0], candidates: [] }], false);
+    const queued = w.translate([{ ids: [4, 0], candidates: [] }], false);
+    await expect(first).rejects.toThrow('timed out');
+    await expect(queued).rejects.toThrow();
+    await w.close();
+  } finally { timer.mockRestore(); }
 });
 
 test('Metal export rejects malformed weights and never overwrites an existing file', async () => {
