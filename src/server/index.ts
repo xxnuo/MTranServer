@@ -6,7 +6,7 @@ import * as logger from '@/logger/index.js';
 import { initRecords } from '@/models/index.js';
 import { cleanupAllEngines } from '@/services/index.js';
 import { cleanupLegacyBin } from '@/assets/index.js';
-import { requestId, errorHandler, cors, requestLogger } from '@/middleware/index.js';
+import { requestId, errorHandler, cors, requestLogger, requestCancellation } from '@/middleware/index.js';
 import { RegisterRoutes } from '@/generated/routes.js';
 import swaggerDocument from '@/generated/swagger.json';
 import { uiStatic } from '@/middleware/ui.js';
@@ -30,6 +30,7 @@ export async function startServer({ handleSignals = true } = {}) {
   const app = express();
 
   app.use(requestId());
+  app.use(requestCancellation());
   app.use(express.json());
   app.use(cors());
   if (config.logRequests) {

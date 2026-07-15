@@ -3,3 +3,4 @@ export * from './auth.js';
 export * from './request-logger.js';
 export * from './request-id.js';
 export * from './error-handler.js';
+export * from './request-context.js';

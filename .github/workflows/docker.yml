@@ -4,6 +4,16 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish_target:
+        description: Publish target
+        required: true
+        type: choice
+        default: both
+        options:
+          - docker
+          - github
+          - both
 
 permissions:
   contents: read
@@ -25,6 +35,55 @@ jobs:
           echo "tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
           echo "Latest tag: ${LATEST_TAG}"
 
+      - name: Resolve publish targets
+        id: targets
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TARGET="${{ inputs.publish_target }}"
+          else
+            TARGET="both"
+          fi
+
+          PUBLISH_DOCKER=false
+          PUBLISH_GHCR=false
+
+          case "${TARGET}" in
+            docker)
+              PUBLISH_DOCKER=true
+              ;;
+            github)
+              PUBLISH_GHCR=true
+              ;;
+            both)
+              PUBLISH_DOCKER=true
+              PUBLISH_GHCR=true
+              ;;
+            *)
+              echo "Unsupported publish target: ${TARGET}"
+              exit 1
+              ;;
+          esac
+
+          GHCR_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGES=()
+
+          if [[ "${PUBLISH_DOCKER}" == "true" ]]; then
+            IMAGES+=("xxnuo/mtranserver")
+          fi
+
+          if [[ "${PUBLISH_GHCR}" == "true" ]]; then
+            IMAGES+=("ghcr.io/${GHCR_OWNER}/mtranserver")
+          fi
+
+          {
+            echo "target=${TARGET}"
+            echo "publish_docker=${PUBLISH_DOCKER}"
+            echo "publish_ghcr=${PUBLISH_GHCR}"
+            echo "images<<EOF"
+            printf '%s\n' "${IMAGES[@]}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -32,12 +91,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
+        if: steps.targets.outputs.publish_docker == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Log in to GitHub Container Registry
+        if: steps.targets.outputs.publish_ghcr == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -48,9 +109,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            xxnuo/mtranserver
-            ghcr.io/xxnuo/mtranserver
+          images: ${{ steps.targets.outputs.images }}
           flavor: |
             latest=false
           tags: |

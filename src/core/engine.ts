@@ -1,6 +1,17 @@
 import { BergamotModule } from '@/core/interfaces.js';
 import { ModelBuffers } from '@/core/loader.js';
 import { isCJKCode } from '@/utils/lang-alias.js';
+import * as logger from '@/logger/index.js';
+
+const HTML_ENTITY_PATTERN = /&(?!(?:#\d+|#x[a-fA-F0-9]+|[a-zA-Z][a-zA-Z0-9]+);)/g;
+const INVALID_HTML_LT_PATTERN = /<(?!\/?[a-zA-Z][\w:-]*(?:\s[^<>]*?)?\/?>|!--|!DOCTYPE\b|\?xml\b)/g;
+const HTML_LIKE_PATTERN = /<\/?[a-zA-Z][\w:-]*(?:\s[^<>]*?)?\/?>|<!--|<!DOCTYPE\b|<\?xml\b/i;
+const WASM_ABORT_PATTERN = /aborted|abort/i;
+const FATAL_WASM_ERROR_PATTERN =
+  new RegExp(
+    `${WASM_ABORT_PATTERN.source}|memory access out of bounds|invalid memory access|invalid table access|unreachable`,
+    'i'
+  );
 
 export interface TranslationOptions {
   sourceLang?: string;
@@ -12,6 +23,7 @@ export interface TranslateOptions {
   qualityScores?: boolean;
   alignment?: boolean;
   html?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface TranslationConfig {
@@ -35,6 +47,8 @@ interface QueueTask {
   options: TranslateOptions;
   resolve: (value: string) => void;
   reject: (reason: any) => void;
+  signal?: AbortSignal;
+  onAbort?: () => void;
 }
 
 export class TranslationEngine {
@@ -117,15 +131,18 @@ export class TranslationEngine {
 
   translate(text: string, options: TranslateOptions = {}): string {
     if (!this.isReady) throw new Error("Engine not initialized");
+    this._throwIfAborted(options.signal);
 
     let processedText = text;
-    if (options.html) {
+    const shouldUseHtml = !!options.html && this._looksLikeHTML(text);
+    if (shouldUseHtml) {
       processedText = this._sanitizeHTML(text);
     }
 
-    const { taggedText, replacements, forceHtml } = this._tagPlaceholders(processedText, options.html);
+    const { taggedText, replacements, forceHtml } = this._tagPlaceholders(processedText, shouldUseHtml);
     const { cleanText, replacements: emojiReplacements } = this._hideEmojis(taggedText);
-    const effectiveOptions: TranslateOptions = forceHtml ? { ...options, html: true } : options;
+    const normalizedOptions: TranslateOptions = { ...options, html: shouldUseHtml };
+    const effectiveOptions: TranslateOptions = forceHtml ? { ...normalizedOptions, html: true } : normalizedOptions;
 
     let translation: string;
     try {
@@ -134,8 +151,10 @@ export class TranslationEngine {
       } else {
         translation = this._translateInternal(cleanText, effectiveOptions);
       }
+      this._throwIfAborted(options.signal);
     } catch (error: any) {
-      if (this._isFatalWASMError(error)) {
+      // Never treat a client-initiated abort as a fatal WASM engine failure.
+      if (error.name !== 'AbortError' && this._isFatalWASMError(error)) {
         this.isReady = false;
         throw new Error(`Fatal WASM error: ${error.message}`);
       }
@@ -158,13 +177,38 @@ export class TranslationEngine {
       }
       return match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     });
+    text = text.replace(HTML_ENTITY_PATTERN, '&amp;');
+    text = text.replace(INVALID_HTML_LT_PATTERN, '&lt;');
 
     return text;
   }
 
+  private _looksLikeHTML(text: string): boolean {
+    return HTML_LIKE_PATTERN.test(text);
+  }
+
   async translateAsync(text: string, options: TranslateOptions = {}): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.pendingQueue.push({ text, options, resolve, reject });
+      const task: QueueTask = {
+        text,
+        options,
+        resolve,
+        reject,
+        signal: options.signal,
+      };
+      if (task.signal?.aborted) {
+        reject(this._abortError());
+        return;
+      }
+      task.onAbort = () => {
+        const index = this.pendingQueue.indexOf(task);
+        if (index !== -1) {
+          this.pendingQueue.splice(index, 1);
+          reject(this._abortError());
+        }
+      };
+      task.signal?.addEventListener('abort', task.onAbort, { once: true });
+      this.pendingQueue.push(task);
       this._processQueue();
     });
   }
@@ -174,6 +218,11 @@ export class TranslationEngine {
 
     this.translating = true;
     const task = this.pendingQueue.shift()!;
+    if (task.signal?.aborted) {
+      task.reject(this._abortError());
+      this._finishTask(task);
+      return;
+    }
 
     try {
       const result = this.translate(task.text, task.options);
@@ -181,8 +230,27 @@ export class TranslationEngine {
     } catch (error) {
       task.reject(error);
     } finally {
-      this.translating = false;
-      setImmediate(() => this._processQueue());
+      this._finishTask(task);
+    }
+  }
+
+  private _finishTask(task: QueueTask): void {
+    if (task.signal && task.onAbort) {
+      task.signal.removeEventListener('abort', task.onAbort);
+    }
+    this.translating = false;
+    setImmediate(() => this._processQueue());
+  }
+
+  private _abortError(): Error {
+    const error = new Error('Translation request aborted');
+    error.name = 'AbortError';
+    return error;
+  }
+
+  private _throwIfAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+      throw this._abortError();
     }
   }
 
@@ -203,6 +271,7 @@ export class TranslationEngine {
     const responseOptions = new this.bergamot.VectorResponseOptions();
 
     try {
+      this._throwIfAborted(options.signal);
       messages.push_back(cleanedText);
       responseOptions.push_back({
         qualityScores: options.qualityScores || false,
@@ -213,12 +282,24 @@ export class TranslationEngine {
       const responses = this.service.translate(this.model, messages, responseOptions);
       try {
         const result = responses.get(0);
-        return result.getTranslatedText();
+        const translatedText = result.getTranslatedText();
+        this._throwIfAborted(options.signal);
+        return translatedText;
       } finally {
         responses.delete();
       }
     } catch (error: any) {
-      console.error(`WASM Error Context: TextLength=${cleanedText.length}, Options=${JSON.stringify(options)}`);
+      // Don't log or re-wrap client-initiated cancellations as WASM/HTML errors.
+      if (error.name === 'AbortError') throw error;
+      logger.error(
+        `WASM Error Context: TextLength=${cleanedText.length}, Options=${JSON.stringify(options)}`,
+        error
+      );
+      if (options.html && error?.message && WASM_ABORT_PATTERN.test(error.message)) {
+        const wrappedError = new Error(`HTML parse error: ${error.message}`);
+        (wrappedError as Error & { cause?: unknown }).cause = error;
+        throw wrappedError;
+      }
       throw error;
     } finally {
       messages.delete();
@@ -227,13 +308,7 @@ export class TranslationEngine {
   }
 
   private _isFatalWASMError(error: Error): boolean {
-    const fatalPatterns = [
-      'Out of bounds memory access',
-      'Invalid memory access',
-      'Invalid table access',
-    ];
-    const errorMsg = error.message.toLowerCase();
-    return fatalPatterns.some(pattern => errorMsg.includes(pattern));
+    return FATAL_WASM_ERROR_PATTERN.test(error.message);
   }
 
   private _getMappedSeparator(sep: string, targetLang?: string): string {
@@ -384,10 +459,13 @@ export class TranslationEngine {
     const taggedText = text.replace(placeholderRegex, (match) => {
       const index = replacements.length;
       replacements.push(match);
-      return `<mt${index} />`;
+      if (htmlEnabled) {
+        return `<mt${index} />`;
+      }
+      return `MT_PLACEHOLDER_${index}_TOKEN`;
     });
 
-    return { taggedText, replacements, forceHtml: !htmlEnabled };
+    return { taggedText, replacements, forceHtml: false };
   }
 
   private _restoreTaggedPlaceholders(text: string, replacements: string[]): string {
@@ -398,6 +476,10 @@ export class TranslationEngine {
     let result = text;
     result = result.replace(/<\/mt\d+>/gi, '');
     result = result.replace(/<mt(\d+)\s*\/?>/gi, (_, index) => {
+      const idx = Number(index);
+      return replacements[idx] ?? _;
+    });
+    result = result.replace(/MT_PLACEHOLDER_(\d+)_TOKEN/g, (_, index) => {
       const idx = Number(index);
       return replacements[idx] ?? _;
     });

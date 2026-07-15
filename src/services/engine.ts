@@ -10,6 +10,7 @@ import * as logger from '@/logger/index.js';
 import * as models from '@/models/index.js';
 import { detectLanguage, detectMultipleLanguages } from './detector.js';
 import { readCache, writeCache } from '@/utils/cache.js';
+import { getRequestSignal } from '@/middleware/request-context.js';
 
 interface EngineInfo {
   engine: TranslationEngine;
@@ -44,6 +45,18 @@ function needsPivotTranslation(fromLang: string, toLang: string): boolean {
   }
 
   return true;
+}
+
+function destroyEngine(fromLang: string, toLang: string, reason: string) {
+  const key = `${fromLang}-${toLang}`;
+  const info = engines.get(key);
+  if (!info) {
+    return;
+  }
+
+  logger.warn(`${reason}: ${key}`);
+  info.engine.destroy();
+  engines.delete(key);
 }
 
 async function getOrCreateSingleEngine(
@@ -142,8 +155,10 @@ async function translateSingleLanguageText(
   fromLang: string,
   toLang: string,
   text: string,
-  isHTML: boolean
+  isHTML: boolean,
+  signal?: AbortSignal
 ): Promise<string> {
+  throwIfAborted(signal);
   const cacheKey = [fromLang, toLang, text, isHTML];
   const cached = readCache(cacheKey);
   if (cached !== null) {
@@ -156,12 +171,24 @@ async function translateSingleLanguageText(
 
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
+      throwIfAborted(signal);
       const engine = await getOrCreateSingleEngine(fromLang, toLang);
-      const result = await engine.translateAsync(text, { html: isHTML });
+      const result = await engine.translateAsync(text, { html: isHTML, signal });
       writeCache(result, cacheKey);
       return result;
     } catch (error: any) {
       lastError = error;
+      if (signal?.aborted) {
+        throwIfAborted(signal);
+      }
+      if (isAbortError(error)) {
+        throw error;
+      }
+      logger.error(
+        `Translation failed (${fromLang}->${toLang}), text length: ${text.length}, isHTML: ${isHTML}`,
+        error
+      );
+      const isHTMLParseError = isHTML && error.message && error.message.includes('HTML parse error');
       const isSIMDError = error.message && (
         error.message.includes('wasm-simd is not enabled') ||
         error.message.includes('SIMD') ||
@@ -174,16 +201,15 @@ async function translateSingleLanguageText(
         error.message.includes('abort')
       );
 
+      if (isHTMLParseError) {
+        logger.warn(`HTML parsing failed during translation (${fromLang}->${toLang}), retrying as plain text`);
+        destroyEngine(fromLang, toLang, 'Destroying engine after HTML parse failure');
+        return translateSingleLanguageText(fromLang, toLang, text, false, signal);
+      }
+
       if (isMemoryError) {
         logger.warn(`WASM memory error during translation (${fromLang}->${toLang}), retrying (${i + 1}/${MAX_RETRIES})...`);
-
-        const key = `${fromLang}-${toLang}`;
-        const info = engines.get(key);
-        if (info) {
-          logger.warn(`Destroying crashed engine: ${key}`);
-          info.engine.destroy();
-          engines.delete(key);
-        }
+        destroyEngine(fromLang, toLang, 'Destroying crashed engine');
 
         await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
         continue;
@@ -209,26 +235,30 @@ async function translateSegment(
   fromLang: string,
   toLang: string,
   text: string,
-  isHTML: boolean
+  isHTML: boolean,
+  signal?: AbortSignal
 ): Promise<string> {
+  throwIfAborted(signal);
   if (fromLang === toLang) {
     return text;
   }
 
   if (!needsPivotTranslation(fromLang, toLang)) {
-    return translateSingleLanguageText(fromLang, toLang, text, isHTML);
+    return translateSingleLanguageText(fromLang, toLang, text, isHTML, signal);
   }
 
-  const intermediateText = await translateSingleLanguageText(fromLang, 'en', text, isHTML);
-  return translateSingleLanguageText('en', toLang, intermediateText, isHTML);
+  const intermediateText = await translateSingleLanguageText(fromLang, 'en', text, isHTML, signal);
+  return translateSingleLanguageText('en', toLang, intermediateText, isHTML, signal);
 }
 
 export async function translateWithPivot(
   fromLang: string,
   toLang: string,
   text: string,
-  isHTML: boolean = false
+  isHTML: boolean = false,
+  signal: AbortSignal | undefined = getRequestSignal()
 ): Promise<string> {
+  throwIfAborted(signal);
   logger.debug(
     `TranslateWithPivot: ${fromLang} -> ${toLang}, text length: ${text.length}, isHTML: ${isHTML}`
   );
@@ -239,7 +269,7 @@ export async function translateWithPivot(
   if (fromLang !== 'auto' && fromLang === toLang) {
     result = text;
   } else if (fromLang !== 'auto' && text.length <= 512) {
-    result = await translateSegment(fromLang, toLang, text, isHTML);
+    result = await translateSegment(fromLang, toLang, text, isHTML, signal);
   } else {
     const segments = await detectMultipleLanguages(text);
 
@@ -262,10 +292,10 @@ export async function translateWithPivot(
       } else if (!isHTML) {
         config = config ?? getConfig();
         result = text.length > config.maxSentenceLength
-          ? await translateLongText(effectiveFromLang, toLang, text)
-          : await translateSegment(effectiveFromLang, toLang, text, isHTML);
+          ? await translateLongText(effectiveFromLang, toLang, text, signal)
+          : await translateSegment(effectiveFromLang, toLang, text, isHTML, signal);
       } else {
-        result = await translateSegment(effectiveFromLang, toLang, text, isHTML);
+        result = await translateSegment(effectiveFromLang, toLang, text, isHTML, signal);
       }
     } else {
       logger.debug(`Detected ${segments.length} language segments`);
@@ -273,6 +303,7 @@ export async function translateWithPivot(
       let lastEnd = 0;
 
       for (const seg of segments) {
+        throwIfAborted(signal);
         if (seg.start > lastEnd) {
           result += text.substring(lastEnd, seg.start);
         }
@@ -281,10 +312,19 @@ export async function translateWithPivot(
           result += seg.text;
         } else {
           try {
-            const translated = await translateSegment(seg.language, toLang, seg.text, isHTML);
+            const translated = await translateSegment(seg.language, toLang, seg.text, isHTML, signal);
             result += translated;
           } catch (error) {
-            logger.error(`Failed to translate segment: ${error}`);
+            if (signal?.aborted) {
+              throwIfAborted(signal);
+            }
+            if (isAbortError(error)) {
+              throw error;
+            }
+            logger.error(
+              `Failed to translate segment (${seg.language}->${toLang}), text length: ${seg.text.length}`,
+              error
+            );
             result += seg.text;
           }
         }
@@ -307,7 +347,8 @@ export async function translateWithPivot(
 async function translateLongText(
   fromLang: string,
   toLang: string,
-  text: string
+  text: string,
+  signal?: AbortSignal
 ): Promise<string> {
   logger.debug(`Splitting long text (${text.length} chars) into sentences`);
 
@@ -319,21 +360,43 @@ async function translateLongText(
   const results: string[] = [];
 
   for (let i = 0; i < sentences.length; i++) {
+    throwIfAborted(signal);
     const { segment } = sentences[i];
     try {
-      const translated = await translateSegment(fromLang, toLang, segment, false);
+      const translated = await translateSegment(fromLang, toLang, segment, false, signal);
       results.push(translated);
 
       if ((i + 1) % 10 === 0) {
         logger.debug(`Translated ${i + 1}/${sentences.length} sentences`);
       }
     } catch (error) {
-      logger.error(`Failed to translate sentence ${i + 1}: ${error}`);
+      if (signal?.aborted) {
+        throwIfAborted(signal);
+      }
+      if (isAbortError(error)) {
+        throw error;
+      }
+      logger.error(
+        `Failed to translate sentence ${i + 1}/${sentences.length}, text length: ${segment.length}`,
+        error
+      );
       results.push(segment);
     }
   }
 
   return results.join('');
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    const error = new Error('Translation request aborted');
+    error.name = 'AbortError';
+    throw error;
+  }
+}
+
+function isAbortError(error: unknown): error is Error {
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 export function cleanupAllEngines() {
