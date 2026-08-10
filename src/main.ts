@@ -29,6 +29,9 @@ Options:
   --log-console            Enable logging to console (default: true)
   --no-log-console         Disable logging to console
   --check-update / --no-check-update  Enable/Disable update check (default: true)
+  --model-source <source>  Model source: mirror or official (default: mirror)
+  --model-mirror-url <url> Mirror download site URL
+  --download-proxy <url>   HTTP/SOCKS proxy for model downloads
 
 Commands:
   --download <pairs...>    Download models for specified pairs (e.g., --download en-zh zh-en)

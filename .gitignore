@@ -25,3 +25,12 @@ src/assets/swagger.ts
 /release
 /.electron-node-modules
 /.electron-build-temp
+
+# 临时调试与测试文件
+tmp-ocr/
+dist-ocr-check/
+dist-ocr-check-2/
+dist-ocr-check-3/
+download/
+server-start.log
+backend-start.log

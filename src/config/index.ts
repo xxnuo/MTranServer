@@ -22,6 +22,9 @@ export interface Config {
   checkUpdate: boolean;
   cacheSize: number;
   fullwidthZhPunctuation: boolean;
+  modelDownloadSource: 'mirror' | 'official';
+  modelMirrorUrl: string;
+  downloadProxy: string;
 }
 
 let globalConfig: Config | null = null;
@@ -104,6 +107,10 @@ function getInt(flag: string, envKey: string, defaultValue: number): number {
   return defaultValue;
 }
 
+function getModelDownloadSource(value: string): 'mirror' | 'official' {
+  return value === 'official' ? 'official' : 'mirror';
+}
+
 export function getConfig(): Config {
   if (globalConfig !== null) {
     return globalConfig;
@@ -145,6 +152,15 @@ export function getConfig(): Config {
     checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', fileConfig.checkUpdate ?? true),
 
     cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', fileConfig.cacheSize ?? 1000),
+    modelDownloadSource: getModelDownloadSource(
+      getString('--model-source', 'MT_MODEL_DOWNLOAD_SOURCE', fileConfig.modelDownloadSource || 'mirror')
+    ),
+    modelMirrorUrl: getString(
+      '--model-mirror-url',
+      'MT_MODEL_MIRROR_URL',
+      fileConfig.modelMirrorUrl || 'http://183.136.206.212:8787'
+    ),
+    downloadProxy: getString('--download-proxy', 'MT_DOWNLOAD_PROXY', fileConfig.downloadProxy || ''),
   };
 
   return globalConfig;
@@ -165,7 +181,12 @@ export function saveConfigFile(config: Partial<Config>) {
   const next = { ...current, ...config };
   const configPath = getConfigFilePath(current.homeDir);
   fs.mkdirSync(current.homeDir, { recursive: true });
-  fs.writeFileSync(configPath, JSON.stringify(next, null, 2), 'utf8');
+  fs.writeFileSync(configPath, JSON.stringify(next, null, 2), { encoding: 'utf8', mode: 0o600 });
+  try {
+    fs.chmodSync(configPath, 0o600);
+  } catch {
+    // Windows does not expose Unix file modes; the write still succeeds there.
+  }
   fileConfigCache = next;
 }
 

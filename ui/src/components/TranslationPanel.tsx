@@ -4,6 +4,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Command,
@@ -18,7 +26,7 @@ import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { ArrowRightLeft, Copy, Volume2, X, Upload, ChevronDown, Mic, MicOff } from 'lucide-react'
+import { ArrowRightLeft, Copy, Volume2, X, Upload, ChevronDown, Mic, MicOff, ImagePlus, Download } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { getSortedLanguages } from '@/lib/languages'
 
@@ -31,6 +39,30 @@ interface TranslateRequest {
 
 interface TranslateResponse {
   result: string
+}
+
+interface ImageTranslationResponse {
+  mimeType: string
+  imageBase64: string
+  ocr: {
+    text: string
+  }
+  lines: Array<{
+    text: string
+    translatedText: string
+  }>
+}
+
+interface ImageTranslationResult {
+  sourceUrl: string
+  translatedUrl: string
+  filename: string
+  ocrText: string
+  translatedText: string
+  lines: Array<{
+    text: string
+    translatedText: string
+  }>
 }
 
 interface TranslationPanelProps {
@@ -67,6 +99,8 @@ export function TranslationPanel({
   const [targetOpen, setTargetOpen] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(true)
+  const [imageTranslating, setImageTranslating] = useState(false)
+  const [imageResult, setImageResult] = useState<ImageTranslationResult | null>(null)
   const [recentLanguages, setRecentLanguages] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('recentTranslateLanguages')
@@ -82,6 +116,14 @@ export function TranslationPanel({
   const recognitionRef = useRef<any>(null)
 
   const translateTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (imageResult?.sourceUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(imageResult.sourceUrl)
+      }
+    }
+  }, [imageResult?.sourceUrl])
 
   const sortedLanguages = useMemo(() => {
     return getSortedLanguages(languages, i18n.language)
@@ -338,9 +380,79 @@ export function TranslationPanel({
     }
   }
 
+  const translateImageFile = useCallback(async (file: File) => {
+    if (imageTranslating) {
+      toast.error(t('imageTranslateBusy'))
+      return
+    }
+
+    const sourceUrl = URL.createObjectURL(file)
+    let completed = false
+
+    setImageTranslating(true)
+    try {
+      const form = new FormData()
+      form.append('image', file)
+      form.append('from', sourceLang)
+      form.append('to', targetLang)
+      form.append('format', 'json')
+
+      const headers: HeadersInit = {}
+      const apiToken = localStorage.getItem('apiToken')
+      if (apiToken) {
+        headers['Authorization'] = `Bearer ${apiToken}`
+      }
+
+      const response = await fetch('/ocr/translate-image?format=json', {
+        method: 'POST',
+        headers,
+        body: form
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null)
+        throw new Error(error?.message || t('imageTranslationFailed'))
+      }
+
+      const data = await response.json() as ImageTranslationResponse
+      const translatedText = data.lines.map(line => line.translatedText).join('\n')
+      setSourceText(data.ocr.text)
+      setTranslatedText(translatedText)
+      setImageResult({
+        sourceUrl,
+        translatedUrl: `data:${data.mimeType};base64,${data.imageBase64}`,
+        filename: file.name.replace(/\.[^.]+$/, '') + '-translated.png',
+        ocrText: data.ocr.text,
+        translatedText,
+        lines: data.lines,
+      })
+      completed = true
+      addToHistory({
+        from: sourceLang,
+        to: targetLang,
+        sourceText: data.ocr.text,
+        translatedText
+      })
+      toast.success(t('imageTranslationCompleted'))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('imageTranslationFailed'))
+    } finally {
+      if (!completed) {
+        URL.revokeObjectURL(sourceUrl)
+      }
+      setImageTranslating(false)
+    }
+  }, [addToHistory, imageTranslating, sourceLang, targetLang, t])
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
+    event.target.value = ''
     if (!file) return
+
+    if (/^image\//i.test(file.type)) {
+      void translateImageFile(file)
+      return
+    }
 
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -351,6 +463,27 @@ export function TranslationPanel({
     }
     reader.readAsText(file)
   }
+
+  const handlePaste = useCallback((event: React.ClipboardEvent) => {
+    const clipboard = event.clipboardData
+    if (!clipboard) return
+
+    const imageFile = Array.from(clipboard.items)
+      .find(item => item.kind === 'file' && /^image\//i.test(item.type))
+      ?.getAsFile() || Array.from(clipboard.files).find(file => /^image\//i.test(file.type))
+
+    if (!imageFile) return
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (imageTranslating) {
+      toast.error(t('imageTranslateBusy'))
+      return
+    }
+
+    void translateImageFile(imageFile)
+  }, [imageTranslating, t, translateImageFile])
 
   const handleVoiceInput = () => {
     if (!speechSupported) {
@@ -379,7 +512,7 @@ export function TranslationPanel({
 
   return (
     <Card className="shadow-lg h-full flex flex-col">
-      <CardContent className="pt-1 sm:pt-1 space-y-3 sm:space-y-4 flex-1 flex flex-col">
+      <CardContent className="pt-1 sm:pt-1 space-y-3 sm:space-y-4 flex-1 flex flex-col" onPaste={handlePaste}>
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div className="flex items-center gap-2 flex-1 min-w-[280px]">
             <Popover open={sourceOpen} onOpenChange={setSourceOpen}>
@@ -609,6 +742,13 @@ export function TranslationPanel({
                 accept=".txt,.md,.json,.js,.ts,.go,.py,.java,.c,.cpp,.h,.hpp"
                 onChange={handleFileUpload}
               />
+              <input
+                type="file"
+                id={`image-upload-${id}`}
+                className="hidden"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/tiff"
+                onChange={handleFileUpload}
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Label
@@ -621,6 +761,21 @@ export function TranslationPanel({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t('uploadFile')}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label
+                    htmlFor={`image-upload-${id}`}
+                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${imageTranslating ? 'pointer-events-none opacity-50' : 'hover:bg-accent hover:text-accent-foreground'} h-8 w-8 cursor-pointer`}
+                    aria-label={t('translateImage')}
+                  >
+                    {imageTranslating ? <Spinner className="h-4 w-4" /> : <ImagePlus className="h-4 w-4" />}
+                  </Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{imageTranslating ? t('imageTranslating') : t('translateImage')}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -772,6 +927,60 @@ export function TranslationPanel({
           </div>
         )}
       </CardContent>
+
+      <Dialog open={Boolean(imageResult)} onOpenChange={(open) => { if (!open) setImageResult(null) }}>
+        <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>{t('imageTranslationResult')}</DialogTitle>
+            <DialogDescription>{t('imageTranslationResultDesc')}</DialogDescription>
+          </DialogHeader>
+          {imageResult && (
+            <div className="space-y-4">
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">{t('imageTranslationSource')}</div>
+                  <div className="overflow-hidden rounded-md border bg-muted">
+                    <img src={imageResult.sourceUrl} alt="" className="max-h-[46vh] w-full object-contain" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">{t('imageTranslationResult')}</div>
+                  <div className="overflow-hidden rounded-md border bg-muted">
+                    <img src={imageResult.translatedUrl} alt="" className="max-h-[46vh] w-full object-contain" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">{t('imageTranslationRecognized')}</div>
+                  <div className="max-h-48 overflow-auto rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap break-words">
+                    {imageResult.ocrText || '—'}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">{t('imageTranslationText')}</div>
+                  <div className="max-h-48 overflow-auto rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap break-words">
+                    {imageResult.translatedText || '—'}
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="sm:justify-between">
+                <div className="min-w-0 text-xs text-muted-foreground">
+                  <span className="truncate">{imageResult.filename}</span>
+                </div>
+                <Button asChild>
+                  <a href={imageResult.translatedUrl} download={imageResult.filename}>
+                    <Download className="h-4 w-4" />
+                    {t('downloadImage')}
+                  </a>
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

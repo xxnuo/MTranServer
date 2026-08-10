@@ -15,6 +15,9 @@ export type DesktopServerConfig = {
   fullwidthZhPunctuation: boolean
   checkUpdate: boolean
   cacheSize: number
+  modelDownloadSource: 'mirror' | 'official'
+  modelMirrorUrl: string
+  downloadProxy: string
   modelDir: string
   configDir: string
 }

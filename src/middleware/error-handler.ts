@@ -21,6 +21,15 @@ export function errorHandler() {
       return;
     }
 
+    if (status >= 400 && status < 500) {
+      res.status(status).json({
+        error: err.code || 'Bad Request',
+        message: err.message || 'Request failed',
+        requestId,
+      });
+      return;
+    }
+
     res.status(500).json({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message,

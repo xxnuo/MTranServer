@@ -4,7 +4,9 @@ import swaggerUi from 'swagger-ui-express';
 import { getConfig, setConfig, resetConfig, saveConfigFile, clearConfigFile } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
 import { initRecords } from '@/models/index.js';
+import { resumePendingDownloads } from '@/models/manager.js';
 import { cleanupAllEngines } from '@/services/index.js';
+import { cleanupOcrService } from '@/services/ocr.js';
 import { cleanupLegacyBin } from '@/assets/index.js';
 import { requestId, errorHandler, cors, requestLogger } from '@/middleware/index.js';
 import { RegisterRoutes } from '@/generated/routes.js';
@@ -13,6 +15,7 @@ import { uiStatic } from '@/middleware/ui.js';
 import { swaggerStatic } from '@/middleware/swagger.js';
 import { checkForUpdate } from '@/utils/update-checker.js';
 import { VERSION } from '@/version';
+import { registerOcrRoutes } from './ocr-routes.js';
 
 export async function startServer({ handleSignals = true } = {}) {
   const config = getConfig();
@@ -26,6 +29,7 @@ export async function startServer({ handleSignals = true } = {}) {
 
   logger.info('Initializing model records...');
   await initRecords();
+  await resumePendingDownloads();
 
   const app = express();
 
@@ -35,6 +39,7 @@ export async function startServer({ handleSignals = true } = {}) {
   if (config.logRequests) {
     app.use(requestLogger());
   }
+  registerOcrRoutes(app);
 
   const getDesktopControl = () => (globalThis as any).mtranDesktopControl;
   const getSettingsPayload = () => {
@@ -59,6 +64,9 @@ export async function startServer({ handleSignals = true } = {}) {
           fullwidthZhPunctuation: current.fullwidthZhPunctuation,
           checkUpdate: current.checkUpdate,
           cacheSize: current.cacheSize,
+          modelDownloadSource: current.modelDownloadSource,
+          modelMirrorUrl: current.modelMirrorUrl,
+          downloadProxy: current.downloadProxy,
           modelDir: current.modelDir,
           configDir: current.configDir
         }
@@ -99,6 +107,11 @@ export async function startServer({ handleSignals = true } = {}) {
       fullwidthZhPunctuation: toBool(input.fullwidthZhPunctuation, current.fullwidthZhPunctuation),
       checkUpdate: toBool(input.checkUpdate, current.checkUpdate),
       cacheSize: toNumber(input.cacheSize, current.cacheSize),
+      modelDownloadSource: input.modelDownloadSource === 'official' || input.modelDownloadSource === 'mirror'
+        ? input.modelDownloadSource
+        : current.modelDownloadSource,
+      modelMirrorUrl: toString(input.modelMirrorUrl, current.modelMirrorUrl),
+      downloadProxy: toString(input.downloadProxy, current.downloadProxy),
       modelDir: toString(input.modelDir, current.modelDir),
       configDir: toString(input.configDir, current.configDir)
     };
@@ -187,6 +200,7 @@ export async function startServer({ handleSignals = true } = {}) {
   const stop = async () => {
     logger.info('Shutting down server...');
     cleanupAllEngines();
+    await cleanupOcrService();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     logger.info('Server shutdown complete');
   };

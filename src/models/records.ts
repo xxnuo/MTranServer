@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import fsSync from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import { createDownloader } from '@/core/factory.js';
@@ -8,6 +9,33 @@ import { getLargestVersion } from '@/utils/version.js';
 
 const RECORDS_URL = 'https://firefox.settings.services.mozilla.com/v1/buckets/main-preview/collections/translations-models-v2/records';
 const ATTACHMENTS_BASE_URL = 'https://firefox-settings-attachments.cdn.mozilla.net';
+
+function getMirrorBase(): string {
+  return getConfig().modelMirrorUrl.trim().replace(/\/+$/, '');
+}
+
+function getRecordsUrls(): string[] {
+  const config = getConfig();
+  const mirrorBase = getMirrorBase();
+  if (config.modelDownloadSource === 'official' || !mirrorBase) {
+    return [RECORDS_URL];
+  }
+
+  // 下载站会固定托管 records.json，先用镜像能避免初始化阶段仍然绕回官方源。
+  return [`${mirrorBase}/records.json`, RECORDS_URL];
+}
+
+function getAttachmentUrls(location: string): string[] {
+  const officialUrl = `${ATTACHMENTS_BASE_URL}/${location.replace(/^\/+/, '')}`;
+  const config = getConfig();
+  const mirrorBase = getMirrorBase();
+  if (config.modelDownloadSource === 'official' || !mirrorBase) {
+    return [officialUrl];
+  }
+
+  const mirrorUrl = `${mirrorBase}/attachments/${location.replace(/^\/+/, '')}`;
+  return [mirrorUrl, officialUrl];
+}
 
 export interface Attachment {
   hash: string;
@@ -37,7 +65,26 @@ export interface RecordsData {
   data: RecordItem[];
 }
 
+export type ModelDownloadStage = 'checking' | 'downloading' | 'decompressing';
+
+export interface ModelDownloadProgress {
+  stage: ModelDownloadStage;
+  fileType: string;
+  filename: string;
+  fileBytesDownloaded: number;
+  fileBytesTotal: number;
+  completedBytes: number;
+  totalBytes: number;
+}
+
+export interface ModelSelection {
+  records: RecordItem[];
+  version: string;
+  architecture?: string;
+}
+
 export let globalRecords: RecordsData | null = null;
+export let recordsLoadedAt: number | null = null;
 
 export function hasLanguagePair(fromLang: string, toLang: string): boolean {
   if (!globalRecords) return false;
@@ -65,6 +112,116 @@ export function getSupportedLanguages(): string[] {
   return Array.from(langs);
 }
 
+function getPreferredArchitecture(records: RecordItem[]): string | undefined {
+  const architectures = Array.from(new Set(records.map(record => record.architecture).filter(Boolean))) as string[];
+  const preferredOrder = ['base-memory', 'base', 'tiny'];
+  return preferredOrder.find(architecture => architectures.includes(architecture)) || architectures[0];
+}
+
+function isSelectionInstalled(records: RecordItem[]): boolean {
+  const first = records[0];
+  if (!first) return false;
+
+  const modelDir = getConfig().modelDir;
+  const pairDir = path.join(modelDir, `${first.sourceLanguage}_${first.targetLanguage}`);
+  return records.every(record => {
+    const filename = record.attachment.filename.replace(/\.zst$/, '');
+    return fsSync.existsSync(path.join(pairDir, filename));
+  });
+}
+
+export function getModelSelection(
+  fromLang: string,
+  toLang: string,
+  version?: string,
+  architecture?: string
+): ModelSelection {
+  if (!globalRecords) {
+    throw new Error('Records not initialized');
+  }
+
+  const matchedRecords = globalRecords.data.filter(record =>
+    record.sourceLanguage === fromLang &&
+    record.targetLanguage === toLang &&
+    (!version || record.version === version) &&
+    (!architecture || record.architecture === architecture)
+  );
+
+  if (matchedRecords.length === 0) {
+    throw new Error(`No model found for ${fromLang} -> ${toLang}`);
+  }
+
+  let selectedArchitecture = architecture || getPreferredArchitecture(matchedRecords);
+  if (!architecture) {
+    const architectures = Array.from(new Set(matchedRecords.map(record => record.architecture).filter(Boolean))) as string[];
+    const preferredOrder = ['base-memory', 'base', 'tiny'];
+    const orderedArchitectures = [
+      ...preferredOrder.filter(item => architectures.includes(item)),
+      ...architectures.filter(item => !preferredOrder.includes(item)),
+    ];
+
+    for (const candidate of orderedArchitectures) {
+      const candidateRecords = matchedRecords.filter(record => record.architecture === candidate);
+      const candidateVersion = version || getLargestVersion(candidateRecords.map(record => record.version));
+      const versionRecords = candidateRecords.filter(record => record.version === candidateVersion);
+      if (isSelectionInstalled(versionRecords)) {
+        selectedArchitecture = candidate;
+        break;
+      }
+    }
+  }
+
+  const architectureRecords = selectedArchitecture
+    ? matchedRecords.filter(record => record.architecture === selectedArchitecture)
+    : matchedRecords;
+
+  const selectedVersion = version || getLargestVersion(architectureRecords.map(record => record.version));
+  const versionRecords = architectureRecords.filter(record => record.version === selectedVersion);
+
+  const fileTypes = new Set(versionRecords.map(record => record.fileType));
+  const requiredFileTypes = ['model', 'lex'];
+  const hasVocab = fileTypes.has('vocab') || (fileTypes.has('srcvocab') && fileTypes.has('trgvocab'));
+  if (!requiredFileTypes.every(fileType => fileTypes.has(fileType)) || !hasVocab) {
+    throw new Error(`Incomplete model records for ${fromLang} -> ${toLang}`);
+  }
+
+  return {
+    records: versionRecords,
+    version: selectedVersion,
+    architecture: selectedArchitecture,
+  };
+}
+
+export function getModelSelections(): ModelSelection[] {
+  if (!globalRecords) return [];
+
+  const groups = new Map<string, RecordItem[]>();
+  for (const record of globalRecords.data) {
+    const architecture = record.architecture || 'unknown';
+    const key = `${record.sourceLanguage}\u0000${record.targetLanguage}\u0000${architecture}`;
+    const records = groups.get(key) || [];
+    records.push(record);
+    groups.set(key, records);
+  }
+
+  const selections: ModelSelection[] = [];
+  for (const records of groups.values()) {
+    const first = records[0];
+    if (!first) continue;
+    try {
+      selections.push(getModelSelection(
+        first.sourceLanguage,
+        first.targetLanguage,
+        undefined,
+        first.architecture
+      ));
+    } catch {
+      // Ignore incomplete records so one malformed remote entry does not hide other models.
+    }
+  }
+  return selections;
+}
+
 function computeHash(data: Buffer): string {
   return crypto.createHash('sha256').update(data).digest('hex');
 }
@@ -86,6 +243,7 @@ export async function initRecords(): Promise<void> {
     try {
       const data = await fs.readFile(recordsPath, 'utf-8');
       globalRecords = JSON.parse(data);
+      recordsLoadedAt = Date.now();
       if (globalRecords) {
         logger.debug(`Loaded ${globalRecords.data.length} model records`);
       }
@@ -99,12 +257,15 @@ export async function initRecords(): Promise<void> {
   try {
     const downloader = createDownloader();
     await downloader.download({
-      url: RECORDS_URL,
+      url: getRecordsUrls()[0],
       outputPath: recordsPath,
+      urls: getRecordsUrls().slice(1),
+      proxy: config.downloadProxy || undefined,
     });
 
     const data = await fs.readFile(recordsPath, 'utf-8');
     globalRecords = JSON.parse(data);
+    recordsLoadedAt = Date.now();
     if (globalRecords) {
       logger.debug(`Loaded ${globalRecords.data.length} model records`);
     }
@@ -114,10 +275,23 @@ export async function initRecords(): Promise<void> {
   }
 }
 
+export async function refreshRecords(): Promise<void> {
+  const config = getConfig();
+  if (config.enableOfflineMode) {
+    throw new Error('Cannot refresh model records while offline mode is enabled');
+  }
+
+  await initRecords();
+}
+
 export async function downloadModel(
   toLang: string,
   fromLang: string,
-  version?: string
+  version?: string,
+  architecture?: string,
+  onProgress?: (progress: ModelDownloadProgress) => void,
+  signal?: AbortSignal,
+  onFallback?: (failedUrl: string, nextUrl: string) => void
 ): Promise<void> {
   if (!globalRecords) {
     await initRecords();
@@ -127,34 +301,10 @@ export async function downloadModel(
     throw new Error('Records not initialized');
   }
 
-  const matchedRecords = globalRecords.data.filter(
-    r =>
-      r.targetLanguage === toLang &&
-      r.sourceLanguage === fromLang &&
-      (!version || r.version === version)
-  );
-
-  if (matchedRecords.length === 0) {
-    throw new Error(`No model found for ${fromLang} -> ${toLang}`);
-  }
-
-  let targetRecords = matchedRecords;
-  if (!version) {
-    const fileTypeMap = new Map<string, RecordItem[]>();
-    for (const record of matchedRecords) {
-      const arr = fileTypeMap.get(record.fileType) || [];
-      arr.push(record);
-      fileTypeMap.set(record.fileType, arr);
-    }
-
-    targetRecords = [];
-    for (const records of fileTypeMap.values()) {
-      const versions = records.map(r => r.version);
-      const latest = getLargestVersion(versions);
-      const latestRecord = records.find(r => r.version === latest);
-      if (latestRecord) targetRecords.push(latestRecord);
-    }
-  }
+  const selection = getModelSelection(fromLang, toLang, version, architecture);
+  const targetRecords = selection.records;
+  const totalBytes = targetRecords.reduce((total, record) => total + record.attachment.size, 0);
+  let completedBytes = 0;
 
   const config = getConfig();
   const langPairDir = path.join(config.modelDir, `${fromLang}_${toLang}`);
@@ -166,7 +316,8 @@ export async function downloadModel(
 
   for (const record of targetRecords) {
     const filename = record.attachment.filename;
-    const fileUrl = `${ATTACHMENTS_BASE_URL}/${record.attachment.location}`;
+    const downloadUrls = getAttachmentUrls(record.attachment.location);
+    const fileUrl = downloadUrls[0];
     const compressedPath = path.join(langPairDir, filename);
     const decompressedFilename = filename.replace(/\.zst$/, '');
     const decompressedPath = path.join(langPairDir, decompressedFilename);
@@ -187,6 +338,16 @@ export async function downloadModel(
 
     if (!needDownload) {
       logger.debug(`Model file up to date: ${decompressedFilename}`);
+      onProgress?.({
+        stage: 'checking',
+        fileType: record.fileType,
+        filename: decompressedFilename,
+        fileBytesDownloaded: record.attachment.size,
+        fileBytesTotal: record.attachment.size,
+        completedBytes: completedBytes + record.attachment.size,
+        totalBytes,
+      });
+      completedBytes += record.attachment.size;
       continue;
     }
 
@@ -194,12 +355,44 @@ export async function downloadModel(
     await downloader.download({
       url: fileUrl,
       outputPath: compressedPath,
+      urls: downloadUrls.slice(1),
+      hash: record.attachment.hash,
+      proxy: config.downloadProxy || undefined,
+      signal,
+      onFallback,
+      onProgress: ({ downloadedBytes, totalBytes: fileBytesTotal }) => {
+        onProgress?.({
+          stage: 'downloading',
+          fileType: record.fileType,
+          filename,
+          fileBytesDownloaded: downloadedBytes,
+          fileBytesTotal: fileBytesTotal || record.attachment.size,
+          completedBytes,
+          totalBytes,
+        });
+      },
     });
+
+    completedBytes += record.attachment.size;
 
     if (filename.endsWith('.zst')) {
       logger.debug(`Decompressing: ${filename} -> ${decompressedFilename}`);
+      onProgress?.({
+        stage: 'decompressing',
+        fileType: record.fileType,
+        filename: decompressedFilename,
+        fileBytesDownloaded: record.attachment.size,
+        fileBytesTotal: record.attachment.size,
+        completedBytes,
+        totalBytes,
+      });
       await downloader.decompress(compressedPath, decompressedPath);
+      if (record.decompressedHash && !(await downloader.verifyHash(decompressedPath, record.decompressedHash))) {
+        throw new Error(`Decompressed file hash mismatch: ${decompressedFilename}`);
+      }
       await fs.unlink(compressedPath);
+    } else if (record.decompressedHash && !(await downloader.verifyHash(compressedPath, record.decompressedHash))) {
+      throw new Error(`Downloaded file hash mismatch: ${filename}`);
     }
   }
 
@@ -219,19 +412,18 @@ export async function getModelFiles(
     throw new Error('Records not initialized');
   }
 
+  const selection = getModelSelection(fromLang, toLang);
   const langPairDir = path.join(modelDir, `${fromLang}_${toLang}`);
   const fileTypeMap = new Map<string, string>();
 
-  for (const record of globalRecords.data) {
-    if (record.sourceLanguage === fromLang && record.targetLanguage === toLang) {
-      const filename = record.attachment.filename.replace(/\.zst$/, '');
-      const fullPath = path.join(langPairDir, filename);
+  for (const record of selection.records) {
+    const filename = record.attachment.filename.replace(/\.zst$/, '');
+    const fullPath = path.join(langPairDir, filename);
 
-      try {
-        await fs.access(fullPath);
-        fileTypeMap.set(record.fileType, fullPath);
-      } catch {
-      }
+    try {
+      await fs.access(fullPath);
+      fileTypeMap.set(record.fileType, fullPath);
+    } catch {
     }
   }
 

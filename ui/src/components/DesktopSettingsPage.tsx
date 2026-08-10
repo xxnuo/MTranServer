@@ -38,6 +38,9 @@ type FormState = {
     maxSentenceLength: string
     checkUpdate: boolean
     cacheSize: string
+    modelDownloadSource: 'mirror' | 'official'
+    modelMirrorUrl: string
+    downloadProxy: string
     modelDir: string
     configDir: string
   }
@@ -62,6 +65,9 @@ function toForm(config: DesktopConfig): FormState {
       maxSentenceLength: String(config.server.maxSentenceLength),
       checkUpdate: config.server.checkUpdate,
       cacheSize: String(config.server.cacheSize),
+      modelDownloadSource: config.server.modelDownloadSource,
+      modelMirrorUrl: config.server.modelMirrorUrl,
+      downloadProxy: config.server.downloadProxy,
       modelDir: config.server.modelDir,
       configDir: config.server.configDir
     }
@@ -129,6 +135,9 @@ export function DesktopSettingsPage() {
         maxSentenceLength: toNumber(form.server.maxSentenceLength, config.server.maxSentenceLength),
         checkUpdate: form.server.checkUpdate,
         cacheSize: toNumber(form.server.cacheSize, config.server.cacheSize),
+        modelDownloadSource: form.server.modelDownloadSource,
+        modelMirrorUrl: form.server.modelMirrorUrl,
+        downloadProxy: form.server.downloadProxy,
         modelDir: form.server.modelDir,
         configDir: form.server.configDir
       }

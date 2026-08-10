@@ -43,6 +43,9 @@ export function getDefaultDesktopConfig() {
       maxSentenceLength: 512,
       checkUpdate: true,
       cacheSize: 1000,
+      modelDownloadSource: 'mirror',
+      modelMirrorUrl: process.env.MT_MODEL_MIRROR_URL || 'http://183.136.206.212:8787',
+      downloadProxy: '',
       modelDir: getDefaultModelDir(),
       configDir: serverConfigDir
     }
@@ -76,6 +79,9 @@ function normalizeConfig(input) {
         : defaults.server.maxSentenceLength,
       checkUpdate: typeof server.checkUpdate === 'boolean' ? server.checkUpdate : defaults.server.checkUpdate,
       cacheSize: Number.isFinite(Number(server.cacheSize)) ? Number(server.cacheSize) : defaults.server.cacheSize,
+      modelDownloadSource: server.modelDownloadSource === 'official' ? 'official' : defaults.server.modelDownloadSource,
+      modelMirrorUrl: server.modelMirrorUrl ?? defaults.server.modelMirrorUrl,
+      downloadProxy: server.downloadProxy ?? defaults.server.downloadProxy,
       modelDir: server.modelDir ?? defaults.server.modelDir,
       configDir: server.configDir ?? defaults.server.configDir
     }

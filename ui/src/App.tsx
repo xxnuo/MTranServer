@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { toast } from 'sonner'
 import { History, BookOpen, Maximize2, Minimize2, Plus } from 'lucide-react'
 import { SettingsMenu } from '@/components/SettingsMenu'
+import { ModelManagerButton, ModelManagerPage } from '@/components/ModelManagerDialog'
 import { HistorySheet } from '@/components/HistorySheet'
 import { TranslationPanel } from '@/components/TranslationPanel'
 import { useHistory } from '@/hooks/use-history'
@@ -13,6 +14,7 @@ import { DesktopSettingsPage } from '@/components/DesktopSettingsPage'
 function getRoute(pathname: string) {
   const normalized = pathname.replace(/\/+$/, '')
   if (normalized.endsWith('/settings')) return 'settings'
+  if (normalized.endsWith('/models')) return 'models'
   return 'main'
 }
 
@@ -186,6 +188,7 @@ function MainPage() {
                 <p>{t('history')}</p>
               </TooltipContent>
             </Tooltip>
+            <ModelManagerButton />
             <SettingsMenu
               showTokenDialog={showTokenDialog}
               setShowTokenDialog={setShowTokenDialog}
@@ -256,6 +259,9 @@ function App() {
   const route = useMemo(() => getRoute(window.location.pathname), [])
   if (route === 'settings') {
     return <DesktopSettingsPage />
+  }
+  if (route === 'models') {
+    return <ModelManagerPage />
   }
   return <MainPage />
 }

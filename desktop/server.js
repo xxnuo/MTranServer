@@ -73,6 +73,9 @@ function applyConfigToEnv(config) {
   process.env.MT_MAX_SENTENCE_LENGTH = String(config.maxSentenceLength);
   process.env.MT_CHECK_UPDATE = String(config.checkUpdate);
   process.env.MT_CACHE_SIZE = String(config.cacheSize);
+  process.env.MT_MODEL_DOWNLOAD_SOURCE = config.modelDownloadSource;
+  process.env.MT_MODEL_MIRROR_URL = config.modelMirrorUrl;
+  process.env.MT_DOWNLOAD_PROXY = config.downloadProxy || '';
   process.env.MT_MODEL_DIR = config.modelDir;
   process.env.MT_CONFIG_DIR = config.configDir;
 }
