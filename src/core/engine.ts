@@ -4,6 +4,27 @@ import { Tokenizer } from './tokenizer.js';
 import type { ConvertedModel } from '../converter/cache.js';
 import { createSession, selectBackend, type BackendInfo, type SessionTuning } from './backend.js';
 import * as logger from '../logger/index.js';
+import { isCJKCode } from '../utils/lang-alias.js';
+
+export class GenerationLimitError extends Error {
+  constructor() { super('Translation exceeded generation limit'); this.name = 'GenerationLimitError'; }
+}
+
+interface GenerationRecovery { remainingAttempts: number; completed: Map<string, string> }
+const MAX_RECOVERY_DEPTH = 6;
+const MAX_RECOVERY_ATTEMPTS = 64;
+const newGenerationRecovery = (): GenerationRecovery => ({ remainingAttempts: MAX_RECOVERY_ATTEMPTS, completed: new Map() });
+
+function splitForRecovery(text: string): [string, string] | undefined {
+  for (const granularity of ['sentence', 'word', 'grapheme'] as const) {
+    const boundaries = [...new Intl.Segmenter(undefined, { granularity }).segment(text)]
+      .map(s => s.index).filter(index => index > 0 && index < text.length);
+    if (!boundaries.length) continue;
+    const midpoint = text.length / 2;
+    const split = boundaries.reduce((a, b) => Math.abs(a - midpoint) <= Math.abs(b - midpoint) ? a : b);
+    return [text.slice(0, split), text.slice(split)];
+  }
+}
 
 export interface TranslationOptions { sourceLang?: string; targetLang?: string; cacheSize?: number }
 export interface TranslateOptions { qualityScores?: boolean; alignment?: boolean; html?: boolean }
@@ -91,15 +112,20 @@ export class TranslationEngine {
   }
   private async translateText(text: string): Promise<string> {
     // Protect placeholders and pictographs without asking the model to reproduce sentinel tokens.
-    const protectedParts = text.split(/(\{\d+\}|\[\d+\]|\p{RI}\p{RI}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu);
+    const protectedParts = text.split(/([\r\n\t]+|\{\d+\}|\[\d+\]|\p{RI}\p{RI}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu);
     const translated: string[] = [];
-    for (let i = 0; i < protectedParts.length; i++) translated.push(i % 2 ? protectedParts[i] : await this.translatePlain(protectedParts[i]));
+    const recovery = newGenerationRecovery();
+    for (let i = 0; i < protectedParts.length; i++) translated.push(i % 2 ? protectedParts[i] : await this.translatePlain(protectedParts[i], recovery));
     return translated.join('');
   }
-  private async translatePlain(text: string): Promise<string> {
-    if (!text.trim()) return text;
+  private async translatePlain(text: string, recovery = newGenerationRecovery(), recoveryDepth = 0): Promise<string> {
+    // 纯数字、标点和符号无需翻译，交给模型反而可能循环生成或改坏数值。
+    if (!/[\p{L}\p{M}]/u.test(text)) return text;
     const match = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
     const [, before, content, after] = match;
+    // 只在本请求内复用完整生成的片段，避免重复文本耗尽恢复预算。
+    const completed = recovery.completed.get(content);
+    if (completed !== undefined) return before + completed + after;
     const ids = this.src!.encode(content);
     if (ids.length + 1 > this.tokenLimit || content.length > this.tokenLimit) {
       const sentences = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(content)].map(s => s.segment);
@@ -110,9 +136,33 @@ export class TranslationEngine {
         for (let i = midpoint; i > midpoint / 2; i--) if (/\s/.test(chars[i])) { midpoint = i + 1; break; }
         sentences.splice(0, 1, chars.slice(0, midpoint).join(''), chars.slice(midpoint).join(''));
       }
-      const out: string[] = []; for (const sentence of sentences) out.push(await this.translatePlain(sentence));
+      const out: string[] = []; for (const sentence of sentences) out.push(await this.translatePlain(sentence, recovery, recoveryDepth));
       return before + out.join('') + after;
     }
+    if (recoveryDepth > 0 && recovery.remainingAttempts-- <= 0) throw new GenerationLimitError();
+    try {
+      const translated = await this.translateEncoded(ids);
+      recovery.completed.set(content, translated);
+      return before + translated + after;
+    } catch (error) {
+      if (!(error instanceof GenerationLimitError)) throw error;
+      const parts = recoveryDepth < MAX_RECOVERY_DEPTH && recovery.remainingAttempts > 0 ? splitForRecovery(content) : undefined;
+      if (!parts) {
+        logger.warn(`Generation recovery exhausted: chars=${content.length}, depth=${recoveryDepth}, remaining=${recovery.remainingAttempts}`);
+        throw error;
+      }
+      if (recoveryDepth === 0) logger.warn(`Translation reached generation limit; retrying smaller fragments: chars=${content.length}, tokens=${ids.length}`);
+      const left = await this.translatePlain(parts[0], recovery, recoveryDepth + 1);
+      const right = await this.translatePlain(parts[1], recovery, recoveryDepth + 1);
+      // 无空格源语言拆分后，非中日韩译文的相邻单词仍需分隔，避免粘连。
+      const separator = this.options.targetLang && !isCJKCode(this.options.targetLang)
+        && /[\p{L}\p{N}\p{Pe}\p{Pf}.!?;:。！？；：]$/u.test(left) && /^[\p{L}\p{N}]/u.test(right) ? ' ' : '';
+      const translated = left + separator + right;
+      recovery.completed.set(content, translated);
+      return before + translated + after;
+    }
+  }
+  private async translateEncoded(ids: number[]): Promise<string> {
     ids.push(this.src!.eos);
     const input = new ort.Tensor('int64', BigInt64Array.from(ids.map(BigInt)), [ids.length]);
     const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst!.eos)), [1]);
@@ -130,7 +180,7 @@ export class TranslationEngine {
         logger.warn(`ONNX accelerator failed, falling back to CPU: ${error}`);
         tokens = await this.infer(session, input, eos);
       }
-      return before + this.dst!.decode(tokens) + after;
+      return this.dst!.decode(tokens);
     } finally { input.dispose(); eos.dispose(); }
   }
   private async infer(session: ort.InferenceSession, input: ort.Tensor, eos: ort.Tensor) {
@@ -138,7 +188,7 @@ export class TranslationEngine {
     try {
       if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
       const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
-      if (end < 0) throw new Error('Translation exceeded generation limit');
+      if (end < 0) throw new GenerationLimitError();
       return tokens.slice(0, end);
     } finally { for (const tensor of Object.values(output)) tensor.dispose(); }
   }

@@ -1,7 +1,7 @@
 import path from 'path';
 import { parseFragment } from 'parse5';
 import { readFile } from 'fs/promises';
-import { TranslationEngine } from '@/core/engine.js';
+import { GenerationLimitError, TranslationEngine } from '@/core/engine.js';
 import { getConfig } from '@/config/index.js';
 import * as logger from '@/logger/index.js';
 import * as models from '@/models/index.js';
@@ -226,6 +226,8 @@ export async function translateWithPivot(
             const translated = await translateSegment(seg.language, toLang, seg.text, isHTML);
             result += translated;
           } catch (error) {
+            // 有界恢复仍失败时必须整体失败，不能把原文混入成功译文。
+            if (error instanceof GenerationLimitError) throw error;
             logger.error(`Failed to translate segment: ${error}`);
             result += seg.text;
           }
@@ -270,6 +272,7 @@ async function translateLongText(
         logger.debug(`Translated ${i + 1}/${sentences.length} sentences`);
       }
     } catch (error) {
+      if (error instanceof GenerationLimitError) throw error;
       logger.error(`Failed to translate sentence ${i + 1}: ${error}`);
       results.push(segment);
     }
