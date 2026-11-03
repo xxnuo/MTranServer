@@ -33,15 +33,17 @@ export class TranslationEngine {
       this.src = await Tokenizer.load(model.sourceVocab);
       this.dst = await Tokenizer.load(model.targetVocab);
       const sampleIds = this.src.encode(Array.from(sampleText).slice(0, 512).join(''));
-      const inputs = [...new Set([Math.min(16, this.tokenLimit - 1), Math.min(32, this.tokenLimit - 1)])].map(length => {
-        const ids = sampleIds.length ? Array.from({ length }, (_, i) => sampleIds[i % sampleIds.length]) : [];
+      // 校准只截取真实输入，不循环补齐短文本，避免人为诱发重复生成。
+      const inputs = [...new Set([Math.min(16, this.tokenLimit - 1, sampleIds.length), Math.min(32, this.tokenLimit - 1, sampleIds.length)])].map(length => {
+        const ids = sampleIds.slice(0, length);
         ids.push(this.src!.eos);
         return new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
       });
       const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst.eos)), [1]);
       try {
         const selected = await selectBackend(model.model, async (session, short) => {
-          for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos);
+          // 校准验证后端能执行并测量耗时；模型未生成 EOS 不代表后端不可用。
+          for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos, false);
         }, config['cpu-threads'], model.identity);
         this.session = selected.session;
         this.backend = selected.info;
@@ -133,13 +135,13 @@ export class TranslationEngine {
       return before + this.dst!.decode(tokens) + after;
     } finally { input.dispose(); eos.dispose(); }
   }
-  private async infer(session: ort.InferenceSession, input: ort.Tensor, eos: ort.Tensor) {
+  private async infer(session: ort.InferenceSession, input: ort.Tensor, eos: ort.Tensor, requireEos = true) {
     const output = await session.run({ X: input, eos_id: eos });
     try {
       if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
       const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
-      if (end < 0) throw new Error('Translation exceeded generation limit');
-      return tokens.slice(0, end);
+      if (end < 0 && (requireEos || tokens.length === 0)) throw new Error('Translation exceeded generation limit');
+      return end < 0 ? tokens : tokens.slice(0, end);
     } finally { for (const tensor of Object.values(output)) tensor.dispose(); }
   }
   destroy(): Promise<void> {
