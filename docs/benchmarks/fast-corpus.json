@@ -1,0 +1,152 @@
+[
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "The weather is pleasant today, so we decided to walk through the old market."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "Please send the signed contract before Friday afternoon."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "This library loads translation models only when a language pair is requested."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "I left the keys on the kitchen table next to the blue notebook."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "Our team finished the release checklist and published the package."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "The train was delayed for twenty minutes because of heavy rain."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "Can you review this paragraph and correct the awkward wording?"
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "The museum closes early on Mondays during the winter season."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "She compared three offers and chose the one with local support."
+  },
+  {
+    "group": "SHORT_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "A small cache can hide the real cost of repeated translations."
+  },
+  {
+    "group": "PARA_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "Machine translation on a personal computer has to balance model quality, startup time, and memory. A useful service should answer a short sentence quickly, then stay responsive when several pages are translated at once. The model files stay on disk until the first request, after which the engine should reuse them instead of parsing the whole package again."
+  },
+  {
+    "group": "PARA_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "The harbor was quiet after midnight. Fishing boats rocked beside the pier while a single lamp lit the wet planks. We waited for the ferry, talking about the route we would take through the hills once the sun came up and the shops along the waterfront opened their doors."
+  },
+  {
+    "group": "PARA_EN",
+    "from": "en",
+    "to": "zh",
+    "text": "Before changing the server configuration, write down the current port, cache size, and model directory. A benchmark is only comparable when both programs translate the same text, with caching disabled, on the same machine. Otherwise a fast result may only mean that one side returned a stored answer."
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "今天下午三点在会议室讨论发布计划。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "请把这份说明翻译成自然的英文。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "模型文件已经放在本地目录里。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "火车晚点了二十分钟。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "我们先关闭缓存再比较速度。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "图书馆周末也会开门。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "他把钥匙放在蓝色笔记本旁边。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "这个服务只在第一次请求时加载模型。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "请检查合同里的日期和金额。"
+  },
+  {
+    "group": "SHORT_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "雨停以后我们沿着老街走回去。"
+  },
+  {
+    "group": "PARA_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "本地翻译服务需要同时考虑启动时间、内存占用和连续请求时的速度。短句应该尽快返回，长段落也不该把整个进程堵住。比较两个项目时，应该使用同一批文本，并确认结果不是从缓存里直接读出来的。"
+  },
+  {
+    "group": "PARA_ZH",
+    "from": "zh",
+    "to": "en",
+    "text": "午夜过后港口很安静。渔船靠在栈桥边轻轻摇晃，一盏灯照着湿漉漉的木板。我们等着渡船，商量天亮以后要走的山路，以及沿岸店铺开门的时间。"
+  }
+]

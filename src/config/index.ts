@@ -21,6 +21,7 @@ export interface Config {
   maxSentenceLength: number;
   checkUpdate: boolean;
   cacheSize: number;
+  fast: boolean;
   lexicalShortlist: boolean;
   fullwidthZhPunctuation: boolean;
 }
@@ -89,6 +90,31 @@ function getBool(flag: string, envKey: string, defaultValue: boolean): boolean {
   return defaultValue;
 }
 
+function getFast(fileConfig: Partial<Config>): boolean {
+  for (const flag of ['--fast', '--lexical-shortlist']) {
+    const value = getArgValue(flag);
+    if (value !== null) return value.toLowerCase() === 'true' || value === '1';
+    if (hasFlag(flag)) return true;
+    if (hasFlag(`--no-${flag.slice(2)}`)) return false;
+  }
+  const value = process.env.MT_FAST ?? process.env.MT_LEXICAL_SHORTLIST;
+  if (value !== undefined) return value.toLowerCase() === 'true' || value === '1';
+  return (fileConfig.fast ?? fileConfig.lexicalShortlist) === true;
+}
+
+function withFastAlias(config: Config): Config {
+  return Object.defineProperty(config, 'lexicalShortlist', {
+    enumerable: true,
+    configurable: true,
+    get: () => config.fast,
+    set: (value: boolean) => { config.fast = value === true; },
+  });
+}
+
+function mergeConfig(current: Config, config: Partial<Config>): Config {
+  return withFastAlias({ ...current, ...config, fast: config.fast ?? config.lexicalShortlist ?? current.fast });
+}
+
 function getInt(flag: string, envKey: string, defaultValue: number): number {
   const argVal = getArgValue(flag);
   if (argVal !== null) {
@@ -119,7 +145,7 @@ export function getConfig(): Config {
   const modelDir = getString('--model-dir', 'MT_MODEL_DIR', fileConfig.modelDir || defaultModelDir);
   const logDir = getString('--log-dir', 'MT_LOG_DIR', fileConfig.logDir || path.join(homeDir, 'logs'));
 
-  globalConfig = {
+  globalConfig = withFastAlias({
     homeDir,
     configDir,
     modelDir,
@@ -145,16 +171,17 @@ export function getConfig(): Config {
 
     checkUpdate: getBool('--check-update', 'MT_CHECK_UPDATE', fileConfig.checkUpdate ?? true),
 
-    lexicalShortlist: getBool('--lexical-shortlist', 'MT_LEXICAL_SHORTLIST', fileConfig.lexicalShortlist === true),
+    fast: getFast(fileConfig),
+    lexicalShortlist: false,
     cacheSize: getInt('--cache-size', 'MT_CACHE_SIZE', fileConfig.cacheSize ?? 1000),
-  };
+  });
 
   return globalConfig;
 }
 
 export function setConfig(config: Partial<Config>) {
   const current = getConfig();
-  globalConfig = { ...current, ...config };
+  globalConfig = mergeConfig(current, config);
 }
 
 export function resetConfig() {
@@ -164,7 +191,7 @@ export function resetConfig() {
 
 export function saveConfigFile(config: Partial<Config>) {
   const current = getConfig();
-  const next = { ...current, ...config };
+  const next = mergeConfig(current, config);
   const configPath = getConfigFilePath(current.homeDir);
   fs.mkdirSync(current.homeDir, { recursive: true });
   fs.writeFileSync(configPath, JSON.stringify(next, null, 2), 'utf8');

@@ -13,6 +13,8 @@
 | MT_PORT               | Server port                              | 8989    | 1-65535                     |
 | MT_ENABLE_UI          | Enable Web UI                            | true    | true, false                 |
 | MT_OFFLINE | Use previously prepared translation files offline | false | true, false |
+| MT_FAST | Fast mode; faster but may reduce translation accuracy | false | true, false |
+| MT_LEXICAL_SHORTLIST | Compatibility alias for MT_FAST | false | true, false |
 | MT_WORKER_IDLE_TIMEOUT | Release an idle translation engine after this many seconds | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN          | API access token                         | empty   | Any string                  |
 | MT_CACHE_SIZE | Recent translation results to keep; 0 disables caching | 1000 | 0, 1, 2, ... |
@@ -38,6 +40,17 @@ export MT_PORT=9000
 # Start the server
 mtranserver
 ```
+
+### Fast mode
+
+The default `fast: false` uses the original K9 engine. Opt in with `mtranserver --fast`, `MT_FAST=true`, `"fast": true` in `~/.config/mtran/server.json`, or library configuration `new MTran({ fast: true })`. Use `--no-fast` or `false` to disable it.
+
+Fast mode reuses the lexical shortlist path. It can be faster but may reduce translation accuracy. Models without a lex file fall back to the original K9 engine. Switching modes prepares the model again when needed; initial preparation may require conversion.
+
+Compatibility names remain supported: `--lexical-shortlist` / `--no-lexical-shortlist`, `MT_LEXICAL_SHORTLIST`, and the library/file field `lexicalShortlist`. Precedence is CLI > environment > file > default. Within each layer, `fast` wins over its legacy alias. Library configuration and `setConfig` also prefer explicit `fast`; both fields reflect the same requested mode.
+
+`GET /ui/api/settings` exposes `config.server.fast` and `config.server.cacheSize`. `fast` reports the requested mode, so it remains `true` when a model without lex falls back. Update it with `POST /ui/api/settings/apply` and `{"server":{"fast":true}}`; no additional UI control is required.
+
 
 ### API Documentation
 

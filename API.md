@@ -13,6 +13,8 @@
 | MT_PORT               | 服务器端口                               | 8989   | 1-65535                     |
 | MT_ENABLE_UI          | 启用 Web UI                              | true   | true, false                 |
 | MT_OFFLINE | 离线使用已准备好的翻译文件 | false | true, false |
+| MT_FAST | 快速模式；更快但可能降低翻译准确性 | false | true, false |
+| MT_LEXICAL_SHORTLIST | MT_FAST 的兼容别名 | false | true, false |
 | MT_WORKER_IDLE_TIMEOUT | 翻译引擎空闲多久后释放内存（秒） | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN          | API 访问令牌                             | 空     | 任意字符串                  |
 | MT_CACHE_SIZE | 保存最近多少条翻译结果；0 为关闭 | 1000 | 0, 1, 2, ... |
@@ -38,6 +40,17 @@ export MT_PORT=9000
 # 启动服务
 mtranserver
 ```
+
+### 快速模式
+
+默认 `fast: false`，使用原 K9 引擎。可通过 `mtranserver --fast`、`MT_FAST=true`、配置文件 `~/.config/mtran/server.json` 中的 `"fast": true`，或库配置 `new MTran({ fast: true })` 显式开启。使用 `--no-fast` 或 `false` 关闭。
+
+快速模式复用 lexical shortlist 路径，可能更快，但也可能降低翻译准确性；没有 lex 文件的模型自动回退原 K9。切换模式时会按需重新准备模型，首次准备可能需要转换。
+
+兼容 `--lexical-shortlist` / `--no-lexical-shortlist`、`MT_LEXICAL_SHORTLIST` 和库/文件字段 `lexicalShortlist`。优先级为 CLI > 环境变量 > 文件 > 默认值；同层同时指定时，`fast` 优先于旧别名。库配置及 `setConfig` 同样优先采用显式 `fast`，两个字段始终反映同一请求模式。
+
+`GET /ui/api/settings` 返回 `config.server.fast` 和 `config.server.cacheSize`；`fast` 表示请求模式，无 lex 回退时仍为 `true`。通过 `POST /ui/api/settings/apply` 的 `{"server":{"fast":true}}` 可更新模式，无需新增 UI 控件。
+
 
 ### API 接口说明
 

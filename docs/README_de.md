@@ -149,6 +149,7 @@ mtranserver --offline
 | `--languages [Filter]` | Herunterladbare Richtungen auflisten |
 | `--worker-idle-timeout <Sekunden>` | Engine nach Leerlauf freigeben, Standard 60 |
 | `--cache-size <Anzahl>` | Letzte Übersetzungen zwischenspeichern, Standard 1000; `0` schaltet aus |
+| `--fast` / `--no-fast` | Fast-Modus aktivieren, standardmäßig aus; kann mehr Fehlübersetzungen verursachen |
 | `--api-token <Token>` | API-Zugangstoken |
 
 Umgebungsvariablen und weitere Optionen stehen in [API_de.md](API_de.md), oder `mtranserver --help` ausführen.
@@ -168,6 +169,36 @@ Cache aus. Median aus drei Läufen:
 | --- | --- | --- | --- |
 | Englisch → Chinesisch | 33.47 | 391.7 | 118.8 |
 | Deutsch → Englisch | 26.44 | 345.1 | 71.9 |
+
+## Fast-Modus
+
+Standardmäßig aus. Aktivierung: `mtranserver --fast` oder `MT_FAST=true mtranserver`; Deaktivierung: `--no-fast`. In der Bibliothek: `new MTran({ fast: true })`. Fast reduziert die Berechnung der Ausgabeschicht durch eine lexikalische Kandidatenliste, kann aber mehr Fehlübersetzungen verursachen. Ohne Lexikon wird der ursprüngliche Modus verwendet. Beim ersten Aufruf nach einem Wechsel kann eine erneute Modellkonvertierung nötig sein. `--lexical-shortlist` und `MT_LEXICAL_SHORTLIST` bleiben als Aliasse erhalten.
+
+### Fast und LinguaSpark auf demselben Rechner
+
+Mittlere Latenz bei sequenziellen Anfragen (ms, niedriger ist besser):
+
+| Richtung / Eingabe | Original | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
+| --- | --- | --- | --- |
+| EN→ZH kurz | 16.87 | 8.11 | 14.54 |
+| EN→ZH Absatz | 55.40 | 36.29 | 56.97 |
+| ZH→EN kurz | 34.68 | 11.18 | 18.89 |
+| ZH→EN Absatz | 121.05 | 27.15 | 59.43 |
+
+Durchsatz kurzer Texte bei 8 parallelen Anfragen (Anfragen/s, höher ist besser):
+
+| Richtung / Eingabe | Original | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
+| --- | --- | --- | --- |
+| EN→ZH | 70.0 | 103.7 | 319.6 |
+| ZH→EN | 37.9 | 138.0 | 293.3 |
+
+Prozess-RSS nach der Last mit beiden geladenen Richtungen (Median aus drei Runden): Original **542.4 MiB**, Fast **575.9 MiB**, LinguaSpark **190.4 MiB**. Dies ist nicht der Spitzenverbrauch während der ersten Konvertierung.
+
+2026-11-11, Intel Core i5-14400, Linux x64, auf CPUs 0–15 begrenzt. Identische Firefox-Modelle für EN/ZH und identische Texte, Cache deaktiviert. MTranServer wählt CPU-Threads und Parallelität automatisch; LinguaSpark nutzt 16 Worker (Engine `269605c`). Nur eine Engine läuft gleichzeitig; drei Runden mit wechselnder Reihenfolge und vorherigem Aufwärmen aller 25 Texte. Angegeben ist der Median der drei Rundenmittelwerte bzw. Durchsatzwerte, ohne Start, Konvertierung und Aufwärmen. Je Richtung 10 kurze Texte; 3 EN→ZH- und 2 ZH→EN-Absätze. Sequenziell 3 Wiederholungen pro Runde, parallel 24. Die älteren Tabellen oben stammen aus einer separaten Messung und sind nicht direkt vergleichbar.
+
+Fast und LinguaSpark können Fachbegriffe, Ortsnamen und Satzbeziehungen falsch übersetzen; siehe [25 Qualitätsvergleiche](../tests/fixtures/translation-quality-regressions.json). Diese ausgewählten Regressionen zeigen keine allgemeine Fehlerquote.
+
+Methode und Rohdaten: [Rohdaten](benchmarks/fast-linguaspark-2026-11-11.json) · [Eingabetexte](benchmarks/fast-corpus.json) · [Benchmark-Skript](../scripts/benchmark-engines.py).
 
 ## Ähnliche Projekte
 

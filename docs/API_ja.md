@@ -13,6 +13,8 @@
 | MT_PORT | サーバーポート | 8989 | 1-65535 |
 | MT_ENABLE_UI | Web UI を有効にする | true | true, false |
 | MT_OFFLINE | 準備済みの翻訳ファイルでオフライン利用 | false | true, false |
+| MT_FAST | 高速モード；高速化する一方、翻訳精度が低下する可能性があります | false | true, false |
+| MT_LEXICAL_SHORTLIST | MT_FAST の互換エイリアス | false | true, false |
 | MT_WORKER_IDLE_TIMEOUT | 待機中の翻訳エンジンを解放するまでの秒数 | 60 | 1, 2, 3, ... |
 | MT_API_TOKEN | API アクセストークン | 空 | 任意の文字列 |
 | MT_CACHE_SIZE | 保存する翻訳結果の件数；0 で無効 | 1000 | 0, 1, 2, ... |
@@ -38,6 +40,17 @@ export MT_PORT=9000
 # サービスを起動
 mtranserver
 ```
+
+### 高速モード
+
+既定の `fast: false` は従来の K9 エンジンを使用します。`mtranserver --fast`、`MT_FAST=true`、`~/.config/mtran/server.json` の `"fast": true`、またはライブラリ設定 `new MTran({ fast: true })` で明示的に有効にできます。`--no-fast` または `false` で無効にします。
+
+高速モードは lexical shortlist を利用し、翻訳が速くなる一方、精度が低下する可能性があります。lex ファイルがないモデルは従来の K9 にフォールバックします。モード変更時は必要に応じてモデルを再準備し、初回は変換が必要になる場合があります。
+
+互換名 `--lexical-shortlist` / `--no-lexical-shortlist`、`MT_LEXICAL_SHORTLIST`、ライブラリ・ファイル設定の `lexicalShortlist` も利用できます。優先順位は CLI > 環境変数 > ファイル > 既定値で、同じ層では `fast` が旧名より優先されます。ライブラリ設定と `setConfig` でも明示的な `fast` が優先され、両フィールドは同じ要求モードを表します。
+
+`GET /ui/api/settings` は `config.server.fast` と `config.server.cacheSize` を返します。`fast` は要求モードであり、lex 不在によるフォールバック時も `true` のままです。`POST /ui/api/settings/apply` に `{"server":{"fast":true}}` を送信して変更できます。追加の UI 操作部品は不要です。
+
 
 ### API インターフェース説明
 
