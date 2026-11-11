@@ -10,7 +10,10 @@ import { VERSION } from '../version/index.js';
 export const CONVERSION_VERSION = 'marian-qall-k9-v1';
 export const CONVERSION_PARAMETERS = { strategy: 'qall', topK: 9, int4BlockSize: 64, int4AccuracyLevel: 4, int8WeightType: 'QInt8', perTensor: true, reduceRange: false, opset: 11, irVersion: 10 } as const;
 
-export interface ConvertedModel { directory: string; identity: string; model: string; sourceVocab: string; targetVocab: string }
+const SHORTLIST_CONVERSION = { version: 'marian-qall-shortlist-v2', parameters: { ...CONVERSION_PARAMETERS, projection: 'lexical-fp32-byte-complete' } };
+const K9_CONVERSION = { version: CONVERSION_VERSION, parameters: CONVERSION_PARAMETERS };
+
+export interface ConvertedModel { directory: string; identity: string; model: string; sourceVocab: string; targetVocab: string; lex?: string }
 export interface SourceFiles { model: string; vocab_src: string; vocab_trg: string; lex?: string }
 export interface ConversionSource { files: SourceFiles; records: unknown }
 
@@ -28,12 +31,13 @@ interface Manifest {
   identity: string;
   sourceRevision: string;
   converterRevision?: string;
-  conversion?: { version: string; parameters: typeof CONVERSION_PARAMETERS };
+  lexSha256?: string;
+  conversion?: { version: string; parameters: unknown };
   records: unknown;
   files: ManifestFile[];
 }
 
-const pending = new Map<string, Promise<ConvertedModel>>();
+const pending = new Map<string, { key: string; task: Promise<ConvertedModel> }>();
 let conversionQueue: Promise<unknown> = Promise.resolve();
 
 export async function fileHash(file: string) {
@@ -48,25 +52,23 @@ function hashJson(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
 }
 
-const CONVERTER_REVISION = hashJson({ version: CONVERSION_VERSION, parameters: CONVERSION_PARAMETERS });
-
 function normalizedRecords(records: unknown) {
   if (!Array.isArray(records)) return records;
   return [...records].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 }
 
-function sourceRevision(records: unknown) {
+function sourceRevision(records: unknown, lexicalShortlist: boolean) {
   const conversionInputs = Array.isArray(records)
-    ? records.filter(record => ['model', 'vocab', 'srcvocab', 'trgvocab'].includes(record?.fileType))
+    ? records.filter(record => ['model', 'vocab', 'srcvocab', 'trgvocab', ...(lexicalShortlist ? ['lex'] : [])].includes(record?.fileType))
     : records;
   return hashJson(normalizedRecords(conversionInputs));
 }
 
-function runWorker(model: string, sourceVocab: string, targetVocab: string, output: string) {
+function runWorker(model: string, sourceVocab: string, targetVocab: string, output: string, lexicalShortlist: boolean, lex?: string) {
   const task = conversionQueue.then(() => new Promise<void>((resolve, reject) => {
     const bundled = new URL('./converter-worker.js', import.meta.url);
     const source = new URL('../../scripts/converter-worker.mjs', import.meta.url);
-    const worker = new Worker(existsSync(bundled) ? bundled : source, { execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')), workerData: { model, sourceVocab, targetVocab, output } });
+    const worker = new Worker(existsSync(bundled) ? bundled : source, { execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')), workerData: { model, sourceVocab, targetVocab, output, lexicalShortlist, lex } });
     let responded = false;
     worker.once('message', message => { responded = true; if (message.error) reject(new Error(message.error)); else resolve(); });
     worker.once('error', reject);
@@ -101,27 +103,28 @@ function recordFiles(records: unknown): ManifestFile[] {
   });
 }
 
-function result(target: string, identity: string, files: SourceFiles): ConvertedModel {
-  return { directory: target, identity, model: path.join(target, 'model.onnx'), sourceVocab: files.vocab_src, targetVocab: files.vocab_trg };
+function result(target: string, identity: string, files: SourceFiles, lexicalShortlist: boolean): ConvertedModel {
+  return { directory: target, identity, model: path.join(target, 'model.onnx'), sourceVocab: files.vocab_src, targetVocab: files.vocab_trg, ...(lexicalShortlist && files.lex ? { lex: files.lex } : {}) };
 }
 
-function compatible(manifest: Manifest, revision: string) {
+function compatible(manifest: Manifest, revision: string, converterRevision: string) {
   if (manifest.schemaVersion !== 1 || manifest.sourceRevision !== revision) return false;
-  if (manifest.mtranserverVersion === VERSION) return true;
-  if (manifest.converterRevision === CONVERTER_REVISION) return true;
-  return manifest.conversion ? hashJson(manifest.conversion) === CONVERTER_REVISION : false;
+  if (manifest.converterRevision === converterRevision) return true;
+  return manifest.conversion ? hashJson(manifest.conversion) === converterRevision : false;
 }
 
-async function hasRequiredFiles(target: string, manifest: Manifest, source: SourceFiles) {
+async function hasRequiredFiles(target: string, manifest: Manifest, source: SourceFiles, lexicalShortlist: boolean) {
   if (!Array.isArray(manifest.files)) return false;
   const required = manifest.files.filter(file => file?.required);
   if (!required.length || required.some(file => typeof file.path !== 'string' || path.basename(file.path) !== file.path)) return false;
+  if (lexicalShortlist && source.lex && (!manifest.lexSha256 || !await exists(source.lex) || await fileHash(source.lex) !== manifest.lexSha256)) return false;
   const files = [
     ...required.map(file => path.join(target, file.path)),
     path.join(target, 'model.onnx'),
     source.model,
     source.vocab_src,
     source.vocab_trg,
+    ...(lexicalShortlist && source.lex ? [source.lex] : []),
   ];
   return (await Promise.all([...new Set(files)].map(exists))).every(Boolean);
 }
@@ -145,56 +148,69 @@ async function writeManifest(target: string, manifest: Manifest) {
   await replaceFile(staged, path.join(target, 'manifest.json'));
 }
 
-export function ensureConverted(root: string, pair: string, source: ConversionSource, repairSource: () => Promise<SourceFiles>): Promise<ConvertedModel> {
+export function ensureConverted(root: string, pair: string, source: ConversionSource, repairSource: () => Promise<SourceFiles>, lexicalShortlist = false): Promise<ConvertedModel> {
   if (!/^[A-Za-z0-9-]+_[A-Za-z0-9-]+$/.test(pair)) return Promise.reject(new Error('Invalid language pair'));
   const target = path.resolve(root, pair);
+  lexicalShortlist = lexicalShortlist === true && !!source.files.lex;
+  const key = hashJson({ files: source.files, revision: sourceRevision(source.records, lexicalShortlist), lexicalShortlist });
   const existing = pending.get(target);
-  if (existing) return existing;
-  const task = prepare(target, source, repairSource).finally(() => pending.delete(target));
-  pending.set(target, task);
+  // shortcut: one graph per directory, reject conflicting requests until separate mode directories are needed.
+  if (existing) return existing.key === key ? existing.task : Promise.reject(new Error('Conflicting conversion already pending for this directory; retry after it completes'));
+  const task = prepare(target, source, repairSource, lexicalShortlist).finally(() => pending.delete(target));
+  pending.set(target, { key, task });
   return task;
 }
 
-async function prepare(target: string, source: ConversionSource, repairSource: () => Promise<SourceFiles>): Promise<ConvertedModel> {
+async function prepare(target: string, source: ConversionSource, repairSource: () => Promise<SourceFiles>, lexicalShortlist = false): Promise<ConvertedModel> {
   await fs.mkdir(target, { recursive: true });
   const unlock = await lock(target, { stale: 30000, update: 5000, retries: { forever: true, minTimeout: 100, maxTimeout: 1000 } });
-  const revision = sourceRevision(source.records);
+  const revision = sourceRevision(source.records, lexicalShortlist);
+  const conversion = lexicalShortlist ? SHORTLIST_CONVERSION : K9_CONVERSION;
+  const converterRevision = hashJson(conversion);
   let stagedModel = '';
   try {
     let repairedFiles: SourceFiles | undefined;
+    let repairing = false;
     try {
       const manifest: Manifest = JSON.parse(await fs.readFile(path.join(target, 'manifest.json'), 'utf8'));
-      if (compatible(manifest, revision)) {
-        if (!await hasRequiredFiles(target, manifest, source.files)) repairedFiles = await repairSource();
-        if (await hasRequiredFiles(target, manifest, repairedFiles ?? source.files)) {
-          if (manifest.mtranserverVersion !== VERSION || manifest.converterRevision !== CONVERTER_REVISION || manifest.conversion) {
+      if (compatible(manifest, revision, converterRevision)) {
+        if (!await hasRequiredFiles(target, manifest, source.files, lexicalShortlist)) {
+          repairing = true;
+          repairedFiles = await repairSource();
+          repairing = false;
+        }
+        if (await hasRequiredFiles(target, manifest, repairedFiles ?? source.files, lexicalShortlist)) {
+          if (manifest.mtranserverVersion !== VERSION || manifest.converterRevision !== converterRevision || manifest.conversion) {
             manifest.mtranserverVersion = VERSION;
-            manifest.converterRevision = CONVERTER_REVISION;
+            manifest.converterRevision = converterRevision;
             delete manifest.conversion;
             await writeManifest(target, manifest);
           }
           logger.debug(`Reusing converted model ${path.basename(target)}`);
-          return result(target, manifest.identity, repairedFiles ?? source.files);
+          return result(target, manifest.identity, repairedFiles ?? source.files, lexicalShortlist);
         }
       }
     } catch (error: any) {
+      if (repairing) throw error;
       if (error.code && error.code !== 'ENOENT') logger.warn(`Invalid model manifest, repairing: ${error}`);
     }
 
     const files = repairedFiles ?? await repairSource();
-    for (const file of [files.model, files.vocab_src, files.vocab_trg]) {
+    if (lexicalShortlist && !files.lex) throw new Error('Lexical shortlist requires a lex file after source repair');
+    for (const file of [files.model, files.vocab_src, files.vocab_trg, ...(lexicalShortlist && files.lex ? [files.lex] : [])]) {
       if (!await exists(file)) throw new Error(`Required source file not found: ${file}`);
     }
     const sourceHashes = {
       model: await fileHash(files.model),
       sourceVocab: await fileHash(files.vocab_src),
       targetVocab: await fileHash(files.vocab_trg),
+      ...(lexicalShortlist && files.lex ? { lex: await fileHash(files.lex) } : {}),
     };
-    const identity = hashJson({ version: CONVERSION_VERSION, parameters: CONVERSION_PARAMETERS, source: sourceHashes });
-    logger.info(`Converting model ${path.basename(target)} (${CONVERSION_VERSION})`);
+    const identity = hashJson({ ...conversion, source: sourceHashes });
+    logger.info(`Converting model ${path.basename(target)} (${conversion.version})`);
     stagedModel = path.join(target, `.model.${randomUUID()}.onnx`);
-    await runWorker(files.model, files.vocab_src, files.vocab_trg, stagedModel);
-    if (await fileHash(files.model) !== sourceHashes.model || await fileHash(files.vocab_src) !== sourceHashes.sourceVocab || await fileHash(files.vocab_trg) !== sourceHashes.targetVocab) {
+    await runWorker(files.model, files.vocab_src, files.vocab_trg, stagedModel, lexicalShortlist, files.lex);
+    if (await fileHash(files.model) !== sourceHashes.model || await fileHash(files.vocab_src) !== sourceHashes.sourceVocab || await fileHash(files.vocab_trg) !== sourceHashes.targetVocab || (lexicalShortlist && files.lex && await fileHash(files.lex) !== sourceHashes.lex)) {
       throw new Error('Source changed during conversion');
     }
     const outputHash = await fileHash(stagedModel);
@@ -203,7 +219,8 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
       mtranserverVersion: VERSION,
       identity,
       sourceRevision: revision,
-      converterRevision: CONVERTER_REVISION,
+      converterRevision,
+      ...(sourceHashes.lex ? { lexSha256: sourceHashes.lex } : {}),
       records: normalizedRecords(source.records),
       files: [
         ...recordFiles(source.records),
@@ -215,7 +232,7 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
     stagedModel = '';
     await writeManifest(target, manifest);
     logger.info(`Converted model ready: ${target}`);
-    return result(target, identity, files);
+    return result(target, identity, files, lexicalShortlist);
   } finally {
     if (stagedModel) await fs.rm(stagedModel, { force: true });
     await unlock();

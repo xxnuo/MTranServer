@@ -1,6 +1,7 @@
 import * as ort from 'onnxruntime-node';
 import { parseFragment } from 'parse5';
 import { Tokenizer } from './tokenizer.js';
+import { Shortlist } from './shortlist.js';
 import type { ConvertedModel } from '../converter/cache.js';
 import { createSession, selectBackend, type BackendInfo, type SessionTuning } from './backend.js';
 import * as logger from '../logger/index.js';
@@ -12,6 +13,7 @@ export class TranslationEngine {
   private session?: ort.InferenceSession;
   private src?: Tokenizer;
   private dst?: Tokenizer;
+  private shortlist?: Shortlist;
   private tasks = new Set<Promise<string>>();
   private running = 0;
   private waiters: Array<() => void> = [];
@@ -32,6 +34,7 @@ export class TranslationEngine {
     try {
       this.src = await Tokenizer.load(model.sourceVocab);
       this.dst = await Tokenizer.load(model.targetVocab);
+      let shortlist: Promise<Shortlist> | undefined;
       const sampleIds = this.src.encode(Array.from(sampleText).slice(0, 512).join(''));
       const inputs = [...new Set([Math.min(16, this.tokenLimit - 1), Math.min(32, this.tokenLimit - 1)])].map(length => {
         const ids = sampleIds.slice(0, length);
@@ -41,6 +44,11 @@ export class TranslationEngine {
       const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst.eos)), [1]);
       try {
         const selected = await selectBackend(model.model, async (session, short) => {
+          if (session.inputNames?.includes('candidate_ids')) {
+            shortlist ??= model.lex ? Shortlist.load(model.lex, model.sourceVocab, model.targetVocab)
+              : Promise.reject(new Error('Shortlist ONNX graph requires ConvertedModel.lex'));
+            this.shortlist = await shortlist;
+          }
           // A bounded timing probe need not finish a translation; user requests still require EOS.
           for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos, false);
         }, config['cpu-threads'], model.identity);
@@ -51,7 +59,7 @@ export class TranslationEngine {
         this.modelPath = model.model;
       } finally { for (const input of inputs) input.dispose(); eos.dispose(); }
       this.identity = model.identity;
-    } catch (error) { this.src?.close(); this.dst?.close(); throw error; }
+    } catch (error) { this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; this.shortlist = undefined; throw error; }
   }
   translateAsync(text: string, options: TranslateOptions = {}): Promise<string> {
     if (this.closing || !this.session) return Promise.reject(new Error('Engine not initialized or closing'));
@@ -135,19 +143,28 @@ export class TranslationEngine {
     } finally { input.dispose(); eos.dispose(); }
   }
   private async infer(session: ort.InferenceSession, input: ort.Tensor, eos: ort.Tensor, requireEos = true) {
-    const output = await session.run({ X: input, eos_id: eos });
+    let candidates: ort.Tensor | undefined;
     try {
-      if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
-      const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
-      if (end < 0 && requireEos) throw new Error('Translation exceeded generation limit');
-      return end < 0 ? tokens : tokens.slice(0, end);
-    } finally { for (const tensor of Object.values(output)) tensor.dispose(); }
+      const feeds: Record<string, ort.Tensor> = { X: input, eos_id: eos };
+      if (session.inputNames?.includes('candidate_ids')) {
+        if (!this.shortlist) throw new Error('Shortlist ONNX graph requires a validated lexicon (ConvertedModel.lex)');
+        const ids = this.shortlist.candidates(Array.from(input.data as BigInt64Array, Number));
+        feeds.candidate_ids = candidates = new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
+      }
+      const output = await session.run(feeds);
+      try {
+        if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
+        const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
+        if (end < 0 && requireEos) throw new Error('Translation exceeded generation limit');
+        return end < 0 ? tokens : tokens.slice(0, end);
+      } finally { for (const tensor of Object.values(output)) tensor.dispose(); }
+    } finally { candidates?.dispose(); }
   }
   destroy(): Promise<void> {
     if (this.closed) return this.closed;
     this.closing = true;
     this.closed = Promise.allSettled([...this.tasks]).then(async () => {
-      try { await this.session?.release(); } finally { this.session = undefined; this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; }
+      try { await this.session?.release(); } finally { this.session = undefined; this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; this.shortlist = undefined; }
     });
     return this.closed;
   }

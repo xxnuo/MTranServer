@@ -25,6 +25,7 @@ Options:
   --max-sentence-length <length>  Text splitting limit (default: 512)
   --cache-size <count>      Cached translation results (default: 1000; 0 disables caching)
   --fullwidth-zh-punctuation  Fullwidth punctuation for Chinese output (default: true)
+  --lexical-shortlist / --no-lexical-shortlist  Faster translation, but may reduce translation accuracy (default: false)
   --api-token <token>      API access token
   --log-to-file            Enable logging to file (default: false)
   --log-requests           Log translation requests (default: false)
@@ -40,7 +41,7 @@ Environment Variables:
   MT_HOST, MT_PORT, MT_LOG_LEVEL, MT_CONFIG_DIR, MT_MODEL_DIR,
   MT_LOG_DIR, MT_ENABLE_UI, MT_OFFLINE, MT_WORKER_IDLE_TIMEOUT,
   MT_MAX_SENTENCE_LENGTH, MT_CACHE_SIZE, MT_API_TOKEN, MT_LOG_TO_FILE, MT_LOG_CONSOLE,
-  MT_LOG_REQUESTS, MT_CHECK_UPDATE, MT_FULLWIDTH_ZH_PUNCTUATION
+  MT_LOG_REQUESTS, MT_CHECK_UPDATE, MT_FULLWIDTH_ZH_PUNCTUATION, MT_LEXICAL_SHORTLIST
 `);
   process.exit(0);
 }

@@ -10,6 +10,7 @@ import { readCache, writeCache } from '@/utils/cache.js';
 
 interface EngineInfo {
   engine: TranslationEngine;
+  lexicalShortlist: boolean;
   lastUsed: Date;
   fromLang: string;
   toLang: string;
@@ -17,7 +18,7 @@ interface EngineInfo {
 }
 
 const engines = new Map<string, EngineInfo>();
-const loadingPromises = new Map<string, Promise<TranslationEngine>>();
+const loadingPromises = new Map<string, { lexicalShortlist: boolean; promise: Promise<EngineInfo> }>();
 const zhCommaTest = /,/;
 const zhCommaGlobal = /,/g;
 
@@ -50,57 +51,59 @@ async function getOrCreateSingleEngine(
 ): Promise<TranslationEngine> {
   const key = `${fromLang}-${toLang}`;
 
-  const existing = engines.get(key);
-  if (existing) {
-    resetIdleTimer(existing);
-    const manifestPath = path.join(getConfig().modelDir, `${fromLang}_${toLang}`, 'manifest.json');
-    const identity = await readFile(manifestPath, 'utf8').then(s => JSON.parse(s).identity).catch(() => null);
-    if (identity !== existing.engine.identity) {
-      if (existing.timer) clearTimeout(existing.timer);
-      engines.delete(key);
-      await existing.engine.destroy();
-      return getOrCreateSingleEngine(fromLang, toLang, sampleText);
-    }
-    existing.lastUsed = new Date();
-    resetIdleTimer(existing);
-    return existing.engine;
-  }
+  while (true) {
+    let loading = loadingPromises.get(key);
+    if (!loading) {
+      const request = {
+        lexicalShortlist: getConfig().lexicalShortlist === true,
+        promise: Promise.resolve().then(async (): Promise<EngineInfo> => {
+          const existing = engines.get(key);
+          if (existing) {
+            resetIdleTimer(existing);
+            const manifestPath = path.join(getConfig().modelDir, `${fromLang}_${toLang}`, 'manifest.json');
+            const identity = await readFile(manifestPath, 'utf8').then(s => JSON.parse(s).identity).catch(() => null);
+            if (identity === existing.engine.identity && existing.lexicalShortlist === (getConfig().lexicalShortlist === true)) {
+              existing.lastUsed = new Date();
+              resetIdleTimer(existing);
+              return existing;
+            }
+            if (existing.timer) clearTimeout(existing.timer);
+            engines.delete(key);
+            await existing.engine.destroy();
+          }
 
-  if (loadingPromises.has(key)) {
-    logger.debug(`Waiting for existing engine initialization for ${key}...`);
-    return loadingPromises.get(key)!;
-  }
-
-  const initPromise = (async () => {
-    try {
-      const config = getConfig();
-
-      logger.info(`Creating new engine for ${fromLang} -> ${toLang}`);
-
-      const model = await models.prepareModel(toLang, fromLang);
-      const engine = new TranslationEngine({ sourceLang: fromLang, targetLang: toLang });
-      await engine.init(model, { 'max-length-break': config.maxSentenceLength }, sampleText);
-
-      const info: EngineInfo = {
-        engine,
-        lastUsed: new Date(),
-        fromLang,
-        toLang,
+          const config = getConfig();
+          request.lexicalShortlist = config.lexicalShortlist === true;
+          logger.info(`Creating new engine for ${fromLang} -> ${toLang}`);
+          const model = await models.prepareModel(toLang, fromLang, undefined, request.lexicalShortlist);
+          const engine = new TranslationEngine({ sourceLang: fromLang, targetLang: toLang });
+          await engine.init(model, { 'max-length-break': config.maxSentenceLength }, sampleText);
+          const info: EngineInfo = {
+            engine,
+            // Keep the requested mode even when a model without lex falls back to K9.
+            lexicalShortlist: request.lexicalShortlist,
+            lastUsed: new Date(),
+            fromLang,
+            toLang,
+          };
+          resetIdleTimer(info);
+          engines.set(key, info);
+          logger.info(`Engine created successfully for ${fromLang} -> ${toLang}`);
+          return info;
+        }).finally(() => loadingPromises.delete(key)),
       };
-
-      resetIdleTimer(info);
-      engines.set(key, info);
-
-      logger.info(`Engine created successfully for ${fromLang} -> ${toLang}`);
-
-      return engine;
-    } finally {
-      loadingPromises.delete(key);
+      loadingPromises.set(key, request);
+      loading = request;
     }
-  })();
 
-  loadingPromises.set(key, initPromise);
-  return initPromise;
+    try {
+      const info = await loading.promise;
+      if (info.lexicalShortlist === (getConfig().lexicalShortlist === true)) return info.engine;
+    } catch (error) {
+      if (loading.lexicalShortlist === (getConfig().lexicalShortlist === true)) throw error;
+    }
+    // Configuration changed while waiting; prepare again before serving a translation.
+  }
 }
 
 function resetIdleTimer(info: EngineInfo) {
@@ -283,7 +286,7 @@ export function getEngineRuntimes() {
 }
 
 export async function cleanupAllEngines() {
-  await Promise.allSettled(loadingPromises.values());
+  await Promise.allSettled([...loadingPromises.values()].map(loading => loading.promise));
   const closing: Promise<void>[] = [];
   logger.info(`Cleaning up ${engines.size} engine(s)...`);
 
