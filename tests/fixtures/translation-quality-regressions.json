@@ -1,0 +1,140 @@
+{
+  "description": "已观察到的翻译质量退化案例，供人工对照及后续回归测试使用；original 为原 ONNX 输出，linguaspark 为 LinguaSpark 输出，fast 为 ONNX 候选词表快速模式输出。",
+  "limitations": "这些是筛选出的退化样本，不代表总体错误率；记录的是实际输出，不是所有未来实现必须逐字匹配的标准答案。保留原始标点。",
+  "observed_date": "2026-11-11",
+  "dataset": {
+    "name": "FLORES-200",
+    "archive_url": "https://dl.fbaipublicfiles.com/nllb/flores200_dataset.tar.gz",
+    "archive_sha256": "b8b0b76783024b85797e5cc75064eb83fc5288b41e9654dabc7be6ae944011f6"
+  },
+  "engines": {
+    "original": {
+      "engine": "ONNX Runtime",
+      "version": "1.30.0",
+      "projection": "INT4 TopK9 + FP32 rerank",
+      "cpu_threads": 1
+    },
+    "linguaspark": {
+      "revision": "269605c0a6e78697d94162b71dd97a9d98885276",
+      "server_repository": "https://github.com/LinguaSpark/server",
+      "workers": 1
+    },
+    "fast": {
+      "engine": "ONNX Runtime",
+      "version": "1.30.0",
+      "mtranserver_revision": "b47674862feaa4c2eb9f38cf4e62b5141790ce41",
+      "projection": "lexical-fp32-byte-complete",
+      "cpu_threads": 1
+    }
+  },
+  "models": {
+    "en_zh-Hans": {
+      "source-lex": {
+        "file": "lex.50.50.enzh.s2t.bin",
+        "sha256": "4a5e5827788060f1d718a8132b69440929387514a045796e9b77f935db68c055"
+      },
+      "source-srcvocab": {
+        "file": "srcvocab.enzh.spm",
+        "sha256": "bd9b65504acc6d9726dd281f7defc2adb7c2c22d0688fe2f84697de25197c8c5"
+      },
+      "source-trgvocab": {
+        "file": "trgvocab.enzh.spm",
+        "sha256": "aded6993c36e440284d11cec3f6b8aef9c0e43188a772d80be342a713adf223d"
+      },
+      "source-model": {
+        "file": "model.enzh.intgemm.alphas.bin",
+        "sha256": "4e5accc141373565ddc8fa1565bceaa8d0c3482a82cab8131c719ebcc6c2157c"
+      },
+      "inference-model": {
+        "file": "model.onnx",
+        "sha256": "8247cf605656a0e77be72b8d18679acfdfa5c38046b6da528372aa2cc20d3909"
+      },
+      "shortlist-inference-model": {
+        "sha256": "e23eac4afa287ca0668625f0f6315adf566f9d1f29db94d9d14690d0056f0a99"
+      }
+    },
+    "zh-Hans_en": {
+      "source-vocab": {
+        "file": "vocab.zhen.spm",
+        "sha256": "dff594318ab7d8b7b60b844ab98ebe6b932ae8045fab15235404c787715965b3"
+      },
+      "source-lex": {
+        "file": "lex.50.50.zhen.s2t.bin",
+        "sha256": "8524dd4c93ffd7f0ae7be32f77a7c14fea7cdbbebe34ea6ad0ec368d5ddd8b13"
+      },
+      "source-model": {
+        "file": "model.zhen.intgemm.alphas.bin",
+        "sha256": "5cd149601802fc8a18124a1c1306144dbbedc058630c4ddb2d53aa76fa9c7c06"
+      },
+      "inference-model": {
+        "file": "model.onnx",
+        "sha256": "8fba17d3ab3e85fc1c42f891ca9bef795731bb0dda4f6c8258a733fffd74a948"
+      },
+      "shortlist-inference-model": {
+        "sha256": "ceac8dc6a63438d13a09d2cbd1b2fea09863610d0405ea9910e0311551474a60"
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "triceratops",
+      "pair": "en_zh-Hans",
+      "dataset_split": "dev",
+      "dataset_id": 368,
+      "issue": "三角龙被误译为三头肌",
+      "reference": "三角龙的牙齿不仅能咬碎树叶，还能咬碎非常坚硬的树枝和树根。",
+      "source": "A triceratops' teeth would have been able to crush not only leaves but even very tough branches and roots.",
+      "original": "三角龙的牙齿不仅能压碎树叶,还能压碎非常坚硬的树枝和根部。",
+      "linguaspark": "三头肌的牙齿不仅能压碎树叶,甚至能压碎非常坚硬的枝条和根部。",
+      "fast": "三头肌的牙齿不仅能压碎树叶,甚至能压碎非常坚硬的枝条和根部。"
+    },
+    {
+      "id": "cold-war",
+      "pair": "en_zh-Hans",
+      "dataset_split": "devtest",
+      "dataset_id": 545,
+      "issue": "盟友变成敌人的关系与冷战起因被破坏",
+      "reference": "战争结束两年后，曾经的盟友如今成了敌人，冷战随即开始。",
+      "source": "With two years of the end of the war, the former allies were now enemies and the Cold War began.",
+      "original": "战争结束两年后,昔日的盟友如今成了敌人,冷战由此爆发。",
+      "linguaspark": "战争结束两年后,昔日第二任盟友如今也与冷战爆发。",
+      "fast": "战争结束两年后,昔前盟友如今也与冷战爆发为敌,冷战也爆发了。"
+    },
+    {
+      "id": "divide-by-twelve",
+      "pair": "en_zh-Hans",
+      "dataset_split": "devtest",
+      "dataset_id": 433,
+      "issue": "除以十二被误译为十二分之二等表达",
+      "reference": "因此，这种格式的宽高比（除以 12 得到最简单的整数比）便是 3:2。",
+      "source": "The aspect ratio of this format (dividing by twelve to obtain the simplest whole-number ratio) is therefore said to be 3:2.",
+      "original": "因此,这种格式的宽高比(除以十二以获得最简单的整数比)据称为3:2。",
+      "linguaspark": "因此,这种格式的宽高比(按十二分位进行,以获得最简单的全数比)是3:2。",
+      "fast": "因此,这种格式的宽高比(按十二分之二来获得最简单的全数比)据称为3:2。"
+    },
+    {
+      "id": "bile-duct-cancer",
+      "pair": "zh-Hans_en",
+      "dataset_split": "dev",
+      "dataset_id": 306,
+      "issue": "肝内胆管癌被译为错误拼词",
+      "reference": "The cause of death was announced as intrahepatic bile duct cancer.",
+      "source": "宣布的死因是肝内胆管癌。",
+      "original": "The cause of death was intrahepatic bile duct cancer.",
+      "linguaspark": "The declared cause of death is intrahepatial chonosal cancer.",
+      "fast": "The cause of death was intrahepatial cholerial cancer."
+    },
+    {
+      "id": "madhya-pradesh",
+      "pair": "zh-Hans_en",
+      "dataset_split": "devtest",
+      "dataset_id": 277,
+      "issue": "中央邦地名被误译",
+      "reference": "The Madhya Pradesh Police recovered the stolen laptop and mobile phone.",
+      "source": "中央邦警方追回了被盗的笔记本电脑和手机。",
+      "original": "Madhya Pradesh police recovered stolen laptops and mobile phones.",
+      "linguaspark": "The Central Bater police recovered the stolen laptop and cell phone.",
+      "fast": "The Central Bay police recovered the stolen laptop and cell phone."
+    }
+  ]
+}
