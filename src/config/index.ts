@@ -112,7 +112,23 @@ function withFastAlias(config: Config): Config {
 }
 
 function mergeConfig(current: Config, config: Partial<Config>): Config {
+  if (config.workersPerLanguage !== undefined) validateWorkers(config.workersPerLanguage);
   return withFastAlias({ ...current, ...config, fast: config.fast ?? config.lexicalShortlist ?? current.fast });
+}
+
+function validateWorkers(value: number): number {
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error('workersPerLanguage must be a non-negative safe integer');
+  return value;
+}
+
+function getWorkers(fileConfig: Partial<Config>): number {
+  const flag = '--workers-per-language';
+  const index = process.argv.indexOf(flag);
+  const argument = index >= 0 ? (process.argv[index + 1] ?? '')
+    : process.argv.find(arg => arg.startsWith(`${flag}=`))?.slice(flag.length + 1);
+  const value = argument ?? process.env.MT_WORKERS_PER_LANGUAGE;
+  if (value !== undefined) return validateWorkers(value.trim() ? Number(value) : NaN);
+  return validateWorkers(fileConfig.workersPerLanguage === undefined ? 0 : fileConfig.workersPerLanguage);
 }
 
 function getInt(flag: string, envKey: string, defaultValue: number): number {
@@ -159,7 +175,7 @@ export function getConfig(): Config {
     enableOfflineMode: getBool('--offline', 'MT_OFFLINE', fileConfig.enableOfflineMode ?? false),
 
     workerIdleTimeout: getInt('--worker-idle-timeout', 'MT_WORKER_IDLE_TIMEOUT', fileConfig.workerIdleTimeout ?? 60),
-    workersPerLanguage: getInt('--workers-per-language', 'MT_WORKERS_PER_LANGUAGE', fileConfig.workersPerLanguage ?? 1),
+    workersPerLanguage: getWorkers(fileConfig),
     maxSentenceLength: getInt('--max-sentence-length', 'MT_MAX_SENTENCE_LENGTH', fileConfig.maxSentenceLength ?? 512),
     fullwidthZhPunctuation: getBool('--fullwidth-zh-punctuation', 'MT_FULLWIDTH_ZH_PUNCTUATION', fileConfig.fullwidthZhPunctuation ?? true),
 

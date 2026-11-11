@@ -27,6 +27,7 @@ export interface BackendMeasurement {
   error?: string;
 }
 export interface BackendInfo {
+  runtime?: 'native-async';
   provider: string;
   cpuThreads: number;
   tuning: SessionTuning;
