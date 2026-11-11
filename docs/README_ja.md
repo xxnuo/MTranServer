@@ -156,49 +156,20 @@ mtranserver --offline
 
 ## 性能
 
-キャッシュ無効。3 回の中央値:
+同じ条件で測定した CPU 性能の目安です。ms は低いほど、回/秒は高いほど良好です。
 
-| 方向 | 入力（文字数） | バックエンド | 同時実行 | 平均（ms） | スループット（回/秒） |
+| 方向 | 入力 | 同時実行 | 通常 | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| 英 → 中 | 短文 49–94 | CPU / 6 | 4 | 35.6 | 108.33 |
-| 英 → 中 | 段落 234–344 | CPU / 6 | 1 | 27.7 | 36.31 |
-| 独 → 英 | 短文 50–113 | CPU / 5 | 4 | 39.7 | 96.51 |
-| 独 → 英 | 段落 232–395 | CPU / 5 | 1 | 33.4 | 30.00 |
+| 英 → 中 | 短文 | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
+| 英 → 中 | 段落 | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
+| 中 → 英 | 短文 | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
+| 中 → 英 | 段落 | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
+| 英 → 中 | 短文 | 8 | 317 回/秒 | 426 回/秒 | 537 回/秒 |
+| 中 → 英 | 短文 | 8 | 173 回/秒 | 493 回/秒 | 534 回/秒 |
 
-| 方向 | 初回読み込みと翻訳（秒） | ピークメモリ（MiB） | モデル（MiB） |
-| --- | --- | --- | --- |
-| 英 → 中 | 33.47 | 391.7 | 118.8 |
-| 独 → 英 | 26.44 | 345.1 | 71.9 |
+英中・中英の両モデルを読み込んだ状態のメモリ：約 通常 622 MiB、Fast 652 MiB、LinguaSpark 190 MiB。
 
-## Fast モード
-
-既定では無効です。`mtranserver --fast` または `MT_FAST=true mtranserver` で有効、`--no-fast` で無効にします。ライブラリでは `new MTran({ fast: true })` を指定します。候補語彙を使って出力層の計算量を減らしますが、誤訳が増える場合があります。辞書がないモデルは通常モードで動作します。切り替え後の初回リクエストではモデルの再変換が必要な場合があります。旧名 `--lexical-shortlist` と `MT_LEXICAL_SHORTLIST` も使用できます。
-
-### Fast と LinguaSpark の同一マシン比較
-
-逐次リクエストの平均遅延（ms、小さいほど良い）：
-
-| 方向 / 入力 | 通常 | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| 英→中 短文 | 16.87 | 8.11 | 14.54 |
-| 英→中 段落 | 55.40 | 36.29 | 56.97 |
-| 中→英 短文 | 34.68 | 11.18 | 18.89 |
-| 中→英 段落 | 121.05 | 27.15 | 59.43 |
-
-短文を8並列で処理したスループット（件/秒、大きいほど良い）：
-
-| 方向 / 入力 | 通常 | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| 英→中 | 70.0 | 103.7 | 319.6 |
-| 中→英 | 37.9 | 138.0 | 293.3 |
-
-両方向のモデルを読み込み、上記の負荷を処理した後のプロセス RSS（3ラウンドの中央値）：通常 **542.4 MiB**、Fast **575.9 MiB**、LinguaSpark **190.4 MiB**。初回変換時のピークメモリではありません。
-
-2026-11-11、Intel Core i5-14400、Linux x64、CPU 0–15 に制限。同じ Firefox 英中・中英モデルと入力を使用し、キャッシュを無効化。MTranServer は CPU スレッド数と同時実行数を自動選択し、LinguaSpark は 16 workers（エンジン `269605c`）を使用。エンジンを一つずつ実行し、順番を変えて3ラウンド測定。全25テキストを事前にウォームアップし、各ラウンドの平均遅延または処理件数/秒の中央値を掲載。起動、変換、ウォームアップは含みません。各方向10短文、英中3段落、中英2段落。逐次処理は各ラウンド3回、並列処理は24回繰り返します。上の既存表とは別の測定であり、表をまたいだ直接比較はできません。
-
-Fast と LinguaSpark は専門用語、地名、構文で誤訳する場合があります。[25組の品質比較](../tests/fixtures/translation-quality-regressions.json)を参照してください。選択された退化例であり、全体の誤訳率を示すものではありません。
-
-測定方法と生データ: [生データ](benchmarks/fast-linguaspark-2026-11-11.json) · [入力テキスト](benchmarks/fast-corpus.json) · [測定スクリプト](../scripts/benchmark-engines.py).
+通常・Fast の両モードが並列実行に対応しています。`--fast` で Fast を有効にできます。誤訳が増える可能性があるため、既定では無効です。[訳文比較](../tests/fixtures/translation-quality-regressions.json)。
 
 ## 類似プロジェクト
 
@@ -208,7 +179,7 @@ Fast と LinguaSpark は専門用語、地名、構文で誤訳する場合が�
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 中程度 | [コミュニティのデータ](https://community.libretranslate.com/t/performance-benchmark-data/486): 中位 CPU で約 3 文/秒、上位 CPU で約 15–20 文/秒 |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | 高い | 速い | [CTranslate2 のベンチマーク](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | その他の大規模モデル | 極めて高い | 非常に遅い | 品質は良いがハードウェア要件が高い。高同時実行には vLLM がよく使われます |
-| 本プロジェクト | 英訳中のピーク約 392 MiB | 非常に速い | CPU 翻訳、キャッシュ無効 |
+| 本プロジェクト | モデルと同時実行数による | 非常に速い | CPU 翻訳、キャッシュ無効 |
 
 ## その他
 

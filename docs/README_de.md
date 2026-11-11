@@ -156,49 +156,20 @@ Umgebungsvariablen und weitere Optionen stehen in [API_de.md](API_de.md), oder `
 
 ## Leistung
 
-Cache aus. Median aus drei Läufen:
+CPU-Vergleich aus demselben Testlauf, als Richtwert. Weniger ms und mehr Anfragen/s sind besser.
 
-| Richtung | Eingabe (Zeichen) | Backend | Parallelität | Mittel (ms) | Durchsatz (Anfragen/s) |
+| Richtung | Eingabe | Parallelität | Standard | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
 | --- | --- | --- | --- | --- | --- |
-| Englisch → Chinesisch | Kurz 49–94 | CPU / 6 | 4 | 35.6 | 108.33 |
-| Englisch → Chinesisch | Absatz 234–344 | CPU / 6 | 1 | 27.7 | 36.31 |
-| Deutsch → Englisch | Kurz 50–113 | CPU / 5 | 4 | 39.7 | 96.51 |
-| Deutsch → Englisch | Absatz 232–395 | CPU / 5 | 1 | 33.4 | 30.00 |
+| Englisch → Chinesisch | Kurz | 1 | 8.3 ms | 7.0 ms | 10.4 ms |
+| Englisch → Chinesisch | Absatz | 1 | 31.0 ms | 27.6 ms | 44.8 ms |
+| Chinesisch → Englisch | Kurz | 1 | 10.5 ms | 6.0 ms | 9.5 ms |
+| Chinesisch → Englisch | Absatz | 1 | 46.6 ms | 29.0 ms | 48.5 ms |
+| Englisch → Chinesisch | Kurz | 8 | 317 Anfragen/s | 426 Anfragen/s | 537 Anfragen/s |
+| Chinesisch → Englisch | Kurz | 8 | 173 Anfragen/s | 493 Anfragen/s | 534 Anfragen/s |
 
-| Richtung | Erstes Laden und Übersetzen (s) | Speicherhöchstwert (MiB) | Modell (MiB) |
-| --- | --- | --- | --- |
-| Englisch → Chinesisch | 33.47 | 391.7 | 118.8 |
-| Deutsch → Englisch | 26.44 | 345.1 | 71.9 |
+Mit beiden Übersetzungsrichtungen geladen: Standard etwa 622 MiB, Fast 652 MiB, LinguaSpark 190 MiB.
 
-## Fast-Modus
-
-Standardmäßig aus. Aktivierung: `mtranserver --fast` oder `MT_FAST=true mtranserver`; Deaktivierung: `--no-fast`. In der Bibliothek: `new MTran({ fast: true })`. Fast reduziert die Berechnung der Ausgabeschicht durch eine lexikalische Kandidatenliste, kann aber mehr Fehlübersetzungen verursachen. Ohne Lexikon wird der ursprüngliche Modus verwendet. Beim ersten Aufruf nach einem Wechsel kann eine erneute Modellkonvertierung nötig sein. `--lexical-shortlist` und `MT_LEXICAL_SHORTLIST` bleiben als Aliasse erhalten.
-
-### Fast und LinguaSpark auf demselben Rechner
-
-Mittlere Latenz bei sequenziellen Anfragen (ms, niedriger ist besser):
-
-| Richtung / Eingabe | Original | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| EN→ZH kurz | 16.87 | 8.11 | 14.54 |
-| EN→ZH Absatz | 55.40 | 36.29 | 56.97 |
-| ZH→EN kurz | 34.68 | 11.18 | 18.89 |
-| ZH→EN Absatz | 121.05 | 27.15 | 59.43 |
-
-Durchsatz kurzer Texte bei 8 parallelen Anfragen (Anfragen/s, höher ist besser):
-
-| Richtung / Eingabe | Original | Fast | [LinguaSpark](https://github.com/LinguaSpark/server) |
-| --- | --- | --- | --- |
-| EN→ZH | 70.0 | 103.7 | 319.6 |
-| ZH→EN | 37.9 | 138.0 | 293.3 |
-
-Prozess-RSS nach der Last mit beiden geladenen Richtungen (Median aus drei Runden): Original **542.4 MiB**, Fast **575.9 MiB**, LinguaSpark **190.4 MiB**. Dies ist nicht der Spitzenverbrauch während der ersten Konvertierung.
-
-2026-11-11, Intel Core i5-14400, Linux x64, auf CPUs 0–15 begrenzt. Identische Firefox-Modelle für EN/ZH und identische Texte, Cache deaktiviert. MTranServer wählt CPU-Threads und Parallelität automatisch; LinguaSpark nutzt 16 Worker (Engine `269605c`). Nur eine Engine läuft gleichzeitig; drei Runden mit wechselnder Reihenfolge und vorherigem Aufwärmen aller 25 Texte. Angegeben ist der Median der drei Rundenmittelwerte bzw. Durchsatzwerte, ohne Start, Konvertierung und Aufwärmen. Je Richtung 10 kurze Texte; 3 EN→ZH- und 2 ZH→EN-Absätze. Sequenziell 3 Wiederholungen pro Runde, parallel 24. Die älteren Tabellen oben stammen aus einer separaten Messung und sind nicht direkt vergleichbar.
-
-Fast und LinguaSpark können Fachbegriffe, Ortsnamen und Satzbeziehungen falsch übersetzen; siehe [25 Qualitätsvergleiche](../tests/fixtures/translation-quality-regressions.json). Diese ausgewählten Regressionen zeigen keine allgemeine Fehlerquote.
-
-Methode und Rohdaten: [Rohdaten](benchmarks/fast-linguaspark-2026-11-11.json) · [Eingabetexte](benchmarks/fast-corpus.json) · [Benchmark-Skript](../scripts/benchmark-engines.py).
+Standard und Fast unterstützen parallele Verarbeitung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 
 ## Ähnliche Projekte
 
@@ -208,7 +179,7 @@ Methode und Rohdaten: [Rohdaten](benchmarks/fast-linguaspark-2026-11-11.json) ·
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch | Mittel | [Community-Daten](https://community.libretranslate.com/t/performance-benchmark-data/486): etwa 3 Sätze/s auf einer Mittelklasse-CPU, etwa 15–20 auf einer High-End-CPU |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | Hoch | Schnell | [CTranslate2-Benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Andere große Modelle | Extrem hoch | Sehr langsam | Gute Qualität, hohe Hardware-Anforderungen; für hohe Parallelität wird oft vLLM verwendet |
-| Dieses Projekt | Etwa 392 MiB Spitze für Englisch nach Chinesisch | Extrem schnell | CPU-Übersetzung, Cache aus |
+| Dieses Projekt | Abhängig von Modellen und Parallelität | Extrem schnell | CPU-Übersetzung, Cache aus |
 
 ## Weiteres
 

@@ -58,7 +58,8 @@ def graphs(model_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ABBA HTTP comparison: fast ONNX baseline versus native-async; Linux, preinstalled Node and models.")
+    parser = argparse.ArgumentParser(description="ABBA HTTP comparison: ONNX baseline versus native-async; Linux, preinstalled Node and models.")
+    parser.add_argument('--standard', action='store_true', help='Compare ordinary mode instead of Fast')
     for name in ("baseline", "candidate", "model-dir", "config-dir", "output"):
         parser.add_argument("--" + name, type=pathlib.Path, required=True)
     args = parser.parse_args()
@@ -110,7 +111,7 @@ def main():
         parser.error("baseline and candidate must use the same ORT versions")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     report = {
-        "started_at": now(), "completed": False, "order": ["baseline", "candidate", "candidate", "baseline"],
+        "started_at": now(), "completed": False, "fast": not args.standard, "order": ["baseline", "candidate", "candidate", "baseline"],
         "input": {"path": str(corpus_path), "sha256": sha(corpus_path)},
         "script_sha256": sha(pathlib.Path(__file__)), "artifacts": artifacts,
         "model_dir": str(args.model_dir), "config_dir": str(args.config_dir),
@@ -140,7 +141,7 @@ def main():
                 url = f"http://127.0.0.1:{port}"
                 command = [
                     "node", str(bundle), "--host", "127.0.0.1", "--port", str(port),
-                    "--fast", "--workers-per-language", "0", "--cache-size", "0",
+                    "--no-fast" if args.standard else "--fast", "--workers-per-language", "0", "--cache-size", "0",
                     "--worker-idle-timeout", "3600", "--api-token", "",
                     "--offline", "--no-ui", "--no-check-update", "--log-level", "info",
                     "--fullwidth-zh-punctuation=false", "--model-dir", str(args.model_dir),
@@ -161,7 +162,7 @@ def main():
                         else:
                             raise RuntimeError(f"{mode} readiness timeout; see {log.name}")
                         settings = state["config"]["server"]
-                        assert settings["fast"] is True and settings["cacheSize"] == 0, settings
+                        assert settings["fast"] == (not args.standard) and settings["cacheSize"] == 0, settings
                         assert settings["workersPerLanguage"] == 0, settings
 
                         def translate(index):

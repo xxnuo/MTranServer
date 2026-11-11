@@ -61,7 +61,7 @@ for round in range(3):
             env.update(MODELS_DIR=str(work / 'linguaspark-models'), PORT=str(port), IP='127.0.0.1', NUM_WORKERS=str(len(cpus)), RUST_LOG='warn')
         else:
             directory = work / name
-            command = ['node', str(root / 'dist/main.js'), '--host', '127.0.0.1', '--port', str(port), '--cache-size', '0', '--offline', '--no-ui', '--no-check-update', '--log-level', 'error', '--fullwidth-zh-punctuation=false', '--model-dir', str(directory / 'models'), '--config-dir', str(directory / 'config'), '--log-dir', str(directory / 'logs'), '--fast' if name == 'fast' else '--no-fast']
+            command = ['node', str(root / 'dist/main.js'), '--host', '127.0.0.1', '--port', str(port), '--cache-size', '0', '--workers-per-language', '0', '--offline', '--no-ui', '--no-check-update', '--log-level', 'error', '--fullwidth-zh-punctuation=false', '--model-dir', str(directory / 'models'), '--config-dir', str(directory / 'config'), '--log-dir', str(directory / 'logs'), '--fast' if name == 'fast' else '--no-fast']
         with (work / f'{round}-{name}.log').open('w') as log:
             proc = subprocess.Popen(['taskset', '-c', args.cpus, *command], env=env, stdout=log, stderr=log)
             try:
@@ -105,7 +105,8 @@ for round in range(3):
                         results.append({'round': round, 'engine': name, 'group': group, 'concurrency': concurrency, 'requests': len(indices), 'wall_ms': wall * 1000, 'requests_per_second': len(indices) / wall, 'latencies_ms': [ms for ms, _ in measured]})
                 if name != 'linguaspark':
                     runtimes = request(url + '/ui/api/settings')['engines']
-                    runtime_selections.append({'round': round, 'engine': name, 'runtimes': [{key: engine.get(key) for key in ['from', 'to', 'provider', 'cpuThreads', 'maxConcurrentRuns', 'tuning']} for engine in runtimes]})
+                    assert all(engine.get('runtime') == 'native-async' for engine in runtimes), runtimes
+                    runtime_selections.append({'round': round, 'engine': name, 'runtimes': [{key: engine.get(key) for key in ['from', 'to', 'provider', 'runtime', 'cpuThreads', 'maxConcurrentRuns', 'tuning']} for engine in runtimes]})
                 print(round, name, 'PASS', flush=True)
                 for row in results:
                     if row['round'] == round and row['engine'] == name:
@@ -122,7 +123,7 @@ for name in ['original', 'fast', 'linguaspark']:
         assert len(rows) == 3
         summary.append({'engine': name, 'group': group, 'concurrency': concurrency, 'mean_latency_ms': statistics.median(statistics.mean(x['latencies_ms']) for x in rows), 'requests_per_second': statistics.median(x['requests_per_second'] for x in rows), 'requests_total': sum(x['requests'] for x in rows)})
 cpu = next(line.split(':', 1)[1].strip() for line in pathlib.Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name'))
-report = {'finished_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'platform': 'Linux x64', 'cpu': cpu, 'allowed_cpus': cpus, 'cache_size': 0, 'rounds': 3, 'linguaspark_workers': len(cpus), 'linguaspark_revision': args.linguaspark_revision, 'linguaspark_binary_sha256': sha(args.linguaspark.resolve()), 'mtran_main_sha256': sha(root / 'dist/main.js'), 'mtran_worker_sha256': sha(root / 'dist/converter-worker.js'), 'corpus_sha256': sha(corpus_path), 'runtime_selections': runtime_selections, 'node_version': subprocess.check_output(['node', '--version'], text=True).strip(), 'onnxruntime_version': json.loads((root / 'node_modules/onnxruntime-node/package.json').read_text())['version'], 'models': models, 'summary': summary, 'results': results, 'translations': [{'engine': name, 'corpus_index': index, 'text': text} for (name, index), text in sorted(outputs.items())]}
+report = {'finished_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'platform': 'Linux x64', 'cpu': cpu, 'allowed_cpus': cpus, 'cache_size': 0, 'rounds': 3, 'linguaspark_workers': len(cpus), 'linguaspark_revision': args.linguaspark_revision, 'linguaspark_binary_sha256': sha(args.linguaspark.resolve()), 'mtran_main_sha256': sha(root / 'dist/main.js'), 'native_addon_sha256': sha(root / 'dist/onnx-async-linux-x64.node'), 'uv_threadpool_size': os.environ.get('UV_THREADPOOL_SIZE', '4'), 'mtran_worker_sha256': sha(root / 'dist/converter-worker.js'), 'corpus_sha256': sha(corpus_path), 'runtime_selections': runtime_selections, 'node_version': subprocess.check_output(['node', '--version'], text=True).strip(), 'onnxruntime_version': json.loads((root / 'node_modules/onnxruntime-node/package.json').read_text())['version'], 'models': models, 'summary': summary, 'results': results, 'translations': [{'engine': name, 'corpus_index': index, 'text': text} for (name, index), text in sorted(outputs.items())]}
 args.output.parent.mkdir(parents=True, exist_ok=True)
 args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
 print(args.output, flush=True)
