@@ -1,0 +1,177 @@
+{
+  "created": 1794556332.1319618,
+  "host": {
+    "cpu": "Intel(R) Core(TM) i5-14400",
+    "node": "v26.13.1",
+    "affinity": "Cpus_allowed_list:\t4,6,8,10"
+  },
+  "mechanism": "Unsigned INT4 x signed INT8 VNNI with integer zero-point correction; preserves per-block floating-point FMA and reduction order. Weights remain INT4. Final experiment preserves original ORT quantization, prepacking, and scheduling.",
+  "validation": {
+    "realHiddenVectors": 1146,
+    "realLogitsCompared": 54368000,
+    "boundaryVectors": 284,
+    "parallelTailAndFallbackCalls": 480,
+    "goldenSentences": 39,
+    "timedFullModelRequests": 4992,
+    "allTimedOutputsExact": true,
+    "runtimeFilesUnmodified": true,
+    "sanitizers": {
+      "address": true,
+      "undefinedBehavior": true,
+      "boundaryVectors": 284,
+      "leakDetection": false
+    }
+  },
+  "results": [
+    {
+      "pair": "en_zh-Hans",
+      "intraOpThreads": 1,
+      "concurrency": 1,
+      "baselineRps": 34.60352343714058,
+      "candidateRps": 40.40164035785811,
+      "throughputGainPercent": 16.755857048055134,
+      "wallTimeReductionPercent": 14.35119185597571,
+      "baselineBlockMs": [
+        4650.444547,
+        4597.16865
+      ],
+      "candidateBlockMs": [
+        3970.2889840000007,
+        3950.181500999999
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "intraOpThreads": 1,
+      "concurrency": 4,
+      "baselineRps": 88.0443076529018,
+      "candidateRps": 102.19604423141625,
+      "throughputGainPercent": 16.07342593266228,
+      "wallTimeReductionPercent": 13.847636359063753,
+      "baselineBlockMs": [
+        1770.1937850000004,
+        1864.3398779999989
+      ],
+      "candidateBlockMs": [
+        1553.5706279999995,
+        1577.6660300000003
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "intraOpThreads": 2,
+      "concurrency": 1,
+      "baselineRps": 49.17600612675134,
+      "candidateRps": 52.631725268758615,
+      "throughputGainPercent": 7.027246444333346,
+      "wallTimeReductionPercent": 6.565848116057371,
+      "baselineBlockMs": [
+        3232.586593,
+        3274.651899999997
+      ],
+      "candidateBlockMs": [
+        3094.861601999997,
+        2985.1214949999994
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "intraOpThreads": 2,
+      "concurrency": 4,
+      "baselineRps": 89.76238120679929,
+      "candidateRps": 108.71157960197256,
+      "throughputGainPercent": 21.110400749638213,
+      "wallTimeReductionPercent": 17.430708361107683,
+      "baselineBlockMs": [
+        1500.5147819999984,
+        2064.453032999998
+      ],
+      "candidateBlockMs": [
+        1518.1952949999977,
+        1425.3733769999963
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "intraOpThreads": 1,
+      "concurrency": 1,
+      "baselineRps": 20.2029942916455,
+      "candidateRps": 22.260284475696466,
+      "throughputGainPercent": 10.183095408296538,
+      "wallTimeReductionPercent": 9.241976158467757,
+      "baselineBlockMs": [
+        7847.136182000002,
+        7200.138276999991
+      ],
+      "candidateBlockMs": [
+        6916.377721000004,
+        6740.2312200000015
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "intraOpThreads": 1,
+      "concurrency": 4,
+      "baselineRps": 47.95677096400817,
+      "candidateRps": 42.76570934250954,
+      "throughputGainPercent": -10.824460273596316,
+      "wallTimeReductionPercent": -12.138373714144546,
+      "baselineBlockMs": [
+        3232.15034,
+        3106.8919659999956
+      ],
+      "candidateBlockMs": [
+        3847.5731010000018,
+        3260.9258499999996
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "intraOpThreads": 2,
+      "concurrency": 1,
+      "baselineRps": 29.550029025812453,
+      "candidateRps": 30.827018364623342,
+      "throughputGainPercent": 4.321448678427409,
+      "wallTimeReductionPercent": 4.142435456152793,
+      "baselineBlockMs": [
+        5144.959017000001,
+        5142.67893200001
+      ],
+      "candidateBlockMs": [
+        4860.157481000002,
+        5001.321706000002
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "intraOpThreads": 2,
+      "concurrency": 4,
+      "baselineRps": 46.921033529994396,
+      "candidateRps": 47.24198705359041,
+      "throughputGainPercent": 0.6840291004903909,
+      "wallTimeReductionPercent": 0.6793819303830939,
+      "baselineBlockMs": [
+        3249.5706999999966,
+        3229.39996900002
+      ],
+      "candidateBlockMs": [
+        3162.7139310000057,
+        3272.239782000004
+      ]
+    }
+  ],
+  "artifacts": {
+    "kernel": "4fc03e3e2e6037d9c322cb4f040d2a75d0849725d217aecb7c5f8aab1f85659d",
+    "addon": "23635330b5abce21af6a84846b071ab97f2e7ba297892eee93f0c9dc5a593ca0",
+    "runtime": "ffb75a925ba05e47b235bb66e3e3911714a80b328a9c9425539feb204aa32a23"
+  },
+  "limitations": [
+    "Isolated experiment only; no production integration, version bump, release, or HTTP benchmark.",
+    "Runtime pointer replacement is tied to this exact ELF fingerprint and is not a shipping implementation.",
+    "CPU affinity limited to four physical i5-14400 P-cores; other CPUs, GPUs and wider language coverage untested.",
+    "Two timed blocks per arm per condition, not a confidence interval; small or mixed gains need longer independent confirmation.",
+    "Earlier per-call atomic counting and custom-op scheduling experiments are excluded from final performance results.",
+    "Performance-counter PC samples are not precise-IP and cannot attribute exclusive cycles to single instructions."
+  ],
+  "adoptionDecision": "Keep as isolated research prototype. Single-request improvement is promising, but mixed concurrent results and exact-build runtime patching do not justify production integration."
+}
