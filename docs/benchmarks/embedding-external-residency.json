@@ -1,0 +1,3347 @@
+{
+  "matrix": {
+    "started": "2026-11-13T12:10:38.638Z",
+    "scope": "Native shared session, one session alive per block, fixed corpus; warm filesystem cache",
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "mode": "standard",
+        "source": "models/en_zh-Hans/model.onnx",
+        "sourceSha256": "8247cf605656a0e77be72b8d18679acfdfa5c38046b6da528372aa2cc20d3909",
+        "externalTensors": 2,
+        "bytes": 98304000,
+        "file": ".tmp/external-embeddings/en_zh-Hans-standard/model.onnx",
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 177.37079599999993,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 3324.5048289999995,
+            "cpuMs": 3293.773,
+            "p50": 12.37941899999987,
+            "p95": 62.637032999999974
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 177.37079599999993,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1254.4043969999993,
+            "cpuMs": 4279.384,
+            "p50": 16.198260999999547,
+            "p95": 80.06099300000005
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 91.2434919999996,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 3101.2472359999992,
+            "cpuMs": 3073.904,
+            "p50": 11.41295700000046,
+            "p95": 53.52470900000117
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 91.2434919999996,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1379.565634999999,
+            "cpuMs": 4728.222,
+            "p50": 15.821444000001065,
+            "p95": 102.1254740000004
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 93.74890400000004,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2948.722683,
+            "cpuMs": 2925.34,
+            "p50": 10.860273999998753,
+            "p95": 56.578529000000344
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 93.74890400000004,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1213.7628479999985,
+            "cpuMs": 4165.633,
+            "p50": 15.046374999999898,
+            "p95": 81.33490100000017
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 145.97127000000182,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 3110.0169380000007,
+            "cpuMs": 3085.946,
+            "p50": 11.227640000000974,
+            "p95": 60.08262999999715
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 145.97127000000182,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1154.3385669999989,
+            "cpuMs": 3906.432,
+            "p50": 14.627070000002277,
+            "p95": 76.16638099999909
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 142.59437600000092,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 3060.800232999998,
+            "cpuMs": 3039.166,
+            "p50": 11.158215999999811,
+            "p95": 58.24566899999991
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 142.59437600000092,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1182.8411170000036,
+            "cpuMs": 3975.571,
+            "p50": 14.702993999999308,
+            "p95": 76.86282500000016
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 95.44807800000126,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2929.0989200000004,
+            "cpuMs": 2916.583,
+            "p50": 10.90428299999985,
+            "p95": 54.2638369999986
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 95.44807800000126,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1100.3536679999997,
+            "cpuMs": 3746.66,
+            "p50": 14.171272999999928,
+            "p95": 79.17924100000164
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 88.72361799999999,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 3155.686965000001,
+            "cpuMs": 3124.583,
+            "p50": 12.081636999999319,
+            "p95": 58.98190500000055
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 88.72361799999999,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1173.7978860000003,
+            "cpuMs": 3993.469,
+            "p50": 15.162226000000373,
+            "p95": 76.09933099999762
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 139.35000100000616,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2904.988427000004,
+            "cpuMs": 2891.831,
+            "p50": 10.817379000000074,
+            "p95": 54.59434400000464
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 139.35000100000616,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1131.6013530000055,
+            "cpuMs": 3813.83,
+            "p50": 14.628132999998343,
+            "p95": 79.02994500000204
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 138.240174999999,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2105.232367999997,
+            "cpuMs": 3425.777,
+            "p50": 7.82143100000394,
+            "p95": 38.42251300000498
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 138.240174999999,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1008.8718640000006,
+            "cpuMs": 3655.302,
+            "p50": 13.361699000000954,
+            "p95": 71.53865400000359
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 90.2827030000044,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2264.9762330000012,
+            "cpuMs": 3694.021,
+            "p50": 8.47324999999546,
+            "p95": 41.29132299999765
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 90.2827030000044,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1111.3217060000025,
+            "cpuMs": 4041.557,
+            "p50": 15.205325000002631,
+            "p95": 81.56423400000494
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 94.49643199999991,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2141.964503000003,
+            "cpuMs": 3490.503,
+            "p50": 7.934622000000672,
+            "p95": 37.56448000000091
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 94.49643199999991,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1008.4833360000048,
+            "cpuMs": 3656.093,
+            "p50": 13.331321999998181,
+            "p95": 69.62023100000079
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 138.12545800000225,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2335.260961,
+            "cpuMs": 3792.837,
+            "p50": 8.46752099999867,
+            "p95": 41.08195100000012
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 138.12545800000225,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1058.579233999997,
+            "cpuMs": 3857.982,
+            "p50": 14.376696999999695,
+            "p95": 75.84333100000367
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 140.46725099999458,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2200.225993,
+            "cpuMs": 3558.21,
+            "p50": 8.199887999995553,
+            "p95": 40.30549500000052
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 140.46725099999458,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1117.1983279999986,
+            "cpuMs": 4071.431,
+            "p50": 14.290949999995064,
+            "p95": 96.03938000000198
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 89.17636800000037,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2193.960210999998,
+            "cpuMs": 3553.802,
+            "p50": 7.942517000003136,
+            "p95": 39.574289999996836
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 89.17636800000037,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1023.2547760000016,
+            "cpuMs": 3714.124,
+            "p50": 14.27476100000058,
+            "p95": 81.04280499999732
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 92.24093900000298,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2183.610858,
+            "cpuMs": 3557.729,
+            "p50": 8.329690999999002,
+            "p95": 40.61773600000015
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 92.24093900000298,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1107.4381540000031,
+            "cpuMs": 3857.738,
+            "p50": 14.928994999994757,
+            "p95": 89.32692599999427
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 139.66993800000637,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 2197.345788999999,
+            "cpuMs": 3572.166,
+            "p50": 8.32772699999623,
+            "p95": 39.60427399999753
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 139.66993800000637,
+            "requests": 120,
+            "tokens": 3558,
+            "ms": 1061.1043559999962,
+            "cpuMs": 3761.184,
+            "p50": 14.816101000003982,
+            "p95": 79.31065499999386
+          }
+        ],
+        "validation": [
+          {
+            "index": 0,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 1,
+            "matched": true,
+            "tokens": 13
+          },
+          {
+            "index": 2,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 3,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 4,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 5,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 6,
+            "matched": true,
+            "tokens": 15
+          },
+          {
+            "index": 7,
+            "matched": true,
+            "tokens": 10
+          },
+          {
+            "index": 8,
+            "matched": true,
+            "tokens": 15
+          },
+          {
+            "index": 9,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 10,
+            "matched": true,
+            "tokens": 61
+          },
+          {
+            "index": 11,
+            "matched": true,
+            "tokens": 58
+          },
+          {
+            "index": 12,
+            "matched": true,
+            "tokens": 56
+          },
+          {
+            "index": 13,
+            "matched": true,
+            "tokens": 5
+          },
+          {
+            "index": 14,
+            "matched": true,
+            "tokens": 4
+          },
+          {
+            "index": 15,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 16,
+            "matched": true,
+            "tokens": 13
+          },
+          {
+            "index": 17,
+            "matched": true,
+            "tokens": 9
+          },
+          {
+            "index": 18,
+            "matched": true,
+            "tokens": 244
+          },
+          {
+            "index": 19,
+            "matched": true,
+            "tokens": 10
+          }
+        ]
+      },
+      {
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "source": ".tmp/onnx-production/en_zh-Hans.onnx",
+        "sourceSha256": "e23eac4afa287ca0668625f0f6315adf566f9d1f29db94d9d14690d0056f0a99",
+        "externalTensors": 2,
+        "bytes": 98304000,
+        "file": ".tmp/external-embeddings/en_zh-Hans-fast/model.onnx",
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 131.03344900000957,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1358.0055550000106,
+            "cpuMs": 1346.97,
+            "p50": 5.32786400000623,
+            "p95": 31.16551299999992
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 131.03344900000957,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 574.9792259999958,
+            "cpuMs": 2027.913,
+            "p50": 7.581208000003244,
+            "p95": 56.98326100000122
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 70.95364500000142,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1396.6101389999967,
+            "cpuMs": 1394.019,
+            "p50": 5.540767999991658,
+            "p95": 31.28205500000331
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 70.95364500000142,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 564.1143089999969,
+            "cpuMs": 1985.285,
+            "p50": 7.226133000003756,
+            "p95": 52.515744000003906
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 69.22712799999863,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1394.6980320000002,
+            "cpuMs": 1387.113,
+            "p50": 5.683409999997821,
+            "p95": 29.572933000003104
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 69.22712799999863,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 570.8965630000021,
+            "cpuMs": 2008.199,
+            "p50": 7.523090999995475,
+            "p95": 53.70821200001228
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 118.20636700000614,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1445.8578220000054,
+            "cpuMs": 1438.959,
+            "p50": 5.89700399999856,
+            "p95": 34.72594899999967
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 118.20636700000614,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 583.0268399999914,
+            "cpuMs": 2053.949,
+            "p50": 7.46007699999609,
+            "p95": 63.92511299999023
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 121.19836900000519,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1418.832494999995,
+            "cpuMs": 1412.546,
+            "p50": 5.504813999999897,
+            "p95": 40.75208400000702
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 121.19836900000519,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 584.8807529999904,
+            "cpuMs": 2042.02,
+            "p50": 7.653195999999298,
+            "p95": 51.479208999997354
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 71.01655800000299,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1415.9940849999984,
+            "cpuMs": 1396.862,
+            "p50": 5.706865000000107,
+            "p95": 32.02392200000759
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 71.01655800000299,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 564.2210950000008,
+            "cpuMs": 1990.238,
+            "p50": 7.346743999994942,
+            "p95": 54.33289999999397
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 70.8612129999965,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1365.9465960000089,
+            "cpuMs": 1351.639,
+            "p50": 5.356721999996807,
+            "p95": 35.643350999991526
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 70.8612129999965,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 560.6517409999942,
+            "cpuMs": 1967.032,
+            "p50": 7.306473000004189,
+            "p95": 52.21017900000152
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 122.58407099999022,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1421.5793290000001,
+            "cpuMs": 1415.982,
+            "p50": 5.355563000004622,
+            "p95": 29.52718200000527
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 122.58407099999022,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 568.3428639999911,
+            "cpuMs": 1974.862,
+            "p50": 7.427164000007906,
+            "p95": 53.25230200000806
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 118.49101699999301,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1402.6656189999921,
+            "cpuMs": 2149.774,
+            "p50": 5.647328999999445,
+            "p95": 29.332084999987273
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 118.49101699999301,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 637.8556089999911,
+            "cpuMs": 2319.277,
+            "p50": 8.160470000002533,
+            "p95": 54.44882799999323
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 71.34046399999352,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1363.5698140000022,
+            "cpuMs": 2107.995,
+            "p50": 5.346748000010848,
+            "p95": 27.678885000001173
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 71.34046399999352,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 653.7343959999998,
+            "cpuMs": 2376.425,
+            "p50": 8.487789999999222,
+            "p95": 59.568014999997104
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 72.26590500000748,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1367.4328400000086,
+            "cpuMs": 2104.054,
+            "p50": 5.358519999994314,
+            "p95": 31.454125999996904
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 72.26590500000748,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 626.909289999996,
+            "cpuMs": 2273.649,
+            "p50": 8.312122000003,
+            "p95": 59.79238400000031
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 124.24767100000463,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1378.266603000011,
+            "cpuMs": 2116.889,
+            "p50": 5.493607000011252,
+            "p95": 27.747273999993922
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 124.24767100000463,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 629.2570919999998,
+            "cpuMs": 2272.767,
+            "p50": 8.238291000001482,
+            "p95": 60.25709799998731
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 121.3599899999972,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1366.0828489999985,
+            "cpuMs": 2115.584,
+            "p50": 5.455550999991829,
+            "p95": 28.00167300000612
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 121.3599899999972,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 615.8854299999948,
+            "cpuMs": 2239.592,
+            "p50": 7.919494000001578,
+            "p95": 52.72664399999485
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 70.89474199998949,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1392.535539000004,
+            "cpuMs": 2138.519,
+            "p50": 5.36506900000677,
+            "p95": 30.284150000006775
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 70.89474199998949,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 655.5596490000025,
+            "cpuMs": 2365.58,
+            "p50": 8.300784000006388,
+            "p95": 60.99300800000492
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 71.87077199999476,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1381.2749429999967,
+            "cpuMs": 2122.856,
+            "p50": 5.4067269999941345,
+            "p95": 28.120748999994248
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 71.87077199999476,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 635.1645189999981,
+            "cpuMs": 2300.56,
+            "p50": 8.281675000005635,
+            "p95": 56.84467199999199
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 120.23841599999287,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 1370.3285009999963,
+            "cpuMs": 2114.16,
+            "p50": 5.401529000009759,
+            "p95": 28.403850999995484
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 120.23841599999287,
+            "requests": 120,
+            "tokens": 3546,
+            "ms": 634.9194330000028,
+            "cpuMs": 2286.77,
+            "p50": 8.216920000006212,
+            "p95": 57.46530999999959
+          }
+        ],
+        "validation": [
+          {
+            "index": 0,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 1,
+            "matched": true,
+            "tokens": 13
+          },
+          {
+            "index": 2,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 3,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 4,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 5,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 6,
+            "matched": true,
+            "tokens": 14
+          },
+          {
+            "index": 7,
+            "matched": true,
+            "tokens": 10
+          },
+          {
+            "index": 8,
+            "matched": true,
+            "tokens": 15
+          },
+          {
+            "index": 9,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 10,
+            "matched": true,
+            "tokens": 61
+          },
+          {
+            "index": 11,
+            "matched": true,
+            "tokens": 57
+          },
+          {
+            "index": 12,
+            "matched": true,
+            "tokens": 56
+          },
+          {
+            "index": 13,
+            "matched": true,
+            "tokens": 5
+          },
+          {
+            "index": 14,
+            "matched": true,
+            "tokens": 4
+          },
+          {
+            "index": 15,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 16,
+            "matched": true,
+            "tokens": 13
+          },
+          {
+            "index": 17,
+            "matched": true,
+            "tokens": 9
+          },
+          {
+            "index": 18,
+            "matched": true,
+            "tokens": 244
+          },
+          {
+            "index": 19,
+            "matched": true,
+            "tokens": 10
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "standard",
+        "source": "models/zh-Hans_en/model.onnx",
+        "sourceSha256": "8fba17d3ab3e85fc1c42f891ca9bef795731bb0dda4f6c8258a733fffd74a948",
+        "externalTensors": 1,
+        "bytes": 98304000,
+        "file": ".tmp/external-embeddings/zh-Hans_en-standard/model.onnx",
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 162.02687099999457,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 5112.423120000007,
+            "cpuMs": 5071.268,
+            "p50": 19.57145699999819,
+            "p95": 344.71432900000946
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 162.02687099999457,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2103.5156759999954,
+            "cpuMs": 7217.893,
+            "p50": 29.440290000013192,
+            "p95": 385.9393629999977
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 100.35410499999125,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 4995.367148000005,
+            "cpuMs": 4948.317,
+            "p50": 20.129899000006844,
+            "p95": 341.02164900000207
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 100.35410499999125,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2170.1469709999947,
+            "cpuMs": 7476.761,
+            "p50": 29.945820000008098,
+            "p95": 386.5548609999969
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 102.2006379999948,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 5219.917291000005,
+            "cpuMs": 5174.9,
+            "p50": 20.759659000003012,
+            "p95": 342.0276040000026
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 102.2006379999948,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2142.7473789999785,
+            "cpuMs": 7368.275,
+            "p50": 29.96323000002303,
+            "p95": 396.4017729999905
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 160.2081279999984,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 5134.857465999987,
+            "cpuMs": 5080.754,
+            "p50": 20.92078600000241,
+            "p95": 342.03537600001437
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 160.2081279999984,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2115.916968000005,
+            "cpuMs": 7256.017,
+            "p50": 29.40579499999876,
+            "p95": 403.9948629999999
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 157.22792799997842,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 5042.731318000006,
+            "cpuMs": 5013.04,
+            "p50": 19.633058999985224,
+            "p95": 343.25892900000326
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 157.22792799997842,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2216.4358149999753,
+            "cpuMs": 7607.846,
+            "p50": 30.299800000007963,
+            "p95": 407.86996199999703
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 110.56663900002604,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 4964.464406999992,
+            "cpuMs": 4932.332,
+            "p50": 18.83214000001317,
+            "p95": 338.50927599999704
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 110.56663900002604,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2074.5122289999854,
+            "cpuMs": 7090.769,
+            "p50": 27.79867699998431,
+            "p95": 394.95706499999505
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 100.79548200001591,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 5087.988320000004,
+            "cpuMs": 5023.019,
+            "p50": 20.40254099998856,
+            "p95": 336.1057119999896
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 100.79548200001591,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2102.109914999979,
+            "cpuMs": 7234.495,
+            "p50": 29.636562999978196,
+            "p95": 388.57458699998097
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 161.60313099998166,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 5044.868348000018,
+            "cpuMs": 5008.555,
+            "p50": 20.916373999993084,
+            "p95": 342.88218700001016
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 161.60313099998166,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2127.8767119999975,
+            "cpuMs": 7296.756,
+            "p50": 29.734742999979062,
+            "p95": 397.4778139999835
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 162.4040559999994,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3429.192086999974,
+            "cpuMs": 5776.17,
+            "p50": 13.539159000007203,
+            "p95": 231.6843789999839
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 162.4040559999994,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2080.5259160000132,
+            "cpuMs": 7635.749,
+            "p50": 28.95761099999072,
+            "p95": 293.99986199999694
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 102.9782150000101,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3491.922843999986,
+            "cpuMs": 5889.509,
+            "p50": 14.299822000000859,
+            "p95": 232.42703099999926
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 102.9782150000101,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2121.570968999993,
+            "cpuMs": 7790.432,
+            "p50": 29.904753999988316,
+            "p95": 288.164757999999
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 102.41768499999307,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3555.697690000001,
+            "cpuMs": 5996.403,
+            "p50": 13.926319999998668,
+            "p95": 228.85037299999385
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 102.41768499999307,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2146.28126399999,
+            "cpuMs": 7894.819,
+            "p50": 31.27434999999241,
+            "p95": 293.88571499998216
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 166.85535500000697,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3533.9344869999913,
+            "cpuMs": 5969.493,
+            "p50": 13.999581000010949,
+            "p95": 232.4050630000129
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 166.85535500000697,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2399.5023900000087,
+            "cpuMs": 8843.543,
+            "p50": 35.367324000020744,
+            "p95": 309.9497540000011
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 158.86067399999592,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3626.5176550000033,
+            "cpuMs": 6154.244,
+            "p50": 14.996383999998216,
+            "p95": 228.38268099998822
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 158.86067399999592,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2208.2310660000076,
+            "cpuMs": 8067.993,
+            "p50": 31.7994619999954,
+            "p95": 309.8739530000021
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 104.0167889999866,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3413.5834909999976,
+            "cpuMs": 5772.185,
+            "p50": 13.671896999992896,
+            "p95": 227.7449450000131
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 104.0167889999866,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2132.315266999998,
+            "cpuMs": 7855.526,
+            "p50": 30.215016000001924,
+            "p95": 301.19772600001306
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 100.71068099999684,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3505.4823719999986,
+            "cpuMs": 5922.307,
+            "p50": 14.252561999979662,
+            "p95": 232.23088799999095
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 100.71068099999684,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2104.241079999978,
+            "cpuMs": 7749.674,
+            "p50": 30.047760000015842,
+            "p95": 286.7500389999768
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 161.32237900001928,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 3462.288453999994,
+            "cpuMs": 5870.937,
+            "p50": 14.124543999991147,
+            "p95": 232.93737199998577
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 161.32237900001928,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 2121.0866249999963,
+            "cpuMs": 7832.118,
+            "p50": 32.000064000021666,
+            "p95": 287.2211219999881
+          }
+        ],
+        "validation": [
+          {
+            "index": 0,
+            "matched": true,
+            "tokens": 17
+          },
+          {
+            "index": 1,
+            "matched": true,
+            "tokens": 9
+          },
+          {
+            "index": 2,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 3,
+            "matched": true,
+            "tokens": 8
+          },
+          {
+            "index": 4,
+            "matched": true,
+            "tokens": 13
+          },
+          {
+            "index": 5,
+            "matched": true,
+            "tokens": 10
+          },
+          {
+            "index": 6,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 7,
+            "matched": true,
+            "tokens": 14
+          },
+          {
+            "index": 8,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 9,
+            "matched": true,
+            "tokens": 14
+          },
+          {
+            "index": 10,
+            "matched": true,
+            "tokens": 69
+          },
+          {
+            "index": 11,
+            "matched": true,
+            "tokens": 61
+          },
+          {
+            "index": 12,
+            "matched": true,
+            "tokens": 4
+          },
+          {
+            "index": 13,
+            "matched": true,
+            "tokens": 3
+          },
+          {
+            "index": 14,
+            "matched": true,
+            "tokens": 16
+          },
+          {
+            "index": 15,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 16,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 17,
+            "matched": true,
+            "tokens": 244
+          },
+          {
+            "index": 18,
+            "matched": true,
+            "tokens": 14
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "source": ".tmp/onnx-production/zh-Hans_en.onnx",
+        "sourceSha256": "ceac8dc6a63438d13a09d2cbd1b2fea09863610d0405ea9910e0311551474a60",
+        "externalTensors": 1,
+        "bytes": 98304000,
+        "file": ".tmp/external-embeddings/zh-Hans_en-fast/model.onnx",
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 135.22375000000466,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1198.1564130000188,
+            "cpuMs": 1198.365,
+            "p50": 5.253077999979723,
+            "p95": 70.1160309999832
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 135.22375000000466,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 478.73153100002673,
+            "cpuMs": 1666.658,
+            "p50": 7.102662000019336,
+            "p95": 72.36445500000264
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 73.48569500001031,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1233.9694390000077,
+            "cpuMs": 1218.273,
+            "p50": 5.333165999996709,
+            "p95": 68.93766799999867
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 73.48569500001031,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 479.5502039999992,
+            "cpuMs": 1646.77,
+            "p50": 6.907092999987071,
+            "p95": 73.9558820000093
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 73.19258599999011,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1214.5919799999974,
+            "cpuMs": 1200.483,
+            "p50": 5.38873199999216,
+            "p95": 65.79680399998324
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 73.19258599999011,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 479.89967100002104,
+            "cpuMs": 1658.898,
+            "p50": 7.067939000000479,
+            "p95": 73.00271699999576
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 132.15554200002225,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1289.3591880000022,
+            "cpuMs": 1276.691,
+            "p50": 5.498439999995753,
+            "p95": 69.96784200001275
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 132.15554200002225,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 532.9887989999843,
+            "cpuMs": 1832.751,
+            "p50": 7.526846000022488,
+            "p95": 79.7372289999912
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 132.18296899998677,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1230.6795600000187,
+            "cpuMs": 1215.021,
+            "p50": 5.274581000005128,
+            "p95": 71.47217200000887
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 132.18296899998677,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 474.55089499999303,
+            "cpuMs": 1647.22,
+            "p50": 6.978341000009095,
+            "p95": 70.79907899998943
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 72.78409200001624,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1235.3068550000025,
+            "cpuMs": 1227.832,
+            "p50": 5.382924999983516,
+            "p95": 68.42967500002123
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 72.78409200001624,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 524.3632290000096,
+            "cpuMs": 1824.364,
+            "p50": 7.564127999998163,
+            "p95": 76.9897630000196
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 73.3304380000045,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1236.7875699999859,
+            "cpuMs": 1231.303,
+            "p50": 5.267461999988882,
+            "p95": 69.94732700000168
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 73.3304380000045,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 484.404343000002,
+            "cpuMs": 1676.588,
+            "p50": 7.053985000005923,
+            "p95": 70.84102399999392
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 1,
+            "initMs": 128.75632600000245,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1236.5259669999941,
+            "cpuMs": 1229.762,
+            "p50": 5.2421679999970365,
+            "p95": 68.8831910000008
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 1,
+            "concurrency": 4,
+            "initMs": 128.75632600000245,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 464.48249700001907,
+            "cpuMs": 1610.28,
+            "p50": 6.877569000003859,
+            "p95": 69.58553599999868
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 134.75708899999154,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1241.248219000001,
+            "cpuMs": 1889.202,
+            "p50": 5.281633000005968,
+            "p95": 72.97313699999359
+          },
+          {
+            "round": 0,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 134.75708899999154,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 523.702191999997,
+            "cpuMs": 1883.672,
+            "p50": 7.938084999972489,
+            "p95": 75.8182669999951
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 72.6664120000205,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1262.482514000003,
+            "cpuMs": 1915.65,
+            "p50": 5.442895000014687,
+            "p95": 73.66826299999957
+          },
+          {
+            "round": 0,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 72.6664120000205,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 561.7266079999972,
+            "cpuMs": 2014.434,
+            "p50": 8.060800000006566,
+            "p95": 77.0402260000119
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 71.62457200000063,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1254.7849450000213,
+            "cpuMs": 1913.282,
+            "p50": 5.428572000004351,
+            "p95": 74.2131090000039
+          },
+          {
+            "round": 1,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 71.62457200000063,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 551.0053469999984,
+            "cpuMs": 1972.197,
+            "p50": 7.864421999984188,
+            "p95": 77.19199099999969
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 130.6814449999947,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1328.797007999994,
+            "cpuMs": 2025.361,
+            "p50": 5.5553040000086185,
+            "p95": 72.95826800001669
+          },
+          {
+            "round": 1,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 130.6814449999947,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 554.271133000002,
+            "cpuMs": 1988.654,
+            "p50": 8.179995999991661,
+            "p95": 77.13574599998537
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 133.6521130000183,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1247.165337000013,
+            "cpuMs": 1904.795,
+            "p50": 5.199909999995725,
+            "p95": 73.46238899999298
+          },
+          {
+            "round": 2,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 133.6521130000183,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 536.340182999993,
+            "cpuMs": 1932.833,
+            "p50": 7.734616000001552,
+            "p95": 77.33798700000625
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 73.42761000001337,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1231.7663409999805,
+            "cpuMs": 1875.168,
+            "p50": 5.201315000012983,
+            "p95": 73.70019999999204
+          },
+          {
+            "round": 2,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 73.42761000001337,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 532.0183050000051,
+            "cpuMs": 1912.868,
+            "p50": 7.818921999976737,
+            "p95": 77.73963699999149
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 73.22533700001077,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1235.8084049999889,
+            "cpuMs": 1871.07,
+            "p50": 5.22746900000493,
+            "p95": 73.23639700000058
+          },
+          {
+            "round": 3,
+            "variant": "external",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 73.22533700001077,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 520.6886660000018,
+            "cpuMs": 1861.763,
+            "p50": 7.468684999999823,
+            "p95": 74.35186999998405
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 1,
+            "initMs": 130.91393800001242,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 1230.3224100000225,
+            "cpuMs": 1872.369,
+            "p50": 5.17947699999786,
+            "p95": 72.63475600001402
+          },
+          {
+            "round": 3,
+            "variant": "embedded",
+            "threads": 2,
+            "concurrency": 4,
+            "initMs": 130.91393800001242,
+            "requests": 114,
+            "tokens": 3318,
+            "ms": 517.4134250000061,
+            "cpuMs": 1851.783,
+            "p50": 7.721893000009004,
+            "p95": 75.04026400001021
+          }
+        ],
+        "validation": [
+          {
+            "index": 0,
+            "matched": true,
+            "tokens": 17
+          },
+          {
+            "index": 1,
+            "matched": true,
+            "tokens": 9
+          },
+          {
+            "index": 2,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 3,
+            "matched": true,
+            "tokens": 8
+          },
+          {
+            "index": 4,
+            "matched": true,
+            "tokens": 13
+          },
+          {
+            "index": 5,
+            "matched": true,
+            "tokens": 10
+          },
+          {
+            "index": 6,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 7,
+            "matched": true,
+            "tokens": 14
+          },
+          {
+            "index": 8,
+            "matched": true,
+            "tokens": 11
+          },
+          {
+            "index": 9,
+            "matched": true,
+            "tokens": 14
+          },
+          {
+            "index": 10,
+            "matched": true,
+            "tokens": 69
+          },
+          {
+            "index": 11,
+            "matched": true,
+            "tokens": 61
+          },
+          {
+            "index": 12,
+            "matched": true,
+            "tokens": 4
+          },
+          {
+            "index": 13,
+            "matched": true,
+            "tokens": 3
+          },
+          {
+            "index": 14,
+            "matched": true,
+            "tokens": 16
+          },
+          {
+            "index": 15,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 16,
+            "matched": true,
+            "tokens": 12
+          },
+          {
+            "index": 17,
+            "matched": true,
+            "tokens": 244
+          },
+          {
+            "index": 18,
+            "matched": true,
+            "tokens": 14
+          }
+        ]
+      }
+    ],
+    "finished": "2026-11-13T12:14:59.847Z"
+  },
+  "memory": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59320,
+        "VmRSS": 58940
+      },
+      "afterInit": {
+        "VmHWM": 263256,
+        "VmRSS": 244300
+      },
+      "afterWarm": {
+        "VmHWM": 263256,
+        "VmRSS": 247888
+      },
+      "initMs": 174.023504,
+      "outputHash": "c2bcb37311261dd2f6ae184797b70b03fa8e2f7702fe868c6a55adc408247012"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59612,
+        "VmRSS": 59168
+      },
+      "afterInit": {
+        "VmHWM": 161748,
+        "VmRSS": 148424
+      },
+      "afterWarm": {
+        "VmHWM": 190712,
+        "VmRSS": 190712
+      },
+      "initMs": 126.03398399999999,
+      "outputHash": "c2bcb37311261dd2f6ae184797b70b03fa8e2f7702fe868c6a55adc408247012"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59764,
+        "VmRSS": 59320
+      },
+      "afterInit": {
+        "VmHWM": 162140,
+        "VmRSS": 148820
+      },
+      "afterWarm": {
+        "VmHWM": 191172,
+        "VmRSS": 191172
+      },
+      "initMs": 121.66705,
+      "outputHash": "c2bcb37311261dd2f6ae184797b70b03fa8e2f7702fe868c6a55adc408247012"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59728,
+        "VmRSS": 59292
+      },
+      "afterInit": {
+        "VmHWM": 263672,
+        "VmRSS": 243620
+      },
+      "afterWarm": {
+        "VmHWM": 263672,
+        "VmRSS": 246508
+      },
+      "initMs": 169.57082,
+      "outputHash": "c2bcb37311261dd2f6ae184797b70b03fa8e2f7702fe868c6a55adc408247012"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59604,
+        "VmRSS": 59224
+      },
+      "afterInit": {
+        "VmHWM": 256748,
+        "VmRSS": 235312
+      },
+      "afterWarm": {
+        "VmHWM": 256748,
+        "VmRSS": 249676
+      },
+      "initMs": 145.846426,
+      "outputHash": "02b33495dfc4c4e3f0691b34b38267626488eb4ebe87ac4e5780058418ad4a05"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59872,
+        "VmRSS": 59452
+      },
+      "afterInit": {
+        "VmHWM": 139148,
+        "VmRSS": 139148
+      },
+      "afterWarm": {
+        "VmHWM": 211932,
+        "VmRSS": 211932
+      },
+      "initMs": 103.80113699999998,
+      "outputHash": "02b33495dfc4c4e3f0691b34b38267626488eb4ebe87ac4e5780058418ad4a05"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59520,
+        "VmRSS": 59144
+      },
+      "afterInit": {
+        "VmHWM": 139084,
+        "VmRSS": 139084
+      },
+      "afterWarm": {
+        "VmHWM": 211720,
+        "VmRSS": 211720
+      },
+      "initMs": 99.252862,
+      "outputHash": "02b33495dfc4c4e3f0691b34b38267626488eb4ebe87ac4e5780058418ad4a05"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59924,
+        "VmRSS": 59484
+      },
+      "afterInit": {
+        "VmHWM": 257116,
+        "VmRSS": 236864
+      },
+      "afterWarm": {
+        "VmHWM": 257116,
+        "VmRSS": 250428
+      },
+      "initMs": 146.81932600000002,
+      "outputHash": "02b33495dfc4c4e3f0691b34b38267626488eb4ebe87ac4e5780058418ad4a05"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59604,
+        "VmRSS": 59232
+      },
+      "afterInit": {
+        "VmHWM": 320084,
+        "VmRSS": 251556
+      },
+      "afterWarm": {
+        "VmHWM": 320084,
+        "VmRSS": 254516
+      },
+      "initMs": 193.597357,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59860,
+        "VmRSS": 59480
+      },
+      "afterInit": {
+        "VmHWM": 184316,
+        "VmRSS": 157560
+      },
+      "afterWarm": {
+        "VmHWM": 219704,
+        "VmRSS": 219704
+      },
+      "initMs": 131.67239,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59648,
+        "VmRSS": 59176
+      },
+      "afterInit": {
+        "VmHWM": 184220,
+        "VmRSS": 157484
+      },
+      "afterWarm": {
+        "VmHWM": 218872,
+        "VmRSS": 218872
+      },
+      "initMs": 143.409546,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59600,
+        "VmRSS": 59224
+      },
+      "afterInit": {
+        "VmHWM": 319556,
+        "VmRSS": 252580
+      },
+      "afterWarm": {
+        "VmHWM": 319556,
+        "VmRSS": 256420
+      },
+      "initMs": 187.506474,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59396,
+        "VmRSS": 58988
+      },
+      "afterInit": {
+        "VmHWM": 305756,
+        "VmRSS": 235076
+      },
+      "afterWarm": {
+        "VmHWM": 305756,
+        "VmRSS": 249400
+      },
+      "initMs": 156.77866,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59808,
+        "VmRSS": 59412
+      },
+      "afterInit": {
+        "VmHWM": 138548,
+        "VmRSS": 138548
+      },
+      "afterWarm": {
+        "VmHWM": 248028,
+        "VmRSS": 248028
+      },
+      "initMs": 99.715571,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59940,
+        "VmRSS": 59504
+      },
+      "afterInit": {
+        "VmHWM": 138780,
+        "VmRSS": 138780
+      },
+      "afterWarm": {
+        "VmHWM": 246768,
+        "VmRSS": 246768
+      },
+      "initMs": 98.555419,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59544,
+        "VmRSS": 59100
+      },
+      "afterInit": {
+        "VmHWM": 306072,
+        "VmRSS": 235220
+      },
+      "afterWarm": {
+        "VmHWM": 306072,
+        "VmRSS": 247576
+      },
+      "initMs": 158.20011,
+      "outputHash": "446501c820cc4f9b159eba378eae562ec1eb0344f722933d001d6c513984e8e2"
+    }
+  ],
+  "stressMemory": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59868,
+        "VmRSS": 59488
+      },
+      "afterInit": {
+        "VmHWM": 264128,
+        "VmRSS": 244292
+      },
+      "afterWarm": {
+        "VmHWM": 264128,
+        "VmRSS": 246892
+      },
+      "initMs": 217.60103999999998,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [],
+      "outputHash": "71c5ea191ab57993545729a21a3889ba5eac421b0f630c480efdc74150262806"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59372,
+        "VmRSS": 58972
+      },
+      "afterInit": {
+        "VmHWM": 162172,
+        "VmRSS": 148916
+      },
+      "afterWarm": {
+        "VmHWM": 244528,
+        "VmRSS": 244528
+      },
+      "initMs": 124.67667599999999,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [
+        {
+          "file": "external-embeddings/en_zh-Hans-standard/weights.bin",
+          "Size": 48000,
+          "Rss": 47472,
+          "Pss": 47472,
+          "Shared_Clean": 0,
+          "Shared_Dirty": 0,
+          "Private_Clean": 47472,
+          "Private_Dirty": 0,
+          "Anonymous": 0
+        },
+        {
+          "file": "external-embeddings/en_zh-Hans-standard/weights.bin",
+          "Size": 48000,
+          "Rss": 45344,
+          "Pss": 45344,
+          "Shared_Clean": 0,
+          "Shared_Dirty": 0,
+          "Private_Clean": 45344,
+          "Private_Dirty": 0,
+          "Anonymous": 0
+        }
+      ],
+      "outputHash": "71c5ea191ab57993545729a21a3889ba5eac421b0f630c480efdc74150262806"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59412,
+        "VmRSS": 59116
+      },
+      "afterInit": {
+        "VmHWM": 161952,
+        "VmRSS": 148688
+      },
+      "afterWarm": {
+        "VmHWM": 244712,
+        "VmRSS": 244712
+      },
+      "initMs": 122.187639,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [
+        {
+          "file": "external-embeddings/en_zh-Hans-standard/weights.bin",
+          "Size": 48000,
+          "Rss": 47472,
+          "Pss": 47472,
+          "Shared_Clean": 0,
+          "Shared_Dirty": 0,
+          "Private_Clean": 47472,
+          "Private_Dirty": 0,
+          "Anonymous": 0
+        },
+        {
+          "file": "external-embeddings/en_zh-Hans-standard/weights.bin",
+          "Size": 48000,
+          "Rss": 45344,
+          "Pss": 45344,
+          "Shared_Clean": 0,
+          "Shared_Dirty": 0,
+          "Private_Clean": 45344,
+          "Private_Dirty": 0,
+          "Anonymous": 0
+        }
+      ],
+      "outputHash": "71c5ea191ab57993545729a21a3889ba5eac421b0f630c480efdc74150262806"
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59808,
+        "VmRSS": 59436
+      },
+      "afterInit": {
+        "VmHWM": 264212,
+        "VmRSS": 244592
+      },
+      "afterWarm": {
+        "VmHWM": 264212,
+        "VmRSS": 247400
+      },
+      "initMs": 169.79332300000002,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [],
+      "outputHash": "71c5ea191ab57993545729a21a3889ba5eac421b0f630c480efdc74150262806"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59676,
+        "VmRSS": 59304
+      },
+      "afterInit": {
+        "VmHWM": 320084,
+        "VmRSS": 252380
+      },
+      "afterWarm": {
+        "VmHWM": 320084,
+        "VmRSS": 258348
+      },
+      "initMs": 205.888573,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [],
+      "outputHash": "e60482dc54b7ca94f4d675b99194dca242dd635d05e5d809835ca9db03738bf1"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59964,
+        "VmRSS": 59556
+      },
+      "afterInit": {
+        "VmHWM": 184428,
+        "VmRSS": 157672
+      },
+      "afterWarm": {
+        "VmHWM": 259108,
+        "VmRSS": 259108
+      },
+      "initMs": 136.545237,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [
+        {
+          "file": "external-embeddings/zh-Hans_en-standard/weights.bin",
+          "Size": 96000,
+          "Rss": 95488,
+          "Pss": 95488,
+          "Shared_Clean": 0,
+          "Shared_Dirty": 0,
+          "Private_Clean": 95488,
+          "Private_Dirty": 0,
+          "Anonymous": 0
+        }
+      ],
+      "outputHash": "e60482dc54b7ca94f4d675b99194dca242dd635d05e5d809835ca9db03738bf1"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "external",
+      "before": {
+        "VmHWM": 59824,
+        "VmRSS": 59500
+      },
+      "afterInit": {
+        "VmHWM": 184680,
+        "VmRSS": 157820
+      },
+      "afterWarm": {
+        "VmHWM": 258876,
+        "VmRSS": 258876
+      },
+      "initMs": 133.262004,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [
+        {
+          "file": "external-embeddings/zh-Hans_en-standard/weights.bin",
+          "Size": 96000,
+          "Rss": 95488,
+          "Pss": 95488,
+          "Shared_Clean": 0,
+          "Shared_Dirty": 0,
+          "Private_Clean": 95488,
+          "Private_Dirty": 0,
+          "Anonymous": 0
+        }
+      ],
+      "outputHash": "e60482dc54b7ca94f4d675b99194dca242dd635d05e5d809835ca9db03738bf1"
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "embedded",
+      "before": {
+        "VmHWM": 59164,
+        "VmRSS": 58800
+      },
+      "afterInit": {
+        "VmHWM": 319964,
+        "VmRSS": 252744
+      },
+      "afterWarm": {
+        "VmHWM": 319964,
+        "VmRSS": 258692
+      },
+      "initMs": 196.468041,
+      "syntheticRows": 128,
+      "uniqueSyntheticInputIds": 1978,
+      "mappings": [],
+      "outputHash": "e60482dc54b7ca94f4d675b99194dca242dd635d05e5d809835ca9db03738bf1"
+    }
+  ],
+  "throughput": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "threads": 1,
+      "concurrency": 1,
+      "throughputPercent": 4.983139217300414,
+      "cpuEfficiencyPercent": 4.846565762562383,
+      "rounds": {
+        "ms": [
+          7.198961450360164,
+          5.469970300357363,
+          4.496308134243465,
+          -7.944341146017219
+        ],
+        "cpuMs": [
+          7.15276078888607,
+          5.490165245749212,
+          4.202966279375553,
+          -7.449058002299824
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "threads": 1,
+      "concurrency": 4,
+      "throughputPercent": -4.245372291970112,
+      "cpuEfficiencyPercent": -5.3603436381717495,
+      "rounds": {
+        "ms": [
+          -9.072510565979686,
+          -4.895872459592676,
+          7.496448769051933,
+          -3.594872124347548
+        ],
+        "cpuMs": [
+          -9.492743784027057,
+          -6.222367644965365,
+          6.109735070702982,
+          -4.498319631378134
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "threads": 2,
+      "concurrency": 1,
+      "throughputPercent": 0.45729659130577804,
+      "cpuEfficiencyPercent": 0.26491437234985593,
+      "rounds": {
+        "ms": [
+          -7.052783277483687,
+          9.02426056684269,
+          0.2855923260862703,
+          0.6290008565252858
+        ],
+        "cpuMs": [
+          -7.261572145908213,
+          8.661616964660968,
+          0.12403617309011405,
+          0.4057925716095978
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "threads": 2,
+      "concurrency": 4,
+      "throughputPercent": 0.3917884868785859,
+      "cpuEfficiencyPercent": 1.5095609367452245,
+      "rounds": {
+        "ms": [
+          -9.218738502710533,
+          4.967449258873224,
+          9.180856439999353,
+          -4.183872285116053
+        ],
+        "cpuMs": [
+          -9.557084064384092,
+          5.521987542439444,
+          9.620222695849678,
+          -2.5028656689489948
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "threads": 1,
+      "concurrency": 1,
+      "throughputPercent": 1.9343080033806692,
+      "cpuEfficiencyPercent": 2.430246778541023,
+      "rounds": {
+        "ms": [
+          -2.764163235104955,
+          3.668162485799309,
+          0.2004535209620295,
+          4.072833679069454
+        ],
+        "cpuMs": [
+          -3.3750616024602276,
+          3.7376911614266373,
+          1.122802395655409,
+          4.760368707916829
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "threads": 1,
+      "concurrency": 4,
+      "throughputPercent": 2.025395020520926,
+      "cpuEfficiencyPercent": 2.212679344822477,
+      "rounds": {
+        "ms": [
+          1.9260133676203273,
+          2.1247766734215245,
+          3.661624526815954,
+          1.3718182674825607
+        ],
+        "cpuMs": [
+          2.1471980093538123,
+          2.2781606802911414,
+          2.601799382787373,
+          0.3980616482090804
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "threads": 2,
+      "concurrency": 1,
+      "throughputPercent": -0.00010903483921298474,
+      "cpuEfficiencyPercent": 0.10018801600540361,
+      "rounds": {
+        "ms": [
+          2.867165626474466,
+          0.7922702075812582,
+          -1.899606096875739,
+          -0.7924882772596842
+        ],
+        "cpuMs": [
+          1.9819306971790684,
+          0.610012860886644,
+          -1.0724711821592403,
+          -0.40963682887583674
+        ]
+      }
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "threads": 2,
+      "concurrency": 4,
+      "throughputPercent": -1.2337608754351637,
+      "cpuEfficiencyPercent": -1.502103988776704,
+      "rounds": {
+        "ms": [
+          -2.4289355275118107,
+          0.37450426041762963,
+          -6.051961718590704,
+          -0.03858622335851658
+        ],
+        "cpuMs": [
+          -2.404788705723937,
+          -0.03879226740802766,
+          -5.325882024704298,
+          -0.5994192718294711
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "threads": 1,
+      "concurrency": 1,
+      "throughputPercent": 0.3645286127244629,
+      "cpuEfficiencyPercent": 0.6741753913815818,
+      "rounds": {
+        "ms": [
+          2.343290663767683,
+          -1.6295243824394623,
+          1.5765428973497198,
+          -0.8474856719007939
+        ],
+        "cpuMs": [
+          2.484703385009479,
+          -1.819281532010275,
+          1.6363050986835326,
+          -0.287954315920369
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "threads": 1,
+      "concurrency": 4,
+      "throughputPercent": -0.013195599248333467,
+      "cpuEfficiencyPercent": -0.3314593443578595,
+      "rounds": {
+        "ms": [
+          -3.07035863885734,
+          -1.2521499857111151,
+          6.841299078212892,
+          1.2257587872144482
+        ],
+        "cpuMs": [
+          -3.462301389599054,
+          -1.5235316271447474,
+          7.292255607254994,
+          0.8606129384290284
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "threads": 2,
+      "concurrency": 1,
+      "throughputPercent": -0.9221237399527127,
+      "cpuEfficiencyPercent": -0.6580837509294613,
+      "rounds": {
+        "ms": [
+          -1.7964531234646142,
+          -0.6120656168609684,
+          6.237848424138792,
+          -1.232181863044457
+        ],
+        "cpuMs": [
+          -1.924421883046612,
+          -0.44876903703769955,
+          6.618966647811875,
+          -0.867398464821223
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "threads": 2,
+      "concurrency": 4,
+      "throughputPercent": 2.1804020708679928,
+      "cpuEfficiencyPercent": 1.8842601635806644,
+      "rounds": {
+        "ms": [
+          -1.9346537824905474,
+          11.79813336897395,
+          3.5602520966243834,
+          0.8005520451116022
+        ],
+        "cpuMs": [
+          -1.985550993834484,
+          12.017045609278675,
+          2.7046820289309714,
+          1.0638382982303574
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "threads": 1,
+      "concurrency": 1,
+      "throughputPercent": -0.1978692493332157,
+      "cpuEfficiencyPercent": -0.5842678792787659,
+      "rounds": {
+        "ms": [
+          -2.9022619902978497,
+          6.155746887115532,
+          -0.3745866851830759,
+          -0.021151813483355486
+        ],
+        "cpuMs": [
+          -1.6341164911312878,
+          6.348111551767088,
+          -1.043383785403873,
+          -0.12515197315365878
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "threads": 1,
+      "concurrency": 4,
+      "throughputPercent": -2.1416824738424936,
+      "cpuEfficiencyPercent": -1.3736197790284899,
+      "rounds": {
+        "ms": [
+          -0.17071684948599675,
+          11.062547279796098,
+          -9.499585639330876,
+          -4.11264809819899
+        ],
+        "cpuMs": [
+          1.20769749266747,
+          10.480029513568656,
+          -9.70990438311653,
+          -3.9549370507244497
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "threads": 2,
+      "concurrency": 1,
+      "throughputPercent": 0.4031180338944229,
+      "cpuEfficiencyPercent": 0.8246953088374198,
+      "rounds": {
+        "ms": [
+          -1.6819476519103649,
+          5.898386276858902,
+          1.250155608857706,
+          -0.4439195410688601
+        ],
+        "cpuMs": [
+          -1.380627985279148,
+          5.857944620813882,
+          1.5799651017935457,
+          0.06942551588129398
+        ]
+      }
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "threads": 2,
+      "concurrency": 4,
+      "throughputPercent": -0.018162553952016935,
+      "cpuEfficiencyPercent": 0.149199532043931,
+      "rounds": {
+        "ms": [
+          -6.769203284741032,
+          0.5926958817703776,
+          0.8123551312746446,
+          -0.6290209896744114
+        ],
+        "cpuMs": [
+          -6.491252629770939,
+          0.8344501081788636,
+          1.0437207376567725,
+          -0.5360510440910016
+        ]
+      }
+    }
+  ],
+  "memoryMedians": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "variant": "embedded",
+      "rssMiB": 244.19140625,
+      "peakMiB": 250.91015625,
+      "initMs": 146.332876
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "variant": "external",
+      "rssMiB": 206.861328125,
+      "peakMiB": 206.861328125,
+      "initMs": 101.52699949999999
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "embedded",
+      "rssMiB": 241.404296875,
+      "peakMiB": 257.2890625,
+      "initMs": 171.79716200000001
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "external",
+      "rssMiB": 186.466796875,
+      "peakMiB": 186.466796875,
+      "initMs": 123.850517
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "variant": "embedded",
+      "rssMiB": 242.6640625,
+      "peakMiB": 298.744140625,
+      "initMs": 157.489385
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "variant": "external",
+      "rssMiB": 241.599609375,
+      "peakMiB": 241.599609375,
+      "initMs": 99.13549499999999
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "embedded",
+      "rssMiB": 249.48046875,
+      "peakMiB": 312.32421875,
+      "initMs": 190.5519155
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "external",
+      "rssMiB": 214.1484375,
+      "peakMiB": 214.1484375,
+      "initMs": 137.54096800000002
+    }
+  ],
+  "stressMedians": [
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "embedded",
+      "rssMiB": 241.353515625,
+      "peakMiB": 257.978515625,
+      "initMs": 193.6971815,
+      "mappedRssMiB": 0.0
+    },
+    {
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "variant": "external",
+      "rssMiB": 238.88671875,
+      "peakMiB": 238.88671875,
+      "initMs": 123.43215749999999,
+      "mappedRssMiB": 90.640625
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "embedded",
+      "rssMiB": 252.4609375,
+      "peakMiB": 312.5234375,
+      "initMs": 201.17830700000002,
+      "mappedRssMiB": 0.0
+    },
+    {
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "variant": "external",
+      "rssMiB": 252.921875,
+      "peakMiB": 252.921875,
+      "initMs": 134.9036205,
+      "mappedRssMiB": 93.25
+    }
+  ],
+  "timedTranslations": 14976,
+  "sourceHashes": {
+    "export.mjs": "c6dbaefcd4dc9348637f891c5a66a54e5dc58b3f35e79690c3e8fff2cfc9c8eb",
+    "bench.mjs": "889c6fd52494d11ee825502521e9edf6f59476aa156e080378b74ba2f4cd0344",
+    "memory.mjs": "6e47a12564e4bbfed38e21e4380b54d5271fa533e84ca06e704e4281a814fc33",
+    "memory.py": "6e966f64fc2bd9bb901a1c443071b3af360357f894dd9acaed84f2ecf09e04a5",
+    "stress-memory.mjs": "7303a205ba164b17c046612f301b8e6f39b6d9451f79f3a7552187222c5f2c93",
+    "stress-memory.py": "4e5c252248c31d7c911b4867156b26d2228b34ecb0a4b5bdd620cd897bc11e19",
+    "summarize.py": "c5d404fa99480d0e79d29ecb6bd47f54d9d5ea5bfcc0891388ecedd7bfbc1074"
+  },
+  "refinementTranspose": [
+    {
+      "pair": "en_zh-Hans",
+      "identicalOptimizedProjection": true,
+      "variants": [
+        {
+          "variant": "baseline",
+          "projection": [
+            {
+              "graph": "mozilla_release_greedy",
+              "op": "Gemm",
+              "input": [
+                "Reshape_619",
+                "Gather_627",
+                "Gather_628"
+              ],
+              "output": [
+                "Add_631"
+              ],
+              "attrs": {
+                "beta": 1,
+                "transB": 1,
+                "alpha": 1,
+                "transA": 0
+              },
+              "gatherInput": [
+                "decoder_Wemb",
+                "Squeeze_626"
+              ]
+            },
+            {
+              "graph": "decode_loop",
+              "op": "Gemm",
+              "input": [
+                "Reshape_894",
+                "Gather_902",
+                "Gather_903"
+              ],
+              "output": [
+                "Add_906"
+              ],
+              "attrs": {
+                "beta": 1,
+                "transB": 1,
+                "alpha": 1,
+                "transA": 0
+              },
+              "gatherInput": [
+                "decoder_Wemb",
+                "Squeeze_901"
+              ]
+            }
+          ]
+        },
+        {
+          "variant": "candidate",
+          "projection": [
+            {
+              "graph": "mozilla_release_greedy",
+              "op": "Gemm",
+              "input": [
+                "Reshape_619",
+                "Gather_627",
+                "Gather_628"
+              ],
+              "output": [
+                "Add_631"
+              ],
+              "attrs": {
+                "transA": 0,
+                "alpha": 1,
+                "transB": 1,
+                "beta": 1
+              },
+              "gatherInput": [
+                "decoder_Wemb",
+                "Squeeze_626"
+              ]
+            },
+            {
+              "graph": "decode_loop",
+              "op": "Gemm",
+              "input": [
+                "Reshape_894",
+                "Gather_902",
+                "Gather_903"
+              ],
+              "output": [
+                "Add_906"
+              ],
+              "attrs": {
+                "transA": 0,
+                "alpha": 1,
+                "transB": 1,
+                "beta": 1
+              },
+              "gatherInput": [
+                "decoder_Wemb",
+                "Squeeze_901"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "identicalOptimizedProjection": true,
+      "variants": [
+        {
+          "variant": "baseline",
+          "projection": [
+            {
+              "graph": "mozilla_release_greedy",
+              "op": "Gemm",
+              "input": [
+                "Reshape_619",
+                "Gather_627",
+                "Gather_628"
+              ],
+              "output": [
+                "Add_631"
+              ],
+              "attrs": {
+                "beta": 1,
+                "transB": 1,
+                "alpha": 1,
+                "transA": 0
+              },
+              "gatherInput": [
+                "Wemb",
+                "Squeeze_626"
+              ]
+            },
+            {
+              "graph": "decode_loop",
+              "op": "Gemm",
+              "input": [
+                "Reshape_894",
+                "Gather_902",
+                "Gather_903"
+              ],
+              "output": [
+                "Add_906"
+              ],
+              "attrs": {
+                "beta": 1,
+                "transB": 1,
+                "alpha": 1,
+                "transA": 0
+              },
+              "gatherInput": [
+                "Wemb",
+                "Squeeze_901"
+              ]
+            }
+          ]
+        },
+        {
+          "variant": "candidate",
+          "projection": [
+            {
+              "graph": "mozilla_release_greedy",
+              "op": "Gemm",
+              "input": [
+                "Reshape_619",
+                "Gather_627",
+                "Gather_628"
+              ],
+              "output": [
+                "Add_631"
+              ],
+              "attrs": {
+                "transA": 0,
+                "alpha": 1,
+                "transB": 1,
+                "beta": 1
+              },
+              "gatherInput": [
+                "Wemb",
+                "Squeeze_626"
+              ]
+            },
+            {
+              "graph": "decode_loop",
+              "op": "Gemm",
+              "input": [
+                "Reshape_894",
+                "Gather_902",
+                "Gather_903"
+              ],
+              "output": [
+                "Add_906"
+              ],
+              "attrs": {
+                "transA": 0,
+                "alpha": 1,
+                "transB": 1,
+                "beta": 1
+              },
+              "gatherInput": [
+                "Wemb",
+                "Squeeze_901"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
