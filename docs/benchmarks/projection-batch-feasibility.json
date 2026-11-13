@@ -1,0 +1,278 @@
+{
+  "started": "2026-11-13T09:50:50.355Z",
+  "ort": {
+    "common": "1.30.0",
+    "node": "1.30.0"
+  },
+  "scope": "Isolated projection batching feasibility, not a full-model/service benchmark",
+  "cases": [
+    {
+      "pair": "en_zh-Hans",
+      "N": 32000,
+      "K": 384,
+      "batch": 1,
+      "samples": 128,
+      "exactRows": 128,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 0,
+      "blocks": [
+        {
+          "ms": 500.3494609999999,
+          "calls": 524,
+          "usPerRow": 954.865383587786
+        },
+        {
+          "ms": 500.1598099999999,
+          "calls": 711,
+          "usPerRow": 703.4596483825596
+        },
+        {
+          "ms": 500.35674199999994,
+          "calls": 885,
+          "usPerRow": 565.374849717514
+        },
+        {
+          "ms": 500.14121499999965,
+          "calls": 930,
+          "usPerRow": 537.7862526881717
+        }
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "N": 32000,
+      "K": 384,
+      "batch": 2,
+      "samples": 128,
+      "exactRows": 0,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 1.2874603271484375e-05,
+      "blocks": [
+        {
+          "ms": 500.0598319999999,
+          "calls": 678,
+          "usPerRow": 368.7756873156342
+        },
+        {
+          "ms": 500.22149199999967,
+          "calls": 814,
+          "usPerRow": 307.2613587223585
+        },
+        {
+          "ms": 500.01711200000045,
+          "calls": 767,
+          "usPerRow": 325.9563963494136
+        },
+        {
+          "ms": 500.0856359999998,
+          "calls": 813,
+          "usPerRow": 307.55574169741686
+        }
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "N": 32000,
+      "K": 384,
+      "batch": 4,
+      "samples": 128,
+      "exactRows": 0,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 1.2874603271484375e-05,
+      "blocks": [
+        {
+          "ms": 500.75958699999956,
+          "calls": 349,
+          "usPerRow": 358.71030587392517
+        },
+        {
+          "ms": 500.96604600000046,
+          "calls": 326,
+          "usPerRow": 384.1764156441721
+        },
+        {
+          "ms": 500.9052579999998,
+          "calls": 236,
+          "usPerRow": 530.6199766949151
+        },
+        {
+          "ms": 500.2887219999993,
+          "calls": 322,
+          "usPerRow": 388.4229208074529
+        }
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "N": 32000,
+      "K": 384,
+      "batch": 8,
+      "samples": 128,
+      "exactRows": 0,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 1.2874603271484375e-05,
+      "blocks": [
+        {
+          "ms": 501.53304600000047,
+          "calls": 171,
+          "usPerRow": 366.61772368421083
+        },
+        {
+          "ms": 502.6501449999996,
+          "calls": 132,
+          "usPerRow": 475.99445549242387
+        },
+        {
+          "ms": 510.5019960000009,
+          "calls": 206,
+          "usPerRow": 309.7706286407772
+        },
+        {
+          "ms": 500.22908800000005,
+          "calls": 196,
+          "usPerRow": 319.02365306122454
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "N": 64000,
+      "K": 384,
+      "batch": 1,
+      "samples": 128,
+      "exactRows": 128,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 0,
+      "blocks": [
+        {
+          "ms": 503.23574499999995,
+          "calls": 168,
+          "usPerRow": 2995.4508630952378
+        },
+        {
+          "ms": 502.2134559999995,
+          "calls": 111,
+          "usPerRow": 4524.445549549545
+        },
+        {
+          "ms": 501.1929799999998,
+          "calls": 105,
+          "usPerRow": 4773.266476190474
+        },
+        {
+          "ms": 501.53032800000074,
+          "calls": 101,
+          "usPerRow": 4965.646811881195
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "N": 64000,
+      "K": 384,
+      "batch": 2,
+      "samples": 128,
+      "exactRows": 0,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 1.1682510375976562e-05,
+      "blocks": [
+        {
+          "ms": 502.1931449999993,
+          "calls": 89,
+          "usPerRow": 2821.3098033707824
+        },
+        {
+          "ms": 503.85998199999995,
+          "calls": 84,
+          "usPerRow": 2999.166559523809
+        },
+        {
+          "ms": 501.9836039999991,
+          "calls": 74,
+          "usPerRow": 3391.781108108102
+        },
+        {
+          "ms": 500.92912400000023,
+          "calls": 76,
+          "usPerRow": 3295.586342105265
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "N": 64000,
+      "K": 384,
+      "batch": 4,
+      "samples": 128,
+      "exactRows": 0,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 1.1682510375976562e-05,
+      "blocks": [
+        {
+          "ms": 501.87237699999787,
+          "calls": 126,
+          "usPerRow": 995.7785257936466
+        },
+        {
+          "ms": 500.91942299999937,
+          "calls": 150,
+          "usPerRow": 834.8657049999989
+        },
+        {
+          "ms": 500.08867499999906,
+          "calls": 144,
+          "usPerRow": 868.2095052083317
+        },
+        {
+          "ms": 503.74406699999963,
+          "calls": 124,
+          "usPerRow": 1015.6130383064509
+        }
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "N": 64000,
+      "K": 384,
+      "batch": 8,
+      "samples": 128,
+      "exactRows": 0,
+      "orderedTop9EqualRows": 128,
+      "top9SetEqualRows": 128,
+      "maxAbsError": 1.1682510375976562e-05,
+      "blocks": [
+        {
+          "ms": 502.4485399999976,
+          "calls": 85,
+          "usPerRow": 738.8949117647023
+        },
+        {
+          "ms": 501.831339999997,
+          "calls": 79,
+          "usPerRow": 794.0369303797421
+        },
+        {
+          "ms": 504.40112299999964,
+          "calls": 86,
+          "usPerRow": 733.1411671511623
+        },
+        {
+          "ms": 503.44712900000013,
+          "calls": 81,
+          "usPerRow": 776.9245817901236
+        }
+      ]
+    }
+  ],
+  "finished": "2026-11-13T09:51:10.748Z",
+  "productionChanged": false,
+  "warning": "Sequential batch-size sweep with profiling disabled; timings are exploratory, not ABBA. Batch>1 uses different ORT arithmetic and cannot be adopted based on throughput alone.",
+  "scriptSha256": "27d25c3f92540ed06099f96d49afd87adc16e87c88a027ed53a3ab53baf4a10e"
+}
