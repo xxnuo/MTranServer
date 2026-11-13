@@ -1,0 +1,1492 @@
+{
+  "profile": {
+    "ort": {
+      "common": "1.30.0",
+      "node": "1.30.0"
+    },
+    "reports": [
+      {
+        "pair": "en_zh-Hans",
+        "mode": "standard",
+        "sourceSha256": "8247cf605656a0e77be72b8d18679acfdfa5c38046b6da528372aa2cc20d3909",
+        "trace": ".tmp/stage-profile/1794575139934-en_zh-Hans-standard_2026-11-13_21-05-41_601.json",
+        "optimized": ".tmp/stage-profile/1794575139934-en_zh-Hans-standard-optimized.onnx",
+        "allWarm": {
+          "requests": 20,
+          "sourceTokens": 451,
+          "outputTokens": 593,
+          "leafUs": 933570,
+          "modelRunUs": 1239599,
+          "stageUs": {
+            "encoder": 59506,
+            "context_kv": 5999,
+            "decode": 503562,
+            "projection": 360484,
+            "control": 4019
+          },
+          "stagePercent": {
+            "encoder": 6.374026586115663,
+            "context_kv": 0.64258705828165,
+            "decode": 53.93939393939394,
+            "projection": 38.61349443533961,
+            "control": 0.43049798086913676
+          },
+          "decoderModuleUs": {
+            "attention": 150402,
+            "ffn": 220490,
+            "rnn": 131371,
+            "shape": 1299
+          },
+          "decoderModulePercent": {
+            "attention": 29.867623053367808,
+            "ffn": 43.78606805120323,
+            "rnn": 26.088346618688462,
+            "shape": 0.25796227674050065
+          }
+        },
+        "eosWarm": {
+          "requests": 19,
+          "sourceTokens": 370,
+          "outputTokens": 349,
+          "leafUs": 564136,
+          "modelRunUs": 751085,
+          "stageUs": {
+            "encoder": 52695,
+            "context_kv": 5378,
+            "decode": 292875,
+            "projection": 210764,
+            "control": 2424
+          },
+          "stagePercent": {
+            "encoder": 9.340832707006822,
+            "context_kv": 0.9533162216203185,
+            "decode": 51.91567281648397,
+            "projection": 37.360494632499964,
+            "control": 0.4296836223889275
+          },
+          "decoderModuleUs": {
+            "attention": 82858,
+            "ffn": 131789,
+            "rnn": 77460,
+            "shape": 768
+          },
+          "decoderModulePercent": {
+            "attention": 28.291250533504055,
+            "ffn": 44.998378147673925,
+            "rnn": 26.448143405889883,
+            "shape": 0.26222791293213826
+          }
+        },
+        "cappedWarm": {
+          "requests": 1,
+          "sourceTokens": 81,
+          "outputTokens": 244,
+          "leafUs": 369434,
+          "modelRunUs": 488514,
+          "stageUs": {
+            "encoder": 6811,
+            "context_kv": 621,
+            "decode": 210687,
+            "projection": 149720,
+            "control": 1595
+          },
+          "stagePercent": {
+            "encoder": 1.843631068066285,
+            "context_kv": 0.16809497772267848,
+            "decode": 57.0296724178067,
+            "projection": 40.52686000747089,
+            "control": 0.4317415289334495
+          },
+          "decoderModuleUs": {
+            "attention": 67544,
+            "ffn": 88701,
+            "rnn": 53911,
+            "shape": 531
+          },
+          "decoderModulePercent": {
+            "attention": 32.0589310208983,
+            "ffn": 42.100841532700166,
+            "rnn": 25.58819481031103,
+            "shape": 0.2520326360905039
+          }
+        },
+        "cappedIndexes": [
+          18
+        ],
+        "sourceLengthBuckets": [
+          {
+            "sourceLength": "<=16",
+            "requests": 15,
+            "sourceTokens": 170,
+            "outputTokens": 162,
+            "leafUs": 272253,
+            "modelRunUs": 366267,
+            "stageUs": {
+              "encoder": 31388,
+              "context_kv": 3685,
+              "decode": 138199,
+              "projection": 97774,
+              "control": 1207
+            },
+            "stagePercent": {
+              "encoder": 11.528982233437281,
+              "context_kv": 1.3535204387095827,
+              "decode": 50.761240463833275,
+              "projection": 35.91291923321322,
+              "control": 0.4433376308066394
+            },
+            "decoderModuleUs": {
+              "attention": 36664,
+              "ffn": 64017,
+              "rnn": 37160,
+              "shape": 358
+            },
+            "decoderModulePercent": {
+              "attention": 26.529859116201997,
+              "ffn": 46.32233228894565,
+              "rnn": 26.888761857900565,
+              "shape": 0.2590467369517869
+            }
+          },
+          {
+            "sourceLength": "17-64",
+            "requests": 3,
+            "sourceTokens": 132,
+            "outputTokens": 126,
+            "leafUs": 195817,
+            "modelRunUs": 258727,
+            "stageUs": {
+              "encoder": 13001,
+              "context_kv": 1084,
+              "decode": 104382,
+              "projection": 76523,
+              "control": 827
+            },
+            "stagePercent": {
+              "encoder": 6.639362261703529,
+              "context_kv": 0.5535780856616126,
+              "decode": 53.30589274679931,
+              "projection": 39.0788338091177,
+              "control": 0.4223330967178539
+            },
+            "decoderModuleUs": {
+              "attention": 30648,
+              "ffn": 46208,
+              "rnn": 27252,
+              "shape": 274
+            },
+            "decoderModulePercent": {
+              "attention": 29.361384146691957,
+              "ffn": 44.268168841371114,
+              "rnn": 26.107949646490773,
+              "shape": 0.2624973654461497
+            }
+          },
+          {
+            "sourceLength": ">64",
+            "requests": 1,
+            "sourceTokens": 68,
+            "outputTokens": 61,
+            "leafUs": 96066,
+            "modelRunUs": 126091,
+            "stageUs": {
+              "encoder": 8306,
+              "context_kv": 609,
+              "decode": 50294,
+              "projection": 36467,
+              "control": 390
+            },
+            "stagePercent": {
+              "encoder": 8.646139112693357,
+              "context_kv": 0.6339391668228093,
+              "decode": 52.3535902400433,
+              "projection": 37.96036058543085,
+              "control": 0.40597089500968087
+            },
+            "decoderModuleUs": {
+              "attention": 15546,
+              "ffn": 21564,
+              "rnn": 13048,
+              "shape": 136
+            },
+            "decoderModulePercent": {
+              "attention": 30.910247743269576,
+              "ffn": 42.8758897681632,
+              "rnn": 25.94345249930409,
+              "shape": 0.27040998926313276
+            }
+          }
+        ],
+        "profilingWallRatio": 1.6992625679267832
+      },
+      {
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "sourceSha256": "e23eac4afa287ca0668625f0f6315adf566f9d1f29db94d9d14690d0056f0a99",
+        "trace": ".tmp/stage-profile/1794575139934-en_zh-Hans-fast_2026-11-13_21-05-48_655.json",
+        "optimized": ".tmp/stage-profile/1794575139934-en_zh-Hans-fast-optimized.onnx",
+        "allWarm": {
+          "requests": 20,
+          "sourceTokens": 451,
+          "outputTokens": 591,
+          "leafUs": 691855,
+          "modelRunUs": 977435,
+          "stageUs": {
+            "encoder": 72150,
+            "context_kv": 6830,
+            "decode": 533858,
+            "shortlist_prepare": 17119,
+            "projection": 57611,
+            "control": 4287
+          },
+          "stagePercent": {
+            "encoder": 10.428485737618432,
+            "context_kv": 0.987201075369839,
+            "decode": 77.16327843261955,
+            "shortlist_prepare": 2.474362402526541,
+            "projection": 8.32703384379675,
+            "control": 0.6196385080688873
+          },
+          "decoderModuleUs": {
+            "attention": 156883,
+            "ffn": 237915,
+            "rnn": 137508,
+            "shape": 1552
+          },
+          "decoderModulePercent": {
+            "attention": 29.386653379737684,
+            "ffn": 44.56522146338539,
+            "rnn": 25.75741114678435,
+            "shape": 0.2907140100925714
+          }
+        },
+        "eosWarm": {
+          "requests": 19,
+          "sourceTokens": 370,
+          "outputTokens": 347,
+          "leafUs": 464056,
+          "modelRunUs": 629600,
+          "stageUs": {
+            "encoder": 65446,
+            "context_kv": 6210,
+            "decode": 325066,
+            "shortlist_prepare": 16987,
+            "projection": 47618,
+            "control": 2729
+          },
+          "stagePercent": {
+            "encoder": 14.10303928836175,
+            "context_kv": 1.3382005620011377,
+            "decode": 70.0488734118296,
+            "shortlist_prepare": 3.6605495888427257,
+            "projection": 10.261261571879256,
+            "control": 0.5880755770855242
+          },
+          "decoderModuleUs": {
+            "attention": 89838,
+            "ffn": 152149,
+            "rnn": 82162,
+            "shape": 917
+          },
+          "decoderModulePercent": {
+            "attention": 27.636849132176234,
+            "ffn": 46.805571791574636,
+            "rnn": 25.275482517396465,
+            "shape": 0.28209655885266377
+          }
+        },
+        "cappedWarm": {
+          "requests": 1,
+          "sourceTokens": 81,
+          "outputTokens": 244,
+          "leafUs": 227799,
+          "modelRunUs": 347835,
+          "stageUs": {
+            "encoder": 6704,
+            "context_kv": 620,
+            "decode": 208792,
+            "shortlist_prepare": 132,
+            "projection": 9993,
+            "control": 1558
+          },
+          "stagePercent": {
+            "encoder": 2.942945315826672,
+            "context_kv": 0.2721697636951874,
+            "decode": 91.65624080878318,
+            "shortlist_prepare": 0.05794582065768506,
+            "projection": 4.386762013880658,
+            "control": 0.6839362771566161
+          },
+          "decoderModuleUs": {
+            "attention": 67045,
+            "ffn": 85766,
+            "rnn": 55346,
+            "shape": 635
+          },
+          "decoderModulePercent": {
+            "attention": 32.1109046323614,
+            "ffn": 41.07724433886356,
+            "rnn": 26.50772060232193,
+            "shape": 0.30413042645312083
+          }
+        },
+        "cappedIndexes": [
+          18
+        ],
+        "sourceLengthBuckets": [
+          {
+            "sourceLength": "<=16",
+            "requests": 15,
+            "sourceTokens": 170,
+            "outputTokens": 161,
+            "leafUs": 260782,
+            "modelRunUs": 347512,
+            "stageUs": {
+              "encoder": 44542,
+              "context_kv": 4078,
+              "decode": 183460,
+              "shortlist_prepare": 9505,
+              "projection": 17618,
+              "control": 1579
+            },
+            "stagePercent": {
+              "encoder": 17.08016657591398,
+              "context_kv": 1.5637582348474972,
+              "decode": 70.34994746569932,
+              "shortlist_prepare": 3.644806773473629,
+              "projection": 6.755834375071899,
+              "control": 0.6054865749936729
+            },
+            "decoderModuleUs": {
+              "attention": 46297,
+              "ffn": 91772,
+              "rnn": 44899,
+              "shape": 492
+            },
+            "decoderModulePercent": {
+              "attention": 25.2354736727352,
+              "ffn": 50.02289327373814,
+              "rnn": 24.473454704022675,
+              "shape": 0.26817834950397906
+            }
+          },
+          {
+            "sourceLength": "17-64",
+            "requests": 3,
+            "sourceTokens": 132,
+            "outputTokens": 125,
+            "leafUs": 127642,
+            "modelRunUs": 177505,
+            "stageUs": {
+              "encoder": 14747,
+              "context_kv": 1541,
+              "decode": 87639,
+              "shortlist_prepare": 5330,
+              "projection": 17641,
+              "control": 744
+            },
+            "stagePercent": {
+              "encoder": 11.553407185722568,
+              "context_kv": 1.2072828692750035,
+              "decode": 68.66000219363532,
+              "shortlist_prepare": 4.175741527083562,
+              "projection": 13.820685981103399,
+              "control": 0.5828802431801444
+            },
+            "decoderModuleUs": {
+              "attention": 26613,
+              "ffn": 37251,
+              "rnn": 23511,
+              "shape": 264
+            },
+            "decoderModulePercent": {
+              "attention": 30.366617601752644,
+              "ffn": 42.505049121966245,
+              "rnn": 26.827097525074453,
+              "shape": 0.3012357512066546
+            }
+          },
+          {
+            "sourceLength": ">64",
+            "requests": 1,
+            "sourceTokens": 68,
+            "outputTokens": 61,
+            "leafUs": 75632,
+            "modelRunUs": 104583,
+            "stageUs": {
+              "encoder": 6157,
+              "context_kv": 591,
+              "decode": 53967,
+              "shortlist_prepare": 2152,
+              "projection": 12359,
+              "control": 406
+            },
+            "stagePercent": {
+              "encoder": 8.140734080812354,
+              "context_kv": 0.7814152739581129,
+              "decode": 71.35471757986038,
+              "shortlist_prepare": 2.845356462872858,
+              "projection": 16.340966786545376,
+              "control": 0.5368098159509203
+            },
+            "decoderModuleUs": {
+              "attention": 16928,
+              "ffn": 23126,
+              "rnn": 13752,
+              "shape": 161
+            },
+            "decoderModulePercent": {
+              "attention": 31.367317064131786,
+              "ffn": 42.85211332851557,
+              "rnn": 25.482239146144867,
+              "shape": 0.2983304612077751
+            }
+          }
+        ],
+        "profilingWallRatio": 3.1157671277895265
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "standard",
+        "sourceSha256": "8fba17d3ab3e85fc1c42f891ca9bef795731bb0dda4f6c8258a733fffd74a948",
+        "trace": ".tmp/stage-profile/1794575139934-zh-Hans_en-standard_2026-11-13_21-05-56_424.json",
+        "optimized": ".tmp/stage-profile/1794575139934-zh-Hans_en-standard-optimized.onnx",
+        "allWarm": {
+          "requests": 19,
+          "sourceTokens": 348,
+          "outputTokens": 553,
+          "leafUs": 1436814,
+          "modelRunUs": 1694030,
+          "stageUs": {
+            "encoder": 53543,
+            "context_kv": 6132,
+            "decode": 594251,
+            "projection": 778659,
+            "control": 4229
+          },
+          "stagePercent": {
+            "encoder": 3.7265087895858477,
+            "context_kv": 0.4267775787262652,
+            "decode": 41.35893720411967,
+            "projection": 54.19344466298352,
+            "control": 0.29433176458469923
+          },
+          "decoderModuleUs": {
+            "attention": 172652,
+            "ffn": 275514,
+            "rnn": 144738,
+            "shape": 1347
+          },
+          "decoderModulePercent": {
+            "attention": 29.05371635891231,
+            "ffn": 46.36323708332001,
+            "rnn": 24.35637466323153,
+            "shape": 0.2266718945361472
+          }
+        },
+        "eosWarm": {
+          "requests": 18,
+          "sourceTokens": 267,
+          "outputTokens": 309,
+          "leafUs": 843971,
+          "modelRunUs": 997792,
+          "stageUs": {
+            "encoder": 45363,
+            "context_kv": 5505,
+            "decode": 340651,
+            "projection": 449889,
+            "control": 2563
+          },
+          "stagePercent": {
+            "encoder": 5.374947717397872,
+            "context_kv": 0.6522735970785726,
+            "decode": 40.36287976719579,
+            "projection": 53.306215497925876,
+            "control": 0.30368342040188584
+          },
+          "decoderModuleUs": {
+            "attention": 93393,
+            "ffn": 161871,
+            "rnn": 84599,
+            "shape": 788
+          },
+          "decoderModulePercent": {
+            "attention": 27.416035766811195,
+            "ffn": 47.5181343956131,
+            "rnn": 24.83450804489052,
+            "shape": 0.2313217926851822
+          }
+        },
+        "cappedWarm": {
+          "requests": 1,
+          "sourceTokens": 81,
+          "outputTokens": 244,
+          "leafUs": 592843,
+          "modelRunUs": 696238,
+          "stageUs": {
+            "encoder": 8180,
+            "context_kv": 627,
+            "decode": 253600,
+            "projection": 328770,
+            "control": 1666
+          },
+          "stagePercent": {
+            "encoder": 1.3797919516634252,
+            "context_kv": 0.10576155913116964,
+            "decode": 42.77692407602013,
+            "projection": 55.45650366117167,
+            "control": 0.28101875201360227
+          },
+          "decoderModuleUs": {
+            "attention": 79259,
+            "ffn": 113643,
+            "rnn": 60139,
+            "shape": 559
+          },
+          "decoderModulePercent": {
+            "attention": 31.253548895899055,
+            "ffn": 44.811908517350155,
+            "rnn": 23.714116719242902,
+            "shape": 0.22042586750788642
+          }
+        },
+        "cappedIndexes": [
+          17
+        ],
+        "sourceLengthBuckets": [
+          {
+            "sourceLength": "<=16",
+            "requests": 15,
+            "sourceTokens": 134,
+            "outputTokens": 163,
+            "leafUs": 375665,
+            "modelRunUs": 450804,
+            "stageUs": {
+              "encoder": 29166,
+              "context_kv": 3881,
+              "decode": 142871,
+              "projection": 198536,
+              "control": 1211
+            },
+            "stagePercent": {
+              "encoder": 7.763832137675855,
+              "context_kv": 1.0331013003606937,
+              "decode": 38.031490822940654,
+              "projection": 52.84921406039956,
+              "control": 0.32236167862324144
+            },
+            "decoderModuleUs": {
+              "attention": 36808,
+              "ffn": 69405,
+              "rnn": 36295,
+              "shape": 363
+            },
+            "decoderModulePercent": {
+              "attention": 25.763100979205017,
+              "ffn": 48.578787857577815,
+              "rnn": 25.404035808526572,
+              "shape": 0.254075354690595
+            }
+          },
+          {
+            "sourceLength": "17-64",
+            "requests": 3,
+            "sourceTokens": 133,
+            "outputTokens": 146,
+            "leafUs": 468306,
+            "modelRunUs": 546988,
+            "stageUs": {
+              "encoder": 16197,
+              "context_kv": 1624,
+              "decode": 197780,
+              "projection": 251353,
+              "control": 1352
+            },
+            "stagePercent": {
+              "encoder": 3.4586360200381803,
+              "context_kv": 0.3467818050590853,
+              "decode": 42.23306983041003,
+              "projection": 53.67281222106913,
+              "control": 0.2887001234235735
+            },
+            "decoderModuleUs": {
+              "attention": 56585,
+              "ffn": 92466,
+              "rnn": 48304,
+              "shape": 425
+            },
+            "decoderModulePercent": {
+              "attention": 28.6100717969461,
+              "ffn": 46.75194660734149,
+              "rnn": 24.42309636970371,
+              "shape": 0.21488522600869653
+            }
+          }
+        ],
+        "profilingWallRatio": 1.4365163083599506
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "sourceSha256": "ceac8dc6a63438d13a09d2cbd1b2fea09863610d0405ea9910e0311551474a60",
+        "trace": ".tmp/stage-profile/1794575139934-zh-Hans_en-fast_2026-11-13_21-06-03_783.json",
+        "optimized": ".tmp/stage-profile/1794575139934-zh-Hans_en-fast-optimized.onnx",
+        "allWarm": {
+          "requests": 19,
+          "sourceTokens": 348,
+          "outputTokens": 553,
+          "leafUs": 413809,
+          "modelRunUs": 629935,
+          "stageUs": {
+            "encoder": 48073,
+            "context_kv": 4959,
+            "decode": 320599,
+            "shortlist_prepare": 9126,
+            "projection": 28047,
+            "control": 3005
+          },
+          "stagePercent": {
+            "encoder": 11.61719537274443,
+            "context_kv": 1.198378962274866,
+            "decode": 77.47511533098603,
+            "shortlist_prepare": 2.205365277217267,
+            "projection": 6.777764620875815,
+            "control": 0.7261804359015874
+          },
+          "decoderModuleUs": {
+            "attention": 101091,
+            "ffn": 124607,
+            "rnn": 93747,
+            "shape": 1154
+          },
+          "decoderModulePercent": {
+            "attention": 31.5319136990446,
+            "ffn": 38.86693345893156,
+            "rnn": 29.24120162570688,
+            "shape": 0.3599512163169567
+          }
+        },
+        "eosWarm": {
+          "requests": 18,
+          "sourceTokens": 267,
+          "outputTokens": 309,
+          "leafUs": 248766,
+          "modelRunUs": 374185,
+          "stageUs": {
+            "encoder": 38777,
+            "context_kv": 4092,
+            "decode": 173959,
+            "shortlist_prepare": 8991,
+            "projection": 21183,
+            "control": 1764
+          },
+          "stagePercent": {
+            "encoder": 15.58774109002034,
+            "context_kv": 1.644919321772268,
+            "decode": 69.92876840082648,
+            "shortlist_prepare": 3.6142398880876003,
+            "projection": 8.515231181109959,
+            "control": 0.7091001181833531
+          },
+          "decoderModuleUs": {
+            "attention": 52099,
+            "ffn": 69889,
+            "rnn": 51346,
+            "shape": 625
+          },
+          "decoderModulePercent": {
+            "attention": 29.94901097385016,
+            "ffn": 40.175558608637665,
+            "rnn": 29.516150357268092,
+            "shape": 0.3592800602440805
+          }
+        },
+        "cappedWarm": {
+          "requests": 1,
+          "sourceTokens": 81,
+          "outputTokens": 244,
+          "leafUs": 165043,
+          "modelRunUs": 255750,
+          "stageUs": {
+            "encoder": 9296,
+            "context_kv": 867,
+            "decode": 146640,
+            "shortlist_prepare": 135,
+            "projection": 6864,
+            "control": 1241
+          },
+          "stagePercent": {
+            "encoder": 5.632471537720473,
+            "context_kv": 0.5253176444926474,
+            "decode": 88.84957253564222,
+            "shortlist_prepare": 0.08179686505940877,
+            "projection": 4.158916161242828,
+            "control": 0.7519252558424169
+          },
+          "decoderModuleUs": {
+            "attention": 48992,
+            "ffn": 54718,
+            "rnn": 42401,
+            "shape": 529
+          },
+          "decoderModulePercent": {
+            "attention": 33.40971085651937,
+            "ffn": 37.314511729405346,
+            "rnn": 28.915030005455538,
+            "shape": 0.360747408619749
+          }
+        },
+        "cappedIndexes": [
+          17
+        ],
+        "sourceLengthBuckets": [
+          {
+            "sourceLength": "<=16",
+            "requests": 15,
+            "sourceTokens": 134,
+            "outputTokens": 163,
+            "leafUs": 125953,
+            "modelRunUs": 193384,
+            "stageUs": {
+              "encoder": 27134,
+              "context_kv": 2860,
+              "decode": 85515,
+              "shortlist_prepare": 3957,
+              "projection": 5525,
+              "control": 962
+            },
+            "stagePercent": {
+              "encoder": 21.542956499646692,
+              "context_kv": 2.270688272609624,
+              "decode": 67.89437329797623,
+              "shortlist_prepare": 3.1416480750756235,
+              "projection": 4.386556890268592,
+              "control": 0.7637769644232373
+            },
+            "decoderModuleUs": {
+              "attention": 24740,
+              "ffn": 34582,
+              "rnn": 25877,
+              "shape": 316
+            },
+            "decoderModulePercent": {
+              "attention": 28.930596971291585,
+              "ffn": 40.43968894346021,
+              "rnn": 30.260188271063555,
+              "shape": 0.369525814184646
+            }
+          },
+          {
+            "sourceLength": "17-64",
+            "requests": 3,
+            "sourceTokens": 133,
+            "outputTokens": 146,
+            "leafUs": 122813,
+            "modelRunUs": 180801,
+            "stageUs": {
+              "encoder": 11643,
+              "context_kv": 1232,
+              "decode": 88444,
+              "shortlist_prepare": 5034,
+              "projection": 15658,
+              "control": 802
+            },
+            "stagePercent": {
+              "encoder": 9.48026674700561,
+              "context_kv": 1.0031511322091309,
+              "decode": 72.01517754635096,
+              "shortlist_prepare": 4.0989146100168545,
+              "projection": 12.749464633222868,
+              "control": 0.6530253311945804
+            },
+            "decoderModuleUs": {
+              "attention": 27359,
+              "ffn": 35307,
+              "rnn": 25469,
+              "shape": 309
+            },
+            "decoderModulePercent": {
+              "attention": 30.933698159287232,
+              "ffn": 39.92017547826873,
+              "rnn": 28.796752747501245,
+              "shape": 0.3493736149427887
+            }
+          }
+        ],
+        "profilingWallRatio": 2.4033913729762926
+      }
+    ],
+    "caveat": "Single-thread instrumented timings; exclude Loop and executor containers; profile overhead is substantial."
+  },
+  "normalSpin": {
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "normalRequests": 19,
+        "excluded": [
+          {
+            "index": 18,
+            "outputTokens": 244
+          }
+        ],
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1492.940242,
+            "cpuMs": 2424.265,
+            "voluntarySwitches": 76463,
+            "idleCpuMs": 0.233
+          },
+          {
+            "round": 0,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 936.4823110000002,
+            "cpuMs": 3571.986,
+            "voluntarySwitches": 26327,
+            "idleCpuMs": 0.133
+          },
+          {
+            "round": 0,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 2000.3894719999998,
+            "cpuMs": 3900.084,
+            "voluntarySwitches": 348,
+            "idleCpuMs": 0.127
+          },
+          {
+            "round": 0,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1130.0939599999992,
+            "cpuMs": 4327.031,
+            "voluntarySwitches": 12752,
+            "idleCpuMs": 0.238
+          },
+          {
+            "round": 1,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1727.2877800000006,
+            "cpuMs": 3395.343,
+            "voluntarySwitches": 364,
+            "idleCpuMs": 0.162
+          },
+          {
+            "round": 1,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 656.541013,
+            "cpuMs": 2548.466,
+            "voluntarySwitches": 6662,
+            "idleCpuMs": 0.292
+          },
+          {
+            "round": 1,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1494.0668690000002,
+            "cpuMs": 2443.769,
+            "voluntarySwitches": 76437,
+            "idleCpuMs": 0.151
+          },
+          {
+            "round": 1,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 610.1246919999994,
+            "cpuMs": 2354.421,
+            "voluntarySwitches": 21250,
+            "idleCpuMs": 0.989
+          },
+          {
+            "round": 2,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1292.7117170000001,
+            "cpuMs": 2093.324,
+            "voluntarySwitches": 76515,
+            "idleCpuMs": 4.248
+          },
+          {
+            "round": 2,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 542.1670549999981,
+            "cpuMs": 2100.546,
+            "voluntarySwitches": 16408,
+            "idleCpuMs": 5.336
+          },
+          {
+            "round": 2,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1274.0897659999973,
+            "cpuMs": 2490.485,
+            "voluntarySwitches": 351,
+            "idleCpuMs": 0.187
+          },
+          {
+            "round": 2,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 581.291573999999,
+            "cpuMs": 2254.615,
+            "voluntarySwitches": 6777,
+            "idleCpuMs": 0.109
+          },
+          {
+            "round": 3,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1405.9087499999987,
+            "cpuMs": 2758.907,
+            "voluntarySwitches": 360,
+            "idleCpuMs": 0.51
+          },
+          {
+            "round": 3,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 578.7144150000022,
+            "cpuMs": 2242.81,
+            "voluntarySwitches": 7016,
+            "idleCpuMs": 0.172
+          },
+          {
+            "round": 3,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1310.112391999999,
+            "cpuMs": 2126.316,
+            "voluntarySwitches": 76528,
+            "idleCpuMs": 0.078
+          },
+          {
+            "round": 3,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 604.9787510000024,
+            "cpuMs": 2331.374,
+            "voluntarySwitches": 21138,
+            "idleCpuMs": 5.525
+          },
+          {
+            "round": 4,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1300.3167840000024,
+            "cpuMs": 2102.887,
+            "voluntarySwitches": 76428,
+            "idleCpuMs": 0.113
+          },
+          {
+            "round": 4,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 532.3044719999998,
+            "cpuMs": 2058.49,
+            "voluntarySwitches": 16588,
+            "idleCpuMs": 0.101
+          },
+          {
+            "round": 4,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1276.8754670000017,
+            "cpuMs": 2497.36,
+            "voluntarySwitches": 359,
+            "idleCpuMs": 1.189
+          },
+          {
+            "round": 4,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 576.8041469999989,
+            "cpuMs": 2226.251,
+            "voluntarySwitches": 5722,
+            "idleCpuMs": 0.093
+          },
+          {
+            "round": 5,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1243.1525479999982,
+            "cpuMs": 2432.539,
+            "voluntarySwitches": 345,
+            "idleCpuMs": 0.073
+          },
+          {
+            "round": 5,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 638.3792440000034,
+            "cpuMs": 2476.202,
+            "voluntarySwitches": 6460,
+            "idleCpuMs": 0.981
+          },
+          {
+            "round": 5,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 1311.1667789999992,
+            "cpuMs": 2128.655,
+            "voluntarySwitches": 76514,
+            "idleCpuMs": 0.085
+          },
+          {
+            "round": 5,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 114,
+            "tokens": 2094,
+            "ms": 750.8996379999953,
+            "cpuMs": 2880.674,
+            "voluntarySwitches": 23156,
+            "idleCpuMs": 0.088
+          }
+        ]
+      },
+      {
+        "pair": "zh-Hans_en",
+        "normalRequests": 18,
+        "excluded": [
+          {
+            "index": 17,
+            "outputTokens": 244
+          }
+        ],
+        "blocks": [
+          {
+            "round": 0,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1899.9532770000005,
+            "cpuMs": 3190.067,
+            "voluntarySwitches": 68136,
+            "idleCpuMs": 1.064
+          },
+          {
+            "round": 0,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1055.6855110000033,
+            "cpuMs": 4067.557,
+            "voluntarySwitches": 18574,
+            "idleCpuMs": 0.552
+          },
+          {
+            "round": 0,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1836.9964770000006,
+            "cpuMs": 3614.873,
+            "voluntarySwitches": 338,
+            "idleCpuMs": 4.064
+          },
+          {
+            "round": 0,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1117.8726949999982,
+            "cpuMs": 4319.024,
+            "voluntarySwitches": 6850,
+            "idleCpuMs": 0.265
+          },
+          {
+            "round": 1,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1845.5353879999966,
+            "cpuMs": 3616.989,
+            "voluntarySwitches": 348,
+            "idleCpuMs": 0.076
+          },
+          {
+            "round": 1,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1046.946219999998,
+            "cpuMs": 4047.305,
+            "voluntarySwitches": 5670,
+            "idleCpuMs": 0.125
+          },
+          {
+            "round": 1,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1997.4843990000008,
+            "cpuMs": 3379.222,
+            "voluntarySwitches": 68092,
+            "idleCpuMs": 1.958
+          },
+          {
+            "round": 1,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1051.4357299999974,
+            "cpuMs": 4052.821,
+            "voluntarySwitches": 23120,
+            "idleCpuMs": 1.456
+          },
+          {
+            "round": 2,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1925.5514880000046,
+            "cpuMs": 3233.065,
+            "voluntarySwitches": 67897,
+            "idleCpuMs": 0.495
+          },
+          {
+            "round": 2,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1096.5534170000028,
+            "cpuMs": 4189.478,
+            "voluntarySwitches": 20855,
+            "idleCpuMs": 0.44
+          },
+          {
+            "round": 2,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1877.1119410000028,
+            "cpuMs": 3685.354,
+            "voluntarySwitches": 346,
+            "idleCpuMs": 0.084
+          },
+          {
+            "round": 2,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1113.6225650000051,
+            "cpuMs": 4311.199,
+            "voluntarySwitches": 5789,
+            "idleCpuMs": 0.572
+          },
+          {
+            "round": 3,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 2082.340167000002,
+            "cpuMs": 4093.57,
+            "voluntarySwitches": 347,
+            "idleCpuMs": 0.496
+          },
+          {
+            "round": 3,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1072.4479859999992,
+            "cpuMs": 4160.285,
+            "voluntarySwitches": 6822,
+            "idleCpuMs": 0.115
+          },
+          {
+            "round": 3,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1902.9087419999996,
+            "cpuMs": 3200.027,
+            "voluntarySwitches": 68079,
+            "idleCpuMs": 0.434
+          },
+          {
+            "round": 3,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1102.647557999997,
+            "cpuMs": 4235.067,
+            "voluntarySwitches": 20346,
+            "idleCpuMs": 0.108
+          },
+          {
+            "round": 4,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 2017.6956079999945,
+            "cpuMs": 3422.115,
+            "voluntarySwitches": 68100,
+            "idleCpuMs": 3.836
+          },
+          {
+            "round": 4,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1079.8963240000012,
+            "cpuMs": 4148.325,
+            "voluntarySwitches": 22171,
+            "idleCpuMs": 0.076
+          },
+          {
+            "round": 4,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1864.029297000001,
+            "cpuMs": 3665.962,
+            "voluntarySwitches": 345,
+            "idleCpuMs": 4.222
+          },
+          {
+            "round": 4,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1158.0954980000097,
+            "cpuMs": 4482.099,
+            "voluntarySwitches": 6572,
+            "idleCpuMs": 0.481
+          },
+          {
+            "round": 5,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1973.3435479999898,
+            "cpuMs": 3880.004,
+            "voluntarySwitches": 350,
+            "idleCpuMs": 0.117
+          },
+          {
+            "round": 5,
+            "variant": "spin500",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1251.8814989999955,
+            "cpuMs": 4851.248,
+            "voluntarySwitches": 7109,
+            "idleCpuMs": 0.081
+          },
+          {
+            "round": 5,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 1,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1859.6783359999972,
+            "cpuMs": 3126.76,
+            "voluntarySwitches": 68054,
+            "idleCpuMs": 0.104
+          },
+          {
+            "round": 5,
+            "variant": "baseline",
+            "threads": 2,
+            "concurrency": 4,
+            "requests": 108,
+            "tokens": 1854,
+            "ms": 1119.7881070000003,
+            "cpuMs": 4295.154,
+            "voluntarySwitches": 23659,
+            "idleCpuMs": 0.168
+          }
+        ]
+      }
+    ],
+    "finished": "2026-11-13T13:17:54.753Z"
+  },
+  "spinSummary": [
+    {
+      "pair": "en_zh-Hans",
+      "concurrency": 1,
+      "throughputPercent": -2.676125165797405,
+      "cpuIncreasePercent": 24.361653856801524,
+      "rounds": [
+        -25.367521530327263,
+        -13.50214560077535,
+        1.4615886177679949,
+        -6.813838949362805,
+        1.835834238015055,
+        5.47110900503911
+      ]
+    },
+    {
+      "pair": "en_zh-Hans",
+      "concurrency": 4,
+      "throughputPercent": -6.900223365302366,
+      "cpuIncreasePercent": 7.74221185217856,
+      "rounds": [
+        -17.132349685330517,
+        -7.069828096177233,
+        -6.730618634427499,
+        4.5383932591345655,
+        -7.714867382879476,
+        17.62594806418727
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "concurrency": 1,
+      "throughputPercent": 3.0038477058319746,
+      "cpuIncreasePercent": 13.65300169470397,
+      "rounds": [
+        3.4271595394028465,
+        8.233329579481596,
+        2.5805358722611027,
+        -8.616816207243739,
+        8.243771235103804,
+        -5.760031602971205
+      ]
+    },
+    {
+      "pair": "zh-Hans_en",
+      "concurrency": 4,
+      "throughputPercent": -3.5478760952338764,
+      "cpuIncreasePercent": 4.543829502525599,
+      "rounds": [
+        -5.562993378239279,
+        0.428819543376302,
+        -1.532758812228474,
+        2.8159474766357384,
+        -6.752394265849038,
+        -10.551589116502768
+      ]
+    }
+  ],
+  "sourceHashes": {
+    "capture.mjs": "79129252f2e492a337dc247c0e3d45131da6c55fa25179d0e1c1808e991490c5",
+    "classify.mjs": "f4d7e12c7487ba7553ec2303b6bb494620afeeada9c31e932beecb5534715b85",
+    "modules.mjs": "e093db16b683296619d3e88a59eb4ebaaef9b462ab05f47a2b31a950708ae4ee",
+    "analyze.mjs": "950314af3f1846cafaf8a10206eb844cbad18e21ec3f596c3551eb53e8a7205d",
+    "eos.mjs": "837f195aaff32d8119caabb169724674ee2223b03ae4bf248b03b8eb8718e7ae",
+    "normal-spin.mjs": "2b8781c2377b74c108ae7195e060e79f09a21c101b3707e4d3181c0841ec19a2"
+  }
+}
