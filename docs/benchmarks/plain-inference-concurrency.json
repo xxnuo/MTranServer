@@ -1,0 +1,3490 @@
+{
+  "version": "5.1.3",
+  "baselineCommit": "6094bd5",
+  "scope": "Long plain text only after existing splitting threshold; 32 short FLORES dev rows joined with newlines per language. Same segmentation, models and precision. Shared native inference budget, no batching or kernel change.",
+  "method": {
+    "cpuAffinity": [
+      4,
+      6,
+      8,
+      10
+    ],
+    "UV_THREADPOOL_SIZE": 4,
+    "engineCpuThreads": 1,
+    "maxConcurrentRuns": 4,
+    "httpCpuThreads": "production automatic selection; paired choices retained below",
+    "order": [
+      "baseline",
+      "candidate",
+      "candidate",
+      "baseline",
+      "baseline",
+      "candidate",
+      "candidate",
+      "baseline"
+    ],
+    "httpCacheSize": 0,
+    "httpNetwork": "loopback TCP",
+    "measuredEngineRequests": 160,
+    "measuredHttpRequests": 160,
+    "httpWarmup": "one per case plus two full rounds at each concurrency; startup excluded",
+    "engineWarmup": "one per case plus one full round at each concurrency; startup excluded"
+  },
+  "sourceHashes": {
+    "baseline": "ca027d2817683f1de948dece0a107bd3822b4e40ab83888fc5317606bde0ef0f",
+    "candidate": "128a98b77ab3ca23d60dc3521c8f77b583afe860ad280e3dc9c453b7e27dcbf1"
+  },
+  "rawEngine": {
+    "cases": [
+      {
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "inputCharacters": 3244,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 307.6057169999999
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 524.0746979999994
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 122.19321600000058
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 501.26558899999964
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 126.72972800000025
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 529.8328259999998
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 314.93494199999986
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 503.54607900000155
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 337.26868600000125
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 518.9465449999989
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 121.40027800000098
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 504.483717000001
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 175.10014100000262
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 536.2255499999992
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 322.8406070000019
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 518.341038999999
+          }
+        ],
+        "sourceRows": 32
+      },
+      {
+        "pair": "en_zh-Hans",
+        "mode": "standard",
+        "inputCharacters": 3244,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 620.4592980000016
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 852.9947109999994
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 211.39990599999874
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 842.9249460000028
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 212.87295500000255
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 821.6089639999991
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 579.7029859999966
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 785.2930150000029
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 591.3456890000016
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 750.3681540000034
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 215.59776899999997
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 797.0126750000054
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 210.07720999999583
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 836.1262760000027
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 682.1870290000006
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 826.8950980000009
+          }
+        ],
+        "sourceRows": 32
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "inputCharacters": 1516,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 396.7571319999988
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 676.8275090000025
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 161.42300200000318
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 743.2995210000008
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 151.19322900000407
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 629.0322020000021
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 410.9436859999987
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 623.6580389999945
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 419.55787799999234
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 674.0301010000112
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 150.45503100000496
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 595.175052999999
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 146.31990399998904
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 617.6961879999872
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 388.2132500000007
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 635.0231490000006
+          }
+        ],
+        "sourceRows": 32
+      },
+      {
+        "pair": "zh-Hans_en",
+        "mode": "standard",
+        "inputCharacters": 1516,
+        "blocks": [
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1519.9155360000004
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 2199.3324279999943
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 569.1773479999974
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2202.568447999991
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 585.1132379999908
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2254.442095999999
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1528.842313000001
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 2164.154322000002
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1568.6479370000015
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 2166.924450000006
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 560.9080070000055
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2464.1619260000007
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 1,
+            "ms": 659.1921559999755
+          },
+          {
+            "variant": "candidate",
+            "documentConcurrency": 4,
+            "ms": 2200.669565999997
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 1,
+            "ms": 1508.732548
+          },
+          {
+            "variant": "baseline",
+            "documentConcurrency": 4,
+            "ms": 2151.1768440000014
+          }
+        ],
+        "sourceRows": 32
+      }
+    ],
+    "finished": "2026-11-13T17:09:18.873Z"
+  },
+  "rawHttp": {
+    "complete": true,
+    "records": [
+      {
+        "fast": true,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 318.33402200209093,
+        "requestMs": [
+          318.2442050019745
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 495.6744049995905,
+        "requestMs": [
+          495.58653500207583,
+          491.6198600003554,
+          491.785689999233,
+          493.36843299897737
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 433.71820699758246,
+        "requestMs": [
+          433.6232479981845
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 674.0337230003206,
+        "requestMs": [
+          672.6606720003474,
+          670.1126999978442,
+          673.6313749970577,
+          664.4773179978074
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 130.95704699662747,
+        "requestMs": [
+          130.8874369969999
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 514.3523719998484,
+        "requestMs": [
+          512.7984350001498,
+          514.1112740020617,
+          504.25678199826507,
+          497.4832100015192
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 172.15883400058374,
+        "requestMs": [
+          172.08229700190714
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 716.5978720004205,
+        "requestMs": [
+          716.4837239979533,
+          706.0497569982545,
+          711.2098170000536,
+          699.0525239998533
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 127.90381500235526,
+        "requestMs": [
+          127.8354109999782
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 507.2702580000623,
+        "requestMs": [
+          507.19156799823395,
+          503.6378899967531,
+          502.5308789990959,
+          498.7528069977998
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 170.79802900116192,
+        "requestMs": [
+          170.71980599939707
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 694.5047080007498,
+        "requestMs": [
+          664.4884089982952,
+          693.7058929979685,
+          692.5709820025077,
+          693.962047000241
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 319.86739299827605,
+        "requestMs": [
+          319.73653999739327
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 505.3515520012297,
+        "requestMs": [
+          505.283127000439,
+          502.7780079981312,
+          498.400827000296,
+          501.596291000169
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 394.0050409983087,
+        "requestMs": [
+          393.8999790007074
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 658.8489120003942,
+        "requestMs": [
+          658.4760410005401,
+          648.5146699997131,
+          639.2767860015738,
+          658.4384140005568
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 313.07072799972957,
+        "requestMs": [
+          312.9303739988245
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 521.6287350012863,
+        "requestMs": [
+          512.9031569995277,
+          497.07322899848805,
+          521.2855479985592,
+          513.1671230010397
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 420.5420600010257,
+        "requestMs": [
+          420.4831400020339
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 664.4666489992233,
+        "requestMs": [
+          664.3112179990567,
+          655.346303999977,
+          663.5893189995841,
+          661.0436900009518
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 126.5449050006282,
+        "requestMs": [
+          126.48426799933077
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 507.09399100014707,
+        "requestMs": [
+          501.9466570010991,
+          505.2435060024436,
+          496.39104699963355,
+          506.5231420012424
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 169.0319039989845,
+        "requestMs": [
+          168.94432099797996
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 662.6196060024085,
+        "requestMs": [
+          660.3906339987589,
+          642.5186209999083,
+          653.8005190013791,
+          662.262448000547
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 129.2922879983962,
+        "requestMs": [
+          129.2209420025756
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 504.9695490015438,
+        "requestMs": [
+          488.9104270005191,
+          497.57412599865347,
+          497.2226489990135,
+          504.5042729980196
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 162.69633900083136,
+        "requestMs": [
+          162.63589499794762
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 664.1887160003535,
+        "requestMs": [
+          649.5348229982483,
+          659.6418979970622,
+          649.5981059997575,
+          663.7952670025697
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 336.32180399945355,
+        "requestMs": [
+          336.25289499832434
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 506.7476779986464,
+        "requestMs": [
+          503.98017699990305,
+          499.0713910010527,
+          506.4311109999835,
+          505.5969609966269
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 413.9208980013791,
+        "requestMs": [
+          413.83914000107325
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": true,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 682.348856000317,
+        "requestMs": [
+          682.2739679992083,
+          679.1274589995737,
+          673.2444579974981,
+          676.4221780031221
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 1,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 389.32302900138893,
+        "requestMs": [
+          389.2608769965591
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 890.5493180027406,
+        "requestMs": [
+          858.2119290003902,
+          890.3485139999248,
+          884.3253659979382,
+          861.0851980010921
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 862.1176719971118,
+        "requestMs": [
+          862.032172997715
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 0,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 1958.8936569998623,
+        "requestMs": [
+          1937.000600999454,
+          1958.675726000365,
+          1941.2788699992234,
+          1939.1940079985943
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 240.10330500095733,
+        "requestMs": [
+          240.03752399949008
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 901.9776559980528,
+        "requestMs": [
+          901.8618959999003,
+          871.6317059988796,
+          854.6842870018736,
+          881.0098880021542
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 494.52858999939053,
+        "requestMs": [
+          494.4655090002925
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 1,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 2107.8317330029677,
+        "requestMs": [
+          2092.377179000323,
+          2097.1018349991937,
+          2105.2869300001475,
+          2107.3535329996957
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 218.8735239978996,
+        "requestMs": [
+          218.80873699774384
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 852.9112300020643,
+        "requestMs": [
+          852.7793470020697,
+          850.6867049982247,
+          845.8258230020874,
+          841.7445630002476
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 501.58290800027316,
+        "requestMs": [
+          501.51771799937706
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 2,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 2146.1047400007374,
+        "requestMs": [
+          2146.0025390006194,
+          2089.9247740017017,
+          2107.799495999643,
+          2121.9798349993653
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 387.144635002187,
+        "requestMs": [
+          387.08741400114377
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 903.4186429998954,
+        "requestMs": [
+          898.7253500017687,
+          877.7816199981316,
+          894.8445429996355,
+          903.0323150000186
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 754.7391439984494,
+        "requestMs": [
+          754.6717280019948
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 3,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 1885.403314998257,
+        "requestMs": [
+          1878.8579040010518,
+          1878.4240140012116,
+          1873.1346750028024,
+          1885.0204429982114
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 381.1670640025113,
+        "requestMs": [
+          381.0973060026299
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 971.81275299954,
+        "requestMs": [
+          958.8190439972095,
+          971.6320009974879,
+          940.8794219998526,
+          951.9088570013992
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 770.7126349996543,
+        "requestMs": [
+          770.6392649997724
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 4,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 2226.491380999505,
+        "requestMs": [
+          2162.9645290013286,
+          2220.7989020025707,
+          2226.176784002746,
+          2215.776390003157
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 209.46050000202376,
+        "requestMs": [
+          209.39696600180469
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 845.8395269990433,
+        "requestMs": [
+          829.0724120015511,
+          826.3553399992816,
+          845.5431740003405,
+          817.6779030000034
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 475.88704699955997,
+        "requestMs": [
+          475.78865099785617
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 5,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 1907.354465998651,
+        "requestMs": [
+          1903.3170539987623,
+          1888.4016839983815,
+          1882.8229229984572,
+          1906.9141569998465
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 225.13856699879398,
+        "requestMs": [
+          224.95743300169124
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 874.7844529971189,
+        "requestMs": [
+          870.4131839986076,
+          874.2380879994016,
+          874.4455170017318,
+          845.7714520009176
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 539.9255960001028,
+        "requestMs": [
+          539.85589900185
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 6,
+        "variant": "candidate",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 1934.9953870005265,
+        "requestMs": [
+          1934.91188400003,
+          1918.7299269979121,
+          1928.3968989984714,
+          1922.2109760012245
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 1,
+        "ms": 414.828110999224,
+        "requestMs": [
+          414.76490399873
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "en_zh-Hans",
+        "concurrency": 4,
+        "ms": 856.9555750000291,
+        "requestMs": [
+          856.4891610003542,
+          854.2616669983545,
+          856.6293610019784,
+          850.9253389966034
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 1,
+        "ms": 747.4819779999962,
+        "requestMs": [
+          747.4188419982966
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      },
+      {
+        "fast": false,
+        "block": 7,
+        "variant": "baseline",
+        "pair": "zh-Hans_en",
+        "concurrency": 4,
+        "ms": 1885.2385749996756,
+        "requestMs": [
+          1881.5954769997916,
+          1885.043999998743,
+          1880.8399589979672,
+          1881.7352849982854
+        ],
+        "engines": [
+          {
+            "from": "en",
+            "to": "zh-Hans",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 4,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          },
+          {
+            "from": "zh-Hans",
+            "to": "en",
+            "provider": "cpu",
+            "runtime": "native-async",
+            "cpuThreads": 0,
+            "maxConcurrentRuns": 4,
+            "tuning": {
+              "executionMode": "sequential",
+              "interOpNumThreads": 1,
+              "graphOptimizationLevel": "all",
+              "enableCpuMemArena": true,
+              "enableMemPattern": true,
+              "spinning": false,
+              "dynamicBlockBase": 0
+            }
+          }
+        ],
+        "outputsEqual": true
+      }
+    ],
+    "scripts": {
+      "http.py": "eb33047774c3c410d2ef0f3fda33d5e7a63bbaface6e4aacd21393b193fd660f"
+    }
+  },
+  "summary": [
+    {
+      "scope": "engine",
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "concurrency": 1,
+      "pairedRatios": [
+        2.517371479935502,
+        2.4850912802400966,
+        2.778154148872695,
+        1.8437484125155392
+      ],
+      "medianSpeedRatio": 2.501231380087799,
+      "medianLatencyChangePercent": -60.01802755564188
+    },
+    {
+      "scope": "engine",
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "concurrency": 4,
+      "pairedRatios": [
+        1.0455030417019107,
+        0.9503867149975371,
+        1.02866857246851,
+        0.966647409844607
+      ],
+      "medianSpeedRatio": 0.9976579911565585,
+      "medianLatencyChangePercent": 0.3316887865227547
+    },
+    {
+      "scope": "engine",
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "concurrency": 1,
+      "pairedRatios": [
+        2.9350027147126796,
+        2.7232345508615206,
+        2.7428191476322823,
+        3.247315732153974
+      ],
+      "medianSpeedRatio": 2.8389109311724807,
+      "medianLatencyChangePercent": -64.73482144102485
+    },
+    {
+      "scope": "engine",
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "concurrency": 4,
+      "pairedRatios": [
+        1.0119462178071503,
+        0.9557989863898366,
+        0.9414758102811832,
+        0.9889595886829876
+      ],
+      "medianSpeedRatio": 0.9723792875364121,
+      "medianLatencyChangePercent": 2.8704378184157386
+    },
+    {
+      "scope": "engine",
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "concurrency": 1,
+      "pairedRatios": [
+        2.457872342133688,
+        2.7180032380946613,
+        2.7885932109507094,
+        2.6531814154281417
+      ],
+      "medianSpeedRatio": 2.6855923267614017,
+      "medianLatencyChangePercent": -62.75884249045424
+    },
+    {
+      "scope": "engine",
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "concurrency": 4,
+      "pairedRatios": [
+        0.9105717007451182,
+        0.99145645805903,
+        1.132490512837426,
+        1.028050943710881
+      ],
+      "medianSpeedRatio": 1.0097537008849555,
+      "medianLatencyChangePercent": -0.9334197511457532
+    },
+    {
+      "scope": "engine",
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "concurrency": 1,
+      "pairedRatios": [
+        2.670372496974365,
+        2.612899886226852,
+        2.7966224718200294,
+        2.2887598620030545
+      ],
+      "medianSpeedRatio": 2.6416361916006084,
+      "medianLatencyChangePercent": -62.140193532232644
+    },
+    {
+      "scope": "engine",
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "concurrency": 4,
+      "pairedRatios": [
+        0.9985307970778683,
+        0.9599511674483935,
+        0.8793758344921385,
+        0.9775101529258866
+      ],
+      "medianSpeedRatio": 0.96873066018714,
+      "medianLatencyChangePercent": 3.2363466646062933
+    },
+    {
+      "scope": "http",
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "concurrency": 1,
+      "pairedRatios": [
+        2.430827735526817,
+        2.500843254694052,
+        2.473989197733211,
+        2.6012518550497417
+      ],
+      "medianSpeedRatio": 2.4874162262136315,
+      "medianLatencyChangePercent": -59.79646958470623,
+      "pairedCpuThreads": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "matchingThreadRatios": [
+        2.430827735526817,
+        2.500843254694052,
+        2.473989197733211,
+        2.6012518550497417
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "en_zh-Hans",
+      "mode": "fast",
+      "concurrency": 4,
+      "pairedRatios": [
+        0.9636864375143517,
+        0.996217586249986,
+        1.0286628204220527,
+        1.0035212598474867
+      ],
+      "medianSpeedRatio": 0.9998694230487364,
+      "medianLatencyChangePercent": 0.014393531925305236,
+      "pairedCpuThreads": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "matchingThreadRatios": [
+        0.9636864375143517,
+        0.996217586249986,
+        1.0286628204220527,
+        1.0035212598474867
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "concurrency": 1,
+      "pairedRatios": [
+        2.5192910344415544,
+        2.3068477037028825,
+        2.487944879349831,
+        2.5441316045794
+      ],
+      "medianSpeedRatio": 2.5036179568956927,
+      "medianLatencyChangePercent": -60.056238271996236,
+      "pairedCpuThreads": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "matchingThreadRatios": [
+        2.5192910344415544,
+        2.3068477037028825,
+        2.487944879349831,
+        2.5441316045794
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "zh-Hans_en",
+      "mode": "fast",
+      "concurrency": 4,
+      "pairedRatios": [
+        0.9406024624643667,
+        0.9486601090106402,
+        1.0027874861837518,
+        1.0273418375869456
+      ],
+      "medianSpeedRatio": 0.975723797597196,
+      "medianLatencyChangePercent": 2.566929095791204,
+      "pairedCpuThreads": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "matchingThreadRatios": [
+        0.9406024624643667,
+        0.9486601090106402,
+        1.0027874861837518,
+        1.0273418375869456
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "concurrency": 1,
+      "pairedRatios": [
+        1.621481341124549,
+        1.7688052347798,
+        1.8197562977211865,
+        1.842545755394482
+      ],
+      "medianSpeedRatio": 1.7942807662504934,
+      "medianLatencyChangePercent": -44.25612490888679,
+      "pairedCpuThreads": [
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          4
+        ]
+      ],
+      "matchingThreadRatios": [
+        1.621481341124549,
+        1.7688052347798,
+        1.8197562977211865,
+        1.842545755394482
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "en_zh-Hans",
+      "mode": "standard",
+      "concurrency": 4,
+      "pairedRatios": [
+        0.9873296883583368,
+        1.0592176667643465,
+        1.1489327726825884,
+        0.9796191188172059
+      ],
+      "medianSpeedRatio": 1.0232736775613416,
+      "medianLatencyChangePercent": -2.1537038466442113,
+      "pairedCpuThreads": [
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          4
+        ]
+      ],
+      "matchingThreadRatios": [
+        0.9873296883583368,
+        1.0592176667643465,
+        1.1489327726825884,
+        0.9796191188172059
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "concurrency": 1,
+      "pairedRatios": [
+        1.743312094449735,
+        1.5047146383186534,
+        1.619528499165826,
+        1.3844166372876565
+      ],
+      "medianSpeedRatio": 1.5621215687422398,
+      "medianLatencyChangePercent": -35.89792497024136,
+      "pairedCpuThreads": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "matchingThreadRatios": [
+        1.743312094449735,
+        1.5047146383186534,
+        1.619528499165826,
+        1.3844166372876565
+      ]
+    },
+    {
+      "scope": "http",
+      "pair": "zh-Hans_en",
+      "mode": "standard",
+      "concurrency": 4,
+      "pairedRatios": [
+        0.9293406235084442,
+        0.8785234382351763,
+        1.1673191431849352,
+        0.974285823968821
+      ],
+      "medianSpeedRatio": 0.9518132237386325,
+      "medianLatencyChangePercent": 5.121228877011186,
+      "pairedCpuThreads": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "matchingThreadRatios": [
+        0.9293406235084442,
+        0.8785234382351763,
+        1.1673191431849352,
+        0.974285823968821
+      ]
+    }
+  ],
+  "lifecycle": [
+    {
+      "pair": "en_zh-Hans",
+      "nativePeak": 4,
+      "fallbackOutputsEqual": true,
+      "closed": true
+    },
+    {
+      "pair": "zh-Hans_en",
+      "nativePeak": 4,
+      "fallbackOutputsEqual": true,
+      "closed": true
+    }
+  ],
+  "validation": {
+    "unitTests": 106,
+    "typecheck": true,
+    "nodeBuild": true,
+    "outputsExactlyMatchBaseline": true,
+    "limits": [
+      1,
+      2,
+      4
+    ],
+    "orderAndWhitespace": true,
+    "recursiveSplitAndPlaceholders": true,
+    "errorDrainAndClose": true,
+    "nativeFallback": true
+  },
+  "scripts": {
+    "public-bench.ts": "784de8f08e04ee4c62683db513700633d9cc849a362b97cc626f21c3a62db4cd",
+    "benchmark-http.py": "eb33047774c3c410d2ef0f3fda33d5e7a63bbaface6e4aacd21393b193fd660f",
+    "lifecycle.ts": "a4ff34a11e70306730d396381f001f2ebafc093b3940d2ea8223ee093d70e3ea",
+    "record.py": "6f67c722472be58b6df7f1644a705052318338acb1ca3a6906817554a175e780"
+  },
+  "limitations": [
+    "One local Linux x64 CPU and two language directions; small synthetic documents assembled from dev rows, not production traffic.",
+    "Single-document speedup uses otherwise idle capacity of the existing inference budget; it is not a faster ONNX kernel or per-core improvement.",
+    "No stable multi-document throughput improvement is claimed; paired variation retained.",
+    "Four-document standard zh-Hans_en HTTP median block latency increased 5.12% (paired speed ratios 0.879 to 1.167); fast zh-Hans_en increased 2.57%. This is accepted only as a single-document latency improvement, not a general throughput win.",
+    "HTTP standard mode uses production autotuning; comparisons with different CPU thread counts are confounded and must be read separately.",
+    "No load above four documents, mixed arrival latency, long-duration memory test or cross-hardware test.",
+    "Nested splits stay serial; extra workers retire when another request is running and do not restart later.",
+    "Native fallback was tested by injected errors followed by actual CPU inference, not by a natural runtime crash.",
+    "No npm publication. Temporary scripts and source data remain local; this is not a portable reproduction bundle."
+  ]
+}

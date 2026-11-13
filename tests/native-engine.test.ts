@@ -83,9 +83,13 @@ test('explicit concurrency one overrides automatic native parallelism',async()=>
  finally{await engine.destroy();}
 });
 
-test('HTML parts drain through one serialized fallback while the engine closes',async()=>{
+test.each([
+ {input:'<p>one</p><b>two</b><i>three</i>',html:true,output:'<p>result</p><b>result</b><i>result</i>',count:4},
+ {input:'First sentence. Second sentence. Third sentence.',html:false,output:'result result result',count:1},
+ {input:'First sentence. Second sentence. Third sentence.',html:false,output:'result result result',count:4},
+])('parts drain through one serialized fallback while the engine closes: %j',async({input,html,output,count})=>{
  const {original,parallel}=setup();const engine=new TranslationEngine();
- await engine.init(model,{'max-concurrent-runs':2});
+ await engine.init(model,{'max-concurrent-runs':2,'max-length-break':20});
  parallel.run.mockImplementation(async()=>{throw new native.NativeRunError('HTML native failed');});
  let active=0,peak=0,calls=0;
  const fallback={...original,release:mock(async()=>{expect(active).toBe(0);}),run:async()=>{
@@ -94,10 +98,10 @@ test('HTML parts drain through one serialized fallback while the engine closes',
   finally{active--;}
  }};
  const create=spyOn(backend,'createSession').mockResolvedValue(fallback as any);
- const requests=Promise.all(Array.from({length:4},()=>engine.translateAsync('<p>one</p><b>two</b><i>three</i>',{html:true})));
+ const requests=Promise.all(Array.from({length:count},()=>engine.translateAsync(input,{html})));
  const closing=engine.destroy();
- expect(await requests).toEqual(Array(4).fill('<p>result</p><b>result</b><i>result</i>'));
- await closing;expect(create).toHaveBeenCalledTimes(1);expect(calls).toBe(12);expect(peak).toBe(1);
+ expect(await requests).toEqual(Array(count).fill(output));
+ await closing;expect(create).toHaveBeenCalledTimes(1);expect(calls).toBe(count*3);expect(peak).toBe(1);
  expect(parallel.release).toHaveBeenCalledTimes(1);expect(fallback.release).toHaveBeenCalledTimes(1);
  expect(engine.busy).toBe(false);
 });
