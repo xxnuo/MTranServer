@@ -164,12 +164,14 @@ Same-run CPU comparison, for reference. Lower ms and higher req/s are better.
 | English → Chinese | Paragraph | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
 | Chinese → English | Short | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
 | Chinese → English | Paragraph | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| English → Chinese | Long text (32 sentences) | 1 | 164.2 ms | 120.8 ms | 482.2 ms |
+| Chinese → English | Long text (32 sentences) | 1 | 459.1 ms | 159.1 ms | 580.7 ms |
 | English → Chinese | Short | 8 | 273 req/s | 401 req/s | 491 req/s |
 | Chinese → English | Short | 8 | 155 req/s | 453 req/s | 497 req/s |
 
 With both translation directions loaded: Default about 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 
-Both Default and Fast support concurrent acceleration. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
+Long texts use sentence concurrency; [paired HTTP tests](benchmarks/plain-inference-concurrency.json) showed 36%–60% lower latency per long-text request than before the optimization. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
 ## Similar projects
 

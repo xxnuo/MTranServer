@@ -164,12 +164,14 @@ CPU-Vergleich aus demselben Testlauf, als Richtwert. Weniger ms und mehr Anfrage
 | Englisch → Chinesisch | Absatz | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
 | Chinesisch → Englisch | Kurz | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
 | Chinesisch → Englisch | Absatz | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 164.2 ms | 120.8 ms | 482.2 ms |
+| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 459.1 ms | 159.1 ms | 580.7 ms |
 | Englisch → Chinesisch | Kurz | 8 | 273 Anfragen/s | 401 Anfragen/s | 491 Anfragen/s |
 | Chinesisch → Englisch | Kurz | 8 | 155 Anfragen/s | 453 Anfragen/s | 497 Anfragen/s |
 
 Mit beiden Übersetzungsrichtungen geladen: Standard etwa 619 MiB, Fast 650 MiB, LinguaSpark 190 MiB.
 
-Standard und Fast unterstützen parallele Verarbeitung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
+Lange Texte werden satzweise parallel übersetzt; [gepaarte HTTP-Tests](benchmarks/plain-inference-concurrency.json) zeigten pro Langtext-Anfrage 36%–60% weniger Latenz als vor der Optimierung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 
 ## Ähnliche Projekte
 

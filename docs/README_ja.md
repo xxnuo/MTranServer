@@ -164,12 +164,14 @@ mtranserver --offline
 | 英 → 中 | 段落 | 1 | 32.5 ms | 28.1 ms | 46.7 ms |
 | 中 → 英 | 短文 | 1 | 11.8 ms | 6.5 ms | 9.9 ms |
 | 中 → 英 | 段落 | 1 | 53.0 ms | 29.0 ms | 48.6 ms |
+| 英 → 中 | 長文（32 文） | 1 | 164.2 ms | 120.8 ms | 482.2 ms |
+| 中 → 英 | 長文（32 文） | 1 | 459.1 ms | 159.1 ms | 580.7 ms |
 | 英 → 中 | 短文 | 8 | 273 回/秒 | 401 回/秒 | 491 回/秒 |
 | 中 → 英 | 短文 | 8 | 155 回/秒 | 453 回/秒 | 497 回/秒 |
 
 英中・中英の両モデルを読み込んだ状態のメモリ：約 通常 619 MiB、Fast 650 MiB、LinguaSpark 190 MiB。
 
-通常・Fast の両モードが並列実行に対応しています。`--fast` で Fast を有効にできます。誤訳が増える可能性があるため、既定では無効です。[訳文比較](../tests/fixtures/translation-quality-regressions.json)。
+長文は文単位で並列翻訳され、[HTTP のペア比較テスト](benchmarks/plain-inference-concurrency.json)では、長文 1 リクエストの処理時間が最適化前より約 36%～60% 短縮されました。`--fast` で Fast を有効にできます。誤訳が増える可能性があるため、既定では無効です。[訳文比較](../tests/fixtures/translation-quality-regressions.json)。
 
 ## 類似プロジェクト
 
