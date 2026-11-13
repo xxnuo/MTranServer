@@ -20,6 +20,8 @@ export class TranslationEngine {
   private running = 0;
   private waiters: Array<() => void> = [];
   private pending = 0;
+  private inferRunning = 0;
+  private inferWaiters: Array<() => void> = [];
   private closing = false;
   private closed?: Promise<void>;
   private tokenLimit = 512;
@@ -118,21 +120,34 @@ export class TranslationEngine {
   }
   private async translateHTML(html: string) {
     const document = parseFragment(html, { sourceCodeLocationInfo: true });
-    const edits: Array<{ start: number; end: number; text: string }> = [];
-    const visit = async (node: any, blocked = false) => {
+    const nodes: any[] = [];
+    const visit = (node: any, blocked = false) => {
       const attrs: Array<{name: string; value: string}> = node.attrs ?? [];
       blocked ||= ['script', 'style', 'noscript', 'template'].includes(node.tagName)
         || attrs.some(a => a.name === 'translate' && a.value.toLowerCase() === 'no')
         || attrs.some(a => a.name === 'class' && a.value.split(/\s+/).includes('notranslate'));
       if (blocked) return;
-      if (node.nodeName === '#text' && node.value.trim() && node.sourceCodeLocation) {
-        const text = await this.translateText(node.value);
-        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        edits.push({ start: node.sourceCodeLocation.startOffset, end: node.sourceCodeLocation.endOffset, text: escaped });
-      }
-      for (const child of node.childNodes ?? []) await visit(child, blocked);
+      if (node.nodeName === '#text' && node.value.trim() && node.sourceCodeLocation) nodes.push(node);
+      for (const child of node.childNodes ?? []) visit(child, blocked);
     };
-    await visit(document);
+    visit(document);
+    // Let requests accepted in the same turn establish the shared load first.
+    await Promise.resolve();
+    const edits: Array<{ start: number; end: number; text: string }> = [];
+    let next = 0, failed = false, failure: unknown;
+    await Promise.all(Array.from({ length: Math.min(nodes.length, this.backend?.maxConcurrentRuns ?? 1) }, async (_, worker) => {
+      while (!failed && next < nodes.length) {
+        // Other requests already provide parallel work; avoid per-document fan-out.
+        if (worker > 0 && this.running > 1) return;
+        const node = nodes[next++];
+        try {
+          const text = await this.translateText(node.value);
+          const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          edits.push({ start: node.sourceCodeLocation.startOffset, end: node.sourceCodeLocation.endOffset, text: escaped });
+        } catch (error) { if (!failed) { failed = true; failure = error; } }
+      }
+    }));
+    if (failed) throw failure;
     for (const edit of edits.sort((a, b) => b.start - a.start)) html = html.slice(0, edit.start) + edit.text + html.slice(edit.end);
     return html;
   }
@@ -184,6 +199,24 @@ export class TranslationEngine {
       return before + this.dst!.decode(tokens) + after;
     } finally { input.dispose(); eos.dispose(); }
   }
+  private async runInference(session: InferenceSession, feeds: Record<string, ort.Tensor>) {
+    // Initialization probes measure their own concurrency before this.session is published.
+    const gated = !!this.session;
+    if (gated) {
+      if (this.inferRunning >= (this.backend?.maxConcurrentRuns ?? 1)) await new Promise<void>(resolve => this.inferWaiters.push(resolve));
+      else this.inferRunning++;
+    }
+    try { return await session.run(feeds); }
+    finally {
+      if (gated) {
+        this.inferRunning--;
+        while (this.inferWaiters.length && this.inferRunning < (this.backend?.maxConcurrentRuns ?? 1)) {
+          this.inferRunning++;
+          this.inferWaiters.shift()!();
+        }
+      }
+    }
+  }
   private async infer(session: InferenceSession, input: ort.Tensor, eos: ort.Tensor, requireEos = true) {
     let candidates: ort.Tensor | undefined;
     try {
@@ -193,7 +226,7 @@ export class TranslationEngine {
         const ids = this.shortlist.candidates(Array.from(input.data as BigInt64Array, Number));
         feeds.candidate_ids = candidates = new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]);
       }
-      const output = await session.run(feeds);
+      const output = await this.runInference(session, feeds);
       try {
         if (!(output.Y?.data instanceof BigInt64Array)) throw new Error('Invalid translation output');
         const tokens = Array.from(output.Y.data, Number), end = tokens.indexOf(this.dst!.eos);
