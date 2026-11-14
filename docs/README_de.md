@@ -173,6 +173,9 @@ Mit beiden Übersetzungsrichtungen geladen: Standard etwa 619 MiB, Fast 650 MiB,
 
 Lange Texte werden satzweise parallel übersetzt; [gepaarte HTTP-Tests](benchmarks/plain-inference-concurrency.json) zeigten pro Langtext-Anfrage 36%–60% weniger Latenz als vor der Optimierung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 
+- Desktop: Standardmodus für höhere Übersetzungsgenauigkeit empfohlen. GPU-Beschleunigung wird unterstützt; eine dedizierte GPU kann bei geeigneten Aufgaben um ein Mehrfaches schneller als die CPU sein.
+- Server: Fast-Modus für stabilen Durchsatz und hohe Geschwindigkeit empfohlen, mit Beschleunigung durch verschiedene CPU-Befehlssätze.
+
 ## Ähnliche Projekte
 
 | Projekt | Speicher | Geschwindigkeit | Hinweis |

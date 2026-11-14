@@ -173,6 +173,9 @@ Avec les deux sens de traduction chargés : Défaut environ 619 MiB, Fast 650 Mi
 
 Les textes longs sont traduits phrase par phrase en parallèle ; les [tests HTTP appariés](benchmarks/plain-inference-concurrency.json) ont montré une latence par requête de texte long réduite de 36% à 60% par rapport à la version avant optimisation. `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
 
+- Sur ordinateur : privilégier le mode Défaut pour la précision des traductions. L’accélération GPU est prise en charge ; un GPU dédié peut être plusieurs fois plus rapide que le CPU sur des charges adaptées.
+- Sur serveur : privilégier le mode Fast pour un débit stable et une vitesse élevée, avec une accélération exploitant plusieurs jeux d’instructions CPU.
+
 ## Projets similaires
 
 | Projet | Mémoire | Vitesse | Remarque |
