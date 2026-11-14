@@ -2,7 +2,7 @@ import { afterEach, expect, mock, spyOn, test } from 'bun:test';
 import { TranslationEngine } from '../src/core/engine';
 import * as metal from '../src/core/metal';
 
-const deviceTest = test.skipIf(process.platform !== 'darwin' || process.arch !== 'arm64');
+const deviceTest = test;
 afterEach(() => mock.restore());
 
 function setup(delay = 0) {
@@ -18,6 +18,7 @@ function setup(delay = 0) {
     close: mock(async () => { closed = true; }),
   };
   spyOn(metal, 'createMetalWorker').mockResolvedValue(worker as any);
+  spyOn(metal, 'getMetalRuntime').mockReturnValue('/mock-gpu-runtime');
   engine.tokenLimit = 20;
   engine.backend = { provider: 'cpu', maxConcurrentRuns: 4 };
   engine.converted = { directory: '.', sourceModel: 'fake', identity: 'test' };
@@ -36,6 +37,7 @@ deviceTest('Metal document calibration preserves whitespace, caches decisions an
   try {
     expect(await engine.translateAsync(text)).toBe(text);
     expect(engine.backend.documentAcceleration.selected).toBe(true);
+    expect(engine.backend.documentAcceleration.provider).toBe(process.platform === 'linux' ? 'cuda' : 'metal');
     const calibrated = stats();
     expect(await engine.translateAsync(text)).toBe(text);
     expect(stats().cpuCalls).toBe(calibrated.cpuCalls);

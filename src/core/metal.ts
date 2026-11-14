@@ -21,7 +21,10 @@ export class MetalWorker {
 
   private start(): Promise<void> {
     this.buffer = Buffer.alloc(0); this.error = undefined;
-    this.child = spawn(this.executable, [this.model, this.metallib], { stdio: ['pipe', 'pipe', 'pipe'] });
+    this.child = spawn(this.executable, [this.model, this.metallib], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: process.platform === 'linux' ? { ...process.env, MLX_PTX_CACHE_DIR: process.env.MLX_PTX_CACHE_DIR ?? path.join(path.dirname(this.model), '.cuda-ptx') } : process.env,
+    });
     this.iterator = this.child.stdout[Symbol.asyncIterator]();
     let stderr = '';
     this.child.stderr.on('data', data => { stderr = (stderr + String(data)).slice(-4096); });
@@ -48,7 +51,7 @@ export class MetalWorker {
     while (this.buffer.length < length) {
       if (this.error) throw this.error;
       const part = await this.iterator.next();
-      if (part.done) throw this.error ?? new Error('Truncated Metal response');
+      if (part.done) { await this.exited; throw this.error ?? new Error('Truncated Metal response'); }
       if (this.buffer.length + part.value.length > 16 * 1024 * 1024) return this.abort('Metal response exceeded buffer limit');
       this.buffer = Buffer.concat([this.buffer, part.value]);
     }
@@ -94,7 +97,9 @@ export class MetalWorker {
       if (this.completed === 128) { await this.stop(); this.completed = 0; this.ready = this.start(); }
       await this.ready;
       if (this.error) throw this.error;
-      const timer = setTimeout(() => { this.error ??= new Error('Metal translation timed out'); this.child.kill('SIGKILL'); }, 30_000);
+      // New CUDA shapes can require a cold kernel compilation.
+      const deadline = process.platform === 'linux' ? 180_000 : 30_000;
+      const timer = setTimeout(() => { this.error ??= new Error('Metal translation timed out'); this.child.kill('SIGKILL'); }, deadline);
       try {
         await new Promise<void>((resolve, reject) => this.child.stdin.write(payload, error => error ? reject(error) : resolve()));
         await this.status();
@@ -143,9 +148,13 @@ export class MetalWorker {
 }
 
 export function getMetalRuntime(model: ConvertedModel): string | undefined {
-  if (process.platform !== 'darwin' || process.arch !== 'arm64' || process.env.MT_CPU_ONLY === 'true' || !model.sourceModel || !model.sourceModelSha256 || !/^[a-f0-9]{64}$/.test(model.sourceModelSha256)) return;
-  return [new URL('./metal/', import.meta.url), new URL('../../dist/metal/', import.meta.url)]
-    .map(url => fileURLToPath(url)).find(directory => ['metal-worker', 'mlx.metallib', 'libmlx.dylib', 'libjaccl.dylib'].every(file => existsSync(path.join(directory, file))));
+  if (process.env.MT_CPU_ONLY === 'true' || !model.sourceModel || !model.sourceModelSha256 || !/^[a-f0-9]{64}$/.test(model.sourceModelSha256)) return;
+  const cuda = process.platform === 'linux' && ['arm64', 'x64'].includes(process.arch);
+  if (!cuda && (process.platform !== 'darwin' || process.arch !== 'arm64')) return;
+  const directory = cuda ? 'cuda' : 'metal';
+  const files = cuda ? ['metal-worker', 'lib/libmlx.so', 'include/cccl/cuda/std/tuple'] : ['metal-worker', 'mlx.metallib', 'libmlx.dylib', 'libjaccl.dylib'];
+  return [new URL(`./${directory}/`, import.meta.url), new URL(`../../dist/${directory}/`, import.meta.url)]
+    .map(url => fileURLToPath(url)).find(directory => files.every(file => existsSync(path.join(directory, file))));
 }
 
 export async function createMetalWorker(model: ConvertedModel, sourceEos: number, targetEos: number): Promise<MetalWorker | undefined> {

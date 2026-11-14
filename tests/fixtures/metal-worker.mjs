@@ -19,6 +19,7 @@ process.stdin.on('data', data => {
   }
   input = input.subarray(offset);
   if (mode === 'crash') process.exit(7);
+  if (mode === 'no-result') return;
   if (mode === 'truncated') { process.stdout.write(Buffer.from([0, 0])); process.exit(1); }
   if (mode === 'wrong-count') { process.stdout.write(Buffer.concat([integer(0), integer(count + 1)])); return; }
   const parts = [integer(0), integer(count)];
