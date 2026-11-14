@@ -13,7 +13,7 @@ export const CONVERSION_PARAMETERS = { strategy: 'qall', topK: 9, int4BlockSize:
 const SHORTLIST_CONVERSION = { version: 'marian-qall-shortlist-v2', parameters: { ...CONVERSION_PARAMETERS, projection: 'lexical-fp32-byte-complete' } };
 const K9_CONVERSION = { version: CONVERSION_VERSION, parameters: CONVERSION_PARAMETERS };
 
-export interface ConvertedModel { directory: string; identity: string; model: string; sourceVocab: string; targetVocab: string; lex?: string }
+export interface ConvertedModel { directory: string; identity: string; model: string; sourceVocab: string; targetVocab: string; lex?: string; sourceModel?: string; sourceModelSha256?: string }
 export interface SourceFiles { model: string; vocab_src: string; vocab_trg: string; lex?: string }
 export interface ConversionSource { files: SourceFiles; records: unknown }
 
@@ -30,6 +30,7 @@ interface Manifest {
   mtranserverVersion: string;
   identity: string;
   sourceRevision: string;
+  sourceModelSha256?: string;
   converterRevision?: string;
   lexSha256?: string;
   conversion?: { version: string; parameters: unknown };
@@ -64,11 +65,11 @@ function sourceRevision(records: unknown, lexicalShortlist: boolean) {
   return hashJson(normalizedRecords(conversionInputs));
 }
 
-function runWorker(model: string, sourceVocab: string, targetVocab: string, output: string, lexicalShortlist: boolean, lex?: string) {
+export function runWorker(model: string, sourceVocab: string, targetVocab: string, output: string, lexicalShortlist: boolean, lex?: string, metal?: { sourceEos: number; targetEos: number }) {
   const task = conversionQueue.then(() => new Promise<void>((resolve, reject) => {
     const bundled = new URL('./converter-worker.js', import.meta.url);
     const source = new URL('../../scripts/converter-worker.mjs', import.meta.url);
-    const worker = new Worker(existsSync(bundled) ? bundled : source, { execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')), workerData: { model, sourceVocab, targetVocab, output, lexicalShortlist, lex } });
+    const worker = new Worker(existsSync(bundled) ? bundled : source, { execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')), workerData: { model, sourceVocab, targetVocab, output, lexicalShortlist, lex, metal } });
     let responded = false;
     worker.once('message', message => { responded = true; if (message.error) reject(new Error(message.error)); else resolve(); });
     worker.once('error', reject);
@@ -103,8 +104,8 @@ function recordFiles(records: unknown): ManifestFile[] {
   });
 }
 
-function result(target: string, identity: string, files: SourceFiles, lexicalShortlist: boolean): ConvertedModel {
-  return { directory: target, identity, model: path.join(target, 'model.onnx'), sourceVocab: files.vocab_src, targetVocab: files.vocab_trg, ...(lexicalShortlist && files.lex ? { lex: files.lex } : {}) };
+function result(target: string, identity: string, files: SourceFiles, lexicalShortlist: boolean, sourceModelSha256?: string): ConvertedModel {
+  return { directory: target, identity, model: path.join(target, 'model.onnx'), sourceModel: files.model, ...(sourceModelSha256 ? { sourceModelSha256 } : {}), sourceVocab: files.vocab_src, targetVocab: files.vocab_trg, ...(lexicalShortlist && files.lex ? { lex: files.lex } : {}) };
 }
 
 function compatible(manifest: Manifest, revision: string, converterRevision: string) {
@@ -187,7 +188,7 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
             await writeManifest(target, manifest);
           }
           logger.debug(`Reusing converted model ${path.basename(target)}`);
-          return result(target, manifest.identity, repairedFiles ?? source.files, lexicalShortlist);
+          return result(target, manifest.identity, repairedFiles ?? source.files, lexicalShortlist, manifest.sourceModelSha256 ?? manifest.files.find(file => file.role === 'source-model')?.sha256);
         }
       }
     } catch (error: any) {
@@ -219,6 +220,7 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
       mtranserverVersion: VERSION,
       identity,
       sourceRevision: revision,
+      sourceModelSha256: sourceHashes.model,
       converterRevision,
       ...(sourceHashes.lex ? { lexSha256: sourceHashes.lex } : {}),
       records: normalizedRecords(source.records),
@@ -232,7 +234,7 @@ async function prepare(target: string, source: ConversionSource, repairSource: (
     stagedModel = '';
     await writeManifest(target, manifest);
     logger.info(`Converted model ready: ${target}`);
-    return result(target, identity, files, lexicalShortlist);
+    return result(target, identity, files, lexicalShortlist, sourceHashes.model);
   } finally {
     if (stagedModel) await fs.rm(stagedModel, { force: true });
     await unlock();

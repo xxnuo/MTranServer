@@ -32,6 +32,14 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Setup uv for Apple GPU runtime
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+
+      - name: Prepare Apple GPU runtime
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
+        run: bun run build:metal
+
       - name: Sync version from tag
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then

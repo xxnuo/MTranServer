@@ -2,6 +2,7 @@ import * as ort from 'onnxruntime-node';
 import { availableParallelism } from 'node:os';
 import { createNativeSession, NativeRunError, type InferenceSession } from './native.js';
 import { parseFragment } from 'parse5';
+import { createMetalWorker, getMetalRuntime, type MetalWorker, type MetalInput } from './metal.js';
 import { Tokenizer } from './tokenizer.js';
 import { Shortlist } from './shortlist.js';
 import type { ConvertedModel } from '../converter/cache.js';
@@ -11,8 +12,25 @@ import * as logger from '../logger/index.js';
 export interface TranslationOptions { sourceLang?: string; targetLang?: string; cacheSize?: number }
 export interface TranslateOptions { qualityScores?: boolean; alignment?: boolean; html?: boolean }
 export interface TranslationConfig { 'cpu-threads'?: number; 'max-length-break'?: number; 'max-concurrent-runs'?: number }
+function splitSentences(content: string): string[] {
+  const sentences = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(content)].map(s => s.segment);
+  if (sentences.length === 1) {
+    const chars = Array.from(content);
+    if (chars.length < 2) throw new Error('Single character exceeds model input limit');
+    let midpoint = Math.floor(chars.length / 2);
+    for (let i = midpoint; i > midpoint / 2; i--) if (/\s/.test(chars[i])) { midpoint = i + 1; break; }
+    sentences.splice(0, 1, chars.slice(0, midpoint).join(''), chars.slice(midpoint).join(''));
+  }
+  return sentences;
+}
+
 export class TranslationEngine {
   private session?: InferenceSession;
+  private converted?: ConvertedModel;
+  private metal?: Promise<MetalWorker | undefined>;
+  private metalBusy = false;
+  private metalDisabled = false;
+  private metalSelections = new Map<string, boolean>();
   private src?: Tokenizer;
   private dst?: Tokenizer;
   private shortlist?: Shortlist;
@@ -20,6 +38,7 @@ export class TranslationEngine {
   private running = 0;
   private waiters: Array<() => void> = [];
   private pending = 0;
+  private requestEpoch = 0;
   private inferRunning = 0;
   private inferWaiters: Array<() => void> = [];
   private closing = false;
@@ -64,7 +83,7 @@ export class TranslationEngine {
           // A bounded timing probe need not finish a translation; user requests still require EOS.
           for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos, false);
         };
-        const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity);
+        const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity, !!getMetalRuntime(model));
         let activeSession: InferenceSession = selected.session;
         let info = selected.info;
         const inputNames = selected.session.inputNames ?? ['X', 'eos_id'];
@@ -96,11 +115,13 @@ export class TranslationEngine {
         this.modelPath = model.model;
       } finally { for (const input of inputs) input.dispose(); eos.dispose(); }
       this.identity = model.identity;
+      this.converted = model;
     } catch (error) { this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; this.shortlist = undefined; throw error; }
   }
   translateAsync(text: string, options: TranslateOptions = {}): Promise<string> {
     if (this.closing || !this.session) return Promise.reject(new Error('Engine not initialized or closing'));
     this.pending++;
+    this.requestEpoch++;
     const task = (async () => {
       if (this.running >= (this.backend?.maxConcurrentRuns ?? 1)) await new Promise<void>(resolve => this.waiters.push(resolve));
       else this.running++;
@@ -164,14 +185,11 @@ export class TranslationEngine {
     const [, before, content, after] = match;
     const ids = this.src!.encode(content);
     if (ids.length + 1 > this.tokenLimit || content.length > this.tokenLimit) {
-      const sentences = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(content)].map(s => s.segment);
-      if (sentences.length === 1) {
-        const chars = Array.from(content);
-        if (chars.length < 2) throw new Error('Single character exceeds model input limit');
-        let midpoint = Math.floor(chars.length / 2);
-        for (let i = midpoint; i > midpoint / 2; i--) if (/\s/.test(chars[i])) { midpoint = i + 1; break; }
-        sentences.splice(0, 1, chars.slice(0, midpoint).join(''), chars.slice(midpoint).join(''));
+      if (parallel && this.running === 1 && !this.metalBusy && !this.metalDisabled && this.converted) {
+        const accelerated = await this.translateMetal(content);
+        if (accelerated !== undefined) return before + accelerated + after;
       }
+      const sentences = splitSentences(content);
       await Promise.resolve();
       const out: string[] = new Array(sentences.length);
       let next = 0, failed = false, failure: unknown;
@@ -212,6 +230,75 @@ export class TranslationEngine {
       return before + this.dst!.decode(tokens) + after;
     } finally { input.dispose(); eos.dispose(); }
   }
+  private async translateMetal(content: string): Promise<string | undefined> {
+    // CPU keeps short inputs and competing requests; only documents can amortize GPU dispatch.
+    if (this.backend?.provider !== 'cpu' || process.platform !== 'darwin' || process.arch !== 'arm64' || process.env.MT_CPU_ONLY === 'true') return;
+    const leaves: Array<MetalInput & { text: string; before: string; after: string }> = [];
+    const parts: Array<string | number> = [];
+    const collect = (text: string) => {
+      if (!text.trim()) { parts.push(text); return; }
+      const [, before, value, after] = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
+      const ids = this.src!.encode(value);
+      if (ids.length + 1 > this.tokenLimit || value.length > this.tokenLimit) {
+        parts.push(before); splitSentences(value).forEach(collect); parts.push(after);
+      } else {
+        ids.push(this.src!.eos);
+        parts.push(leaves.length);
+        leaves.push({ text, before, after, ids, candidates: this.shortlist?.candidates(ids) ?? [] });
+      }
+    };
+    collect(content);
+    if (leaves.length < 16) return;
+    const maxTokens = 2 ** Math.ceil(Math.log2(leaves.reduce((max, row) => Math.max(max, row.ids.length), 0)));
+    const batchSize = Math.min(32, leaves.length);
+    const key = `${batchSize}:${maxTokens}`;
+    if (this.metalSelections.get(key) === false) return;
+    this.metalBusy = true;
+    let worker: MetalWorker | undefined;
+    try {
+      this.metal ??= createMetalWorker(this.converted!, this.src!.eos, this.dst!.eos);
+      worker = await this.metal;
+      if (!worker) { this.metalDisabled = true; return; }
+      if (!this.metalSelections.has(key)) {
+        if (this.running !== 1) return;
+        const epoch = this.requestEpoch;
+        const sample = [...leaves].sort((a, b) => b.ids.length - a.ids.length).slice(0, batchSize);
+        const fast = !!this.shortlist;
+        await worker.translateMany(sample, fast);
+        const cpu = async () => {
+          const start = performance.now();
+          let next = 0;
+          await Promise.all(Array.from({ length: Math.min(sample.length, this.backend?.maxConcurrentRuns ?? 1) }, async () => {
+            while (next < sample.length) await this.translatePlain(sample[next++].text, false);
+          }));
+          return performance.now() - start;
+        };
+        const gpu = async () => { const start = performance.now(); await worker!.translateMany(sample, fast); return performance.now() - start; };
+        const cpuFirst = await cpu(), gpuFirst = await gpu();
+        const gpuSecond = await gpu(), cpuSecond = await cpu();
+        const cpuMs = (cpuFirst + cpuSecond) / 2, gpuMs = (gpuFirst + gpuSecond) / 2;
+        // Do not cache a decision contaminated by another user request.
+        if (this.running !== 1 || epoch !== this.requestEpoch) return;
+        const selected = gpuMs < cpuMs * .9;
+        this.metalSelections.set(key, selected);
+        if (this.backend) this.backend = { ...this.backend, documentAcceleration: {
+          provider: 'metal', runtime: 'mlx', batchSize, maxTokens, cpuMs, gpuMs, selected,
+        } };
+        if (!selected) { await worker.close(); this.metal = undefined; return; }
+      }
+      const results = await worker.translateMany(leaves, !!this.shortlist);
+      return parts.map(part => typeof part === 'string' ? part : leaves[part].before + this.dst!.decode(results[part]) + leaves[part].after).join('');
+    } catch (error) {
+      this.metalDisabled = true;
+      await worker?.close().catch(() => {});
+      logger.warn(`Metal document acceleration unavailable; using CPU: ${error}`);
+      if (this.backend) this.backend = { ...this.backend, documentAcceleration: {
+        provider: 'metal', runtime: 'mlx', selected: false, error: String(error),
+      } };
+      return;
+    } finally { this.metalBusy = false; }
+  }
+
   private async runInference(session: InferenceSession, feeds: Record<string, ort.Tensor>) {
     // Initialization probes measure their own concurrency before this.session is published.
     const gated = !!this.session;
@@ -254,6 +341,7 @@ export class TranslationEngine {
     this.closed = (async () => {
       await this.initializing?.catch(() => {});
       await Promise.allSettled([...this.tasks]);
+      await (await this.metal?.catch(() => undefined))?.close();
       try { await this.session?.release(); } finally { this.session = undefined; this.src?.close(); this.dst?.close(); this.src = this.dst = undefined; this.shortlist = undefined; }
     })();
     return this.closed;

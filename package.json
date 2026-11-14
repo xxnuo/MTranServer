@@ -1,6 +1,6 @@
 {
   "name": "mtranserver",
-  "version": "5.1.4",
+  "version": "5.2.0",
   "type": "module",
   "description": "Translation server",
   "repository": {
@@ -14,7 +14,9 @@
   },
   "files": [
     "dist",
-    "assets"
+    "assets",
+    "scripts/build-metal.ts",
+    "native/metal"
   ],
   "scripts": {
     "test": "bun test",
@@ -32,6 +34,7 @@
     "build": "bun scripts/build.ts --node",
     "build:docker": "docker build -t xxnuo/mtranserver:latest .",
     "build:node": "bun scripts/build.ts --node",
+    "build:metal": "bun scripts/build-metal.ts",
     "build:dev": "bun scripts/build.ts --dev",
     "build:lib": "bun scripts/build.ts --lib",
     "build:electron": "bun run scripts/electron-build.ts"
