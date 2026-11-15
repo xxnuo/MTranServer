@@ -1,9 +1,14 @@
 #include "ssru_op.h"
 #include "../ssru/ssru.h"
+#include "../ssru/kleidi.h"
 #ifdef MTRAN_SSRU_PACKED
 #include "../ssru/packed.h"
 #endif
 #include <algorithm>
+#include <bit>
+#if defined(__APPLE__) && defined(__aarch64__)
+#include <sys/sysctl.h>
+#endif
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -74,6 +79,72 @@ std::vector<std::string> weightNames(const OrtApi* api, const OrtKernelInfo* inf
   if (count == 0 || count > 4096) throw std::runtime_error("Invalid SSRU weight count");
   return {names, names + count};
 }
+
+// Constant int8 W=[1,1], scale=.1, bias=.125, X=[-3.3,4.4]. Only prepacked
+// KleidiAI uses the reciprocal scale; a standalone InvokeOp cannot detect it.
+[[maybe_unused]] bool probeKleidi(const OrtApi* api, OrtMemoryInfo* memory) {
+  static constexpr char model[] =
+    "\x08\x0a\x3a\xb0\x01\x0a\x38\x0a\x01\x58\x0a\x01\x57\x0a\x01\x53\x0a\x01\x5a\x0a\x01\x42\x12\x01"
+    "\x59\x22\x15\x44\x79\x6e\x61\x6d\x69\x63\x51\x75\x61\x6e\x74\x69\x7a\x65\x4d\x61\x74\x4d\x75\x6c"
+    "\x3a\x0d\x63\x6f\x6d\x2e\x6d\x69\x63\x72\x6f\x73\x6f\x66\x74\x12\x17\x73\x73\x72\x75\x5f\x71\x75"
+    "\x61\x6e\x74\x69\x7a\x61\x74\x69\x6f\x6e\x5f\x70\x72\x6f\x62\x65\x2a\x0d\x08\x02\x08\x01\x10\x03"
+    "\x42\x01\x57\x4a\x02\x01\x01\x2a\x0b\x10\x01\x42\x01\x53\x4a\x04\xcd\xcc\xcc\x3d\x2a\x08\x10\x03"
+    "\x42\x01\x5a\x4a\x01\x00\x2a\x0b\x10\x01\x42\x01\x42\x4a\x04\x00\x00\x00\x3e\x5a\x13\x0a\x01\x58"
+    "\x12\x0e\x0a\x0c\x08\x01\x12\x08\x0a\x02\x08\x01\x0a\x02\x08\x02\x62\x13\x0a\x01\x59\x12\x0e\x0a"
+    "\x0c\x08\x01\x12\x08\x0a\x02\x08\x01\x0a\x02\x08\x01\x42\x04\x0a\x00\x10\x0d\x42\x11\x0a\x0d\x63"
+    "\x6f\x6d\x2e\x6d\x69\x63\x72\x6f\x73\x6f\x66\x74\x10\x01";
+  OrtEnv* rawEnv = nullptr;
+  check(api, api->CreateEnv(ORT_LOGGING_LEVEL_WARNING, "ssru-quantization-probe", &rawEnv));
+  std::unique_ptr<OrtEnv, decltype(api->ReleaseEnv)> env(rawEnv, api->ReleaseEnv);
+  OrtSessionOptions* rawOptions = nullptr;
+  check(api, api->CreateSessionOptions(&rawOptions));
+  std::unique_ptr<OrtSessionOptions, decltype(api->ReleaseSessionOptions)> options(rawOptions, api->ReleaseSessionOptions);
+  check(api, api->SetIntraOpNumThreads(rawOptions, 1));
+  check(api, api->SetInterOpNumThreads(rawOptions, 1));
+  check(api, api->AddSessionConfigEntry(rawOptions, "session.intra_op.allow_spinning", "0"));
+  check(api, api->SetSessionGraphOptimizationLevel(rawOptions, ORT_ENABLE_ALL));
+  OrtSession* rawSession = nullptr;
+  check(api, api->CreateSessionFromArray(rawEnv, model, sizeof(model) - 1, rawOptions, &rawSession));
+  std::unique_ptr<OrtSession, decltype(api->ReleaseSession)> session(rawSession, api->ReleaseSession);
+  float x[] = {-3.3f, 4.4f};
+  const int64_t dims[] = {1, 2};
+  Value input(api), output(api);
+  check(api, api->CreateTensorWithDataAsOrtValue(memory, x, sizeof(x), dims, 2,
+      ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input.value));
+  const char* inputs[] = {"X"}; const char* outputs[] = {"Y"};
+  const OrtValue* values[] = {input.value};
+  check(api, api->Run(rawSession, nullptr, inputs, values, 1, outputs, 1, &output.value));
+  const auto resultShape = shape(api, output.value);
+  if (resultShape.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT || resultShape.size != 1)
+    throw std::runtime_error("Unexpected SSRU quantization probe shape");
+  const auto bits = std::bit_cast<uint32_t>(*static_cast<const float*>(data(api, output.value)));
+  if (bits == 0x3e72682cu) return true;
+  if (bits == 0x3e72682bu) return false;
+  throw std::runtime_error("Unsupported ORT SSRU quantization arithmetic");
+}
+bool usesKleidi(const OrtApi* api, const OrtKernelInfo* info, OrtMemoryInfo* memory) {
+#if defined(__APPLE__) && defined(__aarch64__)
+  bool sme = false;
+  for (const char* key : {"hw.optional.arm.FEAT_SME", "hw.optional.arm.FEAT_SME2"}) {
+    int supported = 0; size_t size = sizeof(supported);
+    sme |= sysctlbyname(key, &supported, &size, nullptr, 0) == 0 && supported != 0;
+  }
+  if (!sme) return false;
+  OrtKeyValuePairs* raw = nullptr;
+  check(api, api->KernelInfo_GetConfigEntries(info, &raw));
+  std::unique_ptr<OrtKeyValuePairs, decltype(api->ReleaseKeyValuePairs)> config(raw, api->ReleaseKeyValuePairs);
+  for (const char* key : {"mlas.disable_kleidiai", "session.disable_prepacking"}) {
+    const char* value = api->GetKeyValue(raw, key);
+    if (value && std::strcmp(value, "1") == 0) return false;
+  }
+  // Failure rejects native initialization; the engine retains the original Fast graph.
+  return probeKleidi(api, memory);
+#else
+  (void)api; (void)info; (void)memory;
+  return false;
+#endif
+}
+
 float roundEven(float x) {
   const float lo = std::floor(x), fraction = x - lo;
   return fraction < .5f ? lo : fraction > .5f ? lo + 1.f : std::fmod(lo, 2.f) == 0.f ? lo : lo + 1.f;
@@ -102,6 +173,7 @@ struct Kernel {
   std::unique_ptr<mtran::ssru::Decoder> decoder;
   std::unordered_map<std::string, std::unique_ptr<Quantized>> matrices;
   size_t inputCount = 0;
+  bool kleidi = false;
 
   explicit Kernel(const OrtApi* a) : api(a) {}
   ~Kernel() {
@@ -125,6 +197,7 @@ struct Kernel {
     check(api, api->KernelInfo_GetInputCount(info, &inputCount));
     if (inputCount != firstWeight + names.size()) throw std::runtime_error("SSRU input/weight count mismatch");
     check(api, api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &memory));
+    kleidi = usesKleidi(api, info, memory);
     const std::regex linearName(R"(^decoder_l[0-9]+_(rnn_Wf?|context_W[qo]|ffn_W[0-9]+)$)");
 #ifdef MTRAN_SSRU_PACKED
     const bool usePacked = mtran::ssru::packed::backend() != nullptr;
@@ -218,11 +291,15 @@ struct Kernel {
   }
   static void linearBias(void* raw, const mtran::ssru::Matrix& weight, const float* input,
                          size_t rows, const float* bias, bool separate, float* output) {
-    linearImpl(raw, weight, input, rows, output, separate ? nullptr : bias);
-    if (separate) for (size_t i = 0; i < rows * weight.cols; ++i) output[i] += bias[i % weight.cols];
+    auto& invocation = *static_cast<Invocation*>(raw);
+    const bool kleidi = invocation.kernel->kleidi;
+    const bool dynamic = kleidi && !separate && weight.name.find("_rnn_") == std::string::npos;
+    linearImpl(raw, weight, input, rows, output, (separate || kleidi) ? nullptr : bias, dynamic);
+    if (separate || kleidi) for (size_t i = 0; i < rows * weight.cols; ++i) output[i] += bias[i % weight.cols];
   }
   static void linearImpl(void* raw, const mtran::ssru::Matrix& weight, const float* input,
-                         size_t rows, float* output, const float* bias) {
+                         size_t rows, float* output, const float* bias, bool kleidi = false) {
+    if (kleidi && rows != 1) throw std::invalid_argument("SSRU KleidiAI expects one activation row");
     auto& invocation = *static_cast<Invocation*>(raw); auto& k = *invocation.kernel;
     const int64_t aShape[] = {static_cast<int64_t>(rows), static_cast<int64_t>(weight.rows)};
     const int64_t yShape[] = {static_cast<int64_t>(rows), static_cast<int64_t>(weight.cols)};
@@ -253,11 +330,26 @@ struct Kernel {
         k.wrap(zeroTensor, &zero, sizeof(zero), nullptr, 0, ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8);
         const OrtValue* inputs[] = {a.value};
         OrtValue* outputs[] = {quantized.value, scaleTensor.value, zeroTensor.value};
-        check(k.api, k.api->InvokeOp(invocation.context, k.dql, inputs, 1, outputs, 3));
+        if (kleidi) scale = mtran::ssru::kleidi::quantize(input, weight.rows, activation, zero);
+        else check(k.api, k.api->InvokeOp(invocation.context, k.dql, inputs, 1, outputs, 3));
         q.packed->multiply(activation, rows, scale, zero, output, bias);
         return;
       }
 #endif
+      if (kleidi) {
+        std::vector<uint8_t> activation(weight.rows);
+        uint8_t zero = 0;
+        const float scale = mtran::ssru::kleidi::quantize(input, weight.rows, activation.data(), zero) * q.scale;
+        if (!std::isfinite(scale)) throw std::runtime_error("Invalid SSRU KleidiAI output scale");
+        for (size_t col = 0; col < weight.cols; ++col) {
+          int64_t sum = 0;
+          for (size_t row = 0; row < weight.rows; ++row)
+            sum += (int64_t(activation[row]) - zero) * q.bytes[row * weight.cols + col];
+          if (sum < INT32_MIN || sum > INT32_MAX) throw std::runtime_error("SSRU KleidiAI accumulation overflow");
+          output[col] = float(sum) * scale;
+        }
+        return;
+      }
       Value y(k.api);
       k.wrap(y, output, rows * weight.cols * sizeof(float), yShape, 2, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
       OrtValue* outputs[] = {y.value};
@@ -353,6 +445,7 @@ struct Kernel {
     // ORT's Linux ARM64 runtime fuses quantized bias with FMA; folded l1 gate/Q stay separate.
     backend.matmul_bias = linearBias;
 #endif
+    if (kleidi) backend.matmul_bias = linearBias;
     decoder->decode(request, backend, workspace,
                     {&invocation, normalizeAligned, sigmoidAligned, sinAligned, attentionAligned});
     const auto& tokens = workspace.tokens();
