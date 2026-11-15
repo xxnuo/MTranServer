@@ -6,6 +6,15 @@
 #include <limits>
 #include <stdexcept>
 #include <unordered_map>
+#if defined(__x86_64__) || defined(_M_X64)
+#include <emmintrin.h>
+#elif defined(__aarch64__) || defined(_M_ARM64)
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <arm64_neon.h>
+#else
+#include <arm_neon.h>
+#endif
+#endif
 
 namespace mtran::ssru {
 namespace {
@@ -28,13 +37,36 @@ void validate(const TensorView& tensor, const char* name) {
 }
 
 void finite(const float* data, std::size_t size, const char* name) {
-  std::uint32_t bad = 0;
-  for (std::size_t i = 0; i < size; ++i) {
+  std::size_t i = 0;
+#if defined(__x86_64__) || defined(_M_X64)
+  const __m128i mask = _mm_set1_epi32(0x7f800000);
+  __m128i b0 = _mm_setzero_si128(), b1 = _mm_setzero_si128();
+  for (; i + 8 <= size; i += 8) {
+    const __m128i v0 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(data + i));
+    const __m128i v1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(data + i + 4));
+    b0 = _mm_or_si128(b0, _mm_cmpeq_epi32(_mm_and_si128(v0, mask), mask));
+    b1 = _mm_or_si128(b1, _mm_cmpeq_epi32(_mm_and_si128(v1, mask), mask));
+  }
+  if (_mm_movemask_epi8(_mm_or_si128(b0, b1)) != 0)
+    throw std::runtime_error(std::string("SSRU nonfinite value: ") + name);
+#elif defined(__aarch64__) || defined(_M_ARM64)
+  const uint32x4_t mask = vdupq_n_u32(0x7f800000u);
+  uint32x4_t b0 = vdupq_n_u32(0), b1 = vdupq_n_u32(0);
+  for (; i + 8 <= size; i += 8) {
+    const uint32x4_t v0 = vreinterpretq_u32_f32(vld1q_f32(data + i));
+    const uint32x4_t v1 = vreinterpretq_u32_f32(vld1q_f32(data + i + 4));
+    b0 = vorrq_u32(b0, vceqq_u32(vandq_u32(v0, mask), mask));
+    b1 = vorrq_u32(b1, vceqq_u32(vandq_u32(v1, mask), mask));
+  }
+  if (vmaxvq_u32(vorrq_u32(b0, b1)) != 0)
+    throw std::runtime_error(std::string("SSRU nonfinite value: ") + name);
+#endif
+  for (; i < size; ++i) {
     std::uint32_t bits;
     std::memcpy(&bits, &data[i], sizeof(bits));
-    bad |= ((bits & 0x7f800000u) == 0x7f800000u);
+    if ((bits & 0x7f800000u) == 0x7f800000u)
+      throw std::runtime_error(std::string("SSRU nonfinite value: ") + name);
   }
-  if (bad) throw std::runtime_error(std::string("SSRU nonfinite value: ") + name);
 }
 
 void normalize(float* x, std::size_t dim, const float* scale, const float* bias) {
@@ -153,7 +185,8 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
     const auto dim = config_.dim;
     const auto head_dim = dim / config_.heads;
     const auto vocab = static_cast<std::size_t>(embedding_.shape[0]);
-    if (!backend.matmul || !r.source_length || !r.candidate_count || !r.candidate_ids ||
+    const bool full_vocab = (r.candidate_count == 0 && backend.argmax_full != nullptr);
+    if (!backend.matmul || !r.source_length || (!full_vocab && (!r.candidate_count || !r.candidate_ids)) ||
         r.eos_id < 0 || static_cast<std::uint64_t>(r.eos_id) >= vocab ||
         r.keys.size() != config_.depth || r.values.size() != config_.depth ||
         r.source_length > static_cast<std::size_t>(INT64_MAX))
@@ -186,7 +219,7 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
     w.ffn_b_.resize(max_ffn_width_);
     w.scores_.resize(r.source_length);
     multiply(dim, r.candidate_count);
-    if (!backend.argmax_shortlist) {
+    if (!full_vocab && !backend.argmax_shortlist) {
       w.projection_.resize(multiply(dim, r.candidate_count));
       w.bias_.resize(r.candidate_count);
       w.logits_.resize(r.candidate_count);
@@ -230,8 +263,15 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
       finite(w.x_.data(), dim, "position");
       for (std::size_t layer_index = 0; layer_index < config_.depth; ++layer_index) {
         const auto& layer = layers_[layer_index];
-        linear(layer.gate, w.x_.data(), w.gate_.data(), position == 0 && layer_index == 0);
-        linear(layer.state, w.x_.data(), w.update_.data());
+        if (backend.matmul_pair) {
+          backend.matmul_pair(backend.context, layer.gate.weight, layer.gate.bias, position == 0 && layer_index == 0,
+                              w.gate_.data(), layer.state.weight, w.update_.data(), w.x_.data(), 1);
+          finite(w.gate_.data(), dim, "linear gate");
+          finite(w.update_.data(), dim, "linear state");
+        } else {
+          linear(layer.gate, w.x_.data(), w.gate_.data(), position == 0 && layer_index == 0);
+          linear(layer.state, w.x_.data(), w.update_.data());
+        }
         if (math.sigmoid) {
           math.sigmoid(math.context, w.gate_.data(), dim);
           finite(w.gate_.data(), dim, "callback sigmoid");
@@ -294,21 +334,29 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
           finite(w.x_.data(), dim, "callback normalization");
         } else normalize(w.x_.data(), dim, layer.ffn_norm.scale, layer.ffn_norm.bias);
       }
-      std::size_t best = 0;
-      if (backend.argmax_shortlist) {
-        best = backend.argmax_shortlist(backend.context, w.x_.data(), dim,
-                                        embedding_.data, output_bias_, r.candidate_ids, r.candidate_count);
-        if (best >= r.candidate_count) throw std::runtime_error("SSRU invalid shortlist index");
+      std::int64_t chosen_token = 0;
+      if (full_vocab) {
+        const std::size_t tok = backend.argmax_full(backend.context, w.x_.data(), dim);
+        if (tok >= vocab) throw std::runtime_error("SSRU invalid full-vocab token");
+        chosen_token = static_cast<std::int64_t>(tok);
       } else {
-        matmul(projection, w.x_.data(), w.logits_.data());
-        for (std::size_t j = 0; j < r.candidate_count; ++j) {
-          w.logits_[j] += w.bias_[j];
-          if (!std::isfinite(w.logits_[j]) && !(w.logits_[j] == -std::numeric_limits<float>::infinity() && r.candidate_ids[j] == 1))
-            throw std::runtime_error("SSRU nonfinite logit");
-          if (w.logits_[j] > w.logits_[best]) best = j;
+        std::size_t best = 0;
+        if (backend.argmax_shortlist) {
+          best = backend.argmax_shortlist(backend.context, w.x_.data(), dim,
+                                          embedding_.data, output_bias_, r.candidate_ids, r.candidate_count);
+          if (best >= r.candidate_count) throw std::runtime_error("SSRU invalid shortlist index");
+        } else {
+          matmul(projection, w.x_.data(), w.logits_.data());
+          for (std::size_t j = 0; j < r.candidate_count; ++j) {
+            w.logits_[j] += w.bias_[j];
+            if (!std::isfinite(w.logits_[j]) && !(w.logits_[j] == -std::numeric_limits<float>::infinity() && r.candidate_ids[j] == 1))
+              throw std::runtime_error("SSRU nonfinite logit");
+            if (w.logits_[j] > w.logits_[best]) best = j;
+          }
         }
+        chosen_token = r.candidate_ids[best];
       }
-      w.tokens_.push_back(r.candidate_ids[best]);
+      w.tokens_.push_back(chosen_token);
       if (w.tokens_.back() == r.eos_id) { w.ended_with_eos_ = true; break; }
     }
   } catch (...) {

@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import * as logger from '../logger/index.js';
 
-export type InferenceSession = Pick<ort.InferenceSession, 'inputNames' | 'run' | 'release'>;
+export type InferenceSession = Pick<ort.InferenceSession, 'inputNames' | 'run' | 'release'> & {
+  runRaw?(input: BigInt64Array, candidates: BigInt64Array | null, eos: bigint): Promise<BigInt64Array>;
+};
 export class NativeRunError extends Error {}
 interface NativeBinding {
   ssruVersion?: number;
@@ -43,19 +45,21 @@ export async function createNativeSession(model: string, inputNames: readonly st
     const library = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch, libraryName);
     const handle = await binding.init(model, library, cpuThreads);
     let closed: Promise<void> | undefined;
+    const runRaw = async (input: BigInt64Array, candidates: BigInt64Array | null, eos: bigint) => {
+      if (closed) throw new Error('ONNX session is closing');
+      try { return await binding.run(handle, input, candidates, eos); }
+      catch (error) { throw new NativeRunError(String(error)); }
+    };
     return {
       inputNames: [...inputNames],
       release: () => closed ??= binding.close(handle),
+      runRaw,
       run: async feeds => {
         if (closed) throw new Error('ONNX session is closing');
         const input = feeds.X.data, ids = inputNames.includes('candidate_ids') ? feeds.candidate_ids?.data : null, eos = feeds.eos_id.data;
         if (!(input instanceof BigInt64Array) || (ids !== null && !(ids instanceof BigInt64Array)) || !(eos instanceof BigInt64Array) || eos.length !== 1)
           throw new Error('Native translation requires int64 input, candidates and EOS');
-        let output: BigInt64Array;
-        try { output = await binding.run(handle, input, ids, eos[0]); }
-        catch (error) {
-          throw new NativeRunError(String(error));
-        }
+        const output = await runRaw(input, ids, eos[0]);
         return { Y: new ort.Tensor('int64', output, [output.length]) };
       },
     };

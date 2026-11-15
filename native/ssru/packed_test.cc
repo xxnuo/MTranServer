@@ -199,6 +199,36 @@ static void dqlAndShortlistGolden() {
     x_ok[0] = std::numeric_limits<float>::quiet_NaN();
     rejects([&] { table.argmax(x_ok.data(), cids.data(), cids.size(), workspace); });
   }
+  {
+    using mtran::ssru::packed::FullVocabQ4;
+    for (auto [vocab, dim] : {std::pair<std::size_t, std::size_t>{9, 8}, {13, 64}, {20, 384}, {4100, 64}}) {
+      std::vector<float> emb(vocab * dim), bias(vocab), x(dim);
+      for (std::size_t k = 0; k < dim; ++k) x[k] = ((k & 1) ? -0.75f : 0.75f) * float((k % 5) + 1);
+      for (std::size_t r = 0; r < vocab; ++r) {
+        bias[r] = float(int(r % 11) - 5) * 0.25f;
+        for (std::size_t k = 0; k < dim; ++k) {
+          emb[r * dim + k] = (r == 7) ? 4.5f * x[k] : std::sin(float(r * 17 + k * 3)) * 0.5f;
+        }
+      }
+      bias[1] = -std::numeric_limits<float>::infinity();
+      std::fill_n(emb.data() + dim, dim, 50.f);
+      FullVocabQ4 full(emb.data(), bias.data(), vocab, dim);
+      const std::size_t seq = full.argmax(x.data(), workspace, false);
+      const std::size_t par = full.argmax(x.data(), workspace, true);
+      assert(seq == 7 && par == 7);
+      if (vocab == 13) {
+        for (std::size_t k = 0; k < dim; ++k) emb[12 * dim + k] = 9.0f * x[k];
+        FullVocabQ4 tail(emb.data(), bias.data(), vocab, dim);
+        assert(tail.argmax(x.data(), workspace, false) == 12);
+      }
+    }
+    std::vector<float> ok_emb(9 * 8, 1.f), ok_bias(9, 0.f), bad_x(8, 1.f);
+    rejects([&] { FullVocabQ4 bad(ok_emb.data(), ok_bias.data(), 8, 8); });
+    FullVocabQ4 small(ok_emb.data(), ok_bias.data(), 9, 8);
+    rejects([&] { small.argmax(nullptr, workspace, false); });
+    bad_x[0] = std::numeric_limits<float>::infinity();
+    rejects([&] { small.argmax(bad_x.data(), workspace, false); });
+  }
 }
 int main() {
   cpuOsGolden();

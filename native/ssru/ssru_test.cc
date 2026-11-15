@@ -669,6 +669,47 @@ void shortlist_callbacks() {
     };
     rejects([&] { decoder.decode(request, out_of_range, fast_w); });
     CHECK(fast_w.tokens().empty() && !fast_w.ended_with_eos());
+
+    Request full_req = request;
+    full_req.candidate_ids = nullptr;
+    full_req.candidate_count = 0;
+    struct FullCtx {
+      std::size_t full_calls = 0;
+      std::size_t pair_calls = 0;
+      const float* emb;
+      const float* bias;
+      std::size_t vocab;
+      std::size_t dim;
+    };
+    FullCtx ctx{0, 0, f.weights.at("Wemb").data.data(), f.weights.at("decoder_ff_logit_out_b").data.data(),
+                f.weights.at("decoder_ff_logit_out_b").data.size(), f.config.dim};
+    LinearBackend full_backend{&ctx, scalar};
+    full_backend.matmul_pair = [](void* raw, const Matrix& w1, const float* b1, bool, float* o1,
+                                  const Matrix& w2, float* o2, const float* in, std::size_t rows) {
+      ++static_cast<FullCtx*>(raw)->pair_calls;
+      scalar(nullptr, w1, in, rows, o1);
+      if (b1) for (std::size_t i = 0; i < rows * w1.cols; ++i) o1[i] += b1[i % w1.cols];
+      scalar(nullptr, w2, in, rows, o2);
+    };
+    full_backend.argmax_full = [](void* raw, const float* x, std::size_t) {
+      auto& c = *static_cast<FullCtx*>(raw);
+      ++c.full_calls;
+      std::size_t best = 0;
+      float best_val = -std::numeric_limits<float>::infinity();
+      for (std::size_t t = 0; t < c.vocab; ++t) {
+        float dot = 0;
+        for (std::size_t k = 0; k < c.dim; ++k) dot += x[k] * c.emb[t * c.dim + k];
+        const float val = dot + (t == 1 ? -std::numeric_limits<float>::infinity() : c.bias[t]);
+        if (t == 0 || val > best_val) { best_val = val; best = t; }
+      }
+      return best;
+    };
+    Workspace full_w;
+    decoder.decode(full_req, full_backend, full_w);
+    CHECK(!full_w.tokens().empty() && ctx.full_calls == full_w.tokens().size() && ctx.pair_calls >= f.config.depth);
+    LinearBackend bad_full = full_backend;
+    bad_full.argmax_full = [](void* raw, const float*, std::size_t) { return static_cast<FullCtx*>(raw)->vocab; };
+    rejects([&] { decoder.decode(full_req, bad_full, full_w); });
   }
 }
 

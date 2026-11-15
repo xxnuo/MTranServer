@@ -18,7 +18,7 @@ export function collectNative(directory: string, output: string) {
     assert.equal(createHash('sha256').update(readFileSync(source)).digest('hex'), report.addon_sha256, `Unverified binary: ${target}`);
     assert.equal(report.ort, '1.30.0', `ORT version mismatch: ${target}`);
     assert.deepEqual(report.source_sha256, expectedSources, `Stale platform artifact: ${target}`);
-    assert(report.results?.length === 2 && report.results.every((r: { samples: number; token_exact: number; flores_devtest_samples: number; differences: unknown[] }) =>
+    assert(report.results?.length === 4 && report.results.every((r: { samples: number; token_exact: number; flores_devtest_samples: number; differences: unknown[] }) =>
       r.flores_devtest_samples === 1012 && r.samples >= 1012 && r.token_exact === r.samples && r.differences.length === 0), `Unresolved quality differences: ${target}`);
     for (const host of ['node-http', 'electron-http', ...(target.startsWith('linux-') ? ['electron-http-2', 'electron-http-3'] : [])]) {
       const http = JSON.parse(readFileSync(path.join(directory, `${target}-${host}.json`), 'utf8'));

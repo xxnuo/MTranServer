@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 
 namespace mtran::ssru::packed {
@@ -63,7 +64,57 @@ class ShortlistTable {
                  bool sequential_fma = false);
   ~ShortlistTable();
   std::size_t argmax(const float* x, const std::int64_t* candidate_ids,
-                     std::size_t candidate_count, Workspace& workspace) const;
+                     std::size_t candidate_count, Workspace& workspace,
+                     bool prevalidated = false) const;
+  struct alignas(16) RowMeta {
+    float scale;
+    float bias;
+    float w_l2;
+    std::int32_t sum;
+  };
+  struct ScanResult {
+    float best_logit;
+    std::size_t best_j;
+    float second_logit;
+  };
+ private:
+  struct Impl;
+  std::unique_ptr<const Impl> impl_;
+};
+
+class FullVocabQ4 {
+ public:
+  FullVocabQ4(const float* embedding, const float* output_bias, std::size_t vocab, std::size_t dim,
+              bool sequential_fma = false);
+  ~FullVocabQ4();
+  FullVocabQ4(const FullVocabQ4&) = delete;
+  FullVocabQ4& operator=(const FullVocabQ4&) = delete;
+  std::size_t argmax(const float* x, Workspace& workspace, bool allow_parallel = false) const;
+
+  struct TopK9 {
+    float scores[9];
+    std::uint32_t ids[9];
+    int count = 0;
+    void init() noexcept {
+      count = 0;
+      for (int i = 0; i < 9; ++i) {
+        scores[i] = -std::numeric_limits<float>::infinity();
+        ids[i] = 0;
+      }
+    }
+    void push(float s, std::uint32_t id) noexcept {
+      if (count == 9 && !(s > scores[8])) return;
+      int pos = count < 9 ? count++ : 8;
+      while (pos > 0 && s > scores[pos - 1]) {
+        scores[pos] = scores[pos - 1];
+        ids[pos] = ids[pos - 1];
+        --pos;
+      }
+      scores[pos] = s;
+      ids[pos] = id;
+    }
+  };
+
  private:
   struct Impl;
   std::unique_ptr<const Impl> impl_;

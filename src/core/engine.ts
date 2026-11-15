@@ -1,5 +1,5 @@
 import * as ort from 'onnxruntime-node';
-import { availableParallelism } from 'node:os';
+import { availableParallelism, endianness } from 'node:os';
 import { createNativeSession, hasNativeAddon, hasNativeSsru, NativeRunError, type InferenceSession } from './native.js';
 import { parseFragment } from 'parse5';
 import { createMetalWorker, getMetalRuntime, type MetalWorker, type MetalInput } from './metal.js';
@@ -14,6 +14,9 @@ export interface TranslationOptions { sourceLang?: string; targetLang?: string; 
 export interface TranslateOptions { qualityScores?: boolean; alignment?: boolean; html?: boolean }
 export interface TranslationConfig { 'cpu-threads'?: number; 'max-length-break'?: number; 'max-concurrent-runs'?: number }
 const sentenceSegmenter = new Intl.Segmenter(undefined, { granularity: 'sentence' });
+const littleEndian = endianness() === 'LE';
+const protectedSplitRe = /(\{\d+\}|\[\d+\]|\p{RI}\p{RI}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu;
+const protectedQuickRe = /\{\d+\}|\[\d+\]|\p{RI}|\p{Extended_Pictographic}/u;
 function splitSentences(content: string): string[] {
   const sentences = [...sentenceSegmenter.segment(content)].map(s => s.segment);
   if (sentences.length === 1) {
@@ -86,13 +89,14 @@ export class TranslationEngine {
           // A bounded timing probe need not finish a translation; user requests still require EOS.
           for (const input of short ? inputs.slice(0, 1) : inputs) await this.infer(session, input, eos, false);
         };
-        const skipCpuSweep = !!model.lex && config['cpu-threads'] === undefined && hasNativeAddon();
+        const canSsru = (!!model.lex || !!model.sourceModel) && process.env.MT_NATIVE_SSRU !== '0';
+        const skipCpuSweep = config['cpu-threads'] === undefined && ((!!model.lex && hasNativeAddon()) || (canSsru && hasNativeSsru()));
         const selected = await selectBackend(model.model, probe, config['cpu-threads'], model.identity, !!getMetalRuntime(model), skipCpuSweep);
         let activeSession: InferenceSession = selected.session;
         let info = selected.info;
         const inputNames = selected.session.inputNames ?? ['X', 'eos_id'];
         const isShortlist = inputNames.includes('candidate_ids');
-        const preferSsru = selected.info.provider === 'cpu' && isShortlist && process.env.MT_NATIVE_SSRU !== '0';
+        const preferSsru = selected.info.provider === 'cpu' && (isShortlist || !!model.sourceModel) && process.env.MT_NATIVE_SSRU !== '0';
         const ssru = preferSsru && hasNativeSsru();
         if (preferSsru && !ssru) info = { ...info, fallbackReason: 'Native SSRU addon unavailable' };
         if (selected.info.provider === 'cpu'
@@ -100,7 +104,7 @@ export class TranslationEngine {
           const nativeThreads = ssru ? config['cpu-threads'] ?? 1 : isShortlist ? 1 : selected.info.cpuThreads;
           let native: InferenceSession | undefined;
           try {
-            const nativeModel = ssru ? await ensureNativeSsru(model) : model;
+            const nativeModel = ssru ? await ensureNativeSsru(model, isShortlist) : model;
             native = ssru ? await createNativeSession(nativeModel.model, inputNames, nativeThreads, true)
               : await createNativeSession(nativeModel.model, inputNames, nativeThreads);
             if (ssru && !native) throw new Error('Native SSRU session unavailable');
@@ -201,18 +205,30 @@ export class TranslationEngine {
     return html;
   }
   private async translateText(text: string): Promise<string> {
+    if (!protectedQuickRe.test(text)) return this.translatePlain(text);
     // Protect placeholders and pictographs without asking the model to reproduce sentinel tokens.
-    const protectedParts = text.split(/(\{\d+\}|\[\d+\]|\p{RI}\p{RI}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu);
+    const protectedParts = text.split(protectedSplitRe);
     const translated: string[] = [];
     for (let i = 0; i < protectedParts.length; i++) translated.push(i % 2 ? protectedParts[i] : await this.translatePlain(protectedParts[i]));
     return translated.join('');
   }
   private async translatePlain(text: string, parallel = true): Promise<string> {
-    if (!text.trim()) return text;
-    const match = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
-    const [, before, content, after] = match;
-    const ids = this.src!.encode(content);
-    if (ids.length + 1 > this.tokenLimit || content.length > this.tokenLimit) {
+    if (!text) return text;
+    let before = '', content = text, after = '';
+    const firstCode = text.charCodeAt(0), lastCode = text.charCodeAt(text.length - 1);
+    if (firstCode <= 32 || lastCode <= 32 || firstCode >= 160 || lastCode >= 160) {
+      const trimmed = text.trim();
+      if (!trimmed) return text;
+      if (trimmed.length !== text.length) {
+        const start = text.indexOf(trimmed);
+        before = text.slice(0, start);
+        content = trimmed;
+        after = text.slice(start + trimmed.length);
+      }
+    }
+    // Skip encoding the entire document when character count already exceeds tokenLimit.
+    const ids = content.length > this.tokenLimit ? undefined : this.src!.encode(content);
+    if (!ids || ids.length + 1 > this.tokenLimit) {
       if (parallel && !this.metalBusy && !this.metalDisabled && this.converted && (this.running === 1 || this.metalSelections.size > 0)) {
         const accelerated = await this.translateMetal(content);
         if (accelerated !== undefined) return before + accelerated + after;
@@ -235,30 +251,32 @@ export class TranslationEngine {
       return before + out.join('') + after;
     }
     const inputIds = new BigInt64Array(ids.length + 1);
-    for (let i = 0; i < ids.length; i++) inputIds[i] = BigInt(ids[i]);
-    inputIds[ids.length] = BigInt(this.src!.eos);
-    const input = new ort.Tensor('int64', inputIds, [inputIds.length]);
-    const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst!.eos)), [1]);
-    try {
-      let tokens: number[] | Int32Array;
-      try { tokens = await this.infer(this.session!, input, eos); }
-      catch (error) {
-        if (!this.backend || (this.backend.provider === 'cpu' && !(error instanceof NativeRunError))) throw error;
-        this.fallback ??= (async () => {
-          const session = await createSession(this.modelPath, 'cpu', this.fallbackCpuThreads, this.fallbackCpuTuning);
-          const previous = this.session!;
-          this.session = session;
-          this.backend = { ...this.backend!, runtime: undefined, provider: 'cpu', cpuThreads: this.fallbackCpuThreads,
-            tuning: this.fallbackCpuTuning ?? this.backend!.tuning, maxConcurrentRuns: 1, fallbackReason: String(error) };
-          await previous.release().catch(releaseError => logger.debug(`ONNX session release failed: ${releaseError}`));
-          logger.warn(`ONNX execution failed, falling back to standard CPU runtime: ${error}`);
-          return session;
-        })().catch(error => { this.fallback = undefined; throw error; });
-        const session = await this.fallback;
-        tokens = await this.infer(session, input, eos);
-      }
-      return before + this.dst!.decode(tokens) + after;
-    } finally { input.dispose(); eos.dispose(); }
+    if (littleEndian) {
+      const view32 = new Int32Array(inputIds.buffer);
+      for (let i = 0; i < ids.length; i++) view32[i * 2] = ids[i];
+      view32[ids.length * 2] = this.src!.eos;
+    } else {
+      for (let i = 0; i < ids.length; i++) inputIds[i] = BigInt(ids[i]);
+      inputIds[ids.length] = BigInt(this.src!.eos);
+    }
+    let tokens: number[] | Int32Array;
+    try { tokens = await this.inferIds(this.session!, inputIds); }
+    catch (error) {
+      if (!this.backend || (this.backend.provider === 'cpu' && !(error instanceof NativeRunError))) throw error;
+      this.fallback ??= (async () => {
+        const session = await createSession(this.modelPath, 'cpu', this.fallbackCpuThreads, this.fallbackCpuTuning);
+        const previous = this.session!;
+        this.session = session;
+        this.backend = { ...this.backend!, runtime: undefined, provider: 'cpu', cpuThreads: this.fallbackCpuThreads,
+          tuning: this.fallbackCpuTuning ?? this.backend!.tuning, maxConcurrentRuns: 1, fallbackReason: String(error) };
+        await previous.release().catch(releaseError => logger.debug(`ONNX session release failed: ${releaseError}`));
+        logger.warn(`ONNX execution failed, falling back to standard CPU runtime: ${error}`);
+        return session;
+      })().catch(error => { this.fallback = undefined; throw error; });
+      const session = await this.fallback;
+      tokens = await this.inferIds(session, inputIds);
+    }
+    return before + this.dst!.decode(tokens) + after;
   }
   private async translateMetal(content: string): Promise<string | undefined> {
     // CPU keeps short inputs and competing requests; only documents can amortize GPU dispatch.
@@ -268,8 +286,8 @@ export class TranslationEngine {
     const collect = (text: string) => {
       if (!text.trim()) { parts.push(text); return; }
       const [, before, value, after] = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
-      const ids = this.src!.encode(value);
-      if (ids.length + 1 > this.tokenLimit || value.length > this.tokenLimit) {
+      const ids = value.length > this.tokenLimit ? undefined : this.src!.encode(value);
+      if (!ids || ids.length + 1 > this.tokenLimit) {
         parts.push(before); splitSentences(value).forEach(collect); parts.push(after);
       } else {
         ids.push(this.src!.eos);
@@ -387,6 +405,83 @@ export class TranslationEngine {
         return tokens;
       } finally { for (const tensor of Object.values(outputs)) tensor.dispose(); }
     } finally { candidates?.dispose(); }
+  }
+  private async inferIds(session: InferenceSession, inputIds: BigInt64Array, requireEos = true): Promise<Int32Array> {
+    if (typeof session.runRaw !== 'function') {
+      const input = new ort.Tensor('int64', inputIds, [inputIds.length]);
+      const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst!.eos)), [1]);
+      try { return await this.infer(session, input, eos, requireEos); }
+      finally { input.dispose(); eos.dispose(); }
+    }
+    let rawCandidates: BigInt64Array | null = null;
+    if (session.inputNames?.includes('candidate_ids')) {
+      if (!this.shortlist) throw new Error('Shortlist ONNX graph requires a validated lexicon (ConvertedModel.lex)');
+      rawCandidates = typeof (this.shortlist as any).candidatesBigInt === 'function'
+        ? this.shortlist.candidatesBigInt(inputIds)
+        : BigInt64Array.from(this.shortlist.candidates(Array.from(inputIds, Number)), BigInt);
+    }
+    const gated = !!this.session;
+    if (gated) {
+      if (this.inferRunning >= (this.backend?.maxConcurrentRuns ?? 1)) await new Promise<void>(resolve => this.inferWaiters.push(resolve));
+      else this.inferRunning++;
+    }
+    const actual = gated ? this.session! : session;
+    if (typeof actual.runRaw !== 'function') {
+      if (gated) {
+        this.inferRunning--;
+        while (this.inferWaiters.length && this.inferRunning < (this.backend?.maxConcurrentRuns ?? 1)) {
+          this.inferRunning++;
+          this.inferWaiters.shift()!();
+        }
+      }
+      const input = new ort.Tensor('int64', inputIds, [inputIds.length]);
+      const eos = new ort.Tensor('int64', BigInt64Array.of(BigInt(this.dst!.eos)), [1]);
+      try { return await this.infer(actual, input, eos, requireEos); }
+      finally { input.dispose(); eos.dispose(); }
+    }
+    const wasNative = this.nativeSessions.has(actual);
+    let raw: BigInt64Array;
+    try { raw = await actual.runRaw(inputIds, rawCandidates, BigInt(this.dst!.eos)); }
+    catch (error) {
+      if (wasNative && !(error instanceof NativeRunError)) throw new NativeRunError(String(error));
+      throw error;
+    } finally {
+      if (gated) {
+        this.inferRunning--;
+        while (this.inferWaiters.length && this.inferRunning < (this.backend?.maxConcurrentRuns ?? 1)) {
+          this.inferRunning++;
+          this.inferWaiters.shift()!();
+        }
+      }
+    }
+    const invalid = () => new (wasNative ? NativeRunError : Error)('Invalid translation output');
+    if (!(raw instanceof BigInt64Array) || raw.length < 1 || raw.length > 1 + 3 * inputIds.length) throw invalid();
+    const dstSize = this.dst!.size, eosVal = this.dst!.eos;
+    let end = -1;
+    if (littleEndian) {
+      const v32 = new Int32Array(raw.buffer, raw.byteOffset, raw.length * 2);
+      for (let i = 0; i < raw.length; i++) {
+        const lo = v32[i * 2], hi = v32[i * 2 + 1];
+        if (hi !== 0 || lo < 0 || lo >= dstSize) throw invalid();
+        if (end < 0 && lo === eosVal) end = i;
+      }
+      if (end < 0 && requireEos) throw new Error('Translation exceeded generation limit');
+      const length = end < 0 ? raw.length : end;
+      const tokens = new Int32Array(length);
+      for (let i = 0; i < length; i++) tokens[i] = v32[i * 2];
+      return tokens;
+    }
+    const size = BigInt(dstSize), eosId = BigInt(eosVal);
+    for (let i = 0; i < raw.length; i++) {
+      const token = raw[i];
+      if (token < 0n || token >= size) throw invalid();
+      if (end < 0 && token === eosId) end = i;
+    }
+    if (end < 0 && requireEos) throw new Error('Translation exceeded generation limit');
+    const length = end < 0 ? raw.length : end;
+    const tokens = new Int32Array(length);
+    for (let i = 0; i < length; i++) tokens[i] = Number(raw[i]);
+    return tokens;
   }
   destroy(): Promise<void> {
     if (this.closed) return this.closed;

@@ -43,15 +43,32 @@ function fixture(dim = 4, heads = 2, depth = 2, ffnDepth = 2, tied = true) {
 
 test.each([
   ['fp32', false], ['fp32', true], ['int4-k9', false], ['int4-k9', true],
-  ['qdecoder', false], ['qdecoder', true], ['qall', false],
+  ['qdecoder', false], ['qdecoder', true],
 ] as const)('native SSRU rejects mode=%s shortlist=%s before reading weights', (mode, shortlist) => {
   assert.throws(() => buildModel(new Map(), {}, mode, shortlist, true), /nativeSsru.*qall.*shortlist/i);
 });
 
 test('native SSRU requires boolean shortlist and accepts the default qall mode', () => {
-  for (const shortlist of [undefined, 0, 1, 'true']) assert.throws(() => buildModel(new Map(), {}, 'qall', shortlist as never, true), /nativeSsru.*qall.*shortlist/i);
+  for (const shortlist of [null, 0, 1, 'true']) assert.throws(() => buildModel(new Map(), {}, 'qall', shortlist as never, true), /nativeSsru.*qall.*shortlist/i);
   const { weights, config } = fixture();
   assert.deepEqual(buildModel(weights, config, undefined, true, true), buildModel(weights, config, 'qall', true, true));
+  assert.deepEqual(buildModel(weights, config, undefined, false, true), buildModel(weights, config, 'qall', false, true));
+  assert.deepEqual(buildModel(weights, config, 'qall', undefined, true), buildModel(weights, config, 'qall', false, true));
+});
+
+test('native SSRU full-vocab protobuf contract omits candidate_ids graph input and projection tables', () => {
+  const { weights, config } = fixture(8, 2, 2, 2, true);
+  const model = decode(buildModel(weights, config, 'qall', false, true)), g = model.graph;
+  assert.equal(modelType.verify(model), null);
+  assert.deepEqual(g.input.map((v: any) => v.name), ['X', 'eos_id']);
+  assert(!g.initializer.some((t: any) => /^projection_|^shortlist_/.test(t.name)));
+  const node = g.node.at(-1);
+  assert.equal(node.opType, 'SsruDecode');
+  assert.deepEqual(node.input.slice(0, 2), ['X', 'eos_id']);
+  const candInit = g.initializer.find((t: any) => t.name === node.input[2]);
+  assert(candInit);
+  assert.deepEqual(candInit.dims, [0]);
+  assert.equal(candInit.dataType, 7);
 });
 
 test.each([

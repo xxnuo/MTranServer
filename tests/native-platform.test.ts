@@ -212,6 +212,13 @@ test.skipIf(!platforms.includes(process.platform as any) || !architectures.inclu
           attribute: [...Object.entries({ dim: 4, heads: 1, depth: 1, ffn_depth: 1 }).map(([name, i]) => ({ name, type: 2, i })),
             { name: 'weight_names', type: 8, strings: names.map(name => Buffer.from(name)) }] }],
       }, true);
+      const ssruFull = save('全词表解码', { name: 'ssru-full-platform',
+        initializer: [...initializers, { name: 'empty_candidates', dims: [0], dataType: 7, rawData: Buffer.alloc(0) }],
+        input: [value('X', 2), value('eos_id', 1)], output: [value('Y', 'n')],
+        node: [{ opType: 'SsruDecode', domain: 'com.mtran', input: ['X', 'eos_id', 'empty_candidates', 'K', 'V', ...names], output: ['Y'],
+          attribute: [...Object.entries({ dim: 4, heads: 1, depth: 1, ffn_depth: 1 }).map(([name, i]) => ({ name, type: 2, i })),
+            { name: 'weight_names', type: 8, strings: names.map(name => Buffer.from(name)) }] }],
+      }, true);
       const script = String.raw`
         const assert = require('node:assert/strict'), addon = require(${JSON.stringify(binary)});
         const models = ${JSON.stringify(models)}, library = ${JSON.stringify(library)};
@@ -235,6 +242,11 @@ test.skipIf(!platforms.includes(process.platform as any) || !architectures.inclu
           const handle = await addon.init(${JSON.stringify(ssru)}, library, 1);
           assert.deepEqual(await addon.run(handle, BigInt64Array.of(2n, 0n), BigInt64Array.of(0n, 2n), 0n), BigInt64Array.of(0n));
           await addon.close(handle);
+          const fullHandle = await addon.init(${JSON.stringify(ssruFull)}, library, 1);
+          assert.deepEqual(await addon.run(fullHandle, BigInt64Array.of(2n, 0n), null, 0n), BigInt64Array.of(0n));
+          for (const out of await Promise.all(Array.from({length: 8}, () => addon.run(fullHandle, BigInt64Array.of(2n, 0n), null, 0n))))
+            assert.deepEqual(out, BigInt64Array.of(0n));
+          await addon.close(fullHandle);
           console.log(JSON.stringify({platform:process.platform, arch:process.arch, backend:addon.ssruBackend, ort:'1.30.0'}));
         })().catch(error => { console.error(error); process.exitCode = 1; });
       `;

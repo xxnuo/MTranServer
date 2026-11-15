@@ -14,7 +14,7 @@ try {
   } else {
     const lexicalShortlist = workerData.lexicalShortlist === true && !!workerData.lex;
     const nativeSsru = workerData.nativeSsru === true;
-    if (nativeSsru && !lexicalShortlist) throw new Error('Native SSRU requires a lexical shortlist');
+    if (nativeSsru && workerData.lexicalShortlist === true && !workerData.lex) throw new Error('Native SSRU requires a lexical shortlist');
     await writeFile(workerData.output, buildModel(weights, config, 'qall', lexicalShortlist, nativeSsru));
     const src = await Tokenizer.load(workerData.sourceVocab);
     let dst: Tokenizer | undefined, session: ort.InferenceSession | undefined;
