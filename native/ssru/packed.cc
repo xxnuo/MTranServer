@@ -1,4 +1,5 @@
 #include "packed.h"
+#include "kleidi.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -590,29 +591,18 @@ MTRAN_DOTPROD void prepareFullQ4Sdot(
   auto* qa = reinterpret_cast<std::int8_t*>(work_buf);
   auto* sa = reinterpret_cast<float*>(qa + ((dim + 63) & ~std::size_t(63)));
   auto* neg_corr = reinterpret_cast<std::int32_t*>(sa + ((blocks + 7) & ~std::size_t(7)));
+  auto* u8_buf = reinterpret_cast<std::uint8_t*>(qa);
+  std::uint8_t zero_u8 = 128;
+  const float scale = mtran::ssru::kleidi::quantize(x, dim, u8_buf, zero_u8);
+  const int zp_s8 = static_cast<int>(zero_u8) - 128;
+  const uint8x16_t bias128 = vdupq_n_u8(0x80);
+  for (std::size_t k = 0; k < dim; k += 16)
+    vst1q_s8(qa + k, vreinterpretq_s8_u8(veorq_u8(vld1q_u8(u8_buf + k), bias128)));
+  sa[0] = scale;
+  sa[1] = -scale * static_cast<float>(zp_s8);
   const int8x16_t neg8 = vdupq_n_s8(-8);
   const int32x4_t zero = vdupq_n_s32(0);
   for (std::size_t b = 0; b < blocks; ++b) {
-    float amax = 0.0f;
-    for (std::size_t k = 0; k < 64; k += 16) {
-      const float32x4_t a0 = vabsq_f32(vld1q_f32(x + b * 64 + k + 0));
-      const float32x4_t a1 = vabsq_f32(vld1q_f32(x + b * 64 + k + 4));
-      const float32x4_t a2 = vabsq_f32(vld1q_f32(x + b * 64 + k + 8));
-      const float32x4_t a3 = vabsq_f32(vld1q_f32(x + b * 64 + k + 12));
-      amax = std::max(amax, vmaxvq_f32(vmaxq_f32(vmaxq_f32(a0, a2), vmaxq_f32(a1, a3))));
-    }
-    const float scale = amax / 127.0f;
-    const float inv = scale != 0.0f ? 1.0f / scale : 0.0f;
-    sa[b] = scale;
-    for (std::size_t k = 0; k < 64; k += 16) {
-      for (std::size_t u = 0; u < 4; ++u) {
-        const int32x4_t qi = vcvtaq_s32_f32(vmulq_n_f32(vld1q_f32(x + b * 64 + k + u * 4), inv));
-        qa[b * 64 + k + u * 4 + 0] = static_cast<std::int8_t>(vgetq_lane_s32(qi, 0));
-        qa[b * 64 + k + u * 4 + 1] = static_cast<std::int8_t>(vgetq_lane_s32(qi, 1));
-        qa[b * 64 + k + u * 4 + 2] = static_cast<std::int8_t>(vgetq_lane_s32(qi, 2));
-        qa[b * 64 + k + u * 4 + 3] = static_cast<std::int8_t>(vgetq_lane_s32(qi, 3));
-      }
-    }
     const int8x16_t av0 = vld1q_s8(qa + b * 64 + 0);
     const int8x16_t av1 = vld1q_s8(qa + b * 64 + 16);
     const int8x16_t av2 = vld1q_s8(qa + b * 64 + 32);
@@ -623,11 +613,13 @@ MTRAN_DOTPROD void prepareFullQ4Sdot(
 MTRAN_DOTPROD void scanFullQ4SdotRange(
     std::size_t dim, std::size_t g_begin, std::size_t g_end,
     const std::uint8_t* packed_q4, const float* packed_scales,
-    const float* bias, const std::uint8_t* work_buf, FullVocabQ4::TopK9& top) {
+    const float* kai_wsum, const float* bias, const std::uint8_t* work_buf, FullVocabQ4::TopK9& top) {
   const std::size_t blocks = dim / 64;
   const auto* qa = reinterpret_cast<const std::int8_t*>(work_buf);
   const auto* sa = reinterpret_cast<const float*>(qa + ((dim + 63) & ~std::size_t(63)));
   const auto* neg_corr = reinterpret_cast<const std::int32_t*>(sa + ((blocks + 7) & ~std::size_t(7)));
+  const float sa_b = sa[0];
+  const float32x4_t vneg_zp = vdupq_n_f32(sa[1]);
   top.init();
   const uint8x16_t low_mask = vdupq_n_u8(0x0F);
   #define MTRAN_SDOT_Q4_STEP(cp, sb, c_acc) do { \
@@ -650,14 +642,13 @@ MTRAN_DOTPROD void scanFullQ4SdotRange(
       const int8x16_t av0 = vld1q_s8(qa + b * 64 + 0), av1 = vld1q_s8(qa + b * 64 + 16);
       const int8x16_t av2 = vld1q_s8(qa + b * 64 + 32), av3 = vld1q_s8(qa + b * 64 + 48);
       const int32x4_t nc = vld1q_s32(neg_corr + b * 4);
-      const float sa_b = sa[b];
       MTRAN_SDOT_Q4_STEP(gp0 + 0, gs0[0], acc0); MTRAN_SDOT_Q4_STEP(gp0 + 32, gs0[1], acc1);
       MTRAN_SDOT_Q4_STEP(gp0 + 64, gs0[2], acc2); MTRAN_SDOT_Q4_STEP(gp0 + 96, gs0[3], acc3);
       MTRAN_SDOT_Q4_STEP(gp1 + 0, gs1[0], acc4); MTRAN_SDOT_Q4_STEP(gp1 + 32, gs1[1], acc5);
       MTRAN_SDOT_Q4_STEP(gp1 + 64, gs1[2], acc6); MTRAN_SDOT_Q4_STEP(gp1 + 96, gs1[3], acc7);
     }
-    const float32x4_t v0 = vaddq_f32(vpaddq_f32(vpaddq_f32(acc0, acc1), vpaddq_f32(acc2, acc3)), vld1q_f32(bias + g * 4));
-    const float32x4_t v1 = vaddq_f32(vpaddq_f32(vpaddq_f32(acc4, acc5), vpaddq_f32(acc6, acc7)), vld1q_f32(bias + g * 4 + 4));
+    const float32x4_t v0 = vfmaq_f32(vaddq_f32(vpaddq_f32(vpaddq_f32(acc0, acc1), vpaddq_f32(acc2, acc3)), vld1q_f32(bias + g * 4)), vneg_zp, vld1q_f32(kai_wsum + g * 4));
+    const float32x4_t v1 = vfmaq_f32(vaddq_f32(vpaddq_f32(vpaddq_f32(acc4, acc5), vpaddq_f32(acc6, acc7)), vld1q_f32(bias + g * 4 + 4)), vneg_zp, vld1q_f32(kai_wsum + g * 4 + 4));
     const float32x4_t vth = vdupq_n_f32(top.scores[8]);
     if (top.count < 9 || vmaxvq_u32(vorrq_u32(vcgtq_f32(v0, vth), vcgtq_f32(v1, vth))) != 0) {
       float out8[8];
@@ -677,13 +668,12 @@ MTRAN_DOTPROD void scanFullQ4SdotRange(
       const int8x16_t av2 = vld1q_s8(qa + b * 64 + 32);
       const int8x16_t av3 = vld1q_s8(qa + b * 64 + 48);
       const int32x4_t nc = vld1q_s32(neg_corr + b * 4);
-      const float sa_b = sa[b];
       MTRAN_SDOT_Q4_STEP(gp + 0, gs[0], acc0);
       MTRAN_SDOT_Q4_STEP(gp + 32, gs[1], acc1);
       MTRAN_SDOT_Q4_STEP(gp + 64, gs[2], acc2);
       MTRAN_SDOT_Q4_STEP(gp + 96, gs[3], acc3);
     }
-    const float32x4_t v0 = vaddq_f32(vpaddq_f32(vpaddq_f32(acc0, acc1), vpaddq_f32(acc2, acc3)), vld1q_f32(bias + g * 4));
+    const float32x4_t v0 = vfmaq_f32(vaddq_f32(vpaddq_f32(vpaddq_f32(acc0, acc1), vpaddq_f32(acc2, acc3)), vld1q_f32(bias + g * 4)), vneg_zp, vld1q_f32(kai_wsum + g * 4));
     if (top.count < 9 || vmaxvq_u32(vcgtq_f32(v0, vdupq_n_f32(top.scores[8]))) != 0) {
       float out4[4];
       vst1q_f32(out4, v0);
@@ -1227,6 +1217,7 @@ struct FullVocabQ4::Impl {
   std::vector<float> raw_scales_;
   std::vector<std::uint8_t> packed_q4_;
   std::vector<float> packed_scales_;
+  std::vector<float> kai_wsum_;
 
   // Claimable 4-way worker team used only when a single request is active (c=1).
   mutable std::atomic<bool> team_busy_{false};
@@ -1269,7 +1260,7 @@ struct FullVocabQ4::Impl {
     scanFullQ4Avx2Range(dim_, g_begin, g_end, packed_q4_.data(), packed_scales_.data(), bias_.data(), work, out);
 #elif defined(__aarch64__) || defined(_M_ARM64)
     (void)use_vnni;
-    scanFullQ4SdotRange(dim_, g_begin, g_end, packed_q4_.data(), packed_scales_.data(), bias_.data(), work, out);
+    scanFullQ4SdotRange(dim_, g_begin, g_end, packed_q4_.data(), packed_scales_.data(), kai_wsum_.data(), bias_.data(), work, out);
 #else
     (void)work; (void)use_vnni; out.init();
 #endif
@@ -1345,6 +1336,7 @@ struct FullVocabQ4::Impl {
       const std::size_t groups = vocab / 4;
       packed_q4_.resize(groups * blocks_ * 128);
       packed_scales_.resize(groups * blocks_ * 4);
+      kai_wsum_.assign(groups * 4, 0.0f);
       for (std::size_t g = 0; g < groups; ++g) {
         for (std::size_t b = 0; b < blocks_; ++b) {
           for (std::size_t c = 0; c < 4; ++c) {
@@ -1356,7 +1348,15 @@ struct FullVocabQ4::Impl {
               dq[j] = static_cast<std::uint8_t>(nib(j) | (nib(j + 16) << 4));
               dq[j + 16] = static_cast<std::uint8_t>(nib(j + 32) | (nib(j + 48) << 4));
             }
-            packed_scales_[(g * blocks_ + b) * 4 + c] = raw_scales_[col * blocks_ + b];
+            float ws = raw_scales_[col * blocks_ + b];
+            std::uint32_t bits = 0;
+            std::memcpy(&bits, &ws, sizeof(bits));
+            bits &= 0xFFFF0000u;
+            std::memcpy(&ws, &bits, sizeof(bits));
+            packed_scales_[(g * blocks_ + b) * 4 + c] = ws;
+            int bsum = 0;
+            for (std::size_t j = 0; j < 64; ++j) bsum += static_cast<int>(nib(j)) - 8;
+            kai_wsum_[col] += ws * static_cast<float>(bsum);
           }
         }
       }
