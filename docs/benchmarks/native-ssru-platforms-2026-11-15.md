@@ -10,6 +10,8 @@ Fast CPU 默认选择原生 SSRU，不再需要 `MT_NATIVE_SSRU=1`；设置 `MT_
 
 运行器使用目标原生指令集，包含托管虚拟机；没有用 QEMU／Rosetta 的性能代替原生执行。另在实体 i5-14400、i7-8550U 和 Jetson AGX Thor 上验证。Windows／macOS 的实体设备不包含在这些托管运行器证据中。
 
+追加实体 Apple M4 Mac mini 验证发现 **29/2049 条 token 不一致**（英→中17条、中→英12条；25条混合小样本均通过）。Node 26.13.0 与官方 Node 22.23.5 重复结果相同，使用的插件与最终 CI 包一致。该机器尚未验收通过，不能用托管 M1 的结果覆盖；正在核对 M4 的 ORT/KleidiAI 数值路径，尚未完成这些差异的独立质量评估。
+
 | 目标 | 本轮运行器 CPU | 实际首选矩阵后端 | 英→中8并发吞吐较 Fast | 中→英8并发吞吐较 Fast |
 | --- | --- | --- | ---: | ---: |
 | Linux x64 | AMD EPYC 7763 | AVX2，ORT 饱和兼容 | +22.5% | +25.6% |
@@ -42,4 +44,4 @@ Linux 发行插件在固定 digest 的 manylinux_2_28 原生容器构建，glibc
 
 最终安装包（23,573,360 bytes，SHA-256 `2aa64a5a97630630e833926b6ffb835855c6fd8261a24e06e99dd53aa68cfd39`）通过[六平台实际安装验收](https://github.com/xxnuo/MTranServer/actions/runs/43711797091)：`npm install --ignore-scripts` 后运行默认 Fast、关闭 SSRU 和缺插件回退三场景，包含 Intel macOS 的启动恢复。Windows x64 首次在就绪 fetch 失败，原报告未保留 cause 与服务日志，无法确定根因；相同代码与断言的单项重跑通过。随后补充错误链、失败日志及清理前退出状态记录，没有增加重试或放宽断言。
 
-本地完整测试301项通过、0失败，类型检查及最终 Node／library 构建通过。CI 与本地 Bun 版本不同，生成的 JS helper 存在差异；六平台安装验收针对上述 CI tarball，不将本地 JS 的校验和当作同一制品。尚未发布 npm、部署服务或验收桌面 GUI／GPU 性能。Windows／macOS 实体设备验收仍缺少设备访问，托管运行器结果不替代这一项。
+本地完整测试301项通过、0失败，类型检查及最终 Node／library 构建通过。CI 与本地 Bun 版本不同，生成的 JS helper 存在差异；六平台安装验收针对上述 CI tarball，不将本地 JS 的校验和当作同一制品。尚未发布 npm、部署服务或验收桌面 GUI／GPU 性能。Windows 与 Intel macOS 实体设备访问尚未获得；实体 M4 已可访问，但存在上述数值差异，验收尚未通过。托管运行器结果不替代这些实体机项目。
