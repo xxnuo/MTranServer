@@ -25,8 +25,11 @@
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #if defined(_MSC_VER) && !defined(__clang__)
 #include <arm64_neon.h>
+#include <intrin.h>
+#define MTRAN_PREFETCH(addr) __prefetch(addr)
 #else
 #include <arm_neon.h>
+#define MTRAN_PREFETCH(addr) __builtin_prefetch((addr), 0, 3)
 #endif
 #if defined(_WIN32)
 #ifndef NOMINMAX
@@ -487,8 +490,8 @@ MTRAN_DOTPROD ShortlistTable::ScanResult scanShortlistSdot(
     if (j + 16 <= candidate_count) {
       for (int p = 0; p < 8; ++p) {
         const auto nt = static_cast<std::size_t>(candidate_ids[j + 8 + p]);
-        __builtin_prefetch(emb_q8 + nt * dim, 0, 3);
-        __builtin_prefetch(meta + nt, 0, 3);
+        MTRAN_PREFETCH(emb_q8 + nt * dim);
+        MTRAN_PREFETCH(meta + nt);
       }
     }
     const std::size_t ts[8] = {
@@ -639,7 +642,7 @@ MTRAN_DOTPROD void scanFullQ4SdotRange(
     const std::uint8_t* gp1 = gp0 + blocks * 128;
     const float* gs0 = packed_scales + g * blocks * 4;
     const float* gs1 = gs0 + blocks * 4;
-    __builtin_prefetch(gp1 + blocks * 128, 0, 3);
+    MTRAN_PREFETCH(gp1 + blocks * 128);
     for (std::size_t b = 0; b < blocks; ++b, gp0 += 128, gp1 += 128, gs0 += 4, gs1 += 4) {
       const int8x16_t av0 = vld1q_s8(qa + b * 64 + 0), av1 = vld1q_s8(qa + b * 64 + 16);
       const int8x16_t av2 = vld1q_s8(qa + b * 64 + 32), av3 = vld1q_s8(qa + b * 64 + 48);
