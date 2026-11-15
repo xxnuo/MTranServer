@@ -160,16 +160,16 @@ Ryzen 9 9950X, quota de 4 CPU, 3 GiB de mémoire, cache désactivé ; médianes 
 
 | Sens | Entrée | Concurrence | Défaut | Fast |
 | --- | --- | --- | --- | --- |
-| Anglais → chinois | Courte | 1 | 4.1 ms | **3.8 ms** |
-| Anglais → chinois | Paragraphe | 1 | 15.8 ms | **14.0 ms** |
-| Chinois → anglais | Courte | 1 | 5.5 ms | **3.5 ms** |
-| Chinois → anglais | Paragraphe | 1 | 23.2 ms | **14.9 ms** |
-| Anglais → chinois | Texte long (32 phrases) | 1 | 91.1 ms | **53.0 ms** |
-| Chinois → anglais | Texte long (32 phrases) | 1 | 151.2 ms | **72.6 ms** |
-| Anglais → chinois | Courte | 8 | 581 req/s | **910 req/s** |
-| Chinois → anglais | Courte | 8 | 440 req/s | **1067 req/s** |
+| Anglais → chinois | Courte | 1 | 4.4 ms | **2.4 ms** |
+| Anglais → chinois | Paragraphe | 1 | 14.2 ms | **9.4 ms** |
+| Chinois → anglais | Courte | 1 | 5.4 ms | **2.3 ms** |
+| Chinois → anglais | Paragraphe | 1 | 19.2 ms | **9.9 ms** |
+| Anglais → chinois | Texte long (32 phrases) | 1 | 72.8 ms | **28.6 ms** |
+| Chinois → anglais | Texte long (32 phrases) | 1 | 132.4 ms | **38.5 ms** |
+| Anglais → chinois | Courte | 8 | 633 req/s | **1941 req/s** |
+| Chinois → anglais | Courte | 8 | 495 req/s | **2124 req/s** |
 
-Avec les deux sens de traduction chargés : Défaut environ 648 MiB, Fast 677 MiB.
+Avec les deux sens de traduction chargés : Défaut environ 534 MiB, Fast 651 MiB.
 
 Les textes longs sont traduits phrase par phrase en parallèle ; les [tests HTTP appariés](benchmarks/plain-inference-concurrency.json) ont montré une latence par requête de texte long réduite de 36% à 60% par rapport à la version avant optimisation. `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
 
