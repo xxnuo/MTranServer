@@ -24253,7 +24253,7 @@
     "ci_run_attempt": 2
   },
   "fix_5_4_1": {
-    "status": "Passed all six native architecture and installed package checks; physical M4 regression and final tarball HTTP passed. Windows and Intel Mac physical access remains unavailable.",
+    "status": "Passed all six native architecture and installed package checks; physical M4 regression and final tarball HTTP passed. User accepted native-architecture hosted runners, including VMs, on 2026-11-16.",
     "ci": "https://github.com/xxnuo/MTranServer/actions/runs/43717420248",
     "ci_source_revision": "e8b0ab05b334307f26560f9dc301aa36f8881b9d",
     "cause": "KleidiAI reciprocal activation scale and signed rounding order differ from ordinary ORT DQL. The original optimized graph mixes DynamicQuantizeMatMul, ordinary gate/state MatMulIntegerToFloat, and folded first-layer query; matching each path resolves all 29 M4 differences.",
@@ -44248,6 +44248,27 @@
         }
       ],
       "finished_at": "2026-11-15T13:19:16.383Z"
+    },
+    "acceptance": {
+      "date": "2026-11-16",
+      "status": "complete",
+      "user_confirmed_scope": "Native-architecture hosted runners satisfy verification; explicitly identify virtual machines.",
+      "platforms": [
+        "linux-x64",
+        "linux-arm64",
+        "win32-x64",
+        "win32-arm64",
+        "darwin-x64",
+        "darwin-arm64"
+      ],
+      "hosted_runners_include_virtual_machines": true,
+      "additional_physical_devices": [
+        "Intel i5-14400 Linux x64",
+        "Intel i7-8550U Linux x64",
+        "Jetson AGX Thor Linux ARM64",
+        "Apple M4 macOS ARM64"
+      ],
+      "physical_windows_or_intel_mac_tested": false
     }
   }
 }
