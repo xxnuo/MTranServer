@@ -142,12 +142,14 @@ async function translateSingleLanguageText(
   isHTML: boolean
 ): Promise<string> {
   const engine = await getOrCreateSingleEngine(fromLang, toLang, text);
-  const cacheKey = () => [fromLang, toLang, engine.identity, engine.backend?.provider, engine.backend?.cpuThreads, engine.backend?.tuning, text, isHTML];
-  const cached = readCache(cacheKey());
+  const cacheKey = () => [fromLang, toLang, engine.identity, engine.backend?.provider, engine.backend?.runtime, engine.backend?.cpuThreads, engine.backend?.tuning, text, isHTML];
+  const startKey = cacheKey();
+  const key = JSON.stringify(startKey);
+  const cached = readCache(startKey);
   if (cached !== null) return cached;
   const translate = async () => {
     const result = await engine.translateAsync(text, { html: isHTML });
-    writeCache(result, cacheKey());
+    if (JSON.stringify(cacheKey()) === key) writeCache(result, startKey);
     return result;
   };
   if (getConfig().cacheSize <= 0) return translate();
@@ -157,7 +159,6 @@ async function translateSingleLanguageText(
     pending = new Map();
     inFlightTranslations.set(engine, pending);
   }
-  const key = JSON.stringify(cacheKey());
   const existing = pending.get(key);
   if (existing) return existing;
   const promise = translate().finally(() => pending.delete(key));

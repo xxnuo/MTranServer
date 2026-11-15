@@ -5,7 +5,7 @@ import type { ModelConfig, Weight } from './release.js';
 
 // Matches MTranCore's independently verified Marian rank-4 graph and ORT quantizers.
 const modelType = protobuf.Root.fromJSON(schema).lookupType('onnx.ModelProto');
-interface Attribute { name: string; type: number; i?: number; ints?: number[]; f?: number; g?: Graph }
+interface Attribute { name: string; type: number; i?: number; ints?: number[]; strings?: Uint8Array[]; f?: number; g?: Graph }
 interface Tensor { name: string; dims: number[]; dataType: number; rawData?: Uint8Array; int64Data?: number[] }
 interface Node { name: string; opType: string; input: string[]; output: string[]; attribute: Attribute[]; domain?: string }
 interface Value { name: string; type: object }
@@ -162,8 +162,10 @@ function dynamicInt8(root: Graph, mode: Mode) {
   };
   rewrite(root); prune(root);
 }
-export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qall', shortlist = false): Uint8Array {
+export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: Mode = 'qall', shortlist = false, nativeSsru = false): Uint8Array {
+  if (nativeSsru && (mode !== 'qall' || shortlist !== true)) throw new Error('nativeSsru requires mode=qall and shortlist=true');
   const g = graph('mozilla_release_greedy'), b = new Builder(g, g, { n: 0 }, c, weights, mode, shortlist);
+  if (nativeSsru && (!Number.isInteger(b.dim) || b.dim < 4 || b.dim % 2 || !Number.isInteger(b.headsCount) || b.headsCount < 1 || b.dim % b.headsCount || ['enc-depth', 'dec-depth', 'transformer-ffn-depth'].some(k => !Number.isInteger(c[k]) || c[k] < 1))) throw new Error('Invalid nativeSsru model dimensions');
   const emb = weights.get(b.emb);
   if (!emb || emb.dims.length !== 2 || emb.dims[1] !== b.dim || emb.dims[0] < 9) throw new Error('Invalid target embedding');
   for (const name of [...weights.keys()].sort()) {
@@ -184,9 +186,11 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
   g.input = [value('X', 7, -1), value('eos_id', 7, 1)]; g.output = [value('Y', 7, -1)];
   if (shortlist) {
     g.input.push(value('candidate_ids', 7, -1));
-    const selected = b.node('Gather', [b.emb, 'candidate_ids'], ia('axis', 0));
-    b.transpose(selected, 1, 0); g.node.at(-1)!.output = ['shortlist_projection_T'];
-    b.node('Gather', ['decoder_ff_logit_out_b', 'candidate_ids'], ia('axis', 1)); g.node.at(-1)!.output = ['shortlist_bias'];
+    if (!nativeSsru) {
+      const selected = b.node('Gather', [b.emb, 'candidate_ids'], ia('axis', 0));
+      b.transpose(selected, 1, 0); g.node.at(-1)!.output = ['shortlist_projection_T'];
+      b.node('Gather', ['decoder_ff_logit_out_b', 'candidate_ids'], ia('axis', 1)); g.node.at(-1)!.output = ['shortlist_bias'];
+    }
   }
   const length = b.squeeze(b.op('Shape', 'X'), 0);
   let pos = b.node('Cast', [b.op('Range', b.icon([], 0), length, b.icon([], 1))], ia('to', 1)); pos = b.unsqueeze(pos, 1);
@@ -195,24 +199,29 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
   for (let i = 1; i <= c['enc-depth']; i++) { const p = `encoder_l${i}_self`, k = b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2), v = b.heads(b.linear(x, p + '_Wv', p + '_bv')); x = b.ffn(b.attention(x, p, k, v), `encoder_l${i}_ffn`); }
   b.op('Identity', x); g.node.at(-1)!.output = ['encoder_hidden'];
   for (let i = 1; i <= b.depth; i++) { const p = `decoder_l${i}_context`; b.keys.push(b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2)); b.vals.push(b.heads(b.linear(x, p + '_Wv', p + '_bv'))); }
-  const zero = b.fc([1, 1, 1, b.dim], ...new Float32Array(b.dim));
-  const [hidden, cells] = b.decode(zero, b.fc([], 0), Array(b.depth).fill(zero)), first = b.project(hidden);
-  const eos = b.squeeze('eos_id', 0), condition = b.op('Not', b.op('Equal', first, eos));
-  const body = graph('decode_loop'), bb = new Builder(body, g, b.serial, c, weights, mode, shortlist); bb.keys = b.keys; bb.vals = b.vals;
-  body.input = [value('iteration', 7), value('condition', 9), value('previous_token', 7)];
-  const states = Array.from({ length: b.depth }, (_, i) => `cell_${i}`);
-  for (const s of states) body.input.push(value(s, 1, 1, 1, 1, b.dim));
-  x = bb.node('Gather', [b.emb, bb.unsqueeze('previous_token', 0)], ia('axis', 0));
-  const position = bb.node('Cast', [bb.op('Add', 'iteration', bb.icon([], 1))], ia('to', 1));
-  const [h, cs] = bb.decode(bb.reshape(x, 1, 1, 1, b.dim), position, states), token = bb.project(h);
-  const cond = bb.op('Not', bb.op('Equal', token, eos)), scan = bb.op('Identity', token);
-  body.output = [value(cond, 9), value(token, 7), ...cs.map(s => value(s, 1, 1, 1, 1, b.dim)), value(scan, 7)];
-  g.node.push({ name: 'decode_loop', opType: 'Loop', input: [b.op('Mul', length, b.icon([], 3)), condition, first, ...cells], output: ['last_token', ...states.map((_, i) => `last_cell_${i}`), 'generated_tokens'], attribute: [{ name: 'body', type: 5, g: body }] });
-  b.node('Concat', [b.unsqueeze(first, 0), 'generated_tokens'], ia('axis', 0)); g.node.at(-1)!.output = ['Y'];
+  if (nativeSsru) {
+    const names = g.initializer.map(t => t.name).filter(name => name === b.emb || name === 'decoder_ff_logit_out_b' || name === 'position_frequency' || name === 'position_offset' || /^decoder_l\d+_/.test(name)).sort();
+    g.node.push({ name: 'native_ssru', opType: 'SsruDecode', domain: 'com.mtran', input: ['X', 'eos_id', 'candidate_ids', ...b.keys, ...b.vals, ...names], output: ['Y'], attribute: [ia('dim', b.dim), ia('heads', b.headsCount), ia('depth', b.depth), ia('ffn_depth', c['transformer-ffn-depth']), { name: 'weight_names', type: 8, strings: names.map(name => Buffer.from(name, 'utf8')) }] });
+  } else {
+    const zero = b.fc([1, 1, 1, b.dim], ...new Float32Array(b.dim));
+    const [hidden, cells] = b.decode(zero, b.fc([], 0), Array(b.depth).fill(zero)), first = b.project(hidden);
+    const eos = b.squeeze('eos_id', 0), condition = b.op('Not', b.op('Equal', first, eos));
+    const body = graph('decode_loop'), bb = new Builder(body, g, b.serial, c, weights, mode, shortlist); bb.keys = b.keys; bb.vals = b.vals;
+    body.input = [value('iteration', 7), value('condition', 9), value('previous_token', 7)];
+    const states = Array.from({ length: b.depth }, (_, i) => `cell_${i}`);
+    for (const s of states) body.input.push(value(s, 1, 1, 1, 1, b.dim));
+    x = bb.node('Gather', [b.emb, bb.unsqueeze('previous_token', 0)], ia('axis', 0));
+    const position = bb.node('Cast', [bb.op('Add', 'iteration', bb.icon([], 1))], ia('to', 1));
+    const [h, cs] = bb.decode(bb.reshape(x, 1, 1, 1, b.dim), position, states), token = bb.project(h);
+    const cond = bb.op('Not', bb.op('Equal', token, eos)), scan = bb.op('Identity', token);
+    body.output = [value(cond, 9), value(token, 7), ...cs.map(s => value(s, 1, 1, 1, 1, b.dim)), value(scan, 7)];
+    g.node.push({ name: 'decode_loop', opType: 'Loop', input: [b.op('Mul', length, b.icon([], 3)), condition, first, ...cells], output: ['last_token', ...states.map((_, i) => `last_cell_${i}`), 'generated_tokens'], attribute: [{ name: 'body', type: 5, g: body }] });
+    b.node('Concat', [b.unsqueeze(first, 0), 'generated_tokens'], ia('axis', 0)); g.node.at(-1)!.output = ['Y'];
+  }
   prune(g);
   if (mode === 'qall' || mode === 'qdecoder') dynamicInt8(g, mode);
   check(g);
-  const model = { irVersion: 10, producerName: 'mtranserver-ts', graph: g, opsetImport: [{ domain: '', version: 11 }, ...(mode === 'fp32' ? [] : [{ domain: 'com.microsoft', version: 1 }])] };
+  const model = { irVersion: 10, producerName: 'mtranserver-ts', graph: g, opsetImport: [{ domain: '', version: 11 }, ...(mode === 'fp32' ? [] : [{ domain: 'com.microsoft', version: 1 }]), ...(nativeSsru ? [{ domain: 'com.mtran', version: 1 }] : [])] };
   const error = modelType.verify(model); if (error) throw new Error(error);
   return modelType.encode(modelType.create(model)).finish();
 }

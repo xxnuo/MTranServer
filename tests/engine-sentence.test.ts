@@ -9,7 +9,7 @@ function setup(limit = 4) {
   engine.tokenLimit = 20;
   engine.backend = {provider: 'cpu', maxConcurrentRuns: limit};
   engine.src = {encode: (text: string) => {const id = next++; texts.set(id, text); return [id];}, eos: 0, close() {expect(active).toBe(0);}};
-  engine.dst = {eos: 0, decode: ([id]: number[]) => texts.get(id)!, close() {expect(active).toBe(0);}};
+  engine.dst = {size:4096,eos: 0, decode: ([id]: number[]) => texts.get(id)!, close() {expect(active).toBe(0);}};
   engine.session = {
     run: async (feeds: any) => {
       active++; calls++; peak = Math.max(peak, active);
@@ -17,7 +17,7 @@ function setup(limit = 4) {
       try {
         await new Promise(resolve => setTimeout(resolve, Number(id) % 3));
         expect(released).toBe(false);
-        return {Y: {data: BigInt64Array.of(id, 0n), dispose() {}}};
+        return {Y: {type:'int64',dims:[2],data: BigInt64Array.of(id, 0n), dispose() {}}};
       } finally {active--;}
     },
     release: async () => {expect(active).toBe(0); released = true;},
@@ -55,7 +55,7 @@ test('a split failure stops new sentences and drains active work before closing'
     calls++;
     if (calls === 1) {notify(); throw new Error('sentence failed');}
     await gate;
-    return {Y: {data: BigInt64Array.of(1n, 0n), dispose() {}}};
+    return {Y: {type:'int64',dims:[2],data: BigInt64Array.of(1n, 0n), dispose() {}}};
   };
   const result = engine.translateAsync('First sentence. Second sentence. Third sentence. Fourth sentence.').catch((error: Error) => error.message);
   await entered;
@@ -72,7 +72,7 @@ test('competing requests keep sentence workers serial within each request', asyn
   const gate = new Promise<void>(resolve => finish = resolve);
   engine.session.run = async (feeds: any) => {
     calls++; await gate;
-    return {Y: {data: BigInt64Array.of(feeds.X.data[0], 0n), dispose() {}}};
+    return {Y: {type:'int64',dims:[2],data: BigInt64Array.of(feeds.X.data[0], 0n), dispose() {}}};
   };
   const input = 'First sentence. Second sentence. Third sentence. Fourth sentence.';
   const a = engine.translateAsync(input), b = engine.translateAsync(input);

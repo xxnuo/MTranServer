@@ -17,8 +17,8 @@ describe('ONNX text handling', () => {
     const engine = new TranslationEngine() as any;
     engine.tokenLimit = 20;
     engine.src = { encode: (s: string) => [1], eos: 0 };
-    engine.dst = { eos: 0, decode: () => 'Hello!' };
-    engine.session = { run: async () => ({Y:{data:BigInt64Array.of(1n,0n),dispose(){}}}) };
+    engine.dst = { size:4096, eos: 0, decode: () => 'Hello!' };
+    engine.session = { run: async () => ({Y:{type:'int64',dims:[2],data:BigInt64Array.of(1n,0n),dispose(){}}}) };
     expect(await engine.translatePlain('Hallo! '.repeat(10))).toBe('Hello! '.repeat(10));
   });
   test('closing waits for queued requests and rejects new ones', async () => {
@@ -64,11 +64,11 @@ describe('HTML inference scheduling', () => {
     let active = 0, peak = 0, calls = 0, released = false;
     engine.backend = {provider:'cpu',runtime:'native-async',maxConcurrentRuns:limit};
     engine.src = {encode:()=>[5],eos:2,close(){expect(active).toBe(0);}};
-    engine.dst = {eos:2,decode:()=> 'translated & <text>',close(){expect(active).toBe(0);}};
+    engine.dst = {size:4096,eos:2,decode:()=> 'translated & <text>',close(){expect(active).toBe(0);}};
     engine.session = {
       run: async () => {
         active++; calls++; peak=Math.max(peak,active);
-        try { await new Promise(resolve=>setTimeout(resolve,2));expect(released).toBe(false);return {Y:{data:BigInt64Array.of(8n,2n),dispose(){}}}; }
+        try { await new Promise(resolve=>setTimeout(resolve,2));expect(released).toBe(false);return {Y:{type:'int64',dims:[2],data:BigInt64Array.of(8n,2n),dispose(){}}}; }
         finally {active--;}
       },
       release:async()=>{expect(active).toBe(0);released=true;},
@@ -93,7 +93,7 @@ describe('HTML inference scheduling', () => {
       calls++;
       if(calls===1){failed();throw new Error('part failed');}
       await pending;
-      return {Y:{data:BigInt64Array.of(8n,2n),dispose(){}}};
+      return {Y:{type:'int64',dims:[2],data:BigInt64Array.of(8n,2n),dispose(){}}};
     };
     const request=engine.translateAsync('<p>one</p><p>two</p><p>three</p>',{html:true});
     const result=request.catch((error:Error)=>error.message);
@@ -108,7 +108,7 @@ describe('HTML inference scheduling', () => {
       active++;started++;
       if(started===2)engine.backend.maxConcurrentRuns=1;
       if(started>2)peakAfterDrain=Math.max(peakAfterDrain,active);
-      try{await new Promise(resolve=>setTimeout(resolve,2));return {Y:{data:BigInt64Array.of(8n,2n),dispose(){}}};}finally{active--;}
+      try{await new Promise(resolve=>setTimeout(resolve,2));return {Y:{type:'int64',dims:[2],data:BigInt64Array.of(8n,2n),dispose(){}}};}finally{active--;}
     };
     await Promise.all(Array.from({length:3},()=>engine.translateAsync('<p>one</p><p>two</p><p>three</p>',{html:true})));
     await engine.destroy();expect(started).toBe(9);expect(peakAfterDrain).toBe(1);

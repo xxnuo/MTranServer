@@ -1,5 +1,8 @@
 // ORT headers and LICENSE.onnxruntime are from microsoft/onnxruntime tag v1.30.0.
 #include "onnxruntime_c_api.h"
+#ifdef MTRAN_NATIVE_SSRU
+#include "ssru_op.h"
+#endif
 #include <cstring>
 #include <cmath>
 #include <limits>
@@ -69,6 +72,9 @@ struct State {
   const OrtApi *api = nullptr;
   OrtEnv *env = nullptr;
   OrtSession *session = nullptr;
+#ifdef MTRAN_NATIVE_SSRU
+  OrtCustomOpDomain *ssruDomain = nullptr;
+#endif
   OrtMemoryInfo *memory = nullptr;
   size_t inputCount = 0;
   int cpuThreads = 1;
@@ -91,6 +97,12 @@ struct State {
       api->ReleaseSession(session);
       session = nullptr;
     }
+#ifdef MTRAN_NATIVE_SSRU
+    if (ssruDomain) {
+      api->ReleaseCustomOpDomain(ssruDomain);
+      ssruDomain = nullptr;
+    }
+#endif
     if (env) {
       api->ReleaseEnv(env);
       env = nullptr;
@@ -308,6 +320,10 @@ void executeWork(napi_env, void *data) noexcept {
       s.check(s.api->AddSessionConfigEntry(options, "session.inter_op.allow_spinning", "0"));
       s.check(s.api->SetSessionExecutionMode(options, ORT_SEQUENTIAL));
       s.check(s.api->SetSessionGraphOptimizationLevel(options, ORT_ENABLE_ALL));
+#ifdef MTRAN_NATIVE_SSRU
+      s.ssruDomain = createSsruDomain(s.api);
+      s.check(s.api->AddCustomOpDomain(options, s.ssruDomain));
+#endif
       s.check(s.api->CreateSession(s.env, job.model.c_str(), options, &s.session));
       s.check(s.api->SessionGetInputCount(s.session, &s.inputCount));
       if (s.inputCount != 2 && s.inputCount != 3)
@@ -612,6 +628,14 @@ napi_value registerModule(napi_env env, napi_value exports) noexcept {
 #endif
     };
     checkNapi(napi_define_properties(env, exports, sizeof(props) / sizeof(props[0]), props));
+#ifdef MTRAN_NATIVE_SSRU
+    napi_value ssruVersion = nullptr;
+    checkNapi(napi_create_uint32(env, 1, &ssruVersion));
+    checkNapi(napi_set_named_property(env, exports, "ssruVersion", ssruVersion));
+    napi_value backend = nullptr;
+    checkNapi(napi_create_string_utf8(env, ssruBackend(), NAPI_AUTO_LENGTH, &backend));
+    checkNapi(napi_set_named_property(env, exports, "ssruBackend", backend));
+#endif
     return exports;
   } catch (const std::exception &error) {
     fail(env, nullptr, error.what());

@@ -26,9 +26,12 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
 
 FROM node:22-bookworm AS native-builder
 WORKDIR /native
-COPY native/onnx-async ./
-RUN c++ -std=c++20 -O3 -shared -fPIC -pthread -I/usr/local/include/node \
-    addon.cc -ldl -o "onnx-async-linux-$(node -p process.arch).node"
+COPY --from=builder /usr/local/bin/bun /usr/local/bin/bun
+COPY scripts/build-native.ts ./scripts/build-native.ts
+COPY native/onnx-async ./native/onnx-async
+COPY native/ssru ./native/ssru
+RUN bun scripts/build-native.ts && \
+    node -e 'const a=require("./dist/onnx-async-linux-"+process.arch+".node"); if(a.ssruVersion!==1) process.exit(1)'
 
 FROM node:22-bookworm-slim
 
@@ -39,7 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY --from=builder /app/dist ./
-COPY --from=native-builder /native/*.node ./
+COPY --from=native-builder /native/dist/*.node ./
 COPY --from=builder /runtime/node_modules ./node_modules
 COPY --from=builder /runtime/package.json ./package.json
 

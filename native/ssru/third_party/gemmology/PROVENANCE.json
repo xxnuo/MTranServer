@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/mozilla/gemmology",
+  "revision": "38ec34f1d38e877184b5b3ce0153adeec85bf35f",
+  "source": "Firefox third_party/gemmology (revision from moz.yaml)",
+  "license": "MIT",
+  "selection": "Original headers reachable from gemmology.h, gemmology_fwd.h; no source modifications",
+  "sha256": {
+    "LICENSE": "122f4fab6deb079e740eb606f9945b36395cd42be6468dc25e6cb1ae201a6cd9",
+    "gemmology.h": "a6ddb1a72149113bb0f35359e9340590c8715a3bd1b87f79fefe688e2ff029f2",
+    "gemmology_fwd.h": "4efa6df8fe09c32c7eed73f9552203810c2b36b889a654fba750ff10a376a4ad"
+  }
+}

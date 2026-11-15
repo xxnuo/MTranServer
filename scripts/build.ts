@@ -17,6 +17,12 @@ console.log("Cleaning dist...");
 await $`rm -rf dist`;
 await $`mkdir -p dist`;
 await $`bun run scripts/build-native.ts`;
+for (const dependency of ['gemmology', 'xsimd']) {
+  const directory = `dist/licenses/${dependency}`;
+  fs.mkdirSync(directory, { recursive: true });
+  for (const filename of ['LICENSE', 'PROVENANCE.json'])
+    fs.copyFileSync(`native/ssru/third_party/${dependency}/${filename}`, `${directory}/${filename}`);
+}
 buildMetal();
 buildCuda();
 
