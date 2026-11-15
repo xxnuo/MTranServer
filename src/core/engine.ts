@@ -90,7 +90,9 @@ export class TranslationEngine {
         let info = selected.info;
         const inputNames = selected.session.inputNames ?? ['X', 'eos_id'];
         const isShortlist = inputNames.includes('candidate_ids');
-        const ssru = selected.info.provider === 'cpu' && isShortlist && process.env.MT_NATIVE_SSRU === '1' && hasNativeSsru();
+        const preferSsru = selected.info.provider === 'cpu' && isShortlist && process.env.MT_NATIVE_SSRU !== '0';
+        const ssru = preferSsru && hasNativeSsru();
+        if (preferSsru && !ssru) info = { ...info, fallbackReason: 'Native SSRU addon unavailable' };
         if (selected.info.provider === 'cpu'
           && (ssru || !isShortlist || config['cpu-threads'] === undefined || config['cpu-threads'] === 1)) {
           const nativeThreads = ssru ? config['cpu-threads'] ?? 1 : isShortlist ? 1 : selected.info.cpuThreads;
@@ -99,6 +101,7 @@ export class TranslationEngine {
             const nativeModel = ssru ? await ensureNativeSsru(model) : model;
             native = ssru ? await createNativeSession(nativeModel.model, inputNames, nativeThreads, true)
               : await createNativeSession(nativeModel.model, inputNames, nativeThreads);
+            if (ssru && !native) throw new Error('Native SSRU session unavailable');
             if (native) {
               this.nativeSessions.add(native);
               await probe(native);
@@ -119,7 +122,7 @@ export class TranslationEngine {
               }
               const poolSize = Number.parseInt(process.env.UV_THREADPOOL_SIZE ?? '4', 10) || 4;
               activeSession = native;
-              info = { ...selected.info, runtime: ssru ? 'native-ssru' : 'native-async', cpuThreads: nativeThreads,
+              info = { ...info, runtime: ssru ? 'native-ssru' : 'native-async', cpuThreads: nativeThreads,
                 tuning: { ...selected.info.tuning, executionMode: 'sequential', interOpNumThreads: 1,
                   graphOptimizationLevel: 'all', spinning: false, dynamicBlockBase: 0 },
                 maxConcurrentRuns: Math.min(config['max-concurrent-runs'] ?? Infinity, Math.max(1, poolSize), availableParallelism()) };
@@ -127,6 +130,7 @@ export class TranslationEngine {
             }
           } catch (error) {
             await native?.release().catch(() => {});
+            if (ssru) info = { ...info, fallbackReason: `Native SSRU validation failed: ${error}` };
             logger.warn(`Native ONNX${ssru ? ' SSRU' : ''} validation failed; using standard runtime: ${error}`);
           }
         }

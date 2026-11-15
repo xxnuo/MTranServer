@@ -5,6 +5,7 @@ ARG VERSION
 ENV VERSION=${VERSION}
 
 COPY package.json bun.lock ./
+COPY scripts/install-runtime.mjs ./scripts/install-runtime.mjs
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
 

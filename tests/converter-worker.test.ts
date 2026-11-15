@@ -26,7 +26,8 @@ test.each([
       .replace("import { writeFile } from 'node:fs/promises';", 'const writeFile = async () => {};')
       .replaceAll("from './", "from './src/converter/")
       .replaceAll("from '../core/", "from './src/core/");
-    const resolvedSource = workerSource.replaceAll("from './src/", "from '" + process.cwd() + "/src/");
+    const resolvedSource = workerSource.replaceAll("from './src/", "from '" + process.cwd() + "/src/")
+      .replace("import('onnxruntime-node')", ${JSON.stringify(`import(${JSON.stringify(import.meta.resolve('onnxruntime-node'))})`)});
     await import('data:text/javascript;base64,' + Buffer.from(new Bun.Transpiler({loader:'ts'}).transformSync(resolvedSource)).toString('base64'));
     assert.equal(graphMode, expected);
     assert.equal(loaded, expected);

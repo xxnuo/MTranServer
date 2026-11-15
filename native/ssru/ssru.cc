@@ -194,7 +194,12 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
       backend.matmul(backend.context, matrix, input, 1, output);
       finite(output, matrix.cols, matrix.name.c_str());
     };
-    const auto linear = [&](const Linear& l, const float* input, float* output) {
+    const auto linear = [&](const Linear& l, const float* input, float* output, bool separate_bias = false) {
+      if (l.bias && backend.matmul_bias) {
+        backend.matmul_bias(backend.context, l.weight, input, 1, l.bias, separate_bias, output);
+        finite(output, l.weight.cols, "linear fused bias");
+        return;
+      }
       matmul(l.weight, input, output);
       if (l.bias) {
         for (std::size_t j = 0; j < l.weight.cols; ++j) output[j] += l.bias[j];
@@ -215,7 +220,7 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
       finite(w.x_.data(), dim, "position");
       for (std::size_t layer_index = 0; layer_index < config_.depth; ++layer_index) {
         const auto& layer = layers_[layer_index];
-        linear(layer.gate, w.x_.data(), w.gate_.data());
+        linear(layer.gate, w.x_.data(), w.gate_.data(), position == 0 && layer_index == 0);
         linear(layer.state, w.x_.data(), w.update_.data());
         if (math.sigmoid) {
           math.sigmoid(math.context, w.gate_.data(), dim);
@@ -232,7 +237,7 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
           math.normalize(math.context, w.x_.data(), dim, layer.rnn_norm.scale, layer.rnn_norm.bias);
           finite(w.x_.data(), dim, "callback normalization");
         } else normalize(w.x_.data(), dim, layer.rnn_norm.scale, layer.rnn_norm.bias);
-        linear(layer.query, w.x_.data(), w.query_.data());
+        linear(layer.query, w.x_.data(), w.query_.data(), position == 0 && layer_index == 0);
         const auto* keys = r.keys[layer_index].data;
         const auto* values = r.values[layer_index].data;
         if (math.attention) math.attention(math.context,w.query_.data(),keys,values,config_.heads,head_dim,r.source_length,w.context_.data());

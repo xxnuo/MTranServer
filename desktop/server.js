@@ -2,6 +2,8 @@ let currentServer = null;
 let stopServer = null;
 let status = 'stopped';
 let serverModulePromise = null;
+let lifecycle = Promise.resolve();
+const startupControllers = new Set();
 
 const valueFlags = new Set([
   '--host',
@@ -82,16 +84,29 @@ function applyConfigToEnv(config) {
   process.env.MT_CONFIG_DIR = config.configDir;
 }
 
-export async function startServerWithConfig(config) {
-  applyConfigToEnv(config);
-  const serverModule = await loadServerModule();
-  serverModule.resetConfig();
-  status = 'starting';
-  const result = await serverModule.startServer({ handleSignals: false });
-  currentServer = result.server;
-  stopServer = result.stop;
-  status = 'running';
-  return currentServer;
+export function startServerWithConfig(config) {
+  const controller = new AbortController();
+  startupControllers.add(controller);
+  const starting = lifecycle.then(async () => {
+    await stopCurrentServer();
+    controller.signal.throwIfAborted();
+    status = 'starting';
+    applyConfigToEnv(config);
+    const serverModule = await loadServerModule();
+    controller.signal.throwIfAborted();
+    serverModule.resetConfig();
+    const result = await serverModule.startServer({ handleSignals: false, signal: controller.signal });
+    currentServer = result.server;
+    stopServer = result.stop;
+    controller.signal.throwIfAborted();
+    status = 'running';
+    return currentServer;
+  }).catch(async error => {
+    await stopCurrentServer();
+    throw error;
+  }).finally(() => startupControllers.delete(controller));
+  lifecycle = starting.catch(() => {});
+  return starting;
 }
 
 export async function updateServerFastMode(fast) {
@@ -100,16 +115,20 @@ export async function updateServerFastMode(fast) {
   process.env.MT_FAST = String(fast);
 }
 
-export async function stopServerInstance() {
-  if (!stopServer) {
-    status = 'stopped';
-    return;
-  }
+async function stopCurrentServer() {
+  if (stopServer) {
+    status = 'stopping';
+    try { await stopServer(); }
+    finally { currentServer = null; stopServer = null; status = 'stopped'; }
+  } else status = 'stopped';
+}
+
+export function stopServerInstance() {
   status = 'stopping';
-  await stopServer();
-  currentServer = null;
-  stopServer = null;
-  status = 'stopped';
+  for (const controller of startupControllers) controller.abort(new Error('Server startup interrupted by shutdown'));
+  const stopping = lifecycle.then(stopCurrentServer);
+  lifecycle = stopping.catch(() => {});
+  return stopping;
 }
 
 export function getServerStatus() {

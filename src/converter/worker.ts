@@ -1,6 +1,6 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { writeFile } from 'node:fs/promises';
-import * as ort from 'onnxruntime-node';
+import type * as ort from 'onnxruntime-node';
 import { readRelease } from './release.js';
 import { buildModel } from './graph.js';
 import { Tokenizer } from '../core/tokenizer.js';
@@ -25,6 +25,7 @@ try {
       if (src.size !== weights.get(sourceEmbedding)?.dims[0] || dst.size !== weights.get(targetEmbedding)?.dims[0]) throw new Error('Vocabulary size does not match model embeddings');
       // Only the native binding registers SsruDecode; the engine probes it after conversion.
       if (!nativeSsru) {
+      const ort = await import('onnxruntime-node');
       session = await ort.InferenceSession.create(workerData.output, { intraOpNumThreads: 1, interOpNumThreads: 1, graphOptimizationLevel: 'all' });
       const ids = [...src.encode('Hello.'), src.eos];
       const feeds: Record<string, ort.Tensor> = { X: new ort.Tensor('int64', BigInt64Array.from(ids, BigInt), [ids.length]), eos_id: new ort.Tensor('int64', BigInt64Array.of(BigInt(dst.eos)), [1]) };

@@ -9,19 +9,44 @@ permissions:
   contents: write
 
 jobs:
+  native:
+    uses: ./.github/workflows/native-ssru.yml
+    permissions:
+      contents: read
+      actions: read
+
   build-server:
+    needs: native
     runs-on: ubuntu-latest
+    env:
+      MTRAN_NATIVE_ARTIFACT_DIR: .tmp/release-native
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      - name: Download verified native addons and Intel ORT
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-ssru-*
+          path: .tmp/release-native
+          merge-multiple: true
+
+      - name: Prepare official Node headers
+        run: bun scripts/prepare-node-headers.ts
 
       - name: Sync version from tag
         run: |
@@ -36,28 +61,95 @@ jobs:
       - name: Build Server
         run: bun run build:node
 
+      - name: Require all six native addons
+        run: |
+          node -e 'const f=require("fs"),a=require("assert/strict");for(const p of ["linux-x64","linux-arm64","win32-x64","win32-arm64","darwin-x64","darwin-arm64"])a(f.statSync("dist/onnx-async-"+p+".node").size>0,"Missing native addon: "+p);a.equal(require("./dist/onnx-async-"+process.platform+"-"+process.arch+".node").ssruVersion,1)'
+
       - name: Validate runtime and benchmarks
         run: bun run typecheck && bun test
 
   build-desktop:
+    needs: native
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+            arch: x64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+            arch: arm64
+          - os: windows-2025
+            platform: win32-x64
+            arch: x64
+          - os: windows-11-arm
+            platform: win32-arm64
+            arch: arm64
+          - os: macos-15
+            platform: darwin-arm64
+            arch: arm64
+          - os: macos-15-intel
+            platform: darwin-x64
+            arch: x64
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+      MTRAN_NATIVE_ARTIFACT_DIR: .tmp/release-native
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      npm_config_arch: ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
+      - name: Setup native Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          architecture: ${{ matrix.arch }}
+
+      - name: Check native Node architecture
+        id: node
+        run: |
+          node -e 'if(process.platform+"-"+process.arch!=="${{ matrix.platform }}")throw Error("Runner architecture mismatch")'
+          echo "arch=$(node -p process.arch)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup MSVC for native Node
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ steps.node.outputs.arch }}
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      - name: Install native Electron runtime for smoke check
+        run: node node_modules/electron/install.js
+
+      - name: Download verified native addons and Intel ORT
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-ssru-*
+          path: .tmp/release-native
+          merge-multiple: true
+
+      - name: Restore verified Intel Mac ORT
+        if: matrix.platform == 'darwin-x64'
+        run: |
+          node -e 'require("fs").cpSync(process.env.MTRAN_NATIVE_ARTIFACT_DIR+"/ort/darwin/x64","dist/ort/darwin/x64",{recursive:true})'
+          bun scripts/prepare-ort-macos-x64.ts --restore-only
+
+      - name: Prepare official Node headers
+        run: bun scripts/prepare-node-headers.ts
 
       - name: Setup uv for Apple GPU runtime
         if: runner.os == 'macOS' && runner.arch == 'ARM64'
@@ -78,23 +170,15 @@ jobs:
           echo "Syncing version to ${VERSION}"
           bun run bump ${VERSION}
 
-      - name: Build Desktop (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: bun run build:electron -- --linux
-
-      - name: Build Desktop (Windows)
-        if: matrix.os == 'windows-latest'
-        run: bun run build:electron -- --win
-
-      - name: Build Desktop (macOS)
-        if: matrix.os == 'macos-latest'
-        run: bun run build:electron -- --mac
+      - name: Build Desktop
+        run: bun run build:electron -- --${{ matrix.arch }}
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os }}
+          name: desktop-${{ matrix.platform }}
           path: release/mtranserver-desktop-*
+          if-no-files-found: error
 
   release:
     needs: [build-server, build-desktop]
@@ -161,6 +245,7 @@ jobs:
           | macOS | x64 | [mtranserver-desktop-${VERSION}-mac-x64.dmg](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-mac-x64.dmg) |
           | macOS | arm64 | [mtranserver-desktop-${VERSION}-mac-arm64.dmg](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-mac-arm64.dmg) |
           | Windows | x64 | [mtranserver-desktop-${VERSION}-win-x64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-win-x64.exe) |
+          | Windows | arm64 | [mtranserver-desktop-${VERSION}-win-arm64.exe](https://github.com/${REPO}/releases/download/${TAG}/mtranserver-desktop-${VERSION}-win-arm64.exe) |
 
           > 桌面端启动后会创建一个托盘菜单，通过菜单可以方便的管理服务。
 

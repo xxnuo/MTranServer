@@ -8,6 +8,7 @@ import * as ort from 'onnxruntime-node';
 const tuning={executionMode:'sequential',interOpNumThreads:1,graphOptimizationLevel:'all',enableCpuMemArena:true,enableMemPattern:true,spinning:true,dynamicBlockBase:0} as const;
 afterEach(()=>mock.restore());
 function setup(fails=false,shortlist=true){
+ spyOn(native,'hasNativeSsru').mockReturnValue(false);
  const original={inputNames:shortlist?['X','eos_id','candidate_ids']:['X','eos_id'],release:mock(async()=>{}),run:mock(async()=>({Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])}))};
  const parallel={...original,release:mock(async()=>{}),run:mock(async()=>{if(fails)throw new Error('native probe failed');return {Y:new ort.Tensor('int64',BigInt64Array.of(7n,0n),[2])};})};
  spyOn(Tokenizer,'load').mockResolvedValue({size:64,encode:()=>[2],decode:()=> 'result',eos:0,close(){}} as any);

@@ -501,6 +501,100 @@ struct CallbackMath {
   }
 };
 
+struct BiasTrace {
+  const Fixture& fixture;
+  const std::vector<Stage>& expected;
+  std::size_t next = 0, step = 0, plain_calls = 0, bias_calls = 0;
+  std::vector<std::pair<std::size_t, std::string>> separate;
+  int failure = -1;
+
+  BiasTrace(const Fixture& f, const std::vector<Stage>& stages) : fixture(f), expected(stages) {}
+  void multiply(const Matrix& weight, const float* input, std::size_t rows, float* output) {
+    CHECK(rows == 1 && next < expected.size());
+    const auto& stage = expected[next++];
+    CHECK(weight.name == stage.name && weight.rows == stage.input.size());
+    for (std::size_t i = 0; i < weight.rows; ++i) CHECK(input[i] == stage.input[i]);
+    scalar(nullptr, weight, input, rows, output);
+  }
+  static void plain(void* raw, const Matrix& weight, const float* input, std::size_t rows, float* output) {
+    auto& self = *static_cast<BiasTrace*>(raw);
+    CHECK(weight.name.ends_with("_rnn_W") || weight.name == "shortlist_projection_T");
+    self.multiply(weight, input, rows, output);
+    ++self.plain_calls;
+    if (weight.name == "shortlist_projection_T") ++self.step;
+  }
+  static void biased(void* raw, const Matrix& weight, const float* input, std::size_t rows,
+                     const float* bias, bool separate_bias, float* output) {
+    auto& self = *static_cast<BiasTrace*>(raw);
+    const auto split = weight.name.rfind("_W");
+    CHECK(split != std::string::npos);
+    const auto& expected_bias = self.fixture.weights.at(weight.name.substr(0, split) + "_b" + weight.name.substr(split + 2));
+    CHECK(bias == expected_bias.data.data() && expected_bias.data.size() == weight.cols);
+    self.multiply(weight, input, rows, output);
+    ++self.bias_calls;
+    if (separate_bias) self.separate.emplace_back(self.step, weight.name);
+    for (std::size_t i = 0; i < weight.cols; ++i) output[i] += bias[i];
+    if (self.step == 2 && self.failure >= 0) {
+      if (self.failure == 0) throw std::runtime_error("bias callback failure");
+      output[0] = self.failure == 1 ? NAN : INFINITY;
+    }
+  }
+  void complete(std::size_t tokens) const {
+    CHECK(next == expected.size() && step == tokens);
+    CHECK(plain_calls == tokens * (fixture.config.depth + 1));
+    CHECK(bias_calls == tokens * fixture.config.depth * (3 + fixture.config.ffn_depth));
+    const std::vector<std::pair<std::size_t, std::string>> folded{
+      {0, "decoder_l1_rnn_Wf"}, {0, "decoder_l1_context_Wq"}};
+    CHECK(separate == folded);
+  }
+};
+
+void bias_callbacks() {
+  for (const Config config : {Config{4, 1, 1, 1}, Config{12, 3, 2, 3}}) {
+    Fixture f(config);
+    Decoder decoder(config, f.named());
+    const auto request = f.request();
+    Workspace w;
+    std::vector<Stage> stages;
+    decoder.decode(request, {&stages, [](void* raw, const Matrix& weight, const float* input,
+                                       std::size_t rows, float* output) {
+      static_cast<std::vector<Stage>*>(raw)->push_back({weight.name, Vec(input, input + weight.rows)});
+      scalar(nullptr, weight, input, rows, output);
+    }}, w);
+    const auto expected = w.tokens();
+    CHECK(expected.size() == 1 + 3 * f.source_length);
+    // Match every scalar input, so missing or duplicate bias cannot hide behind the same argmax.
+    for (unsigned mask : {0u, 1u, 2u, 4u, 8u, 15u}) {
+      BiasTrace trace(f, stages);
+      CallbackMath math;
+      decoder.decode(request, {&trace, BiasTrace::plain, BiasTrace::biased}, w, math.backend(mask));
+      trace.complete(expected.size());
+      CHECK(w.tokens() == expected && !w.ended_with_eos());
+      CHECK(math.norm_calls == (mask & 1 ? expected.size() * config.depth * 3 : 0));
+      CHECK(math.sigmoid_calls == (mask & 2 ? expected.size() * config.depth : 0));
+      CHECK(math.sin_calls == (mask & 4 ? expected.size() : 0));
+      CHECK(math.attention_calls == (mask & 8 ? expected.size() * config.depth : 0));
+    }
+    for (int failure : {0, 1, 2}) {
+      BiasTrace failing(f, stages);
+      failing.failure = failure;
+      bool rejected = false;
+      try { decoder.decode(request, {&failing, BiasTrace::plain, BiasTrace::biased}, w); }
+      catch (const std::runtime_error& error) {
+        rejected = true;
+        CHECK(std::string(error.what()) == (failure == 0 ? "bias callback failure" : "SSRU nonfinite value: linear fused bias"));
+      }
+      CHECK(rejected && failing.step == 2 && w.tokens().empty() && !w.ended_with_eos());
+      BiasTrace good(f, stages);
+      decoder.decode(request, {&good, BiasTrace::plain, BiasTrace::biased}, w);
+      good.complete(expected.size());
+      CHECK(w.tokens() == expected);
+      decoder.decode(request, {nullptr, scalar}, w);
+      CHECK(w.tokens() == expected && !w.ended_with_eos());
+    }
+  }
+}
+
 void math_callbacks() {
   for (const Config config : {Config{4, 1, 1, 1}, Config{12, 3, 2, 3}}) {
     Fixture f(config);
@@ -547,7 +641,8 @@ int main() {
     invalid_inputs();
     allocation_and_concurrency();
     math_callbacks();
-    std::cout << "PASS: scalar stage reference, EOS/ties, invalid inputs, failure recovery, allocations, concurrency, math callbacks\n";
+    bias_callbacks();
+    std::cout << "PASS: scalar stage reference, EOS/ties, invalid inputs, failure recovery, allocations, concurrency, math callbacks, bias callbacks\n";
   } catch (const std::exception& error) {
     std::cerr << "FAIL: " << error.what() << '\n';
     return 1;

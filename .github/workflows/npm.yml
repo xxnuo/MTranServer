@@ -6,12 +6,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  native:
+    uses: ./.github/workflows/native-ssru.yml
+    permissions:
+      contents: read
+      actions: read
   publish:
+    needs: native
     runs-on: ubuntu-latest
     environment: npm-publish # Requires manual approval in GitHub Settings
     permissions:
       contents: read
       id-token: write # Required for Trusted Publishing (provenance)
+    env:
+      MTRAN_NATIVE_ARTIFACT_DIR: .tmp/release-native
 
     steps:
       - name: Checkout
@@ -29,6 +37,13 @@ jobs:
 
       - name: Install Dependencies
         run: bun install
+
+      - name: Download verified native addons
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-ssru-*
+          path: .tmp/release-native
+          merge-multiple: true
 
       - name: Build Library
         run: bun run build:lib

@@ -17,7 +17,7 @@ interface NativeBinding {
 let loadedBinding: NativeBinding | undefined;
 function loadBinding(): NativeBinding | undefined {
   if (loadedBinding) return loadedBinding;
-  if (!['linux', 'darwin'].includes(process.platform)) return;
+  if (!['win32', 'linux', 'darwin'].includes(process.platform) || !['x64', 'arm64'].includes(process.arch)) return;
   const filename = `onnx-async-${process.platform}-${process.arch}.node`;
   const candidates = [new URL(`./${filename}`, import.meta.url), new URL(`../../dist/${filename}`, import.meta.url)];
   const addon = candidates.find(url => existsSync(url));
@@ -37,7 +37,8 @@ export async function createNativeSession(model: string, inputNames: readonly st
   if (!binding || (requireSsru && binding.ssruVersion !== 1)) return;
   try {
     const require = createRequire(import.meta.url);
-    const libraryName = process.platform === 'darwin' ? 'libonnxruntime.1.dylib' : 'libonnxruntime.so.1';
+    const libraryName = process.platform === 'win32' ? 'onnxruntime.dll'
+      : process.platform === 'darwin' ? 'libonnxruntime.1.dylib' : 'libonnxruntime.so.1';
     const library = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch, libraryName);
     const handle = await binding.init(model, library, cpuThreads);
     let closed: Promise<void> | undefined;
