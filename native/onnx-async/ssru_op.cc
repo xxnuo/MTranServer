@@ -19,6 +19,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#ifdef _MSC_VER
+#pragma fp_contract(off)
+#endif
 
 namespace {
 void check(const OrtApi* api, OrtStatus* status) {

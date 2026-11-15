@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <cmath>
 #include <limits>
+#ifdef _MSC_VER
+#pragma fp_contract(off)
+#endif
 
 namespace mtran::ssru::packed {
 void multiplyVnni(const std::uint8_t* a, const std::int8_t* b, const std::int32_t* sums,

@@ -15,6 +15,9 @@
 #include <arm_neon.h>
 #endif
 #endif
+#ifdef _MSC_VER
+#pragma fp_contract(off)
+#endif
 
 namespace mtran::ssru {
 namespace {

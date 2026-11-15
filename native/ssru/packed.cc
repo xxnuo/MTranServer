@@ -50,6 +50,9 @@
 #define MTRAN_DOTPROD __attribute__((target("arch=armv8.2-a+dotprod"), noinline))
 #endif
 #endif
+#ifdef _MSC_VER
+#pragma fp_contract(off)
+#endif
 
 namespace mtran::ssru::packed {
 #if defined(MTRAN_SSRU_HAVE_VNNI) && !defined(MTRAN_SSRU_NO_VNNI)
@@ -1229,14 +1232,28 @@ struct FullVocabQ4::Impl {
   mutable std::atomic<bool> team_busy_{false};
   mutable std::mutex team_mu_;
   mutable std::condition_variable team_cv_;
-  mutable std::condition_variable done_cv_;
-  mutable std::uint64_t epoch_ = 0;
-  mutable int remaining_ = 0;
-  mutable bool stop_ = false;
+  mutable std::atomic<std::uint64_t> epoch_{0};
+  mutable std::atomic<int> remaining_{0};
+  mutable std::atomic<int> sleeping_{0};
+  mutable std::atomic<bool> stop_{false};
   mutable const std::uint8_t* task_work_ = nullptr;
   mutable bool task_vnni_ = false;
   mutable TopK9 partial_tops_[4];
   mutable std::vector<std::thread> workers_;
+
+  static void cpuRelax() noexcept {
+#if defined(__x86_64__) || defined(_M_X64)
+    _mm_pause();
+#elif defined(__aarch64__) || defined(_M_ARM64)
+#if defined(_MSC_VER) && !defined(__clang__)
+    __yield();
+#else
+    asm volatile("yield" ::: "memory");
+#endif
+#else
+    std::this_thread::yield();
+#endif
+  }
 
   void scanRange(std::size_t g_begin, std::size_t g_end, const std::uint8_t* work, bool use_vnni, TopK9& out) const {
     if (g_begin >= g_end) { out.init(); return; }
@@ -1362,17 +1379,27 @@ struct FullVocabQ4::Impl {
         workers_.emplace_back([this, idx, gb, ge] {
           std::uint64_t seen = 0;
           for (;;) {
-            {
+            std::uint64_t cur = epoch_.load(std::memory_order_acquire);
+            if (cur == seen && !stop_.load(std::memory_order_acquire)) {
+              for (int spin = 0; spin < 32768; ++spin) {
+                cpuRelax();
+                cur = epoch_.load(std::memory_order_acquire);
+                if (cur != seen || stop_.load(std::memory_order_acquire)) break;
+              }
+            }
+            if (cur == seen) {
               std::unique_lock<std::mutex> lk(team_mu_);
-              team_cv_.wait(lk, [&] { return stop_ || epoch_ != seen; });
-              if (stop_) return;
-              seen = epoch_;
+              sleeping_.fetch_add(1, std::memory_order_seq_cst);
+              team_cv_.wait(lk, [&] {
+                cur = epoch_.load(std::memory_order_seq_cst);
+                return stop_.load(std::memory_order_seq_cst) || cur != seen;
+              });
+              sleeping_.fetch_sub(1, std::memory_order_seq_cst);
             }
+            if (stop_.load(std::memory_order_acquire)) return;
+            seen = cur;
             scanRange(gb, ge, task_work_, task_vnni_, partial_tops_[idx]);
-            {
-              std::lock_guard<std::mutex> lk(team_mu_);
-              if (--remaining_ == 0) done_cv_.notify_one();
-            }
+            remaining_.fetch_sub(1, std::memory_order_release);
           }
         });
       }
@@ -1383,7 +1410,7 @@ struct FullVocabQ4::Impl {
     if (!workers_.empty()) {
       {
         std::lock_guard<std::mutex> lk(team_mu_);
-        stop_ = true;
+        stop_.store(true, std::memory_order_seq_cst);
       }
       team_cv_.notify_all();
       for (auto& t : workers_) if (t.joinable()) t.join();
@@ -1449,18 +1476,17 @@ struct FullVocabQ4::Impl {
           ~ReleaseTeam() { flag.store(false, std::memory_order_release); }
         } guard{team_busy_};
         const std::size_t parts = workers_.size() + 1;
-        {
+        task_work_ = work;
+        task_vnni_ = use_vnni;
+        remaining_.store(static_cast<int>(workers_.size()), std::memory_order_relaxed);
+        epoch_.fetch_add(1, std::memory_order_seq_cst);
+        if (sleeping_.load(std::memory_order_seq_cst) > 0) {
           std::lock_guard<std::mutex> lk(team_mu_);
-          task_work_ = work;
-          task_vnni_ = use_vnni;
-          remaining_ = static_cast<int>(workers_.size());
-          ++epoch_;
+          team_cv_.notify_all();
         }
-        team_cv_.notify_all();
         scanRange(0, groups / parts, work, use_vnni, top);
-        {
-          std::unique_lock<std::mutex> lk(team_mu_);
-          done_cv_.wait(lk, [&] { return remaining_ == 0; });
+        while (remaining_.load(std::memory_order_acquire) != 0) {
+          cpuRelax();
         }
         for (std::size_t p = 1; p < parts; ++p) {
           for (int k = 0; k < partial_tops_[p].count; ++k) {
