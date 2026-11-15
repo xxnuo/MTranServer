@@ -64,18 +64,13 @@ export class DeeplController extends Controller {
     const sourceLang = body.source_lang ? NormalizeLanguageCode(body.source_lang) : 'auto';
     const targetLang = NormalizeLanguageCode(body.target_lang);
     const isHTML = body.tag_handling === 'html' || body.tag_handling === 'xml';
-
-    const translations: DeeplTranslation[] = [];
-
-    for (let i = 0; i < textArray.length; i++) {
-      const result = await translateWithPivot(sourceLang, targetLang, textArray[i], isHTML);
-      const detectedLang = body.source_lang || convertBCP47ToDeeplLang(sourceLang);
-
-      translations.push({
+    const detectedLang = body.source_lang || convertBCP47ToDeeplLang(sourceLang);
+    const translations: DeeplTranslation[] = await Promise.all(
+      textArray.map(async item => ({
         detected_source_language: detectedLang,
-        text: result,
-      });
-    }
+        text: await translateWithPivot(sourceLang, targetLang, item, isHTML),
+      }))
+    );
 
     return { translations };
   }

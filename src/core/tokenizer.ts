@@ -19,6 +19,6 @@ export class Tokenizer {
     catch (error) { processor.processor?.delete(); throw error; }
   }
   encode(text: string) { return this.processor.encodeIds(text); }
-  decode(ids: number[]) { return this.processor.decodeIds(Int32Array.from(ids)) as string; }
+  decode(ids: number[] | Int32Array) { return this.processor.decodeIds(ids instanceof Int32Array ? ids : Int32Array.from(ids)) as string; }
   close() { this.processor.processor?.delete(); }
 }

@@ -632,6 +632,46 @@ void math_callbacks() {
   }
 }
 
+void shortlist_callbacks() {
+  for (const Config config : {Config{4, 1, 1, 1}, Config{12, 3, 2, 3}}) {
+    Fixture f(config);
+    Decoder decoder(config, f.named());
+    const auto request = f.request();
+    Workspace w;
+    decoder.decode(request, {nullptr, scalar}, w);
+    const auto expected = w.tokens();
+    std::size_t calls = 0;
+    LinearBackend backend{&calls, [](void*, const Matrix& weight, const float* input, std::size_t rows, float* output) {
+      CHECK(weight.name != "shortlist_projection_T");
+      scalar(nullptr, weight, input, rows, output);
+    }};
+    backend.argmax_shortlist = [](void* raw, const float* x, std::size_t dim, const float* emb,
+                                  const float* bias, const std::int64_t* ids, std::size_t count) {
+      ++(*static_cast<std::size_t*>(raw));
+      std::size_t best = 0;
+      float best_val = -std::numeric_limits<float>::infinity();
+      for (std::size_t j = 0; j < count; ++j) {
+        const auto t = static_cast<std::size_t>(ids[j]);
+        float dot = 0;
+        for (std::size_t k = 0; k < dim; ++k) dot += x[k] * emb[t * dim + k];
+        const float val = dot + (t == 1 ? -std::numeric_limits<float>::infinity() : bias[t]);
+        if (j == 0 || val > best_val) { best_val = val; best = j; }
+      }
+      return best;
+    };
+    Workspace fast_w;
+    decoder.decode(request, backend, fast_w);
+    CHECK(fast_w.tokens() == expected && calls == expected.size());
+    LinearBackend out_of_range{nullptr, scalar};
+    out_of_range.argmax_shortlist = [](void*, const float*, std::size_t, const float*,
+                                       const float*, const std::int64_t*, std::size_t count) {
+      return count;
+    };
+    rejects([&] { decoder.decode(request, out_of_range, fast_w); });
+    CHECK(fast_w.tokens().empty() && !fast_w.ended_with_eos());
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -642,6 +682,7 @@ int main() {
     allocation_and_concurrency();
     math_callbacks();
     bias_callbacks();
+    shortlist_callbacks();
     std::cout << "PASS: scalar stage reference, EOS/ties, invalid inputs, failure recovery, allocations, concurrency, math callbacks, bias callbacks\n";
   } catch (const std::exception& error) {
     std::cerr << "FAIL: " << error.what() << '\n';

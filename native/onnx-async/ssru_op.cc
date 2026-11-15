@@ -165,26 +165,27 @@ struct Kernel {
   OrtMemoryInfo* memory = nullptr;
   OrtOp* dqmm = nullptr;
   OrtOp* dqmmBias = nullptr;
-#ifdef MTRAN_SSRU_PACKED
-  OrtOp* dql = nullptr;
-#endif
   OrtOp* mm = nullptr;
-  OrtOp *sigmoidOp = nullptr, *normOp = nullptr, *mulOp = nullptr, *addOp = nullptr, *sinOp=nullptr, *softmaxOp=nullptr, *qkOp=nullptr;
+  OrtOp *sigmoidOp = nullptr, *normOp = nullptr, *sinOp = nullptr, *softmaxOp = nullptr, *qkOp = nullptr;
   std::unique_ptr<mtran::ssru::Decoder> decoder;
+#ifdef MTRAN_SSRU_PACKED
+  std::unique_ptr<const mtran::ssru::packed::ShortlistTable> shortlist;
+#endif
   std::unordered_map<std::string, std::unique_ptr<Quantized>> matrices;
   size_t inputCount = 0;
   bool kleidi = false;
 
   explicit Kernel(const OrtApi* a) : api(a) {}
   ~Kernel() {
-    decoder.reset(); matrices.clear();
+    decoder.reset();
+#ifdef MTRAN_SSRU_PACKED
+    shortlist.reset();
+#endif
+    matrices.clear();
     if (dqmm) api->ReleaseOp(dqmm);
     if (dqmmBias) api->ReleaseOp(dqmmBias);
-#ifdef MTRAN_SSRU_PACKED
-    if (dql) api->ReleaseOp(dql);
-#endif
     if (mm) api->ReleaseOp(mm);
-    for (auto* op : {sigmoidOp,normOp,mulOp,addOp,sinOp,softmaxOp,qkOp}) if(op) api->ReleaseOp(op);
+    for (auto* op : {sigmoidOp, normOp, sinOp, softmaxOp, qkOp}) if (op) api->ReleaseOp(op);
     if (memory) api->ReleaseMemoryInfo(memory);
   }
   void wrap(Value& value, void* ptr, size_t bytes, const int64_t* dims, size_t rank, ONNXTensorElementDataType type) {
@@ -201,7 +202,9 @@ struct Kernel {
     const std::regex linearName(R"(^decoder_l[0-9]+_(rnn_Wf?|context_W[qo]|ffn_W[0-9]+)$)");
 #ifdef MTRAN_SSRU_PACKED
     const bool usePacked = mtran::ssru::packed::backend() != nullptr;
-    bool hasPacked = false;
+    const float* embData = nullptr;
+    const float* outBias = nullptr;
+    size_t vocabSize = 0;
 #endif
     std::vector<mtran::ssru::NamedTensor> weights;
     weights.reserve(names.size());
@@ -211,6 +214,14 @@ struct Kernel {
       if (!constant || !value) throw std::runtime_error("SSRU weights must be immutable initializers");
       auto view = floatView(api, value);
       weights.push_back({names[i], view});
+#ifdef MTRAN_SSRU_PACKED
+      if ((names[i] == "Wemb" || (names[i] == "decoder_Wemb" && !embData)) && view.shape.size() == 2 && view.shape[0] >= 2) {
+        embData = view.data;
+        vocabSize = static_cast<size_t>(view.shape[0]);
+      } else if (names[i] == "decoder_ff_logit_out_b") {
+        outBias = view.data;
+      }
+#endif
       if (!std::regex_match(names[i], linearName)) continue;
       if (view.shape.size() != 2) throw std::runtime_error("Invalid SSRU matrix rank");
       if (view.shape[0] <= 0 || view.shape[1] <= 0) throw std::runtime_error("Invalid SSRU matrix shape");
@@ -220,7 +231,6 @@ struct Kernel {
 #ifdef MTRAN_SSRU_PACKED
       if (usePacked && q->rows % 32 == 0 && q->cols % 8 == 0 && q->rows <= size_t(INT32_MAX) / (255 * 128)) {
         q->packed = std::make_unique<const mtran::ssru::packed::Weight>(view.data, q->rows, q->cols);
-        hasPacked = true;
       } else
 #endif
       {
@@ -241,6 +251,11 @@ struct Kernel {
       if (!matrices.emplace(names[i], std::move(q)).second) throw std::runtime_error("Duplicate SSRU weight");
     }
     decoder = std::make_unique<mtran::ssru::Decoder>(config, weights);
+#ifdef MTRAN_SSRU_PACKED
+    if (usePacked && embData && outBias) {
+      shortlist = std::make_unique<const mtran::ssru::packed::ShortlistTable>(embData, outBias, vocabSize, config.dim, kleidi);
+    }
+#endif
     const char* namesDQ[] = {"T1", "T2"};
     ONNXTensorElementDataType typesDQ[] = {ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8};
     // Standalone ORT operators do not prepack constants. Benchmark this backend
@@ -249,18 +264,9 @@ struct Kernel {
 #if defined(__linux__) && defined(__aarch64__)
     check(api, api->CreateOp(info, "DynamicQuantizeMatMul", "com.microsoft", 1, namesDQ, typesDQ, 2, nullptr, 0, 5, 1, &dqmmBias));
 #endif
-#ifdef MTRAN_SSRU_PACKED
-    if (hasPacked) {
-      const char* namesDQL[] = {"T2"};
-      ONNXTensorElementDataType typesDQL[] = {ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8};
-      check(api, api->CreateOp(info, "DynamicQuantizeLinear", "", 11, namesDQL, typesDQL, 1, nullptr, 0, 1, 3, &dql));
-    }
-#endif
     const char* namesMM[] = {"T"}; ONNXTensorElementDataType typesMM[] = {ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT};
     check(api, api->CreateOp(info, "MatMul", "", 13, namesMM, typesMM, 1, nullptr, 0, 2, 1, &mm));
     check(api, api->CreateOp(info, "Sigmoid", "", 6, namesMM, typesMM, 1, nullptr, 0, 1, 1, &sigmoidOp));
-    check(api, api->CreateOp(info, "Mul", "", 7, namesMM, typesMM, 1, nullptr, 0, 2, 1, &mulOp));
-    check(api, api->CreateOp(info, "Add", "", 7, namesMM, typesMM, 1, nullptr, 0, 2, 1, &addOp));
     float epsilon=1e-6f; OrtOpAttr* attr=nullptr;
     check(api,api->CreateOpAttr("epsilon", &epsilon, 1, ORT_OP_ATTR_FLOAT, &attr));
     const OrtOpAttr* attrs[]={attr};
@@ -281,7 +287,7 @@ struct Kernel {
   }
   struct Invocation {
     Kernel* kernel; OrtKernelContext* context;
-    std::vector<float> alignA, alignB, scaled, probs;
+    std::vector<float> alignA, scaled, probs;
 #ifdef MTRAN_SSRU_PACKED
     std::unique_ptr<mtran::ssru::packed::Workspace> workspace;
 #endif
@@ -294,13 +300,34 @@ struct Kernel {
     auto& invocation = *static_cast<Invocation*>(raw);
     const bool kleidi = invocation.kernel->kleidi;
     const bool dynamic = kleidi && !separate && weight.name.find("_rnn_") == std::string::npos;
-    linearImpl(raw, weight, input, rows, output, (separate || kleidi) ? nullptr : bias, dynamic);
-    if (separate || kleidi) for (size_t i = 0; i < rows * weight.cols; ++i) output[i] += bias[i % weight.cols];
+#if defined(__linux__) && defined(__aarch64__)
+    const bool fuseFma = !separate;
+#else
+    const bool fuseFma = false;
+#endif
+    linearImpl(raw, weight, input, rows, output, fuseFma ? bias : nullptr, dynamic, fuseFma ? nullptr : bias);
   }
   static void linearImpl(void* raw, const mtran::ssru::Matrix& weight, const float* input,
-                         size_t rows, float* output, const float* bias, bool kleidi = false) {
+                         size_t rows, float* output, const float* bias, bool kleidi = false, const float* separateBias = nullptr) {
     if (kleidi && rows != 1) throw std::invalid_argument("SSRU KleidiAI expects one activation row");
     auto& invocation = *static_cast<Invocation*>(raw); auto& k = *invocation.kernel;
+    if (weight.name != "shortlist_projection_T") {
+      const auto found = k.matrices.find(weight.name);
+      if (found == k.matrices.end()) throw std::runtime_error("Missing quantized SSRU matrix: " + weight.name);
+      const auto& q = *found->second;
+      if (q.rows != weight.rows || q.cols != weight.cols) throw std::runtime_error("SSRU matrix dimension mismatch");
+#ifdef MTRAN_SSRU_PACKED
+      if (q.packed) {
+        if (!invocation.workspace) invocation.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
+        auto* activation = invocation.workspace->resize(rows * weight.rows);
+        float scale = 0; uint8_t zero = 0;
+        if (kleidi) scale = mtran::ssru::kleidi::quantize(input, weight.rows, activation, zero);
+        else mtran::ssru::packed::quantizeLinearU8(input, rows, weight.rows, activation, scale, zero);
+        q.packed->multiply(activation, rows, scale, zero, output, bias, separateBias);
+        return;
+      }
+#endif
+    }
     const int64_t aShape[] = {static_cast<int64_t>(rows), static_cast<int64_t>(weight.rows)};
     const int64_t yShape[] = {static_cast<int64_t>(rows), static_cast<int64_t>(weight.cols)};
     Value a(k.api);
@@ -314,28 +341,7 @@ struct Kernel {
       const OrtValue* inputs[] = {a.value, b.value};
       check(k.api, k.api->InvokeOp(invocation.context, k.mm, inputs, 2, outputs, 1));
     } else {
-      const auto found = k.matrices.find(weight.name);
-      if (found == k.matrices.end()) throw std::runtime_error("Missing quantized SSRU matrix: " + weight.name);
-      const auto& q = *found->second;
-      if (q.rows != weight.rows || q.cols != weight.cols) throw std::runtime_error("SSRU matrix dimension mismatch");
-#ifdef MTRAN_SSRU_PACKED
-      if (q.packed) {
-        if (!invocation.workspace) invocation.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
-        auto* activation = invocation.workspace->resize(rows * weight.rows);
-        float scale = 0; uint8_t zero = 0;
-        Value quantized(k.api), scaleTensor(k.api), zeroTensor(k.api);
-        k.wrap(quantized, activation, rows * weight.rows, aShape, 2, ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8);
-        // ORT DQL scale and zero point are rank-0 outputs [], never [1].
-        k.wrap(scaleTensor, &scale, sizeof(scale), nullptr, 0, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-        k.wrap(zeroTensor, &zero, sizeof(zero), nullptr, 0, ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8);
-        const OrtValue* inputs[] = {a.value};
-        OrtValue* outputs[] = {quantized.value, scaleTensor.value, zeroTensor.value};
-        if (kleidi) scale = mtran::ssru::kleidi::quantize(input, weight.rows, activation, zero);
-        else check(k.api, k.api->InvokeOp(invocation.context, k.dql, inputs, 1, outputs, 3));
-        q.packed->multiply(activation, rows, scale, zero, output, bias);
-        return;
-      }
-#endif
+      const auto& q = *k.matrices.find(weight.name)->second;
       if (kleidi) {
         std::vector<uint8_t> activation(weight.rows);
         uint8_t zero = 0;
@@ -346,7 +352,7 @@ struct Kernel {
           for (size_t row = 0; row < weight.rows; ++row)
             sum += (int64_t(activation[row]) - zero) * q.bytes[row * weight.cols + col];
           if (sum < INT32_MIN || sum > INT32_MAX) throw std::runtime_error("SSRU KleidiAI accumulation overflow");
-          output[col] = float(sum) * scale;
+          output[col] = float(sum) * scale + (separateBias ? separateBias[col] : 0.0f);
         }
         return;
       }
@@ -358,6 +364,7 @@ struct Kernel {
       if (bias) k.wrap(b, const_cast<float*>(bias), weight.cols * sizeof(float), biasShape, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
       const OrtValue* inputs[] = {a.value, q.tensor.value, q.scaleTensor.value, q.zeroTensor.value, b.value};
       check(k.api, k.api->InvokeOp(invocation.context, bias ? k.dqmmBias : k.dqmm, inputs, bias ? 5 : 4, outputs, 1));
+      if (separateBias) for (size_t i = 0; i < rows * weight.cols; ++i) output[i] += separateBias[i % weight.cols];
     }
   }
   static void sigmoidAligned(void* raw, float* x, size_t dim) {
@@ -373,24 +380,17 @@ struct Kernel {
   }
   static void normalizeAligned(void* raw, float* x, size_t dim, const float* gamma, const float* beta) {
     auto& v=*static_cast<Invocation*>(raw); auto& k=*v.kernel;
-    v.alignA.resize(dim);v.alignB.resize(dim);
-    const int64_t dims[]={1,1,static_cast<int64_t>(dim)},vector[]={static_cast<int64_t>(dim)},oneDim[]={1};
+    v.alignA.resize(dim);
+    const int64_t dims[]={1,1,static_cast<int64_t>(dim)},oneDim[]={1};
     float one=1,zero=0;
-    Value a(k.api),n(k.api),m(k.api),y(k.api),scale(k.api),bias(k.api),g(k.api),b(k.api);
+    Value a(k.api),n(k.api),scale(k.api),bias(k.api);
     k.wrap(a,x,dim*4,dims,3,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
     k.wrap(n,v.alignA.data(),dim*4,dims,3,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(m,v.alignB.data(),dim*4,dims,3,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(y,x,dim*4,dims,3,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
     k.wrap(scale,&one,4,oneDim,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
     k.wrap(bias,&zero,4,oneDim,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(g,const_cast<float*>(gamma),dim*4,vector,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
-    k.wrap(b,const_cast<float*>(beta),dim*4,vector,1,ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
     const OrtValue* ni[]={a.value,scale.value,bias.value};OrtValue* no[]={n.value};
     check(k.api,k.api->InvokeOp(v.context,k.normOp,ni,3,no,1));
-    const OrtValue* mi[]={n.value,g.value};OrtValue* mo[]={m.value};
-    check(k.api,k.api->InvokeOp(v.context,k.mulOp,mi,2,mo,1));
-    const OrtValue* ai[]={m.value,b.value};OrtValue* ao[]={y.value};
-    check(k.api,k.api->InvokeOp(v.context,k.addOp,ai,2,ao,1));
+    for (size_t i = 0; i < dim; ++i) x[i] = (v.alignA[i] * gamma[i]) + beta[i];
   }
   static void sinAligned(void* raw,float* x,size_t dim) {
     auto& v=*static_cast<Invocation*>(raw);auto& k=*v.kernel;
@@ -437,15 +437,30 @@ struct Kernel {
     request.candidate_ids = static_cast<const int64_t*>(data(api, candidates)); request.candidate_count = cs.size;
     const auto depth = decoder->config().depth;
     for (size_t i = 0; i < depth; ++i) { request.keys.push_back(floatView(api, get(3 + i))); request.values.push_back(floatView(api, get(3 + depth + i))); }
-    mtran::ssru::Workspace workspace;
-    Invocation invocation{};
+    struct ThreadScratch {
+      mtran::ssru::Workspace workspace;
+      Invocation invocation;
+    };
+    thread_local ThreadScratch scratch;
+    auto& workspace = scratch.workspace;
+    auto& invocation = scratch.invocation;
     invocation.kernel = this; invocation.context = context;
+    struct ResetGuard {
+      Invocation& inv;
+      ~ResetGuard() { inv.kernel = nullptr; inv.context = nullptr; }
+    } guard{invocation};
     mtran::ssru::LinearBackend backend{&invocation, linear};
-#if defined(__linux__) && defined(__aarch64__)
-    // ORT's Linux ARM64 runtime fuses quantized bias with FMA; folded l1 gate/Q stay separate.
-    backend.matmul_bias = linearBias;
+#ifdef MTRAN_SSRU_PACKED
+    if (shortlist) {
+      backend.argmax_shortlist = [](void* raw, const float* x_vec, size_t, const float*, const float*,
+                                    const int64_t* cids, size_t ccount) {
+        auto& inv = *static_cast<Invocation*>(raw);
+        if (!inv.workspace) inv.workspace = std::make_unique<mtran::ssru::packed::Workspace>();
+        return inv.kernel->shortlist->argmax(x_vec, cids, ccount, *inv.workspace);
+      };
+    }
 #endif
-    if (kleidi) backend.matmul_bias = linearBias;
+    backend.matmul_bias = linearBias;
     decoder->decode(request, backend, workspace,
                     {&invocation, normalizeAligned, sigmoidAligned, sinAligned, attentionAligned});
     const auto& tokens = workspace.tokens();

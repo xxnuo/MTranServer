@@ -1,0 +1,999 @@
+{
+  "version": "5.4.2",
+  "date": "2026-11-16",
+  "ci_run_id": 43860981495,
+  "quality_gate": {
+    "flores_devtest_and_corpus_samples_per_platform": 2049,
+    "token_exact_all_platforms_and_physical_hosts": true,
+    "local_extended_parity_samples": 4043,
+    "local_extended_token_differences": 0
+  },
+  "http_ab_v541_vs_v542": {
+    "host_cpu": "Intel(R) Core(TM) i5-14400",
+    "platform": "Linux x64",
+    "rounds": 3,
+    "uv_threadpool_size": 16,
+    "startup_warmup_median_ms": {
+      "v5.4.1": 17399.6,
+      "v5.4.2": 3566.0
+    },
+    "memory_mib": {
+      "v5.4.1_rss_median": 753.1,
+      "v5.4.2_rss_median": 790.6,
+      "v5.4.1_warm_peak_max": 873.5,
+      "v5.4.2_warm_peak_max": 879.4
+    },
+    "summary": [
+      {
+        "scenario": "BATCH10_EN",
+        "concurrency": 1,
+        "v541_rps": 87.10280344974343,
+        "v542_rps": 410.14404200625404,
+        "rps_gain_pct": 370.8735261809328,
+        "v541_mean_ms": 114.80390166737682,
+        "v542_mean_ms": 24.378528916410385,
+        "v541_p95_ms": 195.53541300047073,
+        "v542_p95_ms": 29.39673799846787
+      },
+      {
+        "scenario": "BATCH10_ZH",
+        "concurrency": 1,
+        "v541_rps": 112.72556974798852,
+        "v542_rps": 392.23309696579093,
+        "rps_gain_pct": 247.953971616799,
+        "v541_mean_ms": 88.70842366650322,
+        "v542_mean_ms": 25.49029766669264,
+        "v541_p95_ms": 98.95585299818777,
+        "v542_p95_ms": 33.85924900067039
+      },
+      {
+        "scenario": "LONG_EN",
+        "concurrency": 1,
+        "v541_rps": 5.84574120157784,
+        "v542_rps": 13.872949159324596,
+        "rps_gain_pct": 137.31719692928093,
+        "v541_mean_ms": 170.64844625,
+        "v542_mean_ms": 71.77737475,
+        "v541_p95_ms": 178.440602,
+        "v542_p95_ms": 78.05624300000002
+      },
+      {
+        "scenario": "LONG_EN",
+        "concurrency": 8,
+        "v541_rps": 4.864664943734703,
+        "v542_rps": 11.530418744322612,
+        "rps_gain_pct": 137.0239035511143,
+        "v541_mean_ms": 1574.307879375,
+        "v542_mean_ms": 634.846352,
+        "v541_p95_ms": 1844.968587,
+        "v542_p95_ms": 718.5816659999999
+      },
+      {
+        "scenario": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "v541_rps": 4.585555972374951,
+        "v542_rps": 8.903528644469082,
+        "rps_gain_pct": 94.16464869488372,
+        "v541_mean_ms": 217.74779725,
+        "v542_mean_ms": 111.8420775,
+        "v541_p95_ms": 234.35898500000002,
+        "v542_p95_ms": 117.89324099999999
+      },
+      {
+        "scenario": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "v541_rps": 3.6531427610100136,
+        "v542_rps": 9.595271668893764,
+        "rps_gain_pct": 162.6579987868003,
+        "v541_mean_ms": 2095.8696291875,
+        "v542_mean_ms": 790.7788295624999,
+        "v541_p95_ms": 2418.513734,
+        "v542_p95_ms": 906.836353
+      },
+      {
+        "scenario": "PARA_EN",
+        "concurrency": 1,
+        "v541_rps": 26.257508246958192,
+        "v542_rps": 34.558137200289565,
+        "rps_gain_pct": 31.61240158533687,
+        "v541_mean_ms": 37.93812150000001,
+        "v542_mean_ms": 28.793054444444444,
+        "v541_p95_ms": 54.021469,
+        "v542_p95_ms": 38.802317999999985
+      },
+      {
+        "scenario": "PARA_EN",
+        "concurrency": 4,
+        "v541_rps": 40.55403197186606,
+        "v542_rps": 103.33860687467315,
+        "rps_gain_pct": 154.81709672262238,
+        "v541_mean_ms": 93.73250183333333,
+        "v542_mean_ms": 35.03719972222222,
+        "v541_p95_ms": 123.26958199999999,
+        "v542_p95_ms": 40.832423000000006
+      },
+      {
+        "scenario": "PARA_ZH",
+        "concurrency": 1,
+        "v541_rps": 25.741696244697952,
+        "v542_rps": 32.94434282243333,
+        "rps_gain_pct": 27.980466047255593,
+        "v541_mean_ms": 38.62562125,
+        "v542_mean_ms": 30.167004666666664,
+        "v541_p95_ms": 51.17360000000002,
+        "v542_p95_ms": 40.525203000000005
+      },
+      {
+        "scenario": "PARA_ZH",
+        "concurrency": 4,
+        "v541_rps": 44.778641376167656,
+        "v542_rps": 99.56759783611732,
+        "rps_gain_pct": 122.35511122298087,
+        "v541_mean_ms": 87.59724541666667,
+        "v542_mean_ms": 38.39245058333333,
+        "v541_p95_ms": 97.21328300000002,
+        "v542_p95_ms": 47.342276999999996
+      },
+      {
+        "scenario": "SHORT_EN",
+        "concurrency": 1,
+        "v541_rps": 99.22979257298542,
+        "v542_rps": 119.2981029307134,
+        "rps_gain_pct": 20.22407770626684,
+        "v541_mean_ms": 9.966516433333338,
+        "v542_mean_ms": 8.280043583333333,
+        "v541_p95_ms": 14.913750999999998,
+        "v542_p95_ms": 13.226146999999997
+      },
+      {
+        "scenario": "SHORT_EN",
+        "concurrency": 8,
+        "v541_rps": 278.875925326007,
+        "v542_rps": 469.1049466086543,
+        "rps_gain_pct": 68.21277995232784,
+        "v541_mean_ms": 28.218348283333334,
+        "v542_mean_ms": 16.696423237500003,
+        "v541_p95_ms": 40.11161800000002,
+        "v542_p95_ms": 23.736045000000047
+      },
+      {
+        "scenario": "SHORT_EN_DEFAULT_ENV",
+        "concurrency": 8,
+        "v541_rps": 250.83514004523616,
+        "v542_rps": 389.5745309721125,
+        "rps_gain_pct": 55.310986691041684,
+        "v541_mean_ms": 31.441960260416664,
+        "v542_mean_ms": 20.63050526875,
+        "v541_p95_ms": 47.27406399999998,
+        "v542_p95_ms": 31.134689999999978
+      },
+      {
+        "scenario": "SHORT_ZH",
+        "concurrency": 1,
+        "v541_rps": 110.30424860565685,
+        "v542_rps": 129.70670335440948,
+        "rps_gain_pct": 17.5899432651206,
+        "v541_mean_ms": 8.968949383333328,
+        "v542_mean_ms": 7.611630133333329,
+        "v541_p95_ms": 14.916127000000017,
+        "v542_p95_ms": 14.694083000000035
+      },
+      {
+        "scenario": "SHORT_ZH",
+        "concurrency": 8,
+        "v541_rps": 297.73188630558604,
+        "v542_rps": 549.8064534668742,
+        "rps_gain_pct": 84.66495486565518,
+        "v541_mean_ms": 26.187198954166668,
+        "v542_mean_ms": 14.223980158333335,
+        "v541_p95_ms": 44.138191000000006,
+        "v542_p95_ms": 22.758541000000008
+      },
+      {
+        "scenario": "SHORT_ZH_DEFAULT_ENV",
+        "concurrency": 8,
+        "v541_rps": 300.5131674649852,
+        "v542_rps": 544.5259923637689,
+        "rps_gain_pct": 81.1987131735967,
+        "v541_mean_ms": 26.09099492708333,
+        "v542_mean_ms": 14.34999706875,
+        "v541_p95_ms": 36.15449000000001,
+        "v542_p95_ms": 22.147513500000002
+      }
+    ]
+  },
+  "three_engine_http": {
+    "short_summary": [
+      {
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 29.65036011111111,
+        "requests_per_second": 33.439190416096174,
+        "requests_total": 27
+      },
+      {
+        "engine": "candidate",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 37.13746444444444,
+        "requests_per_second": 87.30167206273454,
+        "requests_total": 27
+      },
+      {
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "mean_latency_ms": 29.636676833333336,
+        "requests_per_second": 33.531002692438925,
+        "requests_total": 18
+      },
+      {
+        "engine": "candidate",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "mean_latency_ms": 37.50168033333333,
+        "requests_per_second": 77.20829823465542,
+        "requests_total": 18
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 8.242290799999997,
+        "requests_per_second": 119.79408116212718,
+        "requests_total": 90
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "mean_latency_ms": 8.927434233333335,
+        "requests_per_second": 219.1340040372664,
+        "requests_total": 90
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 10.572541566666668,
+        "requests_per_second": 341.6803177444725,
+        "requests_total": 90
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "mean_latency_ms": 18.360541608333335,
+        "requests_per_second": 422.55094087516517,
+        "requests_total": 720
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "mean_latency_ms": 8.490636533333335,
+        "requests_per_second": 116.06999037443177,
+        "requests_total": 90
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "mean_latency_ms": 8.291072666666667,
+        "requests_per_second": 235.4261704941887,
+        "requests_total": 90
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "mean_latency_ms": 9.655259000000001,
+        "requests_per_second": 384.4432427602993,
+        "requests_total": 90
+      },
+      {
+        "engine": "candidate",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "mean_latency_ms": 14.162710470833336,
+        "requests_per_second": 549.362407471977,
+        "requests_total": 720
+      },
+      {
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 46.054453222222214,
+        "requests_per_second": 21.624613429099746,
+        "requests_total": 27
+      },
+      {
+        "engine": "fast",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 105.54750933333332,
+        "requests_per_second": 33.04702213412066,
+        "requests_total": 27
+      },
+      {
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "mean_latency_ms": 44.400222166666666,
+        "requests_per_second": 22.407350507260404,
+        "requests_total": 18
+      },
+      {
+        "engine": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "mean_latency_ms": 108.51519066666667,
+        "requests_per_second": 30.623414788503286,
+        "requests_total": 18
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 16.664682300000003,
+        "requests_per_second": 59.52252896273504,
+        "requests_total": 90
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "mean_latency_ms": 14.069461666666669,
+        "requests_per_second": 138.27376014251857,
+        "requests_total": 90
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 16.419114233333335,
+        "requests_per_second": 222.0900375221118,
+        "requests_total": 90
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "mean_latency_ms": 35.116475595833336,
+        "requests_per_second": 223.61800231137158,
+        "requests_total": 720
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "mean_latency_ms": 13.995229933333338,
+        "requests_per_second": 70.84822126046863,
+        "requests_total": 90
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "mean_latency_ms": 11.406481433333333,
+        "requests_per_second": 171.77278347391913,
+        "requests_total": 90
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "mean_latency_ms": 15.00207946666667,
+        "requests_per_second": 253.49027592289792,
+        "requests_total": 90
+      },
+      {
+        "engine": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "mean_latency_ms": 32.26594124166667,
+        "requests_per_second": 242.86346836628184,
+        "requests_total": 720
+      },
+      {
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 60.03928911111111,
+        "requests_per_second": 16.609295821295316,
+        "requests_total": 27
+      },
+      {
+        "engine": "linguaspark",
+        "group": "PARA_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 70.45559577777777,
+        "requests_per_second": 45.59318835334364,
+        "requests_total": 27
+      },
+      {
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "mean_latency_ms": 68.31986450000001,
+        "requests_per_second": 14.589394193205187,
+        "requests_total": 18
+      },
+      {
+        "engine": "linguaspark",
+        "group": "PARA_ZH",
+        "concurrency": 4,
+        "mean_latency_ms": 70.40518683333333,
+        "requests_per_second": 41.82429080083645,
+        "requests_total": 18
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 13.508052899999997,
+        "requests_per_second": 73.3389851125845,
+        "requests_total": 90
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 2,
+        "mean_latency_ms": 13.570905533333333,
+        "requests_per_second": 144.96871505060997,
+        "requests_total": 90
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 15.828197299999998,
+        "requests_per_second": 239.66804441972386,
+        "requests_total": 90
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "mean_latency_ms": 25.655114025000003,
+        "requests_per_second": 306.86647375258593,
+        "requests_total": 720
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "mean_latency_ms": 13.751358700000003,
+        "requests_per_second": 71.95709250383103,
+        "requests_total": 90
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 2,
+        "mean_latency_ms": 14.32648563333333,
+        "requests_per_second": 136.69833664871607,
+        "requests_total": 90
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 4,
+        "mean_latency_ms": 16.771458199999998,
+        "requests_per_second": 224.36414192539704,
+        "requests_total": 90
+      },
+      {
+        "engine": "linguaspark",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "mean_latency_ms": 31.613787545833336,
+        "requests_per_second": 244.47646105914802,
+        "requests_total": 720
+      }
+    ],
+    "long_summary": [
+      {
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 80.60266000000001,
+        "requests_per_second": 12.357564497537739,
+        "requests_total": 18
+      },
+      {
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 421.02136925,
+        "requests_per_second": 9.390257635404527,
+        "requests_total": 72
+      },
+      {
+        "engine": "candidate",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "mean_latency_ms": 727.9172826666667,
+        "requests_per_second": 10.615140867253825,
+        "requests_total": 72
+      },
+      {
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "mean_latency_ms": 100.72378166666665,
+        "requests_per_second": 9.898561749866163,
+        "requests_total": 18
+      },
+      {
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "mean_latency_ms": 568.88095125,
+        "requests_per_second": 6.884108369879492,
+        "requests_total": 72
+      },
+      {
+        "engine": "candidate",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "mean_latency_ms": 901.6419444583333,
+        "requests_per_second": 8.629712853794663,
+        "requests_total": 72
+      },
+      {
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 222.15554683333335,
+        "requests_per_second": 4.494321889454989,
+        "requests_total": 18
+      },
+      {
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 921.559764125,
+        "requests_per_second": 4.212760084523127,
+        "requests_total": 72
+      },
+      {
+        "engine": "fast",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "mean_latency_ms": 1925.2036146666667,
+        "requests_per_second": 4.035943185102879,
+        "requests_total": 72
+      },
+      {
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "mean_latency_ms": 283.86684733333334,
+        "requests_per_second": 3.51922137893297,
+        "requests_total": 18
+      },
+      {
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "mean_latency_ms": 1207.3434860833331,
+        "requests_per_second": 3.2686991019379827,
+        "requests_total": 72
+      },
+      {
+        "engine": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "mean_latency_ms": 2574.29475575,
+        "requests_per_second": 3.0312658250113675,
+        "requests_total": 72
+      },
+      {
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "mean_latency_ms": 717.2412468333334,
+        "requests_per_second": 1.393783971441539,
+        "requests_total": 18
+      },
+      {
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 4,
+        "mean_latency_ms": 1353.185652,
+        "requests_per_second": 2.952457324098347,
+        "requests_total": 72
+      },
+      {
+        "engine": "linguaspark",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "mean_latency_ms": 2325.2063100416667,
+        "requests_per_second": 3.173471269601977,
+        "requests_total": 72
+      },
+      {
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "mean_latency_ms": 844.9142958333334,
+        "requests_per_second": 1.1832444737604657,
+        "requests_total": 18
+      },
+      {
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 4,
+        "mean_latency_ms": 1645.7048600416667,
+        "requests_per_second": 2.371565933089251,
+        "requests_total": 72
+      },
+      {
+        "engine": "linguaspark",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "mean_latency_ms": 2841.4970272916667,
+        "requests_per_second": 2.60333947447484,
+        "requests_total": 72
+      }
+    ]
+  },
+  "physical_hosts": [
+    {
+      "platform": "linux-x64",
+      "host_kind": "physical",
+      "cpu": "Intel(R) Core(TM) i5-14400",
+      "addon_sha256": "c0b9af8c2639faf7351ae6d6652aa524b57f2be945474748828b0d89f3c0f446",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 52.26,
+          "ssru_c1_rps": 87.75,
+          "c1_gain_pct": 67.9,
+          "fast_c8_rps": 98.48,
+          "ssru_c8_rps": 321.5,
+          "c8_gain_pct": 226.5,
+          "fast_c8_p95_ms": 207.3,
+          "ssru_c8_p95_ms": 58.41
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 74.17,
+          "ssru_c1_rps": 80.46,
+          "c1_gain_pct": 8.5,
+          "fast_c8_rps": 137.53,
+          "ssru_c8_rps": 409.94,
+          "c8_gain_pct": 198.1,
+          "fast_c8_p95_ms": 177.17,
+          "ssru_c8_p95_ms": 43.77
+        }
+      }
+    },
+    {
+      "platform": "linux-x64",
+      "host_kind": "physical",
+      "cpu": "Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz",
+      "addon_sha256": "c0b9af8c2639faf7351ae6d6652aa524b57f2be945474748828b0d89f3c0f446",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 49.3,
+          "ssru_c1_rps": 62.86,
+          "c1_gain_pct": 27.5,
+          "fast_c8_rps": 115.68,
+          "ssru_c8_rps": 188.05,
+          "c8_gain_pct": 62.6,
+          "fast_c8_p95_ms": 158.55,
+          "ssru_c8_p95_ms": 94.46
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 49.72,
+          "ssru_c1_rps": 65.36,
+          "c1_gain_pct": 31.5,
+          "fast_c8_rps": 133.34,
+          "ssru_c8_rps": 206.07,
+          "c8_gain_pct": 54.5,
+          "fast_c8_p95_ms": 159.99,
+          "ssru_c8_p95_ms": 93.71
+        }
+      }
+    },
+    {
+      "platform": "linux-arm64",
+      "host_kind": "physical",
+      "cpu": "NVIDIA Jetson AGX Thor (ARM64)",
+      "addon_sha256": "8d226098a6c7f0b39c502c0fda9e51a0addd200c182298bdf76e7e0d22f062c4",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 64.67,
+          "ssru_c1_rps": 87.44,
+          "c1_gain_pct": 35.2,
+          "fast_c8_rps": 265.11,
+          "ssru_c8_rps": 491.13,
+          "c8_gain_pct": 85.3,
+          "fast_c8_p95_ms": 68.52,
+          "ssru_c8_p95_ms": 34.22
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 74.03,
+          "ssru_c1_rps": 98.02,
+          "c1_gain_pct": 32.4,
+          "fast_c8_rps": 286.84,
+          "ssru_c8_rps": 554.07,
+          "c8_gain_pct": 93.2,
+          "fast_c8_p95_ms": 71.06,
+          "ssru_c8_p95_ms": 34.77
+        }
+      }
+    },
+    {
+      "platform": "darwin-arm64",
+      "host_kind": "physical",
+      "cpu": "Apple M4",
+      "addon_sha256": "848b3d05f00932e99264557952eaa12e3f3a22fd772f0b004a452dd4371785f1",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 150.83,
+          "ssru_c1_rps": 223.47,
+          "c1_gain_pct": 48.2,
+          "fast_c8_rps": 250.39,
+          "ssru_c8_rps": 868.07,
+          "c8_gain_pct": 246.7,
+          "fast_c8_p95_ms": 85.15,
+          "ssru_c8_p95_ms": 22.06
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 180.66,
+          "ssru_c1_rps": 259.76,
+          "c1_gain_pct": 43.8,
+          "fast_c8_rps": 315.82,
+          "ssru_c8_rps": 928.85,
+          "c8_gain_pct": 194.1,
+          "fast_c8_p95_ms": 74.72,
+          "ssru_c8_p95_ms": 21.88
+        }
+      }
+    }
+  ],
+  "ci_hosted_runners": [
+    {
+      "platform": "darwin-arm64",
+      "host_kind": "hosted-runner-vm",
+      "cpu": "Apple M1 (Virtual)",
+      "addon_sha256": "848b3d05f00932e99264557952eaa12e3f3a22fd772f0b004a452dd4371785f1",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 61.19,
+          "ssru_c1_rps": 99.37,
+          "c1_gain_pct": 62.4,
+          "fast_c8_rps": 122.1,
+          "ssru_c8_rps": 220.93,
+          "c8_gain_pct": 80.9,
+          "fast_c8_p95_ms": 183.2,
+          "ssru_c8_p95_ms": 91.65
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 42.95,
+          "ssru_c1_rps": 98.22,
+          "c1_gain_pct": 128.7,
+          "fast_c8_rps": 78.62,
+          "ssru_c8_rps": 293.31,
+          "c8_gain_pct": 273.1,
+          "fast_c8_p95_ms": 283.33,
+          "ssru_c8_p95_ms": 66.07
+        }
+      }
+    },
+    {
+      "platform": "darwin-x64",
+      "host_kind": "hosted-runner-vm",
+      "cpu": "Intel(R) Core(TM) i7-8700B CPU @ 3.20GHz",
+      "addon_sha256": "ba5c1aa4cad6e07f88461caa80a52ffc31eeab9e16c802c3ec3f3b6f9dea2f6b",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 18.7,
+          "ssru_c1_rps": 26.84,
+          "c1_gain_pct": 43.5,
+          "fast_c8_rps": 42.65,
+          "ssru_c8_rps": 128.77,
+          "c8_gain_pct": 202.0,
+          "fast_c8_p95_ms": 457.52,
+          "ssru_c8_p95_ms": 110.79
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 44.37,
+          "ssru_c1_rps": 59.26,
+          "c1_gain_pct": 33.6,
+          "fast_c8_rps": 104.68,
+          "ssru_c8_rps": 200.75,
+          "c8_gain_pct": 91.8,
+          "fast_c8_p95_ms": 205.95,
+          "ssru_c8_p95_ms": 76.14
+        }
+      }
+    },
+    {
+      "platform": "linux-arm64",
+      "host_kind": "hosted-runner-vm",
+      "cpu": "unknown",
+      "addon_sha256": "56fcfddaf31bc045b4d655b38df23131fd0ce1bd188e9172a067a3ccaee6149b",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 60.87,
+          "ssru_c1_rps": 83.01,
+          "c1_gain_pct": 36.4,
+          "fast_c8_rps": 184.95,
+          "ssru_c8_rps": 311.5,
+          "c8_gain_pct": 68.4,
+          "fast_c8_p95_ms": 103.09,
+          "ssru_c8_p95_ms": 63.09
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 67.93,
+          "ssru_c1_rps": 96.47,
+          "c1_gain_pct": 42.0,
+          "fast_c8_rps": 209.29,
+          "ssru_c8_rps": 335.23,
+          "c8_gain_pct": 60.2,
+          "fast_c8_p95_ms": 101.31,
+          "ssru_c8_p95_ms": 58.19
+        }
+      }
+    },
+    {
+      "platform": "linux-x64",
+      "host_kind": "hosted-runner-vm",
+      "cpu": "Intel(R) Xeon(R) 6975P-C",
+      "addon_sha256": "3cfa4085b86d51a791a5a4fd83f5ac603f4d8ab620fab8ad8eecad1d7fcff118",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 74.25,
+          "ssru_c1_rps": 104.81,
+          "c1_gain_pct": 41.2,
+          "fast_c8_rps": 143.46,
+          "ssru_c8_rps": 221.76,
+          "c8_gain_pct": 54.6,
+          "fast_c8_p95_ms": 139.52,
+          "ssru_c8_p95_ms": 94.6
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 88.25,
+          "ssru_c1_rps": 120.47,
+          "c1_gain_pct": 36.5,
+          "fast_c8_rps": 164.92,
+          "ssru_c8_rps": 290.06,
+          "c8_gain_pct": 75.9,
+          "fast_c8_p95_ms": 132.54,
+          "ssru_c8_p95_ms": 69.84
+        }
+      }
+    },
+    {
+      "platform": "win32-arm64",
+      "host_kind": "hosted-runner-vm",
+      "cpu": "Cobalt 100",
+      "addon_sha256": "691ec5f731c0a7895fca6961fbcb1baa7abcd5595f1afdf330abc1e790a5294e",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 55.35,
+          "ssru_c1_rps": 77.59,
+          "c1_gain_pct": 40.2,
+          "fast_c8_rps": 169.3,
+          "ssru_c8_rps": 295.04,
+          "c8_gain_pct": 74.3,
+          "fast_c8_p95_ms": 107.6,
+          "ssru_c8_p95_ms": 62.02
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 62.36,
+          "ssru_c1_rps": 86.46,
+          "c1_gain_pct": 38.6,
+          "fast_c8_rps": 147.71,
+          "ssru_c8_rps": 232.66,
+          "c8_gain_pct": 57.5,
+          "fast_c8_p95_ms": 128.76,
+          "ssru_c8_p95_ms": 69.24
+        }
+      }
+    },
+    {
+      "platform": "win32-x64",
+      "host_kind": "hosted-runner-vm",
+      "cpu": "AMD EPYC 7763 64-Core Processor                ",
+      "addon_sha256": "22cbd24364be30720f80d3d3e601fb7272b10f8be14d3f70a2b23d11f44be6bf",
+      "pairs": {
+        "en_zh-Hans": {
+          "samples": 1025,
+          "token_exact": 1025,
+          "fast_c1_rps": 63.67,
+          "ssru_c1_rps": 87.35,
+          "c1_gain_pct": 37.2,
+          "fast_c8_rps": 143.63,
+          "ssru_c8_rps": 211.0,
+          "c8_gain_pct": 46.9,
+          "fast_c8_p95_ms": 116.63,
+          "ssru_c8_p95_ms": 78.9
+        },
+        "zh-Hans_en": {
+          "samples": 1024,
+          "token_exact": 1024,
+          "fast_c1_rps": 71.66,
+          "ssru_c1_rps": 104.08,
+          "c1_gain_pct": 45.2,
+          "fast_c8_rps": 157.3,
+          "ssru_c8_rps": 256.95,
+          "c8_gain_pct": 63.3,
+          "fast_c8_p95_ms": 93.84,
+          "ssru_c8_p95_ms": 70.87
+        }
+      }
+    }
+  ],
+  "rejected_candidates": [
+    {
+      "name": "64-col j+=4 broadcast AVX-VNNI GEMV (exp1)",
+      "evidence": "packed decode 5,293 ms vs Gemmology 8-col k+=32 3,030 ms at c=8 (400 FLORES sentences)",
+      "reason": "8x more outer-loop broadcasts/loads degraded throughput on hybrid P+E cores"
+    },
+    {
+      "name": "Per-sentence 32-col panel-transposed FP32 shortlist (exp2)",
+      "evidence": "wall 2,855 ms vs 1,392 ms with shared L3 Q8 table",
+      "reason": "8 private 2.2 MB buffers (17.6 MB) still evicted 7.08 MB packed decoder weights from L3 cache"
+    },
+    {
+      "name": "Scalar/FMA native Attention & LayerNorm (EXP_NATIVE_ATTN / EXP_NATIVE_NORM)",
+      "evidence": "183 vs 197 rps and 17 / 68 token diffs out of 2,049",
+      "reason": "Slower than MLAS SIMD and drifted across dynamic quantization boundaries"
+    },
+    {
+      "name": "Unreranked FP16 / Unreranked INT8 shortlist (exp5)",
+      "evidence": "165/997 diffs on EN->ZH FLORES dev (chrF++ -0.0761)",
+      "reason": "Two-stage INT8 + Cauchy-Schwarz exact FP32 rerank achieves identical L3 residency with 0/4,043 diffs"
+    },
+    {
+      "name": "Loose Holder L1/L_inf shortlist pruning bound",
+      "evidence": "EN->ZH c=8 dropped from 321.5 rps to 121.0 rps",
+      "reason": "31.8-logit worst-case bound reranked ~100% of candidate rows in FP32, re-polluting L3; replaced by per-row Cauchy-Schwarz L2 bound (~0.5-logit error, 321.5 rps)"
+    },
+    {
+      "name": "ORT DisableCpuMemArena / enable_memory_arena_shrinkage",
+      "evidence": "DisableCpuMemArena: 347.95 -> 262.93 rps (-24.4%), peak RSS 357.5 -> 376.2 MiB; shrinkage: 339.78 rps, no RSS drop",
+      "reason": "Per-step heap malloc/free contention hurt throughput and raised fragmentation"
+    }
+  ]
+}

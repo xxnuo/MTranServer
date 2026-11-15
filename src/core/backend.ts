@@ -63,10 +63,10 @@ async function release(session?: ort.InferenceSession) {
   catch (error) { logger.debug(`ONNX session release failed: ${error}`); }
 }
 
-export async function selectBackend(model: string, probe: (session: ort.InferenceSession, short?: boolean) => Promise<void>, cpuThreads?: number, identity?: string, cpuGraphOnly = false) {
+export async function selectBackend(model: string, probe: (session: ort.InferenceSession, short?: boolean) => Promise<void>, cpuThreads?: number, identity?: string, cpuGraphOnly = false, skipCpuSweep = false) {
   if (cpuThreads !== undefined && (!Number.isInteger(cpuThreads) || cpuThreads < 0)) throw new Error('cpu-threads must be a non-negative integer');
   const cpuOnly = cpuGraphOnly || process.env.MT_CPU_ONLY === 'true';
-  const cacheKey = identity ? `${identity}:${cpuThreads ?? 'auto'}:${cpuOnly}` : undefined;
+  const cacheKey = identity ? `${identity}:${cpuThreads ?? 'auto'}:${cpuOnly}:${skipCpuSweep}` : undefined;
   const cached = cacheKey ? selections.get(cacheKey) : undefined;
   if (cached) {
     let session: ort.InferenceSession | undefined;
@@ -77,6 +77,43 @@ export async function selectBackend(model: string, probe: (session: ort.Inferenc
     } catch {
       await release(session);
       selections.delete(cacheKey!);
+    }
+  }
+  const require = createRequire(import.meta.url);
+  const nativeDir = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch);
+  const supportedBackends = cpuOnly ? [] : ort.listSupportedBackends();
+  const hasCandidateAccelerators = supportedBackends.some(backend =>
+    backend.name !== 'cpu' && (backend.bundled || process.platform !== 'linux'
+      || !['cuda', 'tensorrt'].includes(backend.name)
+      || existsSync(path.join(nativeDir, `libonnxruntime_providers_${backend.name}.so`))));
+  if (skipCpuSweep && !hasCandidateAccelerators) {
+    const threads = cpuThreads ?? 1;
+    const measurements: BackendMeasurement[] = [];
+    for (const backend of supportedBackends) {
+      if (backend.name !== 'cpu') measurements.push({ provider: backend.name, cpuThreads: threads, error: 'Optional provider library is not installed' });
+    }
+    const measurement: BackendMeasurement = { provider: 'cpu', cpuThreads: threads, tuning: defaults };
+    let session: ort.InferenceSession | undefined;
+    try {
+      session = await createSession(model, 'cpu', threads, defaults);
+      const started = performance.now();
+      await probe(session);
+      measurement.samples = 1;
+      measurement.medianMs = performance.now() - started;
+      measurements.unshift(measurement);
+      const info: BackendInfo = { provider: 'cpu', cpuThreads: threads, tuning: defaults, maxConcurrentRuns: 1, measurements };
+      const result = { info, fallbackCpuThreads: threads, fallbackCpuTuning: defaults };
+      if (cacheKey) {
+        if (selections.size >= 32) selections.delete(selections.keys().next().value!);
+        selections.set(cacheKey, result);
+      }
+      logger.info(`ONNX selected cpu, CPU threads=${threads}, mode=${defaults.executionMode}, concurrency=1, probe=${measurement.medianMs.toFixed(2)}ms`);
+      return { session, ...result };
+    } catch (error) {
+      await release(session);
+      measurement.error = String(error);
+      measurements.unshift(measurement);
+      throw new Error(`No usable ONNX backend: ${JSON.stringify(measurements)}`);
     }
   }
   const budget = availableParallelism();
@@ -128,9 +165,7 @@ export async function selectBackend(model: string, probe: (session: ort.Inferenc
     }
   };
   await measure('cpu', cpuThreads ?? 1, defaults);
-  const require = createRequire(import.meta.url);
-  const nativeDir = path.resolve(path.dirname(require.resolve('onnxruntime-node')), '../bin/napi-v6', process.platform, process.arch);
-  for (const backend of cpuOnly ? [] : ort.listSupportedBackends()) {
+  for (const backend of supportedBackends) {
     if (backend.name === 'cpu') continue;
     if (!backend.bundled && process.platform === 'linux'
       && ['cuda', 'tensorrt'].includes(backend.name)
@@ -142,18 +177,20 @@ export async function selectBackend(model: string, probe: (session: ort.Inferenc
       ...defaults, ...(['dml', 'webgpu'].includes(backend.name) ? { enableMemPattern: false } : {}),
     });
   }
-  for (const count of threads) if (count !== (cpuThreads ?? 1)) await measure('cpu', count, defaults);
-  if (cpu && cpuThreads === undefined && budget > 32) {
-    const best = cpu.cpuThreads || budget;
-    for (const count of new Set([Math.floor(best * .75), Math.ceil(best * 1.25)])) {
-      if (count > 0 && count <= budget && !threads.includes(count)) await measure('cpu', count, defaults);
+  if (!skipCpuSweep) {
+    for (const count of threads) if (count !== (cpuThreads ?? 1)) await measure('cpu', count, defaults);
+    if (cpu && cpuThreads === undefined && budget > 32) {
+      const best = cpu.cpuThreads || budget;
+      for (const count of new Set([Math.floor(best * .75), Math.ceil(best * 1.25)])) {
+        if (count > 0 && count <= budget && !threads.includes(count)) await measure('cpu', count, defaults);
+      }
     }
-  }
-  if (cpu) {
-    await measure('cpu', cpu.cpuThreads, { ...cpu.tuning!, dynamicBlockBase: 4 });
-    for (const inter of [2, 4].filter(n => n <= budget)) {
-      const count = cpuThreads ?? Math.max(1, Math.min(cpu.cpuThreads || budget, Math.floor(budget / inter)));
-      await measure('cpu', count, { ...cpu.tuning!, executionMode: 'parallel', interOpNumThreads: inter });
+    if (cpu) {
+      await measure('cpu', cpu.cpuThreads, { ...cpu.tuning!, dynamicBlockBase: 4 });
+      for (const inter of [2, 4].filter(n => n <= budget)) {
+        const count = cpuThreads ?? Math.max(1, Math.min(cpu.cpuThreads || budget, Math.floor(budget / inter)));
+        await measure('cpu', count, { ...cpu.tuning!, executionMode: 'parallel', interOpNumThreads: inter });
+      }
     }
   }
   if (!selected || !cpu) throw new Error(`No usable ONNX backend: ${JSON.stringify(measurements)}`);

@@ -31,6 +31,7 @@ function loadBinding(): NativeBinding | undefined {
 }
 
 export function hasNativeSsru() { return loadBinding()?.ssruVersion === 1; }
+export function hasNativeAddon() { return !!loadBinding(); }
 
 export async function createNativeSession(model: string, inputNames: readonly string[], cpuThreads: number, requireSsru = false): Promise<InferenceSession | undefined> {
   const binding = loadBinding();
