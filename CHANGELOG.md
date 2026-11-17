@@ -1,15 +1,19 @@
-## v5.1.1
+## v5.4.4
 
-- 修复自动调优因探测输入达到生成上限而误报“没有可用 ONNX 后端”的问题；使用真实输入片段测速，实际翻译仍严格检查输出是否完整。
-- Docker 镜像补充 CA 证书和 Vulkan/Mesa 依赖，支持容器内 HTTPS 证书校验及 WebGPU 探测。
-- 提供默认纯 CPU、Intel、AMD 和 NVIDIA 四份 Compose 配置；默认跳过 GPU 探测，GPU 配置继续按实测性能选择后端并保留 CPU 回退。
-- Intel/AMD 配置映射 `/dev/dri`；NVIDIA 配置通过 NVIDIA Container Toolkit 使用宿主驱动，以 WebGPU/Vulkan 推理，不包含 CUDA/TensorRT 依赖。
+- 默认 Docker 镜像改为纯 CPU，不再安装 Vulkan/Mesa。需要 WebGPU 时使用 `xxnuo/mtranserver:webgpu`；Intel、AMD、NVIDIA 的 Compose 已改用该镜像。
+- Docker 镜像和默认 Compose 默认开启 Fast 模式，设置 `MT_FAST=false` 可关闭。
+- Docker 构建可用 `DEBIAN_MIRROR` 更换 Debian 软件源，默认使用中科大镜像。
+- 桌面打包前先安装 Electron 运行时，避免包管理器跳过 postinstall 后缺少运行时。
+- 发布包和 npm 包的版本跟随当前 tag，不再沿用仓库中更旧的 tag。
+- README 的 CPU 性能数据更新为 2026-11-17 的对比，同类项目中加入 LinguaSpark。
 
 ### English
 
-- Fix automatic tuning incorrectly reporting no usable ONNX backend when a timing probe reaches the generation limit. Benchmark real input fragments while still requiring complete output for actual translations.
-- Include CA certificates and Vulkan/Mesa dependencies in Docker images for HTTPS certificate verification and WebGPU discovery.
-- Provide separate CPU-only, Intel, AMD and NVIDIA Compose configurations. The default skips GPU discovery; GPU configurations retain measured backend selection and CPU fallback.
-- Map `/dev/dri` for Intel/AMD. The NVIDIA configuration uses host drivers through NVIDIA Container Toolkit for WebGPU/Vulkan inference; CUDA/TensorRT dependencies are not included.
+- The default Docker image is now CPU-only and no longer installs Vulkan/Mesa. Use `xxnuo/mtranserver:webgpu` for WebGPU; the Intel, AMD and NVIDIA Compose files now use that image.
+- The Docker image and default Compose file enable Fast mode by default. Set `MT_FAST=false` to turn it off.
+- Docker builds can change the Debian package source with `DEBIAN_MIRROR`. The default is the USTC mirror.
+- Desktop packaging installs the Electron runtime first, so a skipped package-manager postinstall does not leave the runtime missing.
+- Release and npm package versions follow the current tag instead of an older tag in the repository.
+- README CPU figures now use the 2026-11-17 comparison, and LinguaSpark is listed with similar projects.
 
 更早的更新见 [HISTORY.md](HISTORY.md)。
