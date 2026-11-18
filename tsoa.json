@@ -11,7 +11,7 @@
     "spec": {
       "info": {
         "title": "MTranServer API",
-        "version": "5.4.5",
+        "version": "5.4.6",
         "description": "Translation server API",
         "license": {
           "name": "Apache-2.0"

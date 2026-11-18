@@ -80,9 +80,19 @@ jobs:
         if: matrix.platform == 'darwin-x64' && steps.ort-cache.outputs.cache-hit != 'true' && env.ORT_BOOTSTRAP_RUN != ''
         run: |
           node -e 'const f=require("fs");const p=[".tmp/ort-bootstrap/dist/ort/darwin/x64",".tmp/ort-bootstrap/ort/darwin/x64"].find(p=>f.existsSync(p+"/provenance.json"));if(!p)throw Error("Missing pinned ORT bootstrap");f.cpSync(p,"dist/ort/darwin/x64",{recursive:true})'
+      - name: Download verified Intel Mac ORT release
+        if: matrix.platform == 'darwin-x64' && steps.ort-cache.outputs.cache-hit != 'true' && env.ORT_BOOTSTRAP_RUN == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          asset=onnxruntime-1.30.0-macos-x64.tar.gz
+          mkdir -p .tmp/ort-bootstrap dist/ort/darwin
+          gh release download ort-1.30.0-macos-x64 --repo "$GITHUB_REPOSITORY" --pattern "$asset" --dir .tmp/ort-bootstrap
+          echo "318d2f47aabb2a2c365b8fd6d96e2c32a272f36dc8941cb0a33c7097769a93d8  .tmp/ort-bootstrap/$asset" | shasum -a 256 -c
+          tar -xzf ".tmp/ort-bootstrap/$asset" -C dist/ort/darwin
       - name: Prepare Intel Mac ORT
         if: matrix.platform == 'darwin-x64'
-        run: bun scripts/prepare-ort-macos-x64.ts
+        run: bun scripts/prepare-ort-macos-x64.ts --restore-only
       - name: Prepare official Node headers
         run: bun scripts/prepare-node-headers.ts
       - name: Build target native addon
