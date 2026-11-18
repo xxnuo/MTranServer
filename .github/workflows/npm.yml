@@ -1,8 +1,8 @@
 name: Publish to NPM
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -32,9 +32,11 @@ jobs:
           bun-version: latest
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
       - name: Install Dependencies
         run: bun install --frozen-lockfile

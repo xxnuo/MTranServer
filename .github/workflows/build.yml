@@ -289,7 +289,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GH_TOKEN || github.token }}
+          token: ${{ github.token }}
           tag_name: ${{ steps.tag.outputs.tag_name }}
           name: ${{ steps.tag.outputs.tag_name }}
           target_commitish: ${{ github.sha }}
