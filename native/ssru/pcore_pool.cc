@@ -92,6 +92,8 @@ std::vector<int> parseCpuList(const char* text) {
 struct LinuxTopology {
   std::vector<int> all_pcore_cpus;
   std::vector<std::vector<int>> physical_pcore_groups;
+  std::vector<int> pcore_ht_siblings;
+  std::vector<int> ecore_cpus;
   std::vector<int> worker_cpus;
   std::size_t physical_core_count = 0;
 };
@@ -114,10 +116,20 @@ LinuxTopology detectLinuxTopology() {
   for (int c = 0; c < scan_limit; ++c) {
     if (is_allowed(c)) all_allowed_cpus.push_back(c);
   }
-  if (readFileLine("/sys/devices/cpu_core/cpus", buf, sizeof(buf))) {
+  const bool have_core_sysfs = readFileLine("/sys/devices/cpu_core/cpus", buf, sizeof(buf));
+  if (have_core_sysfs) {
     for (int c : parseCpuList(buf)) {
       if (is_allowed(c)) candidate_cpus.push_back(c);
     }
+  }
+  std::vector<int> atom_cpus;
+  const bool have_atom_sysfs = readFileLine("/sys/devices/cpu_atom/cpus", buf, sizeof(buf));
+  if (have_atom_sysfs) {
+    for (int c : parseCpuList(buf)) {
+      if (is_allowed(c)) atom_cpus.push_back(c);
+    }
+    std::sort(atom_cpus.begin(), atom_cpus.end());
+    atom_cpus.erase(std::unique(atom_cpus.begin(), atom_cpus.end()), atom_cpus.end());
   }
   if (candidate_cpus.empty()) {
     // Non-hybrid CPU (or container without cpu_core sysfs): use allowed CPUs,
@@ -166,10 +178,13 @@ LinuxTopology detectLinuxTopology() {
     topo.physical_pcore_groups.push_back(std::move(group));
   }
 
-  // Group remaining non-P-core CPUs (e.g. E-cores) by physical core siblings.
+  // Group remaining non-P-core CPUs (verified via cpu_atom sysfs when present).
   std::vector<std::vector<int>> ecore_groups;
   for (int c : all_allowed_cpus) {
     if (std::binary_search(candidate_cpus.begin(), candidate_cpus.end(), c) || visited[c]) continue;
+    if (have_core_sysfs && (!have_atom_sysfs || !std::binary_search(atom_cpus.begin(), atom_cpus.end(), c))) {
+      continue;
+    }
     char sib_path[128];
     std::snprintf(sib_path, sizeof(sib_path), "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", c);
     std::vector<int> group;
@@ -194,11 +209,17 @@ LinuxTopology detectLinuxTopology() {
     if (!g.empty()) topo.worker_cpus.push_back(g[0]);
   }
   for (const auto& g : ecore_groups) {
-    if (!g.empty()) topo.worker_cpus.push_back(g[0]);
+    if (!g.empty()) {
+      topo.ecore_cpus.push_back(g[0]);
+      topo.worker_cpus.push_back(g[0]);
+    }
   }
   topo.physical_core_count = topo.worker_cpus.size();
   for (const auto& g : topo.physical_pcore_groups) {
-    for (std::size_t i = 1; i < g.size(); ++i) topo.worker_cpus.push_back(g[i]);
+    for (std::size_t i = 1; i < g.size(); ++i) {
+      topo.pcore_ht_siblings.push_back(g[i]);
+      topo.worker_cpus.push_back(g[i]);
+    }
   }
   for (const auto& g : ecore_groups) {
     for (std::size_t i = 1; i < g.size(); ++i) topo.worker_cpus.push_back(g[i]);
@@ -242,6 +263,8 @@ struct PcorePool::Impl {
   };
 
   std::size_t pcore_count = 1;
+  std::size_t pcore_logical_count = 1;
+  std::size_t ecore_count = 0;
 #if defined(__linux__)
   LinuxTopology topo;
 #endif
@@ -264,16 +287,23 @@ struct PcorePool::Impl {
     topo = detectLinuxTopology();
     if (!topo.physical_pcore_groups.empty()) {
       pcore_count = topo.physical_pcore_groups.size();
+      std::size_t logical = 0;
+      for (const auto& g : topo.physical_pcore_groups) logical += g.size();
+      pcore_logical_count = std::max(pcore_count, logical);
     } else {
       pcore_count = std::max<std::size_t>(1, std::thread::hardware_concurrency());
+      pcore_logical_count = pcore_count;
     }
+    ecore_count = topo.ecore_cpus.size();
 #elif defined(__APPLE__)
     pcore_count = detectApplePcores();
+    pcore_logical_count = pcore_count;
 #else
     const unsigned hw = std::thread::hardware_concurrency();
     pcore_count = hw > 0 ? static_cast<std::size_t>(hw) : 1;
+    pcore_logical_count = pcore_count;
 #endif
-    const std::size_t nworkers = pcore_count > 1 ? pcore_count - 1 : 0;
+    const std::size_t nworkers = pcore_logical_count > 1 ? pcore_logical_count - 1 : 0;
     if (nworkers == 0) return;
 
     // Allocate slots before spawning workers so pointers remain immutable.
@@ -284,6 +314,9 @@ struct PcorePool::Impl {
 #if defined(__linux__)
         if (w + 1 < topo.physical_pcore_groups.size()) {
           pinMask(topo.physical_pcore_groups[w + 1]);
+        } else if (!topo.pcore_ht_siblings.empty()) {
+          const std::size_t ht_idx = w + 1 - topo.physical_pcore_groups.size();
+          pinMask({topo.pcore_ht_siblings[ht_idx % topo.pcore_ht_siblings.size()]});
         } else if (!topo.all_pcore_cpus.empty()) {
           pinMask(topo.all_pcore_cpus);
         }
@@ -360,6 +393,14 @@ std::size_t PcorePool::pcoreCount() const noexcept {
   return impl_->pcore_count;
 }
 
+std::size_t PcorePool::pcoreLogicalCount() const noexcept {
+  return impl_->pcore_logical_count;
+}
+
+std::size_t PcorePool::ecoreCount() const noexcept {
+  return impl_->ecore_count;
+}
+
 std::size_t PcorePool::recommendedWorkerCount() noexcept {
   const std::size_t hw = std::max<std::size_t>(1, std::thread::hardware_concurrency());
 #if defined(__linux__)
@@ -396,6 +437,34 @@ void PcorePool::pinWorkerThread(std::size_t worker_idx) noexcept {
 #else
   (void)worker_idx;
 #endif
+}
+
+void PcorePool::pinEcoreThread(std::size_t ecore_idx) noexcept {
+#if defined(__linux__)
+  const auto& ecpus = instance().impl_->topo.ecore_cpus;
+  if (!ecpus.empty()) {
+    pinMask({ecpus[ecore_idx % ecpus.size()]});
+  }
+#else
+  (void)ecore_idx;
+#endif
+}
+
+bool TeamBarrier::arriveAndWaitSlow() noexcept {
+  if (cancelled_.load(std::memory_order_acquire)) return false;
+  const std::size_t gen = generation_.load(std::memory_order_relaxed);
+  if (waiting_.fetch_add(1, std::memory_order_acq_rel) + 1 == nthreads_) {
+    waiting_.store(0, std::memory_order_relaxed);
+    generation_.store(gen + 1, std::memory_order_release);
+    return !cancelled_.load(std::memory_order_acquire);
+  }
+  for (;;) {
+    if (cancelled_.load(std::memory_order_acquire)) return false;
+    if (generation_.load(std::memory_order_acquire) != gen) {
+      return !cancelled_.load(std::memory_order_acquire);
+    }
+    cpuRelax();
+  }
 }
 
 void PcorePool::runTeam(std::size_t max_threads,

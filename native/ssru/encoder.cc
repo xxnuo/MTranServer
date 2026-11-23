@@ -251,6 +251,7 @@ void EncodedBatch::populate_requests(std::vector<Request>& requests) const {
   requests.resize(batch_size);
   for (std::size_t b = 0; b < batch_size; ++b) {
     requests[b].source_length = lengths_[b];
+    requests[b].prevalidated_kv = true;
     requests[b].keys.resize(dec_depth_);
     requests[b].values.resize(dec_depth_);
     for (std::size_t d = 0; d < dec_depth_; ++d) {
@@ -619,59 +620,47 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
     if (native_) {
       auto& pool = PcorePool::instance();
       const std::size_t capped = std::max<std::size_t>(1, max_threads);
-      const std::size_t base_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
-      const auto effThreads = [&]() noexcept -> std::size_t {
-        if (active_submitted && active_submitted->load(std::memory_order_relaxed) > 1) return 1;
-        return base_threads;
-      };
+      const std::size_t team_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+      (void)active_submitted;
 
       s.a_q.resize(multiply(total_tokens, std::max(dim, max_ffn_width_)));
       s.a_scales.resize(total_tokens);
       s.a_zps.resize(total_tokens);
-      s.relu_maxs.resize(multiply(base_threads, total_tokens));
-      s.scores.resize(multiply(base_threads, multiply(heads, max_len)));
+      s.relu_maxs.resize(multiply(team_threads, total_tokens));
+      s.scores.resize(multiply(team_threads, multiply(heads, max_len)));
 
-      // Step 1: Embed + sqrt(dim) + sinusoidal positional encoding (ragged).
-      for (std::size_t b = 0; b < batch_size; ++b) {
-        const auto* seq = inputs[b];
-        const std::size_t len = lengths[b];
-        const std::size_t off = out.offsets_[b];
-        for (std::size_t p = 0; p < len; ++p) {
-          const auto tok = static_cast<std::size_t>(seq[p]);
-          float* dst = s.x.data() + (off + p) * dim;
-          if (p < kPosTableMaxPos) {
-            if (int8_embedding_.data) {
-              native_->pos_table.addScaledEmbedInt8(
-                  int8_embedding_.data + tok * dim, int8_embedding_.scale, emb_scale, p, dst);
-            } else {
-              native_->pos_table.addScaledEmbed(
-                  embedding_.data + tok * dim, emb_scale, p, dst);
+      const std::size_t num_kv = native_->kv_mats.size();
+      const std::size_t qkv_chunks_per_mat = dim / 32;
+      const std::size_t total_qkv_chunks = 3 * qkv_chunks_per_mat;
+      const std::size_t total_attn_heads = batch_size * heads;
+      const std::size_t kv_chunks_per_mat = dim / 32;
+      const std::size_t total_kv_chunks = num_kv * kv_chunks_per_mat;
+      const std::size_t total_scatter = batch_size * num_kv;
+      const std::size_t scratch_stride = heads * max_len;
+
+      TeamBarrier barrier(team_threads);
+      pool.parallelFor(team_threads, [&](std::size_t tid, std::size_t nt) {
+        struct BarrierCancelGuard {
+          TeamBarrier& b;
+          bool done = false;
+          ~BarrierCancelGuard() {
+            if (!done) b.cancel();
+          }
+        } cancel_guard{barrier};
+
+        const std::size_t tb = (total_tokens * tid) / nt;
+        const std::size_t te = (total_tokens * (tid + 1)) / nt;
+
+        auto quantizeX = [&](const float* src, std::size_t cols) {
+          if (batch_size == 1) {
+            if (tid == 0) {
+              float sb = 0.0f;
+              std::uint8_t zb = 0;
+              packed::quantizeLinearU8(src, lengths[0], cols, s.a_q.data(), sb, zb);
+              std::fill_n(s.a_scales.data(), lengths[0], sb);
+              std::fill_n(s.a_zps.data(), lengths[0], zb);
             }
           } else {
-            const float fp = static_cast<float>(p);
-            if (int8_embedding_.data) {
-              const auto* row = int8_embedding_.data + tok * dim;
-              const float ws = int8_embedding_.scale;
-              for (std::size_t d = 0; d < dim; ++d) {
-                const float e = (static_cast<float>(row[d]) * ws) * emb_scale;
-                dst[d] = e + std::sin(fp * frequency_[d] + offset_[d]);
-              }
-            } else {
-              const auto* row = embedding_.data + tok * dim;
-              for (std::size_t d = 0; d < dim; ++d) {
-                dst[d] = row[d] * emb_scale + std::sin(fp * frequency_[d] + offset_[d]);
-              }
-            }
-          }
-        }
-      }
-      finite(s.x.data(), total_dim, "encoder embedding");
-
-      const auto quantizePerSentence = [&](const float* src, std::size_t cols) {
-        const std::size_t threads = effThreads();
-        if (threads > 1 && batch_size >= 2) {
-          const std::size_t team = std::min(threads, batch_size);
-          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
             for (std::size_t b = tid; b < batch_size; b += nt) {
               const std::size_t off = out.offsets_[b];
               const std::size_t len = lengths[b];
@@ -682,200 +671,159 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
               std::fill_n(s.a_scales.data() + off, len, sb);
               std::fill_n(s.a_zps.data() + off, len, zb);
             }
-          });
-        } else {
-          for (std::size_t b = 0; b < batch_size; ++b) {
-            const std::size_t off = out.offsets_[b];
-            const std::size_t len = lengths[b];
-            float sb = 0.0f;
-            std::uint8_t zb = 0;
-            packed::quantizeLinearU8(src + off * cols, len, cols,
-                                     s.a_q.data() + off * cols, sb, zb);
-            std::fill_n(s.a_scales.data() + off, len, sb);
-            std::fill_n(s.a_zps.data() + off, len, zb);
           }
-        }
-      };
+        };
 
-      const auto shardMatmul = [&](const PackedLinear& pl, float* dst, bool relu) {
-        const std::size_t threads = effThreads();
-        const std::size_t chunks = pl.cols / 32;
-        if (threads <= 1 || chunks <= 1) {
-          runMultiplySlice(pl, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                           total_tokens, dst, pl.cols, s.relu_maxs.data(), relu, 0, pl.cols);
-        } else {
-          const std::size_t team = std::min(threads, chunks);
-          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-            const std::size_t cb = (chunks * tid) / nt;
-            const std::size_t ce = (chunks * (tid + 1)) / nt;
-            if (cb < ce) {
-              runMultiplySlice(pl, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                               total_tokens, dst, pl.cols,
-                               s.relu_maxs.data() + tid * total_tokens,
-                               relu, cb * 32, ce * 32);
-            }
-          });
-        }
-      };
-
-      const auto normAndAdd = [&](const float* residual_add, const float* scale, const float* bias) {
-        const std::size_t threads = effThreads();
-        if (threads <= 1 || total_tokens < 4) {
-          for (std::size_t i = 0; i < total_dim; ++i) s.x[i] += residual_add[i];
-          ops::instanceNormAffine(s.x.data(), scale, bias, total_tokens, dim, s.x.data());
-        } else {
-          const std::size_t team = std::min(threads, total_tokens);
-          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-            const std::size_t rb = (total_tokens * tid) / nt;
-            const std::size_t re = (total_tokens * (tid + 1)) / nt;
-            if (rb < re) {
-              const std::size_t start = rb * dim;
-              const std::size_t end = re * dim;
-              for (std::size_t i = start; i < end; ++i) s.x[i] += residual_add[i];
-              ops::instanceNormAffine(s.x.data() + start, scale, bias, re - rb, dim,
-                                      s.x.data() + start);
-            }
-          });
-        }
-      };
-
-      const std::size_t qkv_chunks_per_mat = dim / 32;
-      const std::size_t total_qkv_chunks = 3 * qkv_chunks_per_mat;
-      const std::size_t total_attn_heads = batch_size * heads;
-
-      for (const auto& layer : native_->layers) {
-        // 1. Single shared quantization of x -> Q, K, V in one parallel team.
-        quantizePerSentence(s.x.data(), dim);
-        const PackedLinear* qkv_mats[3] = {&layer.q, &layer.k, &layer.v};
-        float* qkv_outs[3] = {s.q.data(), s.k.data(), s.v.data()};
-        const std::size_t qkv_threads = effThreads();
-        if (qkv_threads <= 1) {
-          for (std::size_t m = 0; m < 3; ++m) {
-            runMultiplySlice(*qkv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                             total_tokens, qkv_outs[m], dim, nullptr, false, 0, dim);
+        auto shardCols = [&](const PackedLinear& pl, float* dst, bool relu) {
+          const std::size_t chunks = pl.cols / 32;
+          const std::size_t cb = (chunks * tid) / nt;
+          const std::size_t ce = (chunks * (tid + 1)) / nt;
+          if (cb < ce) {
+            runMultiplySlice(pl, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                             total_tokens, dst, pl.cols,
+                             s.relu_maxs.data() + tid * total_tokens,
+                             relu, cb * 32, ce * 32);
           }
-        } else {
-          const std::size_t team = std::min(qkv_threads, total_qkv_chunks);
-          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-            const std::size_t gb = (total_qkv_chunks * tid) / nt;
-            const std::size_t ge = (total_qkv_chunks * (tid + 1)) / nt;
-            for (std::size_t m = 0; m < 3; ++m) {
-              const std::size_t mb = m * qkv_chunks_per_mat;
-              const std::size_t me = mb + qkv_chunks_per_mat;
-              const std::size_t lb = std::max(gb, mb);
-              const std::size_t le = std::min(ge, me);
-              if (lb < le) {
-                runMultiplySlice(*qkv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                                 total_tokens, qkv_outs[m], dim, nullptr, false,
-                                 (lb - mb) * 32, (le - mb) * 32);
+        };
+
+        auto normAddSlice = [&](const float* residual_add, const float* scale, const float* bias) {
+          if (tb < te) {
+            const std::size_t start = tb * dim;
+            const std::size_t end = te * dim;
+            for (std::size_t i = start; i < end; ++i) s.x[i] += residual_add[i];
+            ops::instanceNormAffine(s.x.data() + start, scale, bias, te - tb, dim,
+                                    s.x.data() + start);
+          }
+        };
+
+        // Step 1: Embed + sqrt(dim) + sinusoidal positional encoding (sharded by token).
+        if (tb < te) {
+          std::size_t cur_b = 0;
+          while (cur_b + 1 < batch_size && tb >= out.offsets_[cur_b] + lengths[cur_b]) ++cur_b;
+          for (std::size_t t = tb; t < te; ++t) {
+            while (t >= out.offsets_[cur_b] + lengths[cur_b]) ++cur_b;
+            const std::size_t p = t - out.offsets_[cur_b];
+            const auto tok = static_cast<std::size_t>(inputs[cur_b][p]);
+            float* dst = s.x.data() + t * dim;
+            if (p < kPosTableMaxPos) {
+              if (int8_embedding_.data) {
+                native_->pos_table.addScaledEmbedInt8(
+                    int8_embedding_.data + tok * dim, int8_embedding_.scale, emb_scale, p, dst);
+              } else {
+                native_->pos_table.addScaledEmbed(
+                    embedding_.data + tok * dim, emb_scale, p, dst);
+              }
+            } else {
+              const float fp = static_cast<float>(p);
+              if (int8_embedding_.data) {
+                const auto* row = int8_embedding_.data + tok * dim;
+                const float ws = int8_embedding_.scale;
+                for (std::size_t d = 0; d < dim; ++d) {
+                  const float e = (static_cast<float>(row[d]) * ws) * emb_scale;
+                  dst[d] = e + std::sin(fp * frequency_[d] + offset_[d]);
+                }
+              } else {
+                const auto* row = embedding_.data + tok * dim;
+                for (std::size_t d = 0; d < dim; ++d) {
+                  dst[d] = row[d] * emb_scale + std::sin(fp * frequency_[d] + offset_[d]);
+                }
               }
             }
-          });
+          }
+          finite(s.x.data() + tb * dim, (te - tb) * dim, "encoder embedding");
         }
+        if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
 
-        // 2. Per-sentence ragged self-attention across (batch, head) slices.
-        const std::size_t attn_threads = effThreads();
-        if (attn_threads <= 1) {
-          for (std::size_t b = 0; b < batch_size; ++b) {
+        for (const auto& layer : native_->layers) {
+          // 1. Single shared quantization of x -> Q, K, V in one parallel slice.
+          quantizeX(s.x.data(), dim);
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+
+          const PackedLinear* qkv_mats[3] = {&layer.q, &layer.k, &layer.v};
+          float* qkv_outs[3] = {s.q.data(), s.k.data(), s.v.data()};
+          const std::size_t qgb = (total_qkv_chunks * tid) / nt;
+          const std::size_t qge = (total_qkv_chunks * (tid + 1)) / nt;
+          for (std::size_t m = 0; m < 3; ++m) {
+            const std::size_t mb = m * qkv_chunks_per_mat;
+            const std::size_t me = mb + qkv_chunks_per_mat;
+            const std::size_t lb = std::max(qgb, mb);
+            const std::size_t le = std::min(qge, me);
+            if (lb < le) {
+              runMultiplySlice(*qkv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                               total_tokens, qkv_outs[m], dim, nullptr, false,
+                               (lb - mb) * 32, (le - mb) * 32);
+            }
+          }
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+
+          // 2. Per-sentence ragged self-attention across (batch, head) slices.
+          float* t_scores = s.scores.data() + tid * scratch_stride;
+          for (std::size_t idx = tid; idx < total_attn_heads; idx += nt) {
+            const std::size_t b = idx / heads;
+            const std::size_t h = idx % heads;
             const std::size_t off = out.offsets_[b] * dim;
             ops::selfAttention(s.q.data() + off, s.k.data() + off, s.v.data() + off,
-                               lengths[b], heads, head_dim, s.scores.data(),
-                               s.attn.data() + off, 0, heads);
+                               lengths[b], heads, head_dim, t_scores,
+                               s.attn.data() + off, h, h + 1);
           }
-        } else {
-          const std::size_t team = std::min(attn_threads, total_attn_heads);
-          const std::size_t scratch_stride = heads * max_len;
-          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-            float* t_scores = s.scores.data() + tid * scratch_stride;
-            for (std::size_t idx = tid; idx < total_attn_heads; idx += nt) {
-              const std::size_t b = idx / heads;
-              const std::size_t h = idx % heads;
-              const std::size_t off = out.offsets_[b] * dim;
-              ops::selfAttention(s.q.data() + off, s.k.data() + off, s.v.data() + off,
-                                 lengths[b], heads, head_dim, t_scores,
-                                 s.attn.data() + off, h, h + 1);
-            }
-          });
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+
+          // 3. Wo + residual + instanceNormAffine.
+          quantizeX(s.attn.data(), dim);
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          shardCols(layer.o, s.proj.data(), false);
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          normAddSlice(s.proj.data(), layer.self_ln_scale, layer.self_ln_bias);
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+
+          // 4. FFN + residual + instanceNormAffine.
+          const float* ffn_in = s.x.data();
+          for (std::size_t j = 0; j < layer.ffn.size(); ++j) {
+            const bool has_relu = (j + 1 < layer.ffn.size());
+            float* ffn_out = has_relu ? (j % 2 ? s.ffn_b.data() : s.ffn_a.data()) : s.proj.data();
+            quantizeX(ffn_in, layer.ffn[j].rows);
+            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            shardCols(layer.ffn[j], ffn_out, has_relu);
+            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            ffn_in = ffn_out;
+          }
+          normAddSlice(ffn_in, layer.ffn_ln_scale, layer.ffn_ln_bias);
+          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
         }
 
-        // 3. Wo + residual + instanceNormAffine.
-        quantizePerSentence(s.attn.data(), dim);
-        shardMatmul(layer.o, s.proj.data(), false);
-        normAndAdd(s.proj.data(), layer.self_ln_scale, layer.self_ln_bias);
+        // 5. Fused decoder K/V projections sharing one quantization of encoder output.
+        quantizeX(s.x.data(), dim);
+        if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
 
-        // 4. FFN + residual + instanceNormAffine.
-        const float* ffn_in = s.x.data();
-        for (std::size_t j = 0; j < layer.ffn.size(); ++j) {
-          const bool has_relu = (j + 1 < layer.ffn.size());
-          float* ffn_out = has_relu ? (j % 2 ? s.ffn_b.data() : s.ffn_a.data()) : s.proj.data();
-          quantizePerSentence(ffn_in, layer.ffn[j].rows);
-          shardMatmul(layer.ffn[j], ffn_out, has_relu);
-          ffn_in = ffn_out;
-        }
-        normAndAdd(ffn_in, layer.ffn_ln_scale, layer.ffn_ln_bias);
-      }
-
-      // 5. Fused decoder K/V projections sharing one quantization of encoder output.
-      quantizePerSentence(s.x.data(), dim);
-      const std::size_t num_kv = native_->kv_mats.size();
-      const std::size_t kv_chunks_per_mat = dim / 32;
-      const std::size_t total_kv_chunks = num_kv * kv_chunks_per_mat;
-      const std::size_t kv_threads = effThreads();
-      if (kv_threads <= 1) {
+        const std::size_t kgb = (total_kv_chunks * tid) / nt;
+        const std::size_t kge = (total_kv_chunks * (tid + 1)) / nt;
         for (std::size_t m = 0; m < num_kv; ++m) {
-          runMultiplySlice(native_->kv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                           total_tokens, s.kv_proj.data() + m * total_dim, dim,
-                           nullptr, false, 0, dim);
-        }
-      } else {
-        const std::size_t team = std::min(kv_threads, total_kv_chunks);
-        pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-          const std::size_t gb = (total_kv_chunks * tid) / nt;
-          const std::size_t ge = (total_kv_chunks * (tid + 1)) / nt;
-          for (std::size_t m = 0; m < num_kv; ++m) {
-            const std::size_t mb = m * kv_chunks_per_mat;
-            const std::size_t me = mb + kv_chunks_per_mat;
-            const std::size_t lb = std::max(gb, mb);
-            const std::size_t le = std::min(ge, me);
-            if (lb < le) {
-              runMultiplySlice(native_->kv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                               total_tokens, s.kv_proj.data() + m * total_dim, dim,
-                               nullptr, false, (lb - mb) * 32, (le - mb) * 32);
-            }
+          const std::size_t mb = m * kv_chunks_per_mat;
+          const std::size_t me = mb + kv_chunks_per_mat;
+          const std::size_t lb = std::max(kgb, mb);
+          const std::size_t le = std::min(kge, me);
+          if (lb < le) {
+            runMultiplySlice(native_->kv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                             total_tokens, s.kv_proj.data() + m * total_dim, dim,
+                             nullptr, false, (lb - mb) * 32, (le - mb) * 32);
           }
-        });
-      }
-      finite(s.kv_proj.data(), s.kv_proj.size(), "encoder KV projections");
+        }
+        if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
 
-      // Direct transpose into decoder K [heads, head_dim, src_len] and V [heads, src_len, head_dim].
-      const std::size_t total_scatter = batch_size * num_kv;
-      const std::size_t scatter_threads = effThreads();
-      if (scatter_threads <= 1 || total_scatter <= 1) {
-        for (std::size_t idx = 0; idx < total_scatter; ++idx) {
+        // Check finite & direct-transpose into decoder K/V slices (zero extra barrier).
+        for (std::size_t idx = tid; idx < total_scatter; idx += nt) {
           const std::size_t b = idx / num_kv;
           const std::size_t m = idx % num_kv;
           const std::size_t d_layer = m / 2;
           const bool is_v = (m % 2) == 1;
+          const float* src_kv = s.kv_proj.data() + m * total_dim + out.offsets_[b] * dim;
+          finite(src_kv, lengths[b] * dim, "encoder KV projections");
           float* dst_base = is_v ? out.vals_data_.data() : out.keys_data_.data();
-          transposeKV(s.kv_proj.data() + m * total_dim + out.offsets_[b] * dim,
-                      heads, head_dim, lengths[b], is_v,
+          transposeKV(src_kv, heads, head_dim, lengths[b], is_v,
                       dst_base + (d_layer * total_tokens + out.offsets_[b]) * dim);
         }
-      } else {
-        const std::size_t team = std::min(scatter_threads, total_scatter);
-        pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-          for (std::size_t idx = tid; idx < total_scatter; idx += nt) {
-            const std::size_t b = idx / num_kv;
-            const std::size_t m = idx % num_kv;
-            const std::size_t d_layer = m / 2;
-            const bool is_v = (m % 2) == 1;
-            float* dst_base = is_v ? out.vals_data_.data() : out.keys_data_.data();
-            transposeKV(s.kv_proj.data() + m * total_dim + out.offsets_[b] * dim,
-                        heads, head_dim, lengths[b], is_v,
-                        dst_base + (d_layer * total_tokens + out.offsets_[b]) * dim);
-          }
-        });
-      }
+        cancel_guard.done = true;
+      });
       return;
     }
 #else
@@ -962,6 +910,8 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                     out.vals_data_.data() + (d * total_tokens + off) * dim);
       }
     }
+    finite(out.keys_data_.data(), multiply(dec_depth, total_dim), "encoder scalar keys");
+    finite(out.vals_data_.data(), multiply(dec_depth, total_dim), "encoder scalar vals");
   } catch (...) {
     out.dec_depth_ = 0;
     out.heads_ = 0;

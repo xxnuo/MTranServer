@@ -13,9 +13,10 @@ constexpr unsigned x86Features(unsigned leaf1_ecx, unsigned leaf7_ebx,
                                std::uint64_t xcr0) noexcept {
   if ((leaf1_ecx & 0x18000000u) != 0x18000000u || (xcr0 & 6) != 6 || !(leaf7_ebx & (1u << 5))) return 0;
   unsigned result = Avx2;
-  if (leaf71_eax & (1u << 4)) result |= AvxVnni;
-  // ORT's AVX512VNNI kernel also requires F/DQ/BW/VL and opmask/ZMM OS state.
-  if ((leaf7_ebx & 0xc0030000u) == 0xc0030000u && (leaf7_ecx & (1u << 11)) && (xcr0 & 0xe6) == 0xe6)
+  const bool has_fma = (leaf1_ecx & (1u << 12)) != 0;
+  if (has_fma && (leaf71_eax & (1u << 4))) result |= AvxVnni;
+  // ORT's AVX512VNNI kernel also requires FMA, F/DQ/BW/VL, and opmask/ZMM OS state.
+  if (has_fma && (leaf7_ebx & 0xc0030000u) == 0xc0030000u && (leaf7_ecx & (1u << 11)) && (xcr0 & 0xe6) == 0xe6)
     result |= Avx512Vnni;
   return result;
 }
@@ -113,7 +114,7 @@ class ShortlistTable {
 
   std::size_t argmax(const float* x, const std::int64_t* candidate_ids,
                      std::size_t candidate_count, Workspace& workspace,
-                     bool prevalidated = false) const;
+                     bool prevalidated = false, float* out_best_logit = nullptr) const;
 
   // Batched masked-union shortlist argmax for rows <= 32. Writes winning token IDs into out_tokens.
   void argMaxBatch(const float* x_rows, std::size_t rows, std::size_t x_stride,

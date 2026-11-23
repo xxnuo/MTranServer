@@ -144,7 +144,7 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
     return;
   }
 
-  // Batched GEMM (rows >= 2): 16-col outer strips keep B in L1; 4x16 (8 accs + 4 va + 2 vb = 14 YMM) zero-spill.
+  // Batched GEMM (rows >= 2): 16-col outer strips keep B in L1; zero-spill 6x16 + 4x16 + 2x-unrolled 2x16.
   std::size_t col = col_begin;
   const std::size_t m = 0;
   for (; col + 16 <= col_end; col += 16) {
@@ -153,6 +153,51 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
     const __m256i s0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sums + col));
     const __m256i s1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sums + col + 8));
     std::size_t mr = m;
+    for (; mr + 6 <= rows; mr += 6) {
+      const std::uint8_t* a0 = a_q + (mr + 0) * a_stride;
+      const std::uint8_t* a1 = a_q + (mr + 1) * a_stride;
+      const std::uint8_t* a2 = a_q + (mr + 2) * a_stride;
+      const std::uint8_t* a3 = a_q + (mr + 3) * a_stride;
+      const std::uint8_t* a4 = a_q + (mr + 4) * a_stride;
+      const std::uint8_t* a5 = a_q + (mr + 5) * a_stride;
+      __m256i c00 = _mm256_setzero_si256(), c01 = _mm256_setzero_si256();
+      __m256i c10 = _mm256_setzero_si256(), c11 = _mm256_setzero_si256();
+      __m256i c20 = _mm256_setzero_si256(), c21 = _mm256_setzero_si256();
+      __m256i c30 = _mm256_setzero_si256(), c31 = _mm256_setzero_si256();
+      __m256i c40 = _mm256_setzero_si256(), c41 = _mm256_setzero_si256();
+      __m256i c50 = _mm256_setzero_si256(), c51 = _mm256_setzero_si256();
+      const std::int8_t* b0 = b0_base;
+      const std::int8_t* b1 = b1_base;
+      for (std::size_t r = 0; r < k; r += 4, b0 += 32, b1 += 32) {
+        const __m256i vb0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0));
+        const __m256i vb1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1));
+        std::int32_t x0, x1, x2, x3, x4, x5;
+        std::memcpy(&x0, a0 + r, 4); std::memcpy(&x1, a1 + r, 4);
+        std::memcpy(&x2, a2 + r, 4); std::memcpy(&x3, a3 + r, 4);
+        std::memcpy(&x4, a4 + r, 4); std::memcpy(&x5, a5 + r, 4);
+        __m256i va_a = _mm256_set1_epi32(x0), va_b = _mm256_set1_epi32(x1);
+        c00 = _mm256_dpbusd_avx_epi32(c00, va_a, vb0); c01 = _mm256_dpbusd_avx_epi32(c01, va_a, vb1);
+        va_a = _mm256_set1_epi32(x2);
+        c10 = _mm256_dpbusd_avx_epi32(c10, va_b, vb0); c11 = _mm256_dpbusd_avx_epi32(c11, va_b, vb1);
+        va_b = _mm256_set1_epi32(x3);
+        c20 = _mm256_dpbusd_avx_epi32(c20, va_a, vb0); c21 = _mm256_dpbusd_avx_epi32(c21, va_a, vb1);
+        va_a = _mm256_set1_epi32(x4);
+        c30 = _mm256_dpbusd_avx_epi32(c30, va_b, vb0); c31 = _mm256_dpbusd_avx_epi32(c31, va_b, vb1);
+        va_b = _mm256_set1_epi32(x5);
+        c40 = _mm256_dpbusd_avx_epi32(c40, va_a, vb0); c41 = _mm256_dpbusd_avx_epi32(c41, va_a, vb1);
+        c50 = _mm256_dpbusd_avx_epi32(c50, va_b, vb0); c51 = _mm256_dpbusd_avx_epi32(c51, va_b, vb1);
+      }
+      const __m256i accs[6][2] = {{c00, c01}, {c10, c11}, {c20, c21}, {c30, c31}, {c40, c41}, {c50, c51}};
+      for (std::size_t i = 0; i < 6; ++i) {
+        const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(a_zps[mr + i]));
+        const __m256 vsc = _mm256_set1_ps(a_scales[mr + i] * w_scale);
+        __m256 vmax = relu_minmax && out_maxs ? _mm256_set1_ps(out_maxs[mr + i]) : _mm256_setzero_ps();
+        float* dst = out + (mr + i) * out_stride + col;
+        store8Vnni(accs[i][0], vzp, s0, vsc, fused_bias, separate_bias, col, dst, relu_minmax, vmax);
+        store8Vnni(accs[i][1], vzp, s1, vsc, fused_bias, separate_bias, col + 8, dst + 8, relu_minmax, vmax);
+        if (relu_minmax && out_maxs) out_maxs[mr + i] = hmax256Vnni(vmax);
+      }
+    }
     for (; mr + 4 <= rows; mr += 4) {
       const std::uint8_t* a0 = a_q + (mr + 0) * a_stride;
       const std::uint8_t* a1 = a_q + (mr + 1) * a_stride;
@@ -193,9 +238,27 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
       const std::uint8_t* a1 = a_q + (mr + 1) * a_stride;
       __m256i c00 = _mm256_setzero_si256(), c01 = _mm256_setzero_si256();
       __m256i c10 = _mm256_setzero_si256(), c11 = _mm256_setzero_si256();
+      __m256i d00 = _mm256_setzero_si256(), d01 = _mm256_setzero_si256();
+      __m256i d10 = _mm256_setzero_si256(), d11 = _mm256_setzero_si256();
       const std::int8_t* b0 = b0_base;
       const std::int8_t* b1 = b1_base;
-      for (std::size_t r = 0; r < k; r += 4, b0 += 32, b1 += 32) {
+      std::size_t r = 0;
+      for (; r + 8 <= k; r += 8, b0 += 64, b1 += 64) {
+        const __m256i vb0a = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0));
+        const __m256i vb1a = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1));
+        std::int32_t x0a, x1a, x0b, x1b;
+        std::memcpy(&x0a, a0 + r, 4); std::memcpy(&x1a, a1 + r, 4);
+        std::memcpy(&x0b, a0 + r + 4, 4); std::memcpy(&x1b, a1 + r + 4, 4);
+        const __m256i va0a = _mm256_set1_epi32(x0a), va1a = _mm256_set1_epi32(x1a);
+        c00 = _mm256_dpbusd_avx_epi32(c00, va0a, vb0a); c01 = _mm256_dpbusd_avx_epi32(c01, va0a, vb1a);
+        c10 = _mm256_dpbusd_avx_epi32(c10, va1a, vb0a); c11 = _mm256_dpbusd_avx_epi32(c11, va1a, vb1a);
+        const __m256i vb0b = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32));
+        const __m256i vb1b = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1 + 32));
+        const __m256i va0b = _mm256_set1_epi32(x0b), va1b = _mm256_set1_epi32(x1b);
+        d00 = _mm256_dpbusd_avx_epi32(d00, va0b, vb0b); d01 = _mm256_dpbusd_avx_epi32(d01, va0b, vb1b);
+        d10 = _mm256_dpbusd_avx_epi32(d10, va1b, vb0b); d11 = _mm256_dpbusd_avx_epi32(d11, va1b, vb1b);
+      }
+      for (; r < k; r += 4, b0 += 32, b1 += 32) {
         const __m256i vb0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0));
         const __m256i vb1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1));
         std::int32_t x0, x1;
@@ -204,6 +267,8 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
         c00 = _mm256_dpbusd_avx_epi32(c00, va0, vb0); c01 = _mm256_dpbusd_avx_epi32(c01, va0, vb1);
         c10 = _mm256_dpbusd_avx_epi32(c10, va1, vb0); c11 = _mm256_dpbusd_avx_epi32(c11, va1, vb1);
       }
+      c00 = _mm256_add_epi32(c00, d00); c01 = _mm256_add_epi32(c01, d01);
+      c10 = _mm256_add_epi32(c10, d10); c11 = _mm256_add_epi32(c11, d11);
       const __m256i accs[2][2] = {{c00, c01}, {c10, c11}};
       for (std::size_t i = 0; i < 2; ++i) {
         const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(a_zps[mr + i]));
@@ -218,15 +283,27 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
     if (mr < rows) {
       const std::uint8_t* a0 = a_q + mr * a_stride;
       __m256i c0 = _mm256_setzero_si256(), c1 = _mm256_setzero_si256();
+      __m256i d0 = _mm256_setzero_si256(), d1 = _mm256_setzero_si256();
       const std::int8_t* b0 = b0_base;
       const std::int8_t* b1 = b1_base;
-      for (std::size_t r = 0; r < k; r += 4, b0 += 32, b1 += 32) {
+      std::size_t r = 0;
+      for (; r + 8 <= k; r += 8, b0 += 64, b1 += 64) {
+        std::int32_t x0a, x0b;
+        std::memcpy(&x0a, a0 + r, 4); std::memcpy(&x0b, a0 + r + 4, 4);
+        const __m256i va0a = _mm256_set1_epi32(x0a), va0b = _mm256_set1_epi32(x0b);
+        c0 = _mm256_dpbusd_avx_epi32(c0, va0a, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        c1 = _mm256_dpbusd_avx_epi32(c1, va0a, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1)));
+        d0 = _mm256_dpbusd_avx_epi32(d0, va0b, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
+        d1 = _mm256_dpbusd_avx_epi32(d1, va0b, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
+      }
+      for (; r < k; r += 4, b0 += 32, b1 += 32) {
         std::int32_t x0;
         std::memcpy(&x0, a0 + r, 4);
         const __m256i va0 = _mm256_set1_epi32(x0);
         c0 = _mm256_dpbusd_avx_epi32(c0, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
         c1 = _mm256_dpbusd_avx_epi32(c1, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1)));
       }
+      c0 = _mm256_add_epi32(c0, d0); c1 = _mm256_add_epi32(c1, d1);
       const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(a_zps[mr]));
       const __m256 vsc = _mm256_set1_ps(a_scales[mr] * w_scale);
       __m256 vmax = relu_minmax && out_maxs ? _mm256_set1_ps(out_maxs[mr]) : _mm256_setzero_ps();
@@ -241,13 +318,21 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
     const __m256i s0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sums + col));
     for (std::size_t mr = m; mr < rows; ++mr) {
       const std::uint8_t* a0 = a_q + mr * a_stride;
-      __m256i c0 = _mm256_setzero_si256();
+      __m256i c0 = _mm256_setzero_si256(), d0 = _mm256_setzero_si256();
       const std::int8_t* b0 = b0_base;
-      for (std::size_t r = 0; r < k; r += 4, b0 += 32) {
+      std::size_t r = 0;
+      for (; r + 8 <= k; r += 8, b0 += 64) {
+        std::int32_t x0a, x0b;
+        std::memcpy(&x0a, a0 + r, 4); std::memcpy(&x0b, a0 + r + 4, 4);
+        c0 = _mm256_dpbusd_avx_epi32(c0, _mm256_set1_epi32(x0a), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        d0 = _mm256_dpbusd_avx_epi32(d0, _mm256_set1_epi32(x0b), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
+      }
+      for (; r < k; r += 4, b0 += 32) {
         std::int32_t x0;
         std::memcpy(&x0, a0 + r, 4);
         c0 = _mm256_dpbusd_avx_epi32(c0, _mm256_set1_epi32(x0), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
       }
+      c0 = _mm256_add_epi32(c0, d0);
       const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(a_zps[mr]));
       const __m256 vsc = _mm256_set1_ps(a_scales[mr] * w_scale);
       __m256 vmax = relu_minmax && out_maxs ? _mm256_set1_ps(out_maxs[mr]) : _mm256_setzero_ps();

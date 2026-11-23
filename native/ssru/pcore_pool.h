@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <type_traits>
 
@@ -14,9 +15,13 @@ class PcorePool {
   static PcorePool& instance();
 
   std::size_t pcoreCount() const noexcept;
+  // Physical P-cores plus their SMT siblings (equals pcoreCount() on non-SMT/non-Linux).
+  std::size_t pcoreLogicalCount() const noexcept;
+  // Heterogeneous E-cores on Linux (0 elsewhere or on homogeneous CPUs).
+  std::size_t ecoreCount() const noexcept;
   static std::size_t recommendedWorkerCount() noexcept;
 
-  // Executes fn(ctx, tid, nthreads) across 1..min(max_threads, pcoreCount())
+  // Executes fn(ctx, tid, nthreads) across 1..min(max_threads, pcoreLogicalCount())
   // threads. Caller executes tid=0. Thread-safe and fallback-safe when busy.
   void runTeam(std::size_t max_threads,
                void (*fn)(void* ctx, std::size_t tid, std::size_t nthreads),
@@ -36,8 +41,10 @@ class PcorePool {
   // Pins the calling thread to the detected P-core CPU set (Linux),
   // sets user-interactive QoS (macOS), or raises thread priority (Windows).
   static void pinCurrentThreadToPcores() noexcept;
-  // Pins worker `worker_idx` (P-cores first, P-core HT siblings next, E-cores last on Linux).
+  // Pins worker `worker_idx` (P-cores first, E-cores next, P-core HT siblings last on Linux).
   static void pinWorkerThread(std::size_t worker_idx) noexcept;
+  // Pins a background helper thread to a detected E-core (no-op if ecoreCount() == 0).
+  static void pinEcoreThread(std::size_t ecore_idx) noexcept;
 
  private:
   PcorePool();
@@ -47,6 +54,25 @@ class PcorePool {
 
   struct Impl;
   Impl* impl_;
+};
+
+// Persistent intra-team barrier with cancellation support on exception.
+class TeamBarrier {
+ public:
+  explicit TeamBarrier(std::size_t nthreads) noexcept
+      : nthreads_(nthreads < 1 ? 1 : nthreads) {}
+  bool arriveAndWait() noexcept {
+    if (nthreads_ <= 1) return true;
+    return arriveAndWaitSlow();
+  }
+  void cancel() noexcept { cancelled_.store(true, std::memory_order_release); }
+
+ private:
+  bool arriveAndWaitSlow() noexcept;
+  std::size_t nthreads_;
+  alignas(64) std::atomic<std::size_t> waiting_{0};
+  alignas(64) std::atomic<std::size_t> generation_{0};
+  alignas(64) std::atomic<bool> cancelled_{false};
 };
 
 }  // namespace mtran::ssru

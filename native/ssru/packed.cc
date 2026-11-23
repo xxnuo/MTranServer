@@ -1902,7 +1902,7 @@ struct ShortlistTable::Impl {
     if (avx512vnni_) hot_block_ = 16;
     else if (vnni_) hot_block_ = 8;
     else return;
-    hot_count_ = std::min<std::size_t>(vocab_, 2048) & ~(hot_block_ - 1);
+    hot_count_ = std::min<std::size_t>(vocab_, 4096) & ~(hot_block_ - 1);
     if (hot_count_ == 0) return;
     hot_q8_k4_.resize(hot_count_ * dim_);
     const std::int8_t* src = emb_q8_.data();
@@ -2087,10 +2087,19 @@ struct ShortlistTable::Impl {
     return sum;
   }
 
-  std::size_t argmaxFp32(const float* x, const std::int64_t* candidate_ids, std::size_t candidate_count) const {
+  std::size_t argmaxFp32(const float* x, const std::int64_t* candidate_ids,
+                         std::size_t candidate_count, float* out_best_logit = nullptr) const {
 #if defined(__x86_64__) || defined(_M_X64)
-    if (embedding_ && avx2_ && !sequential_fma_)
-      return argmaxFp32Avx2(x, dim_, embedding_, output_bias_, candidate_ids, candidate_count);
+    if (embedding_ && avx2_ && !sequential_fma_) {
+      const std::size_t best =
+          argmaxFp32Avx2(x, dim_, embedding_, output_bias_, candidate_ids, candidate_count);
+      if (out_best_logit) {
+        const auto token = static_cast<std::size_t>(candidate_ids[best]);
+        const float bias = token == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[token];
+        *out_best_logit = dotRowToken(x, token) + bias;
+      }
+      return best;
+    }
 #endif
     std::size_t best = 0;
     float best_logit = -std::numeric_limits<float>::infinity();
@@ -2102,6 +2111,7 @@ struct ShortlistTable::Impl {
         throw std::runtime_error("SSRU nonfinite logit");
       if (j == 0 || val > best_logit) { best_logit = val; best = j; }
     }
+    if (out_best_logit) *out_best_logit = best_logit;
     return best;
   }
 
@@ -2129,7 +2139,8 @@ struct ShortlistTable::Impl {
   }
 
   std::size_t argmax(const float* x, const std::int64_t* candidate_ids,
-                     std::size_t candidate_count, Workspace& workspace, bool prevalidated) const {
+                     std::size_t candidate_count, Workspace& workspace, bool prevalidated,
+                     float* out_best_logit = nullptr) const {
     if (!x || !candidate_ids || !candidate_count)
       throw std::invalid_argument("Invalid shortlist arguments");
     if (!prevalidated) {
@@ -2139,7 +2150,7 @@ struct ShortlistTable::Impl {
     }
     if (!use_q8_) {
       checkFinite(x, dim_, "Nonfinite shortlist activation");
-      return argmaxFp32(x, candidate_ids, candidate_count);
+      return argmaxFp32(x, candidate_ids, candidate_count, out_best_logit);
     }
 #if defined(__aarch64__) || defined(_M_ARM64)
     std::uint8_t* x_u8 = workspace.resize(dim_ * 2);
@@ -2182,7 +2193,7 @@ struct ShortlistTable::Impl {
                              meta_.data(), candidate_ids, candidate_count, approx, x_s8,
                              exact_int8_, min_pos_);
 #endif
-    if (!std::isfinite(scan.best_logit)) return argmaxFp32(x, candidate_ids, candidate_count);
+    if (!std::isfinite(scan.best_logit)) return argmaxFp32(x, candidate_ids, candidate_count, out_best_logit);
     const std::size_t best_j = scan.best_j;
     const auto seed_token = static_cast<std::size_t>(candidate_ids[best_j]);
     float best_exact = dotRowToken(x, seed_token) + meta_[seed_token].bias;
@@ -2194,8 +2205,11 @@ struct ShortlistTable::Impl {
     const float eps = std::numeric_limits<float>::epsilon();
     const float slack = 32.0f * eps * (std::abs(scan.best_logit) + max_bias_abs_) + 1e-4f;
     const float global_err = 1.01f * (dx_l2 * max_w_l2_ + qx_l2 * max_dw_l2_) + slack;
-    if (!std::isfinite(global_err)) return argmaxFp32(x, candidate_ids, candidate_count);
-    if (scan.second_logit + global_err < best_exact) return best_j;
+    if (!std::isfinite(global_err)) return argmaxFp32(x, candidate_ids, candidate_count, out_best_logit);
+    if (scan.second_logit + global_err < best_exact) {
+      if (out_best_logit) *out_best_logit = best_exact;
+      return best_j;
+    }
 
     std::size_t best = best_j;
     const float dx_scaled = 1.01f * dx_l2;
@@ -2211,6 +2225,7 @@ struct ShortlistTable::Impl {
         throw std::runtime_error("SSRU nonfinite logit");
       if (val > best_exact || (val == best_exact && j < best)) { best_exact = val; best = j; }
     }
+    if (out_best_logit) *out_best_logit = best_exact;
     return best;
   }
 
@@ -2353,8 +2368,9 @@ ShortlistTable::ShortlistTable(ShortlistTable&&) noexcept = default;
 ShortlistTable& ShortlistTable::operator=(ShortlistTable&&) noexcept = default;
 
 std::size_t ShortlistTable::argmax(const float* x, const std::int64_t* candidate_ids,
-                                   std::size_t candidate_count, Workspace& workspace, bool prevalidated) const {
-  return impl_->argmax(x, candidate_ids, candidate_count, workspace, prevalidated);
+                                   std::size_t candidate_count, Workspace& workspace, bool prevalidated,
+                                   float* out_best_logit) const {
+  return impl_->argmax(x, candidate_ids, candidate_count, workspace, prevalidated, out_best_logit);
 }
 void ShortlistTable::argMaxBatch(const float* x_rows, std::size_t rows, std::size_t x_stride,
                                  const std::int64_t* union_ids, const std::uint32_t* slot_masks,
@@ -2735,7 +2751,7 @@ struct FullVocabQ4::Impl {
       const std::size_t groups = vocab_ / group_width_;
       auto& pool = mtran::ssru::PcorePool::instance();
       const std::size_t nthreads = (allow_parallel && vocab_ >= 4096)
-          ? std::min<std::size_t>(pool.pcoreCount(), std::max<std::size_t>(1, groups / 16))
+          ? std::min<std::size_t>(pool.pcoreLogicalCount(), std::max<std::size_t>(1, groups / 16))
           : 1;
       if (nthreads >= 2) {
         std::vector<PaddedTopK9<TopK9>> partial(nthreads);
@@ -2800,7 +2816,7 @@ struct FullVocabQ4::Impl {
       auto& pool = mtran::ssru::PcorePool::instance();
       const std::size_t cap = std::max<std::size_t>(1, max_threads);
       const std::size_t nthreads = (cap > 1 && groups >= 4)
-          ? std::min<std::size_t>({cap, pool.pcoreCount(), groups / 4})
+          ? std::min<std::size_t>({cap, pool.pcoreLogicalCount(), groups / 4})
           : 1;
       if (nthreads >= 2) {
         // Group each thread's TopK9 array into cache-separated blocks ([tid * padded_rows + m]).

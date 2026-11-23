@@ -341,6 +341,36 @@ MTRAN_OPS_AVX2_FMA inline __m256 mlasExpAvx2Fma(__m256 x) noexcept {
   return _mm256_mul_ps(p, _mm256_castsi256_ps(pow2));
 }
 
+MTRAN_OPS_AVX2_FMA void ssruGateUpdateAvx2Fma(const float* wf, const float* w, const float* x,
+                                               std::size_t rows, std::size_t dim,
+                                               float* cell, float* out) noexcept {
+  const __m256 vone = _mm256_set1_ps(1.0f);
+  const __m256 vzero = _mm256_setzero_ps();
+  const std::size_t total = rows * dim;
+  std::size_t i = 0;
+  for (; i + 8 <= total; i += 8) {
+    const __m256 vwf = _mm256_loadu_ps(wf + i);
+    const __m256 exp_neg = mlasExpAvx2Fma(_mm256_sub_ps(vzero, vwf));
+    __m256 gate = _mm256_div_ps(vone, _mm256_add_ps(vone, exp_neg));
+    const __m256 isnan_mask = _mm256_cmp_ps(vwf, vwf, _CMP_UNORD_Q);
+    gate = _mm256_blendv_ps(gate, vwf, isnan_mask);
+
+    const __m256 c_prev = _mm256_loadu_ps(cell + i);
+    const __m256 vw = _mm256_loadu_ps(w + i);
+    const __m256 c_next = _mm256_add_ps(_mm256_mul_ps(gate, c_prev),
+                                       _mm256_mul_ps(_mm256_sub_ps(vone, gate), vw));
+    _mm256_storeu_ps(cell + i, c_next);
+    const __m256 relu_c = _mm256_max_ps(vzero, c_next);
+    _mm256_storeu_ps(out + i, _mm256_add_ps(_mm256_loadu_ps(x + i), relu_c));
+  }
+  for (; i < total; ++i) {
+    const float gate = 1.0f / (1.0f + std::exp(-wf[i]));
+    const float c = gate * cell[i] + (1.0f - gate) * w[i];
+    cell[i] = c;
+    out[i] = x[i] + std::max(0.0f, c);
+  }
+}
+
 MTRAN_OPS_AVX2 void softmaxRowAvx2(float* scores, std::size_t len) noexcept {
   const float maximum = maxRowAvx2(scores, len);
   const __m256 vm = _mm256_set1_ps(maximum);
@@ -1059,6 +1089,10 @@ void ssruGateUpdate(const float* wf, const float* w, const float* x,
                     std::size_t rows, std::size_t dim, float* cell, float* out) noexcept {
   if (!wf || !w || !x || !cell || !out || !rows || !dim) return;
 #if defined(__x86_64__) || defined(_M_X64)
+  if (hasAvx2Fma()) {
+    ssruGateUpdateAvx2Fma(wf, w, x, rows, dim, cell, out);
+    return;
+  }
   if (hasAvx2()) {
     ssruGateUpdateAvx2(wf, w, x, rows, dim, cell, out);
     return;

@@ -29,7 +29,6 @@ function splitSentences(content: string): string[] {
   return sentences;
 }
 
-const BATCH_MICRO_SIZE = 8;
 interface BatchLeaf {
   inputIds: BigInt64Array;
   before: string;
@@ -399,15 +398,12 @@ export class TranslationEngine {
     }
     const order = Array.from({ length: leaves.length }, (_, i) => i);
     order.sort((a, b) => leaves[a].inputIds.length - leaves[b].inputIds.length);
-    for (let start = 0; start < order.length; start += BATCH_MICRO_SIZE) {
-      const end = Math.min(order.length, start + BATCH_MICRO_SIZE);
-      const batchInputs: BigInt64Array[] = new Array(end - start);
-      for (let i = 0; i < end - start; i++) batchInputs[i] = leaves[order[start + i]].inputIds;
-      const batchTokens = await this.runBatchWithFallback(batchInputs);
-      for (let i = 0; i < end - start; i++) {
-        const leaf = leaves[order[start + i]];
-        leaf.out = leaf.before + this.dst!.decode(batchTokens[i]) + leaf.after;
-      }
+    const batchInputs: BigInt64Array[] = new Array(order.length);
+    for (let i = 0; i < order.length; i++) batchInputs[i] = leaves[order[i]].inputIds;
+    const batchTokens = await this.runBatchWithFallback(batchInputs);
+    for (let i = 0; i < order.length; i++) {
+      const leaf = leaves[order[i]];
+      leaf.out = leaf.before + this.dst!.decode(batchTokens[i]) + leaf.after;
     }
     return getters.map(g => g());
   }

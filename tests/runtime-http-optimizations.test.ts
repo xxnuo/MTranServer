@@ -243,8 +243,8 @@ test('TranslationEngine runBatch length-buckets LONG_DOC, HTML nodes and transla
   const sentences = Array.from({ length: 12 }, (_, i) => `Sentence ${i}${' word'.repeat((12 - i) % 4)}. `);
   const longDoc = sentences.join('');
   const translatedLong = await engine.translateAsync(longDoc);
-  expect(batchSizes).toEqual([8, 4]);
-  // Verify ascending length sorting inside the micro-batch.
+  expect(batchSizes).toEqual([12]);
+  // Verify ascending length sorting inside the unified batch.
   for (const lens of batchLengths) {
     for (let i = 1; i < lens.length; i++) expect(lens[i]).toBeGreaterThanOrEqual(lens[i - 1]);
   }

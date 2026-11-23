@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <vector>
 #include "onnxruntime_c_api.h"
 
@@ -22,6 +23,7 @@ struct ContinuousItem {
   const std::int64_t* cand = nullptr;
   std::size_t cand_len = 0;
   std::int64_t eos_id = 0;
+  std::shared_ptr<void> pre_encoded;
 };
 
 struct ContinuousHook {
@@ -45,6 +47,10 @@ class SsruTranslateKernel {
       std::size_t max_threads,
       const std::atomic<std::size_t>* active_submitted = nullptr) = 0;
 
+  virtual std::shared_ptr<void> encodeSingle(
+      const std::int64_t* input,
+      std::size_t input_len,
+      std::size_t max_threads = 1) = 0;
   virtual void translateContinuous(
       const ContinuousItem* initial_items,
       std::size_t initial_count,

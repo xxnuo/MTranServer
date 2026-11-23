@@ -98,6 +98,7 @@ struct Request {
   std::size_t candidate_count = 0;
   std::vector<TensorView> keys;    // Per layer: [1, heads, dim/heads, source_length].
   std::vector<TensorView> values;  // Per layer: [1, heads, source_length, dim/heads].
+  bool prevalidated_kv = false;
 };
 
 class Decoder;

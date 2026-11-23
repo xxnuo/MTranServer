@@ -655,6 +655,16 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
     mtran::ssru::BatchWorkspace dec_ws;
     std::vector<mtran::ssru::Request> requests;
   };
+  struct PreEncodedGroup {
+    mtran::ssru::EncodedBatch encoded;
+  };
+  struct PrePool {
+    std::mutex mu;
+    std::vector<std::unique_ptr<PreEncodedGroup>> free;
+    ~PrePool() = default;
+  };
+  std::shared_ptr<PrePool> prePool = std::make_shared<PrePool>();
+
   struct LiveGroup {
     mtran::ssru::EncodedBatch encoded;
     std::size_t pending_slots = 0;
@@ -662,6 +672,7 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
   struct SlotMeta {
     std::size_t caller_id = 0;
     LiveGroup* group = nullptr;
+    std::shared_ptr<void> pre_encoded;
   };
   struct ContinuousBuffers {
     mtran::ssru::BatchWorkspace dec_ws;
@@ -771,6 +782,35 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
   }
 
   bool hasCandidates() const noexcept override { return candInput; }
+
+  std::shared_ptr<void> encodeSingle(const std::int64_t* input, std::size_t input_len,
+                                     std::size_t max_threads = 1) override {
+    if (!input || input_len == 0) {
+      throw std::invalid_argument("SSRU null or empty input");
+    }
+    std::unique_ptr<PreEncodedGroup> grp;
+    {
+      std::lock_guard lock(prePool->mu);
+      if (!prePool->free.empty()) {
+        grp = std::move(prePool->free.back());
+        prePool->free.pop_back();
+      }
+    }
+    if (!grp) grp = std::make_unique<PreEncodedGroup>();
+    encoder->encodeBatch(&input, &input_len, 1, grp->encoded,
+                         std::max<std::size_t>(1, max_threads), nullptr);
+    std::weak_ptr<PrePool> weakPool = prePool;
+    PreEncodedGroup* raw = grp.release();
+    return std::shared_ptr<void>(raw, [weakPool](void* ptr) {
+      std::unique_ptr<PreEncodedGroup> g(static_cast<PreEncodedGroup*>(ptr));
+      if (auto pool = weakPool.lock()) {
+        std::lock_guard lock(pool->mu);
+        if (pool->free.size() < 64) {
+          pool->free.push_back(std::move(g));
+        }
+      }
+    });
+  }
 
   void translateBatch(const std::int64_t* const* inputs,
                       const std::size_t* input_lens,
@@ -919,6 +959,13 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
           err = "Standard graph requires null candidates";
         } else if (candInput && it.cand_len > 0 && !it.cand) {
           err = "SSRU null candidates";
+        } else if (candInput && it.cand_len > 0) {
+          for (std::size_t k = 0; k < it.cand_len; ++k) {
+            if (it.cand[k] < 0 || static_cast<std::uint64_t>(it.cand[k]) >= vocab) {
+              err = "SSRU candidate outside vocabulary";
+              break;
+            }
+          }
         }
         if (err) {
           if (hook.on_error) hook.on_error(it.id, err);
@@ -929,12 +976,36 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
       if (valid.empty()) return;
 
       out_base_seq = next_seq;
-      const std::size_t vn = valid.size();
+      const auto admitPreEncoded = [&](const mtran::onnx_async::ContinuousItem* it) -> bool {
+        if (!it->pre_encoded) return false;
+        auto* pre = static_cast<PreEncodedGroup*>(it->pre_encoded.get());
+        std::vector<mtran::ssru::Request> encoded_reqs;
+        pre->encoded.populate_requests(encoded_reqs);
+        if (encoded_reqs.empty()) return false;
+        auto req = std::move(encoded_reqs[0]);
+        req.eos_id = it->eos_id;
+        req.candidate_ids = candInput ? it->cand : nullptr;
+        req.candidate_count = candInput ? it->cand_len : 0;
+        cb.slot_meta.emplace(next_seq, SlotMeta{it->id, nullptr, it->pre_encoded});
+        out_reqs.push_back(std::move(req));
+        ++next_seq;
+        return true;
+      };
+
+      std::vector<const mtran::onnx_async::ContinuousItem*> valid_raw;
+      valid_raw.reserve(valid.size());
+      for (const auto* it : valid) {
+        if (!admitPreEncoded(it)) valid_raw.push_back(it);
+      }
+      if (valid_raw.empty()) return;
+
+      const std::size_t raw_base_seq = next_seq;
+      const std::size_t vn = valid_raw.size();
       std::vector<const std::int64_t*> ptrs(vn);
       std::vector<std::size_t> lens(vn);
       for (std::size_t i = 0; i < vn; ++i) {
-        ptrs[i] = valid[i]->input;
-        lens[i] = valid[i]->input_len;
+        ptrs[i] = valid_raw[i]->input;
+        lens[i] = valid_raw[i]->input_len;
       }
 
       auto grp = acquireGroup();
@@ -947,13 +1018,13 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
       } catch (const std::exception& ex) {
         cb.free_groups.push_back(std::move(grp));
         if (vn == 1) {
-          if (hook.on_error) hook.on_error(valid[0]->id, ex.what());
+          if (hook.on_error) hook.on_error(valid_raw[0]->id, ex.what());
           return;
         }
       } catch (...) {
         cb.free_groups.push_back(std::move(grp));
         if (vn == 1) {
-          if (hook.on_error) hook.on_error(valid[0]->id, "Unknown native encode failure");
+          if (hook.on_error) hook.on_error(valid_raw[0]->id, "Unknown native encode failure");
           return;
         }
       }
@@ -962,10 +1033,10 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
         grp->pending_slots = vn;
         for (std::size_t i = 0; i < vn; ++i) {
           auto req = std::move(encoded_reqs[i]);
-          req.eos_id = valid[i]->eos_id;
-          req.candidate_ids = candInput ? valid[i]->cand : nullptr;
-          req.candidate_count = candInput ? valid[i]->cand_len : 0;
-          cb.slot_meta.emplace(out_base_seq + i, SlotMeta{valid[i]->id, grp.get()});
+          req.eos_id = valid_raw[i]->eos_id;
+          req.candidate_ids = candInput ? valid_raw[i]->cand : nullptr;
+          req.candidate_count = candInput ? valid_raw[i]->cand_len : 0;
+          cb.slot_meta.emplace(raw_base_seq + i, SlotMeta{valid_raw[i]->id, grp.get(), {}});
           out_reqs.push_back(std::move(req));
         }
         next_seq += vn;
@@ -981,20 +1052,20 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
           encoder->encodeBatch(&ptrs[i], &lens[i], 1, g1->encoded, 1, active_submitted);
           g1->encoded.populate_requests(encoded_reqs);
           auto req = std::move(encoded_reqs[0]);
-          req.eos_id = valid[i]->eos_id;
-          req.candidate_ids = candInput ? valid[i]->cand : nullptr;
-          req.candidate_count = candInput ? valid[i]->cand_len : 0;
+          req.eos_id = valid_raw[i]->eos_id;
+          req.candidate_ids = candInput ? valid_raw[i]->cand : nullptr;
+          req.candidate_count = candInput ? valid_raw[i]->cand_len : 0;
           g1->pending_slots = 1;
-          cb.slot_meta.emplace(out_base_seq + admitted, SlotMeta{valid[i]->id, g1.get()});
+          cb.slot_meta.emplace(raw_base_seq + admitted, SlotMeta{valid_raw[i]->id, g1.get(), {}});
           out_reqs.push_back(std::move(req));
           cb.active_groups.push_back(std::move(g1));
           ++admitted;
         } catch (const std::exception& ex) {
           cb.free_groups.push_back(std::move(g1));
-          if (hook.on_error) hook.on_error(valid[i]->id, ex.what());
+          if (hook.on_error) hook.on_error(valid_raw[i]->id, ex.what());
         } catch (...) {
           cb.free_groups.push_back(std::move(g1));
-          if (hook.on_error) hook.on_error(valid[i]->id, "Unknown native encode failure");
+          if (hook.on_error) hook.on_error(valid_raw[i]->id, "Unknown native encode failure");
         }
       }
       next_seq += admitted;
@@ -1084,7 +1155,7 @@ struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
 
 #ifdef MTRAN_SSRU_PACKED
     const size_t maxThreads = activeRuns.load(std::memory_order_relaxed) <= 1
-        ? mtran::ssru::PcorePool::instance().pcoreCount()
+        ? mtran::ssru::PcorePool::instance().pcoreLogicalCount()
         : 1;
 #else
     const size_t maxThreads = 1;

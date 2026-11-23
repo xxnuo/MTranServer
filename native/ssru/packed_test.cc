@@ -67,26 +67,30 @@ static void golden(const Weight& weight, const std::vector<float>& original,
 }
 static void cpuOsGolden() {
   using namespace mtran::ssru::packed::detail;
-  constexpr unsigned avx = 0x18000000u, avx2 = 1u << 5, vnni = 1u << 4;
+  constexpr unsigned fma = 1u << 12;
+  constexpr unsigned avx = 0x18000000u, avx_fma = avx | fma, avx2 = 1u << 5, vnni = 1u << 4;
   constexpr unsigned avx512 = 0xc0030000u, vnni512 = 1u << 11;
   // i7-8550U / EPYC 7763: no VNNI, including CPUs with no CPUID 7.1.
   assert(x86Features(avx, avx2, 0, 0, 6) == Avx2);
-  assert(x86Features(avx, avx2 | avx512, 0, 0, 0xe6) == Avx2);
+  assert(x86Features(avx_fma, avx2, 0, 0, 6) == Avx2);
+  assert(x86Features(avx_fma, avx2 | avx512, 0, 0, 0xe6) == Avx2);
+  // Missing FMA bit disables FMA-requiring VNNI kernels.
+  assert(x86Features(avx, avx2 | avx512, vnni512, vnni, 0xe6) == Avx2);
   // AVXVNNI needs only XMM/YMM state; AVX512VNNI needs all ZMM/opmask state.
-  assert(x86Features(avx, avx2, 0, vnni, 6) == (Avx2 | AvxVnni));
-  assert(x86Features(avx, avx2 | avx512, vnni512, 0, 0xe6) == (Avx2 | Avx512Vnni));
-  assert(x86Features(avx, avx2 | avx512, vnni512, vnni, 0xe6) == (Avx2 | AvxVnni | Avx512Vnni));
+  assert(x86Features(avx_fma, avx2, 0, vnni, 6) == (Avx2 | AvxVnni));
+  assert(x86Features(avx_fma, avx2 | avx512, vnni512, 0, 0xe6) == (Avx2 | Avx512Vnni));
+  assert(x86Features(avx_fma, avx2 | avx512, vnni512, vnni, 0xe6) == (Avx2 | AvxVnni | Avx512Vnni));
   for (unsigned bit : {16, 17, 30, 31})
-    assert(x86Features(avx, avx2 | (avx512 & ~(1u << bit)), vnni512, 0, 0xe6) == Avx2);
+    assert(x86Features(avx_fma, avx2 | (avx512 & ~(1u << bit)), vnni512, 0, 0xe6) == Avx2);
   for (std::uint64_t state : {0x6, 0x26, 0x46, 0x66, 0x86, 0xa6, 0xc6}) {
-    assert(x86Features(avx, avx2 | avx512, vnni512, 0, state) == Avx2);
-    assert(x86Features(avx, avx2 | avx512, vnni512, vnni, state) == (Avx2 | AvxVnni));
+    assert(x86Features(avx_fma, avx2 | avx512, vnni512, 0, state) == Avx2);
+    assert(x86Features(avx_fma, avx2 | avx512, vnni512, vnni, state) == (Avx2 | AvxVnni));
   }
   for (unsigned leaf1 : {0u, 1u << 27, 1u << 28})
     assert(x86Features(leaf1, avx2 | avx512, vnni512, vnni, 0xe6) == 0);
   for (std::uint64_t state : {0, 2, 4, 0xe0, 0xe2, 0xe4})
-    assert(x86Features(avx, avx2 | avx512, vnni512, vnni, state) == 0);
-  assert(x86Features(avx, avx512, vnni512, vnni, 0xe6) == 0);
+    assert(x86Features(avx_fma, avx2 | avx512, vnni512, vnni, state) == 0);
+  assert(x86Features(avx_fma, avx512, vnni512, vnni, 0xe6) == 0);
 }
 static void kleidiGolden() {
   std::vector<float> input(32), output(8), original(32 * 8, .1f);
@@ -317,7 +321,7 @@ static void batchAndInt8Golden() {
         Weight w_assigned(w_fp32.data(), k, n);
         w_assigned = std::move(w_moved);
 
-        for (std::size_t rows : {std::size_t(1), std::size_t(2), std::size_t(3), std::size_t(7), std::size_t(8)}) {
+        for (std::size_t rows : {std::size_t(1), std::size_t(2), std::size_t(3), std::size_t(4), std::size_t(6), std::size_t(7), std::size_t(8)}) {
           const std::size_t out_stride = n + 16;
           std::vector<std::uint8_t> a_q(rows * k);
           std::vector<float> a_sc(rows);
@@ -443,9 +447,19 @@ static void batchAndInt8Golden() {
           if (masks_hot[j] & (1u << m)) cids_m.push_back(union_hot[j]);
         }
         const std::size_t j_fp32 = tbl_fp32.argmax(x_rows.data() + m * x_stride, cids_m.data(), cids_m.size(), ws);
-        const std::size_t j_i8 = tbl_moved.argmax(x_rows.data() + m * x_stride, cids_m.data(), cids_m.size(), ws);
+        float full_logit = 0.0f;
+        const std::size_t j_i8 = tbl_moved.argmax(x_rows.data() + m * x_stride, cids_m.data(), cids_m.size(), ws, false, &full_logit);
         assert(cids_m[j_fp32] == cids_m[j_i8]);
         assert(got_tokens[m] == cids_m[j_i8]);
+        if (cids_m.size() >= 4) {
+          const std::size_t mid = cids_m.size() / 2;
+          float l0 = 0.0f, l1 = 0.0f;
+          const std::size_t s0 = tbl_moved.argmax(x_rows.data() + m * x_stride, cids_m.data(), mid, ws, true, &l0);
+          const std::size_t s1 = tbl_moved.argmax(x_rows.data() + m * x_stride, cids_m.data() + mid, cids_m.size() - mid, ws, true, &l1);
+          const std::size_t merged = (l1 > l0 || (l1 == l0 && mid + s1 < s0)) ? (mid + s1) : s0;
+          assert(cids_m[merged] == cids_m[j_i8]);
+          assert(std::max(l0, l1) == full_logit);
+        }
       }
       assert(got_tokens[11] == 0);
 

@@ -269,7 +269,9 @@ void testPcorePool() {
   auto& pool = mtran::ssru::PcorePool::instance();
   mtran::ssru::PcorePool::pinCurrentThreadToPcores();
   const std::size_t pcores = pool.pcoreCount();
+  const std::size_t plogical = pool.pcoreLogicalCount();
   assert(pcores >= 1);
+  assert(plogical >= pcores);
 
   for (std::size_t req : {std::size_t{1}, std::size_t{2}, std::size_t{4}, std::size_t{6}, std::size_t{32}}) {
     std::atomic<std::size_t> count{0};
@@ -289,10 +291,49 @@ void testPcorePool() {
         assert(inner == 1);
       }
     });
-    const std::size_t expected = std::min(req, pcores);
+    const std::size_t expected = std::min(req, plogical);
     assert(observed_nthreads == expected);
     assert(count.load() == expected);
     assert(tid_sum.load() == expected * (expected - 1) / 2);
+  }
+
+  // Test TeamBarrier multi-phase synchronization & exception cancellation across plogical threads.
+  if (plogical > 1) {
+    mtran::ssru::TeamBarrier barrier(plogical);
+    std::vector<int> phase_vals(plogical, 0);
+    pool.parallelFor(plogical, [&](std::size_t tid, std::size_t) {
+      phase_vals[tid] = static_cast<int>(tid + 1);
+      assert(barrier.arriveAndWait());
+      const std::size_t peer = (tid + 1) % plogical;
+      assert(phase_vals[peer] == static_cast<int>(peer + 1));
+      assert(barrier.arriveAndWait());
+      if (tid == 0) {
+        int sum = 0;
+        for (int v : phase_vals) sum += v;
+        assert(sum == static_cast<int>(plogical * (plogical + 1) / 2));
+      }
+    });
+
+    mtran::ssru::TeamBarrier err_barrier(plogical);
+    bool cancel_caught = false;
+    try {
+      pool.parallelFor(plogical, [&](std::size_t tid, std::size_t) {
+        struct CancelGuard {
+          mtran::ssru::TeamBarrier& b;
+          bool ok = false;
+          ~CancelGuard() { if (!ok) b.cancel(); }
+        } guard{err_barrier};
+        if (tid == 1) throw std::runtime_error("barrier-cancel");
+        if (!err_barrier.arriveAndWait()) {
+          guard.ok = true;
+          return;
+        }
+        guard.ok = true;
+      });
+    } catch (const std::runtime_error& e) {
+      cancel_caught = std::string(e.what()) == "barrier-cancel";
+    }
+    assert(cancel_caught);
   }
 
   bool caught = false;
