@@ -251,7 +251,7 @@ export function warmupEngines(): Promise<void> {
     while (true) {
       controller.signal.throwIfAborted();
       const { modelDir, lexicalShortlist, workersPerLanguage } = getConfig();
-      const entries = await readdir(modelDir, { withFileTypes: true });
+      const entries = (await readdir(modelDir, { withFileTypes: true })).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
       for (const entry of entries) {
         controller.signal.throwIfAborted();
         if (!entry.isDirectory() || !/^[A-Za-z0-9-]+_[A-Za-z0-9-]+$/.test(entry.name)) continue;
