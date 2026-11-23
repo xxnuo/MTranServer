@@ -24,19 +24,16 @@ export class KissController extends Controller {
   @SuccessResponse('200', 'Success')
   public async translate(@Body() body: KissTranslateRequest): Promise<KissTranslateResponse> {
     const { NormalizeLanguageCode } = await import('@/utils/index.js');
-    const { translateWithPivot } = await import('@/services/index.js');
+    const { translateWithPivot, translateBatchWithPivot } = await import('@/services/index.js');
 
     const fromLang = NormalizeLanguageCode(body.from);
     const toLang = NormalizeLanguageCode(body.to);
 
     if (body.texts && Array.isArray(body.texts) && body.texts.length > 0) {
-      const translations = await Promise.all(
-        body.texts.map(async text => ({
-          text: await translateWithPivot(fromLang, toLang, text, false),
-          src: body.from,
-        }))
-      );
-      return { translations };
+      const results = await translateBatchWithPivot(fromLang, toLang, body.texts, false);
+      return {
+        translations: results.map(text => ({ text, src: body.from })),
+      };
     }
 
     if (body.text) {

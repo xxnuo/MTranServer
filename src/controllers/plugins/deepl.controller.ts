@@ -26,7 +26,7 @@ export class DeeplController extends Controller {
     @Header('Authorization') authorization?: string
   ): Promise<DeeplTranslateResponse> {
     const { NormalizeLanguageCode } = await import('@/utils/index.js');
-    const { translateWithPivot } = await import('@/services/index.js');
+    const { translateBatchWithPivot } = await import('@/services/index.js');
     const { getConfig } = await import('@/config/index.js');
 
     const config = getConfig();
@@ -65,12 +65,11 @@ export class DeeplController extends Controller {
     const targetLang = NormalizeLanguageCode(body.target_lang);
     const isHTML = body.tag_handling === 'html' || body.tag_handling === 'xml';
     const detectedLang = body.source_lang || convertBCP47ToDeeplLang(sourceLang);
-    const translations: DeeplTranslation[] = await Promise.all(
-      textArray.map(async item => ({
-        detected_source_language: detectedLang,
-        text: await translateWithPivot(sourceLang, targetLang, item, isHTML),
-      }))
-    );
+    const results = await translateBatchWithPivot(sourceLang, targetLang, textArray, isHTML);
+    const translations: DeeplTranslation[] = results.map(text => ({
+      detected_source_language: detectedLang,
+      text,
+    }));
 
     return { translations };
   }

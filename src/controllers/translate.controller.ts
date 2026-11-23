@@ -23,17 +23,17 @@ interface TranslateBatchResponse {
 }
 
 let cachedDeps: {
-  NormalizeLanguageCode: typeof import('@/utils/index.js').NormalizeLanguageCode;
-  translateWithPivot: typeof import('@/services/index.js').translateWithPivot;
+  utils: typeof import('@/utils/index.js');
+  services: typeof import('@/services/index.js');
 } | undefined;
 
 async function getDeps() {
   if (cachedDeps) return cachedDeps;
-  const [{ NormalizeLanguageCode }, { translateWithPivot }] = await Promise.all([
+  const [utils, services] = await Promise.all([
     import('@/utils/index.js'),
     import('@/services/index.js'),
   ]);
-  return cachedDeps = { NormalizeLanguageCode, translateWithPivot };
+  return cachedDeps = { utils, services };
 }
 
 @Route('translate')
@@ -43,12 +43,12 @@ export class TranslateController extends Controller {
   @Security('api_token')
   @SuccessResponse('200', 'Success')
   public async translate(@Body() body: TranslateRequest): Promise<TranslateResponse> {
-    const { NormalizeLanguageCode, translateWithPivot } = cachedDeps ?? await getDeps();
+    const { utils, services } = cachedDeps ?? await getDeps();
 
-    const normalizedFrom = NormalizeLanguageCode(body.from);
-    const normalizedTo = NormalizeLanguageCode(body.to);
+    const normalizedFrom = utils.NormalizeLanguageCode(body.from);
+    const normalizedTo = utils.NormalizeLanguageCode(body.to);
 
-    const result = await translateWithPivot(
+    const result = await services.translateWithPivot(
       normalizedFrom,
       normalizedTo,
       body.text,
@@ -64,14 +64,12 @@ export class TranslateController extends Controller {
   public async translateBatch(
     @Body() body: TranslateBatchRequest
   ): Promise<TranslateBatchResponse> {
-    const { NormalizeLanguageCode, translateWithPivot } = cachedDeps ?? await getDeps();
+    const { utils, services } = cachedDeps ?? await getDeps();
 
-    const normalizedFrom = NormalizeLanguageCode(body.from);
-    const normalizedTo = NormalizeLanguageCode(body.to);
+    const normalizedFrom = utils.NormalizeLanguageCode(body.from);
+    const normalizedTo = utils.NormalizeLanguageCode(body.to);
     const html = body.html || false;
-    const results = await Promise.all(
-      body.texts.map(text => translateWithPivot(normalizedFrom, normalizedTo, text, html))
-    );
+    const results = await services.translateBatchWithPivot(normalizedFrom, normalizedTo, body.texts, html);
 
     return { results };
   }

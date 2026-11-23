@@ -25,7 +25,7 @@ export class HcfyController extends Controller {
   @Security('api_token')
   @SuccessResponse('200', 'Success')
   public async translate(@Body() body: HcfyTranslateRequest): Promise<HcfyTranslateResponse> {
-    const { translateWithPivot } = await import('@/services/index.js');
+    const { translateBatchWithPivot } = await import('@/services/index.js');
 
     const hcfyLangToBCP47: Record<string, string> = {
       '中文(简体)': 'zh-Hans',
@@ -122,11 +122,19 @@ export class HcfyController extends Controller {
     }
 
     const paragraphs = body.text.split('\n');
-    const results = await Promise.all(
-      paragraphs.map(paragraph =>
-        paragraph.trim() ? translateWithPivot(detectedSourceLang, targetLang, paragraph, false) : Promise.resolve('')
-      )
-    );
+    const activeIndices: number[] = [];
+    const activeTexts: string[] = [];
+    for (let i = 0; i < paragraphs.length; i++) {
+      if (paragraphs[i].trim()) {
+        activeIndices.push(i);
+        activeTexts.push(paragraphs[i]);
+      }
+    }
+    const results = new Array<string>(paragraphs.length).fill('');
+    if (activeTexts.length > 0) {
+      const translated = await translateBatchWithPivot(detectedSourceLang, targetLang, activeTexts, false);
+      for (let i = 0; i < activeIndices.length; i++) results[activeIndices[i]] = translated[i];
+    }
 
     return {
       text: body.text,

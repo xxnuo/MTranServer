@@ -3,6 +3,7 @@ import { SentencePieceProcessor } from '@sctg/sentencepiece-js';
 import { vocabularyInfo } from './shortlist.js';
 
 export class Tokenizer {
+  private refs = 1;
   private constructor(private processor: SentencePieceProcessor, readonly eos: number, readonly size: number) {}
   static async load(file: string) {
     const bytes = await readFile(file);
@@ -20,5 +21,13 @@ export class Tokenizer {
   }
   encode(text: string) { return this.processor.encodeIds(text); }
   decode(ids: number[] | Int32Array) { return this.processor.decodeIds(ids instanceof Int32Array ? ids : Int32Array.from(ids)) as string; }
-  close() { this.processor.processor?.delete(); }
+  retain() {
+    if (this.refs <= 0) throw new Error('Tokenizer already closed');
+    this.refs++;
+    return this;
+  }
+  close() {
+    if (this.refs <= 0) return;
+    if (--this.refs === 0) this.processor.processor?.delete();
+  }
 }

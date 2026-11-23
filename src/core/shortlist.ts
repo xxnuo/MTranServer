@@ -9,7 +9,11 @@ export interface Lexicon { first: number; offsets: number[]; targets: number[] }
 export class Shortlist {
   private readonly wordCount: number;
   private readonly baseWords: Uint32Array;
-  private readonly scratch: Uint32Array;
+  private readonly extraWords: Uint32Array;
+  private readonly baseIds: Int32Array;
+  private readonly extraIds: Int32Array;
+  private readonly basePrefixLen: number;
+  private readonly extraWordStart: number;
   private readonly offsets: Int32Array;
   private readonly targets: Uint32Array;
   private readonly baseCount: number;
@@ -19,7 +23,7 @@ export class Shortlist {
     assert(Number.isSafeInteger(eos) && eos >= 0 && eos < targetSize && eos !== 1, 'invalid EOS');
     this.wordCount = (targetSize + 31) >>> 5;
     this.baseWords = new Uint32Array(this.wordCount);
-    this.scratch = new Uint32Array(this.wordCount);
+    this.extraWords = new Uint32Array(this.wordCount);
     this.offsets = Int32Array.from(lex.offsets);
     this.targets = Uint32Array.from(lex.targets);
     let count = 0;
@@ -35,6 +39,24 @@ export class Shortlist {
       addBase(id);
     }
     this.baseCount = count;
+    const baseIds = new Int32Array(count);
+    let bi = 0;
+    for (let i = 0; i < this.baseWords.length; i++) {
+      let w = this.baseWords[i];
+      if (w === 0) continue;
+      const base = i << 5;
+      while (w !== 0) {
+        const lsb = w & -w;
+        baseIds[bi++] = base + (31 - Math.clz32(lsb));
+        w ^= lsb;
+      }
+    }
+    let prefix = 0;
+    while (prefix < baseIds.length && baseIds[prefix] === prefix) prefix++;
+    this.baseIds = baseIds;
+    this.basePrefixLen = prefix;
+    this.extraWordStart = prefix >>> 5;
+    this.extraIds = new Int32Array(targetSize - count);
   }
   static async load(lexPath: string, sourceVocab: string, targetVocab: string): Promise<Shortlist> {
     const [lexBytes, sourceBytes, targetBytes] = await Promise.all([readFile(lexPath), readFile(sourceVocab), readFile(targetVocab)]);
@@ -44,12 +66,11 @@ export class Shortlist {
     const shared = sourceBytes.length === targetBytes.length && Buffer.compare(sourceBytes, targetBytes) === 0;
     return new Shortlist(lex, target.size, shared, target.eos, target.byteIds);
   }
-  private fillBitset(source: ArrayLike<number | bigint>): number {
+  private fillExtra(source: ArrayLike<number | bigint>): number {
     assert(source.length > 0, 'invalid source IDs');
-    const words = this.scratch;
-    words.set(this.baseWords);
-    let count = this.baseCount;
-    const { offsets, targets, targetSize, shared } = this;
+    const { baseWords, extraWords, offsets, targets, targetSize, shared } = this;
+    extraWords.fill(0);
+    let extraCount = 0;
     const maxSource = offsets.length - 1;
     for (let i = 0; i < source.length; i++) {
       const raw = source[i];
@@ -57,63 +78,76 @@ export class Shortlist {
       assert(Number.isSafeInteger(id) && id >= 0 && id < maxSource, 'invalid source ID');
       if (shared && id < targetSize) {
         const idx = id >>> 5, bit = 1 << (id & 31);
-        if ((words[idx] & bit) === 0) { words[idx] |= bit; count++; }
+        if (((baseWords[idx] | extraWords[idx]) & bit) === 0) { extraWords[idx] |= bit; extraCount++; }
       }
       const start = offsets[id], end = offsets[id + 1];
       for (let j = start; j < end; j++) {
         const tid = targets[j];
         const idx = tid >>> 5, bit = 1 << (tid & 31);
-        if ((words[idx] & bit) === 0) { words[idx] |= bit; count++; }
+        if (((baseWords[idx] | extraWords[idx]) & bit) === 0) { extraWords[idx] |= bit; extraCount++; }
       }
     }
-    for (let id = this.lex.first; id < targetSize && (count & 7) !== 0; id++) {
+    let totalCount = this.baseCount + extraCount;
+    for (let id = this.lex.first; id < targetSize && (totalCount & 7) !== 0; id++) {
       const idx = id >>> 5, bit = 1 << (id & 31);
-      if ((words[idx] & bit) === 0) { words[idx] |= bit; count++; }
+      if (((baseWords[idx] | extraWords[idx]) & bit) === 0) { extraWords[idx] |= bit; totalCount++; extraCount++; }
     }
-    return count;
-  }
-  candidates(ids: number[]): number[] {
-    const count = this.fillBitset(ids);
-    const out = new Array<number>(count);
-    const words = this.scratch;
-    let pos = 0;
-    for (let i = 0; i < words.length; i++) {
-      let w = words[i];
+    const extraIds = this.extraIds;
+    let e = 0;
+    for (let i = this.extraWordStart; i < extraWords.length && e < extraCount; i++) {
+      let w = extraWords[i];
+      if (w === 0) continue;
       const base = i << 5;
       while (w !== 0) {
         const lsb = w & -w;
-        out[pos++] = base + (31 - Math.clz32(lsb));
+        extraIds[e++] = base + (31 - Math.clz32(lsb));
         w ^= lsb;
       }
     }
+    return extraCount;
+  }
+  candidates(ids: number[]): number[] {
+    const extraCount = this.fillExtra(ids);
+    const { baseIds, basePrefixLen, baseCount, extraIds } = this;
+    const out = new Array<number>(baseCount + extraCount);
+    let pos = 0;
+    for (; pos < basePrefixLen; pos++) out[pos] = pos;
+    let bi = basePrefixLen, ei = 0;
+    while (bi < baseCount && ei < extraCount) {
+      const b = baseIds[bi], e = extraIds[ei];
+      if (b < e) { out[pos++] = b; bi++; }
+      else { out[pos++] = e; ei++; }
+    }
+    while (bi < baseCount) out[pos++] = baseIds[bi++];
+    while (ei < extraCount) out[pos++] = extraIds[ei++];
     return out;
   }
   candidatesBigInt(ids: ArrayLike<number | bigint>): BigInt64Array {
-    const count = this.fillBitset(ids);
-    const out = new BigInt64Array(count);
-    const words = this.scratch;
+    const extraCount = this.fillExtra(ids);
+    const { baseIds, basePrefixLen, baseCount, extraIds } = this;
+    const out = new BigInt64Array(baseCount + extraCount);
     let pos = 0;
     if (littleEndian) {
       const i32 = new Int32Array(out.buffer);
-      for (let i = 0; i < words.length; i++) {
-        let w = words[i];
-        const base = i << 5;
-        while (w !== 0) {
-          const lsb = w & -w;
-          i32[(pos++) << 1] = base + (31 - Math.clz32(lsb));
-          w ^= lsb;
-        }
+      for (; pos < basePrefixLen; pos++) i32[pos << 1] = pos;
+      let bi = basePrefixLen, ei = 0;
+      while (bi < baseCount && ei < extraCount) {
+        const b = baseIds[bi], e = extraIds[ei];
+        if (b < e) { i32[(pos++) << 1] = b; bi++; }
+        else { i32[(pos++) << 1] = e; ei++; }
       }
+      while (bi < baseCount) i32[(pos++) << 1] = baseIds[bi++];
+      while (ei < extraCount) i32[(pos++) << 1] = extraIds[ei++];
     } else {
-      for (let i = 0; i < words.length; i++) {
-        let w = words[i];
-        const base = i << 5;
-        while (w !== 0) {
-          const lsb = w & -w;
-          out[pos++] = BigInt(base + (31 - Math.clz32(lsb)));
-          w ^= lsb;
-        }
+      for (; pos < basePrefixLen; pos++) out[pos] = BigInt(pos);
+      let bi = basePrefixLen, ei = 0;
+      while (bi < baseCount && ei < extraCount) {
+        const b = baseIds[bi], e = extraIds[ei];
+        if (b < e) { out[pos++] = BigInt(b); bi++; }
+        else { out[pos++] = BigInt(e); ei++; }
       }
+      while (bi < baseCount) out[pos++] = BigInt(baseIds[bi++]);
+      while (ei < extraCount) out[pos++] = BigInt(extraIds[ei++]);
     }
     return out;
   }

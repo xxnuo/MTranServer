@@ -141,18 +141,15 @@ test('calibrated Metal worker serves one concurrent document while overflowing c
   } finally { releaseGpu?.(); await engine.destroy(); }
 });
 
-test('TranslateController.translateBatch dispatches batch items concurrently', async () => {
+test('TranslateController.translateBatch dispatches batch items via translateBatchWithPivot', async () => {
   const services = await import('../src/services/index.js');
-  let active = 0, peak = 0;
-  spyOn(services, 'translateWithPivot').mockImplementation(async (_f, _t, text) => {
-    active++;
-    peak = Math.max(peak, active);
-    await new Promise(r => setTimeout(r, 15));
-    active--;
-    return `tr:${text}`;
+  const seen: string[][] = [];
+  spyOn(services, 'translateBatchWithPivot').mockImplementation(async (_f, _t, texts) => {
+    seen.push([...texts]);
+    return texts.map(t => `tr:${t}`);
   });
   const controller = new TranslateController();
   const response = await controller.translateBatch({ from: 'en', to: 'zh-Hans', texts: ['a', 'b', 'c', 'd'] });
   expect(response.results).toEqual(['tr:a', 'tr:b', 'tr:c', 'tr:d']);
-  expect(peak).toBe(4);
+  expect(seen).toEqual([['a', 'b', 'c', 'd']]);
 });

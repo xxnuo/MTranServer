@@ -24,21 +24,18 @@ export class GoogleController extends Controller {
   @SuccessResponse('200', 'Success')
   public async translateCompat(@Body() body: GoogleTranslateRequest): Promise<GoogleTranslateResponse> {
     const { NormalizeLanguageCode } = await import('@/utils/index.js');
-    const { translateWithPivot } = await import('@/services/index.js');
+    const { translateBatchWithPivot } = await import('@/services/index.js');
 
     const queries = Array.isArray(body.q) ? body.q : [body.q];
     const sourceBCP47 = NormalizeLanguageCode(body.source);
     const targetBCP47 = NormalizeLanguageCode(body.target);
     const isHTML = body.format === 'html';
 
-    const translations = [];
-    for (const q of queries) {
-      const result = await translateWithPivot(sourceBCP47, targetBCP47, q, isHTML);
-      translations.push({
-        translatedText: result,
-        detectedSourceLanguage: body.source,
-      });
-    }
+    const results = await translateBatchWithPivot(sourceBCP47, targetBCP47, queries, isHTML);
+    const translations = results.map(translatedText => ({
+      translatedText,
+      detectedSourceLanguage: body.source,
+    }));
 
     return {
       data: { translations },
