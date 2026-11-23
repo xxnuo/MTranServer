@@ -41,18 +41,57 @@ class Workspace {
 void quantizeLinearU8(const float* input, std::size_t rows, std::size_t cols,
                       std::uint8_t* output, float& scale, std::uint8_t& zero_point);
 
-// Immutable once constructed from row-major FP32 [K,N]. No bias.
+// Per-row dynamic uint8 quantization (preserving exact M=1 per-row scale/zero_point).
+void quantizeLinearU8Batch(const float* input, std::size_t rows, std::size_t cols,
+                           std::size_t input_stride, std::uint8_t* output,
+                           std::size_t output_stride, float* scales, std::uint8_t* zero_points);
+
+// Per-row dynamic uint8 quantization when row [min, max] (clamped around 0) are already known.
+void quantizeLinearU8FromMinMax(const float* input, std::size_t rows, std::size_t cols,
+                                std::size_t input_stride, const float* mins, const float* maxs,
+                                std::uint8_t* output, std::size_t output_stride,
+                                float* scales, std::uint8_t* zero_points);
+
+// Fused quantizeLinearU8 + ||x - qx||_2^2 (and optional ||qx||_2^2) in one L1 pass.
+void quantizeLinearU8WithNorm(const float* x, std::size_t dim, std::uint8_t* output,
+                              float& scale, std::uint8_t& zero_point,
+                              float& dx_sq, float* qx_sq = nullptr);
+
+// Immutable once constructed from row-major FP32 [K,N] or 0x4101 INT8 [K,N].
 // Requires K % 32 == 0, N % 8 == 0 and K <= INT32_MAX / (255 * 128).
-// Other shapes use the adapter's InvokeOp path. Unsupported CPUs are rejected.
 class Weight {
  public:
   Weight(const float* data, std::size_t k, std::size_t n);
+  static Weight packInt8(const std::int8_t* w_q8, float w_scale,
+                         std::size_t rows, std::size_t cols,
+                         const float* bias = nullptr, const float* separate_bias = nullptr,
+                         bool enable_vnni = true);
   ~Weight();
+  Weight(Weight&&) noexcept;
+  Weight& operator=(Weight&&) noexcept;
+  Weight(const Weight&) = delete;
+  Weight& operator=(const Weight&) = delete;
+
   void multiply(const std::uint8_t* activation, std::size_t rows,
                 float activation_scale, std::uint8_t zero_point, float* output,
                 const float* fused_bias = nullptr, const float* separate_bias = nullptr) const;
+
+  // Batched GEMM with per-row activation scale/zp (bit-identical to M=1).
+  // col_begin / col_end should be aligned to 32 (8 minimum); col_end == ~0 -> cols.
+  void multiplyBatch(const std::uint8_t* a_q, const float* a_scales, const std::uint8_t* a_zps,
+                     std::size_t rows, float* out, std::size_t out_stride,
+                     std::size_t col_begin = 0, std::size_t col_end = ~std::size_t(0),
+                     bool force_separate_bias = false) const;
+
+  // Fuses multiplyBatch + ReLU + per-row output max tracking over [col_begin, col_end).
+  void multiplyBatchReluMinMax(const std::uint8_t* a_q, const float* a_scales, const std::uint8_t* a_zps,
+                               std::size_t rows, float* out, std::size_t out_stride,
+                               float* out_maxs, std::size_t col_begin = 0,
+                               std::size_t col_end = ~std::size_t(0)) const;
+
  private:
   struct Impl;
+  explicit Weight(std::unique_ptr<const Impl> impl) noexcept;
   std::unique_ptr<const Impl> impl_;
 };
 
@@ -62,10 +101,25 @@ class ShortlistTable {
  public:
   ShortlistTable(const float* embedding, const float* output_bias, std::size_t vocab, std::size_t dim,
                  bool sequential_fma = false);
+  // Borrows 0x4101 INT8 embedding [vocab, dim] without retaining an FP32 Wemb copy.
+  static ShortlistTable createInt8(const std::int8_t* emb_q8, float min_pos,
+                                   const float* bias, std::size_t vocab, std::size_t dim,
+                                   bool sequential_fma = false);
   ~ShortlistTable();
+  ShortlistTable(ShortlistTable&&) noexcept;
+  ShortlistTable& operator=(ShortlistTable&&) noexcept;
+  ShortlistTable(const ShortlistTable&) = delete;
+  ShortlistTable& operator=(const ShortlistTable&) = delete;
+
   std::size_t argmax(const float* x, const std::int64_t* candidate_ids,
                      std::size_t candidate_count, Workspace& workspace,
                      bool prevalidated = false) const;
+
+  // Batched masked-union shortlist argmax for rows <= 32. Writes winning token IDs into out_tokens.
+  void argMaxBatch(const float* x_rows, std::size_t rows, std::size_t x_stride,
+                   const std::int64_t* union_ids, const std::uint32_t* slot_masks,
+                   std::size_t union_count, std::int64_t* out_tokens) const;
+
   struct alignas(16) RowMeta {
     float scale;
     float bias;
@@ -77,8 +131,10 @@ class ShortlistTable {
     std::size_t best_j;
     float second_logit;
   };
+
  private:
   struct Impl;
+  explicit ShortlistTable(std::unique_ptr<const Impl> impl) noexcept;
   std::unique_ptr<const Impl> impl_;
 };
 
@@ -86,10 +142,21 @@ class FullVocabQ4 {
  public:
   FullVocabQ4(const float* embedding, const float* output_bias, std::size_t vocab, std::size_t dim,
               bool sequential_fma = false);
+  // Quantizes from 0x4101 INT8 embedding and reconstructs Stage-2 FP32 rows on-the-fly.
+  static FullVocabQ4 createInt8(const std::int8_t* emb_q8, float min_pos,
+                                const float* bias, std::size_t vocab, std::size_t dim,
+                                bool sequential_fma = false);
   ~FullVocabQ4();
+  FullVocabQ4(FullVocabQ4&&) noexcept;
+  FullVocabQ4& operator=(FullVocabQ4&&) noexcept;
   FullVocabQ4(const FullVocabQ4&) = delete;
   FullVocabQ4& operator=(const FullVocabQ4&) = delete;
+
   std::size_t argmax(const float* x, Workspace& workspace, bool allow_parallel = false) const;
+
+  // Batched full-vocab Q4 argmax with PcorePool sharding. Writes winning token IDs into out_tokens.
+  void argMaxBatch(const float* x_rows, std::size_t rows, std::size_t x_stride,
+                   std::int64_t* out_tokens, std::size_t max_threads = 1) const;
 
   struct TopK9 {
     float scores[9];
@@ -117,6 +184,7 @@ class FullVocabQ4 {
 
  private:
   struct Impl;
+  explicit FullVocabQ4(std::unique_ptr<const Impl> impl) noexcept;
   std::unique_ptr<const Impl> impl_;
 };
 }

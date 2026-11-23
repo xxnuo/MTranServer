@@ -230,6 +230,281 @@ static void dqlAndShortlistGolden() {
     rejects([&] { small.argmax(bad_x.data(), workspace, false); });
   }
 }
+
+static void batchAndInt8Golden() {
+  using mtran::ssru::packed::FullVocabQ4;
+  using mtran::ssru::packed::quantizeLinearU8Batch;
+  using mtran::ssru::packed::quantizeLinearU8FromMinMax;
+  using mtran::ssru::packed::quantizeLinearU8WithNorm;
+
+  // 1. quantizeLinearU8Batch, quantizeLinearU8FromMinMax, quantizeLinearU8WithNorm
+  {
+    constexpr std::size_t rows = 5, cols = 97, in_stride = 104, out_stride = 128;
+    std::vector<float> in(rows * in_stride, 0.0f), mins(rows), maxs(rows);
+    std::vector<std::uint8_t> ref_q(rows * out_stride, 77), got_batch_q(rows * out_stride, 77), got_mm_q(rows * out_stride, 77);
+    std::vector<float> ref_sc(rows), got_batch_sc(rows), got_mm_sc(rows);
+    std::vector<std::uint8_t> ref_zp(rows), got_batch_zp(rows), got_mm_zp(rows);
+
+    for (std::size_t m = 0; m < rows; ++m) {
+      float rmin = std::numeric_limits<float>::infinity();
+      float rmax = -std::numeric_limits<float>::infinity();
+      for (std::size_t c = 0; c < cols; ++c) {
+        const float v = (m == 3) ? 0.0f : std::sin(float(m * 131 + c * 17)) * 3.5f + float(int(m) - 2);
+        in[m * in_stride + c] = v;
+        rmin = std::min(rmin, v);
+        rmax = std::max(rmax, v);
+      }
+      mins[m] = rmin;
+      maxs[m] = rmax;
+      quantizeLinearU8(in.data() + m * in_stride, 1, cols, ref_q.data() + m * out_stride, ref_sc[m], ref_zp[m]);
+
+      std::vector<std::uint8_t> norm_q(cols);
+      float norm_sc = 0.0f, dx_sq = -1.0f, qx_sq = -1.0f;
+      std::uint8_t norm_zp = 0;
+      quantizeLinearU8WithNorm(in.data() + m * in_stride, cols, norm_q.data(), norm_sc, norm_zp, dx_sq, &qx_sq);
+      assert(std::bit_cast<std::uint32_t>(norm_sc) == std::bit_cast<std::uint32_t>(ref_sc[m]));
+      assert(norm_zp == ref_zp[m]);
+      for (std::size_t c = 0; c < cols; ++c) assert(norm_q[c] == ref_q[m * out_stride + c]);
+      double ref_dx = 0.0, ref_qx = 0.0;
+      for (std::size_t c = 0; c < cols; ++c) {
+        const float qf = static_cast<float>(static_cast<int>(norm_q[c]) - static_cast<int>(norm_zp)) * norm_sc;
+        const double d = static_cast<double>(in[m * in_stride + c]) - static_cast<double>(qf);
+        ref_dx += d * d;
+        ref_qx += static_cast<double>(qf) * qf;
+      }
+      assert(std::abs(double(dx_sq) - ref_dx) <= 1e-4 * (1.0 + ref_dx));
+      assert(std::abs(double(qx_sq) - ref_qx) <= 1e-4 * (1.0 + ref_qx));
+    }
+
+    quantizeLinearU8Batch(in.data(), rows, cols, in_stride, got_batch_q.data(), out_stride, got_batch_sc.data(), got_batch_zp.data());
+    quantizeLinearU8FromMinMax(in.data(), rows, cols, in_stride, mins.data(), maxs.data(), got_mm_q.data(), out_stride, got_mm_sc.data(), got_mm_zp.data());
+    for (std::size_t m = 0; m < rows; ++m) {
+      assert(std::bit_cast<std::uint32_t>(got_batch_sc[m]) == std::bit_cast<std::uint32_t>(ref_sc[m]));
+      assert(std::bit_cast<std::uint32_t>(got_mm_sc[m]) == std::bit_cast<std::uint32_t>(ref_sc[m]));
+      assert(got_batch_zp[m] == ref_zp[m] && got_mm_zp[m] == ref_zp[m]);
+      for (std::size_t c = 0; c < cols; ++c) {
+        assert(got_batch_q[m * out_stride + c] == ref_q[m * out_stride + c]);
+        assert(got_mm_q[m * out_stride + c] == ref_q[m * out_stride + c]);
+      }
+      for (std::size_t c = cols; c < out_stride; ++c) {
+        assert(got_batch_q[m * out_stride + c] == 77 && got_mm_q[m * out_stride + c] == 77);
+      }
+    }
+    in[2] = std::numeric_limits<float>::quiet_NaN();
+    rejects([&] { quantizeLinearU8Batch(in.data(), rows, cols, in_stride, got_batch_q.data(), out_stride, got_batch_sc.data(), got_batch_zp.data()); });
+    rejects([&] { quantizeLinearU8FromMinMax(in.data(), rows, cols, in_stride, mins.data(), maxs.data(), got_mm_q.data(), out_stride, got_mm_sc.data(), got_mm_zp.data()); });
+  }
+
+  // 2. Weight::packInt8, multiplyBatch (bit-exact vs M=1), slicing, force_separate_bias, multiplyBatchReluMinMax, move
+  {
+    const bool ortSat = std::string_view(mtran::ssru::packed::backend()) == "packed-avx2-ort";
+    for (std::size_t k : {32, 384}) {
+      for (std::size_t n : {24, 64}) {
+        std::vector<std::int8_t> wq8(k * n);
+        std::vector<float> w_fp32(k * n), bias(n);
+        const float w_scale = 0.015625f;
+        for (std::size_t i = 0; i < k * n; ++i) {
+          wq8[i] = static_cast<std::int8_t>(int((i * 53) % 251) - 125);
+          w_fp32[i] = static_cast<float>(wq8[i]) * w_scale;
+        }
+        wq8[0] = 127;
+        w_fp32[0] = 127.0f * w_scale;
+        for (std::size_t c = 0; c < n; ++c) bias[c] = static_cast<float>(int(c % 13) - 6) * 0.25f;
+
+        Weight w_fused = Weight::packInt8(wq8.data(), w_scale, k, n, bias.data(), nullptr, true);
+        Weight w_sep = Weight::packInt8(wq8.data(), w_scale, k, n, nullptr, bias.data(), false);
+        Weight w_moved = std::move(w_fused);
+        Weight w_assigned(w_fp32.data(), k, n);
+        w_assigned = std::move(w_moved);
+
+        for (std::size_t rows : {std::size_t(1), std::size_t(2), std::size_t(3), std::size_t(7), std::size_t(8)}) {
+          const std::size_t out_stride = n + 16;
+          std::vector<std::uint8_t> a_q(rows * k);
+          std::vector<float> a_sc(rows);
+          std::vector<std::uint8_t> a_zp(rows);
+          for (std::size_t m = 0; m < rows; ++m) {
+            a_sc[m] = 0.01f * float(m + 1);
+            a_zp[m] = static_cast<std::uint8_t>((m * 47 + 19) % 256);
+            for (std::size_t c = 0; c < k; ++c) {
+              a_q[m * k + c] = static_cast<std::uint8_t>((m * 71 + c * 29) % 256);
+            }
+          }
+
+          std::vector<float> out_fused(rows * out_stride, 999.0f), out_sep(rows * out_stride, 999.0f),
+              out_force_sep(rows * out_stride, 999.0f), out_relu(rows * out_stride, 999.0f);
+          std::vector<float> maxs(rows, -1.0f);
+          w_assigned.multiplyBatch(a_q.data(), a_sc.data(), a_zp.data(), rows, out_fused.data(), out_stride);
+          w_assigned.multiplyBatch(a_q.data(), a_sc.data(), a_zp.data(), rows, out_force_sep.data(), out_stride,
+                                   0, ~std::size_t(0), true);
+          // Sliced calls including empty [0, 0).
+          w_sep.multiplyBatch(a_q.data(), a_sc.data(), a_zp.data(), rows, out_sep.data(), out_stride, 0, 0);
+          w_sep.multiplyBatch(a_q.data(), a_sc.data(), a_zp.data(), rows, out_sep.data(), out_stride, 0, 8);
+          w_sep.multiplyBatch(a_q.data(), a_sc.data(), a_zp.data(), rows, out_sep.data(), out_stride, 8, n);
+          w_assigned.multiplyBatchReluMinMax(a_q.data(), a_sc.data(), a_zp.data(), rows, out_relu.data(), out_stride,
+                                             maxs.data());
+
+          Workspace ws;
+          std::uint8_t* a1_aligned = ws.resize(k);
+          std::vector<float> ref_m1(n);
+          for (std::size_t m = 0; m < rows; ++m) {
+            std::copy_n(a_q.data() + m * k, k, a1_aligned);
+            float expected_max = 0.0f;
+            for (std::size_t c = 0; c < n; ++c) {
+              std::int64_t acc = 0;
+              if (ortSat) {
+                for (std::size_t j = 0; j < k; j += 2) {
+                  const int pair = int(a_q[m * k + j]) * wq8[j * n + c] + int(a_q[m * k + j + 1]) * wq8[(j + 1) * n + c];
+                  acc += std::clamp(pair, -32768, 32767) - int(a_zp[m]) * (int(wq8[j * n + c]) + int(wq8[(j + 1) * n + c]));
+                }
+              } else {
+                for (std::size_t j = 0; j < k; ++j)
+                  acc += (std::int64_t(a_q[m * k + j]) - a_zp[m]) * wq8[j * n + c];
+              }
+              const float comb = a_sc[m] * w_scale;
+              const float ef = std::fma(static_cast<float>(acc), comb, bias[c]);
+              const float es = static_cast<float>(acc) * comb + bias[c];
+              const float er = ef > 0.0f ? ef : 0.0f;
+              expected_max = std::max(expected_max, er);
+              assert(std::bit_cast<std::uint32_t>(out_fused[m * out_stride + c]) == std::bit_cast<std::uint32_t>(ef));
+              assert(std::bit_cast<std::uint32_t>(out_sep[m * out_stride + c]) == std::bit_cast<std::uint32_t>(es));
+              assert(std::bit_cast<std::uint32_t>(out_force_sep[m * out_stride + c]) == std::bit_cast<std::uint32_t>(es));
+              assert(std::bit_cast<std::uint32_t>(out_relu[m * out_stride + c]) == std::bit_cast<std::uint32_t>(er));
+            }
+            assert(std::bit_cast<std::uint32_t>(maxs[m]) == std::bit_cast<std::uint32_t>(expected_max));
+            for (std::size_t c = n; c < out_stride; ++c) {
+              assert(out_fused[m * out_stride + c] == 999.0f && out_sep[m * out_stride + c] == 999.0f);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 3. ShortlistTable::createInt8 & argMaxBatch
+  {
+    Workspace ws;
+    for (std::size_t dim : {std::size_t(20), std::size_t(64)}) {
+      const std::size_t vocab = 512;
+      const float min_pos = 0.015625f;
+      std::vector<std::int8_t> emb_q8(vocab * dim);
+      std::vector<float> emb_fp32(vocab * dim), bias(vocab);
+      for (std::size_t r = 0; r < vocab; ++r) {
+        bias[r] = static_cast<float>(int(r % 19) - 9) * 0.125f;
+        for (std::size_t k = 0; k < dim; ++k) {
+          emb_q8[r * dim + k] = static_cast<std::int8_t>(int((r * 29 + k * 41) % 241) - 120);
+          emb_fp32[r * dim + k] = static_cast<float>(emb_q8[r * dim + k]) * min_pos;
+        }
+      }
+      bias[1] = -std::numeric_limits<float>::infinity();
+      std::fill_n(emb_q8.data() + dim, dim, 127);
+      std::fill_n(emb_fp32.data() + dim, dim, 127.0f * min_pos);
+
+      ShortlistTable tbl_fp32(emb_fp32.data(), bias.data(), vocab, dim, false);
+      ShortlistTable tbl_i8 = ShortlistTable::createInt8(emb_q8.data(), min_pos, bias.data(), vocab, dim, false);
+      ShortlistTable tbl_moved = std::move(tbl_i8);
+
+      // Case A: contiguous hot 0..255 + tail with heterogeneous masks across rows=12 (plus empty slot m=11).
+      const std::size_t rows = 12, x_stride = dim + 16;
+      std::vector<float> x_rows(rows * x_stride, 0.0f);
+      std::vector<std::int64_t> union_hot;
+      std::vector<std::uint32_t> masks_hot;
+      for (std::int64_t id = 0; id < 256; ++id) {
+        union_hot.push_back(id);
+        std::uint32_t mask = 0;
+        for (std::size_t m = 0; m < 11; ++m) {
+          if (((id + static_cast<std::int64_t>(m)) % 3) != 0 || id < 16) mask |= (1u << m);
+        }
+        masks_hot.push_back(mask);
+      }
+      for (std::int64_t id = 260; id < 320; id += 2) {
+        union_hot.push_back(id);
+        std::uint32_t mask = 0;
+        for (std::size_t m = 0; m < 11; ++m) {
+          if (((id / 2 + static_cast<std::int64_t>(m)) & 1) == 0) mask |= (1u << m);
+        }
+        masks_hot.push_back(mask);
+      }
+      for (std::size_t m = 0; m < rows; ++m) {
+        for (std::size_t k = 0; k < dim; ++k) {
+          x_rows[m * x_stride + k] = std::cos(float(m * 31 + k * 7)) * 1.5f;
+        }
+        if (m < 11) {
+          const std::size_t win = (m == 0) ? 7 : (m < 6 ? 12 + m * 20 : 260 + (m - 6) * 10);
+          for (std::size_t k = 0; k < dim; ++k) {
+            x_rows[m * x_stride + k] += 3.0f * static_cast<float>(emb_q8[win * dim + k]) * min_pos;
+          }
+        }
+      }
+      std::vector<std::int64_t> got_tokens(rows, -1);
+      tbl_moved.argMaxBatch(x_rows.data(), rows, x_stride, union_hot.data(), masks_hot.data(), union_hot.size(), got_tokens.data());
+      for (std::size_t m = 0; m < 11; ++m) {
+        std::vector<std::int64_t> cids_m;
+        for (std::size_t j = 0; j < union_hot.size(); ++j) {
+          if (masks_hot[j] & (1u << m)) cids_m.push_back(union_hot[j]);
+        }
+        const std::size_t j_fp32 = tbl_fp32.argmax(x_rows.data() + m * x_stride, cids_m.data(), cids_m.size(), ws);
+        const std::size_t j_i8 = tbl_moved.argmax(x_rows.data() + m * x_stride, cids_m.data(), cids_m.size(), ws);
+        assert(cids_m[j_fp32] == cids_m[j_i8]);
+        assert(got_tokens[m] == cids_m[j_i8]);
+      }
+      assert(got_tokens[11] == 0);
+
+      // Case B: unsorted union IDs + ties.
+      std::vector<std::int64_t> union_unsorted{400, 1, 250, 7, 300, 12, 9, 450, 500, 33};
+      std::vector<std::uint32_t> masks_all(union_unsorted.size(), 0xFu);
+      std::vector<std::int64_t> got_unsorted(4, -1);
+      tbl_moved.argMaxBatch(x_rows.data(), 4, x_stride, union_unsorted.data(), masks_all.data(), union_unsorted.size(), got_unsorted.data());
+      for (std::size_t m = 0; m < 4; ++m) {
+        const std::size_t j_ref = tbl_moved.argmax(x_rows.data() + m * x_stride, union_unsorted.data(), union_unsorted.size(), ws);
+        assert(got_unsorted[m] == union_unsorted[j_ref]);
+      }
+    }
+  }
+
+  // 4. FullVocabQ4::createInt8 & argMaxBatch (M=1..8, max_threads=1,4,6)
+  {
+    Workspace ws;
+    for (auto [vocab, dim] : {std::pair<std::size_t, std::size_t>{13, 64}, {384, 384}, {4100, 64}}) {
+      const float min_pos = 0.015625f;
+      std::vector<std::int8_t> emb_q8(vocab * dim);
+      std::vector<float> emb_fp32(vocab * dim), bias(vocab);
+      for (std::size_t r = 0; r < vocab; ++r) {
+        bias[r] = static_cast<float>(int(r % 17) - 8) * 0.125f;
+        for (std::size_t k = 0; k < dim; ++k) {
+          emb_q8[r * dim + k] = static_cast<std::int8_t>(int((r * 19 + k * 37) % 241) - 120);
+          emb_fp32[r * dim + k] = static_cast<float>(emb_q8[r * dim + k]) * min_pos;
+        }
+      }
+      bias[1] = -std::numeric_limits<float>::infinity();
+      FullVocabQ4 q4_fp32(emb_fp32.data(), bias.data(), vocab, dim);
+      FullVocabQ4 q4_i8 = FullVocabQ4::createInt8(emb_q8.data(), min_pos, bias.data(), vocab, dim);
+      FullVocabQ4 q4_moved = std::move(q4_i8);
+
+      const std::size_t x_stride = dim + 16;
+      for (std::size_t rows : {std::size_t(1), std::size_t(2), std::size_t(4), std::size_t(8)}) {
+        std::vector<float> x_rows(rows * x_stride, 0.0f);
+        for (std::size_t m = 0; m < rows; ++m) {
+          const std::size_t target = (vocab == 13) ? ((m * 3 + 2) % 12 + (m % 2)) : (10 + m * (vocab / rows - 2));
+          const std::size_t safe_target = (target == 1) ? 2 : std::min(target, vocab - 1);
+          for (std::size_t k = 0; k < dim; ++k) {
+            x_rows[m * x_stride + k] = static_cast<float>(emb_q8[safe_target * dim + k]) * min_pos * 4.0f +
+                                       std::sin(float(m * 13 + k)) * 0.1f;
+          }
+        }
+        for (std::size_t mt : {std::size_t(1), std::size_t(4), std::size_t(6)}) {
+          std::vector<std::int64_t> got(rows, -1);
+          q4_moved.argMaxBatch(x_rows.data(), rows, x_stride, got.data(), mt);
+          for (std::size_t m = 0; m < rows; ++m) {
+            const std::size_t ref_fp = q4_fp32.argmax(x_rows.data() + m * x_stride, ws, mt > 1);
+            const std::size_t ref_i8 = q4_moved.argmax(x_rows.data() + m * x_stride, ws, mt > 1);
+            assert(ref_fp == ref_i8);
+            assert(got[m] == static_cast<std::int64_t>(ref_i8));
+          }
+        }
+      }
+    }
+  }
+}
 int main() {
   cpuOsGolden();
   if (!mtran::ssru::packed::backend()) {
@@ -242,6 +517,7 @@ int main() {
   std::fesetround(FE_TONEAREST);
   kleidiGolden();
   dqlAndShortlistGolden();
+  batchAndInt8Golden();
   for (std::size_t k : {32, 64, 512, 2048}) for (std::size_t n : {8, 24, 32, 64}) {
     std::vector<float> original(k * n, 127.f);
     const Weight positive(original.data(), k, n);
