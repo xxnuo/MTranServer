@@ -608,14 +608,12 @@ bool TeamBarrier::arriveAndWaitSlow() noexcept {
     generation_.store(gen + 1, std::memory_order_release);
     return !cancelled_.load(std::memory_order_acquire);
   }
-  std::size_t spins = 0;
   for (;;) {
     if (cancelled_.load(std::memory_order_acquire)) return false;
     if (generation_.load(std::memory_order_acquire) != gen) {
       return !cancelled_.load(std::memory_order_acquire);
     }
-    if ((++spins & 4095) == 0) std::this_thread::yield();
-    else cpuRelax();
+    cpuRelax();
   }
 }
 
@@ -655,10 +653,8 @@ void PcorePool::runTeam(std::size_t max_threads,
     caller_exc = std::current_exception();
   }
 
-  std::size_t spins = 0;
   while (impl_->remaining.load(std::memory_order_acquire) != 0) {
-    if ((++spins & 4095) == 0) std::this_thread::yield();
-    else cpuRelax();
+    cpuRelax();
   }
 
   if (caller_exc) std::rethrow_exception(caller_exc);
