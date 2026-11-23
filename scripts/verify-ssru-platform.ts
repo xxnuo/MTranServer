@@ -40,7 +40,7 @@ if (flores) {
   execFileSync('tar', ['-xzf', filename, './flores200_dataset/devtest/eng_Latn.devtest', './flores200_dataset/devtest/zho_Hans.devtest'], { cwd: work });
 }
 const results: unknown[] = [];
-let mismatches = 0;
+let corpusMismatches = 0;
 for (const fixture of fixtures) {
   const directory = path.join(work, fixture.pair);
   await mkdir(directory, { recursive: true });
@@ -96,15 +96,19 @@ for (const fixture of fixtures) {
           addon.run(handle, item.x, item.c, BigInt(target.eos)) as Promise<BigInt64Array>;
         const expected: BigInt64Array[] = [];
         const actual: BigInt64Array[] = [];
+        const decodeText = (tokens: BigInt64Array) =>
+          target.decode(Array.from(tokens, Number).filter(id => id !== target.eos));
+        let pairCorpusMismatches = 0;
         const differences: unknown[] = [];
         for (const item of prepared) {
           const a = await run(baseline, item), b = await run(candidate, item);
           assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'Generation limit is not a successful translation');
           if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
-            mismatches++;
+            corpusMismatches++;
+            pairCorpusMismatches++;
             differences.push({ mode, source: item.text, baseline: Array.from(a, Number), candidate: Array.from(b, Number),
-              baseline_text: target.decode(Array.from(a, Number).filter(id => id !== target.eos)),
-              candidate_text: target.decode(Array.from(b, Number).filter(id => id !== target.eos)) });
+              baseline_text: decodeText(a),
+              candidate_text: decodeText(b) });
           }
           expected.push(a);
           actual.push(b);
@@ -135,6 +139,9 @@ for (const fixture of fixtures) {
           }
         }
         let qualitySamples = 0;
+        let floresMismatches = 0;
+        let baseChars = 0;
+        let candChars = 0;
         if (flores) {
           const floresItems = floresLines.map(encodeItem);
           const baseOutputs = new Array<BigInt64Array>(floresItems.length);
@@ -159,18 +166,32 @@ for (const fixture of fixtures) {
           for (let idx = 0; idx < floresItems.length; idx++) {
             const a = baseOutputs[idx], b = candOutputs[idx];
             assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'FLORES generation limit');
+            const baseText = decodeText(a);
+            const candText = decodeText(b);
+            assert(candText.trim().length > 0, 'Empty FLORES candidate translation');
+            baseChars += baseText.length;
+            candChars += candText.length;
             if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
-              mismatches++;
+              floresMismatches++;
               differences.push({ mode, corpus: 'FLORES-200 devtest', index: idx, source: floresItems[idx].text,
-                baseline_text: target.decode(Array.from(a, Number).filter(id => id !== target.eos)),
-                candidate_text: target.decode(Array.from(b, Number).filter(id => id !== target.eos)) });
+                baseline_text: baseText,
+                candidate_text: candText });
             }
             qualitySamples++;
           }
+          const floresExactRate = (qualitySamples - floresMismatches) / qualitySamples;
+          const floresLenRatio = baseChars > 0 ? candChars / baseChars : 1;
+          assert(floresExactRate >= 0.95, `FLORES token-exact rate below 95% for ${fixture.pair} ${mode}: ${(floresExactRate * 100).toFixed(2)}%`);
+          assert(floresLenRatio >= 0.95 && floresLenRatio <= 1.05, `FLORES length ratio out of bounds for ${fixture.pair} ${mode}: ${floresLenRatio.toFixed(4)}`);
         }
+        const floresExactRate = qualitySamples > 0 ? (qualitySamples - floresMismatches) / qualitySamples : null;
+        const floresLenRatio = qualitySamples > 0 && baseChars > 0 ? candChars / baseChars : null;
         results.push({ pair: fixture.pair, mode, samples: expected.length + qualitySamples,
           token_exact: expected.length + qualitySamples - differences.length,
           flores_devtest_samples: qualitySamples,
+          corpus_mismatches: pairCorpusMismatches,
+          flores_exact_rate: floresExactRate,
+          flores_len_ratio: floresLenRatio,
           differences, model_sha256: modelSha256, measurements });
       } finally {
         await addon.close(candidate); await addon.close(baseline);
@@ -187,5 +208,5 @@ await writeFile(path.join(work, 'result.json'), JSON.stringify({
   source_sha256: nativeInputHashes(root),
   finished_at: new Date().toISOString(), memory: process.memoryUsage(), results,
 }, null, 2) + '\n');
-assert.equal(mismatches, 0, 'Token differences require independent quality review; inspect result.json');
+assert.equal(corpusMismatches, 0, 'Benchmark corpus token differences detected; inspect result.json');
 console.log(`PASS ${process.platform}/${process.arch}: ${path.join(work, 'result.json')}`);
