@@ -39,7 +39,9 @@ test('release assembly requires matching binary hashes and all six passing platf
       writeFileSync(path.join(directory, `${target}.json`), JSON.stringify({ platform, arch, ort: '1.30.0',
         addon_sha256: createHash('sha256').update(bytes).digest('hex'),
         source_sha256: nativeInputHashes(),
-        results: [0, 1, 2, 3].map(i => ({ mode: i % 2 ? 'standard' : 'fast', samples: 1024, token_exact: 1024, flores_devtest_samples: 1012, differences: [] })) }));
+        results: [0, 1, 2, 3].map(i => ({ mode: i % 2 ? 'standard' : 'fast', samples: 1024, token_exact: 1024, flores_devtest_samples: 1012,
+          corpus_exact_rate: 1, corpus_chrf: 1, corpus_len_ratio: 1,
+          flores_exact_rate: 1, flores_chrf: 1, flores_len_ratio: 1, differences: [] })) }));
       for (const host of ['node-http', 'electron-http', ...(platform === 'linux' ? ['electron-http-2', 'electron-http-3'] : [])])
         writeFileSync(path.join(directory, `${target}-${host}.json`), JSON.stringify({ platform, arch, status: 'passed',
           addon_sha256: createHash('sha256').update(bytes).digest('hex'),
@@ -54,7 +56,21 @@ test('release assembly requires matching binary hashes and all six passing platf
     writeFileSync(reportPath, JSON.stringify(report));
     assert.throws(() => collectNative(directory, output), /quality/);
     report.results[0].token_exact++;
+    report.results[0].flores_chrf = 0.95;
     writeFileSync(reportPath, JSON.stringify(report));
+    assert.throws(() => collectNative(directory, output), /quality/);
+    Object.assign(report.results[0], {
+      corpus_exact_rate: 0.85,
+      corpus_chrf: 0.98,
+      corpus_len_ratio: 1,
+      flores_exact_rate: 0.82,
+      flores_chrf: 0.97,
+      flores_len_ratio: 1,
+      token_exact: 840,
+      differences: Array(184).fill({}),
+    });
+    writeFileSync(reportPath, JSON.stringify(report));
+    collectNative(directory, output);
     writeFileSync(path.join(directory, 'onnx-async-win32-arm64.node'), 'changed');
     assert.throws(() => collectNative(directory, output), /Unverified binary/);
   } finally { rmSync(directory, { recursive: true, force: true }); }

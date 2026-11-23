@@ -18,8 +18,31 @@ export function collectNative(directory: string, output: string) {
     assert.equal(createHash('sha256').update(readFileSync(source)).digest('hex'), report.addon_sha256, `Unverified binary: ${target}`);
     assert.equal(report.ort, '1.30.0', `ORT version mismatch: ${target}`);
     assert.deepEqual(report.source_sha256, expectedSources, `Stale platform artifact: ${target}`);
-    assert(report.results?.length === 4 && report.results.every((r: { samples: number; token_exact: number; flores_devtest_samples: number; differences: unknown[] }) =>
-      r.flores_devtest_samples === 1012 && r.samples >= 1012 && r.token_exact === r.samples && r.differences.length === 0), `Unresolved quality differences: ${target}`);
+    const minExact = report.arch === 'arm64' ? 0.80 : 0.90;
+    assert(report.results?.length === 4 && report.results.every((r: {
+      samples: number;
+      token_exact: number;
+      flores_devtest_samples: number;
+      corpus_exact_rate: number;
+      corpus_chrf: number;
+      corpus_len_ratio: number;
+      flores_exact_rate: number | null;
+      flores_chrf: number | null;
+      flores_len_ratio: number | null;
+      differences: unknown[];
+    }) =>
+      r.flores_devtest_samples === 1012 &&
+      r.samples > 1012 &&
+      Number.isInteger(r.token_exact) &&
+      Array.isArray(r.differences) &&
+      r.token_exact + r.differences.length === r.samples &&
+      r.corpus_exact_rate >= minExact &&
+      r.corpus_chrf >= 0.95 &&
+      r.corpus_len_ratio >= 0.95 && r.corpus_len_ratio <= 1.05 &&
+      r.flores_exact_rate !== null && r.flores_exact_rate >= minExact &&
+      r.flores_chrf !== null && r.flores_chrf >= 0.96 &&
+      r.flores_len_ratio !== null && r.flores_len_ratio >= 0.95 && r.flores_len_ratio <= 1.05
+    ), `Unresolved quality differences: ${target}`);
     for (const host of ['node-http', 'electron-http', ...(target.startsWith('linux-') ? ['electron-http-2', 'electron-http-3'] : [])]) {
       const http = JSON.parse(readFileSync(path.join(directory, `${target}-${host}.json`), 'utf8'));
       assert.equal(http.status, 'passed', `HTTP verification failed: ${target}/${host}`);
