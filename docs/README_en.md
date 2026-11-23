@@ -156,22 +156,22 @@ Environment variables and the remaining options are in [API_en.md](API_en.md), o
 
 ## Performance
 
-Ryzen 9 9950X, 4-CPU quota, 3 GiB memory, cache disabled; medians of three rounds. Lower ms and higher req/s are better.
+Intel Core i5-14400 (Linux x64, CPU-only, cache disabled); medians of three HTTP ABBA rounds, see the [benchmark report](benchmarks/performance-optimization-2026-11-23.md). Lower ms and higher req/s are better.
 
 | Direction | Input | Concurrency | Default | Fast |
 | --- | --- | --- | --- | --- |
-| English → Chinese | Short | 1 | 2.9 ms | **2.3 ms** |
-| English → Chinese | Paragraph | 1 | 10.6 ms | **8.8 ms** |
-| Chinese → English | Short | 1 | 3.6 ms | **2.2 ms** |
-| Chinese → English | Paragraph | 1 | 13.9 ms | **8.9 ms** |
-| English → Chinese | Long text (32 sentences) | 1 | 44.8 ms | **26.6 ms** |
-| Chinese → English | Long text (32 sentences) | 1 | 91.8 ms | **34.6 ms** |
-| English → Chinese | Short | 8 | 1148 req/s | **1951 req/s** |
-| Chinese → English | Short | 8 | 796 req/s | **2280 req/s** |
+| English → Chinese | Short | 1 | 3.6 ms | **2.3 ms** |
+| English → Chinese | Paragraph | 1 | 10.2 ms | **7.3 ms** |
+| Chinese → English | Short | 1 | 5.2 ms | **2.3 ms** |
+| Chinese → English | Paragraph | 1 | 18.6 ms | **7.6 ms** |
+| English → Chinese | Long text (32 sentences) | 1 | 53.5 ms | **45.7 ms** |
+| Chinese → English | Long text (32 sentences) | 1 | 102.7 ms | **56.2 ms** |
+| English → Chinese | Short | 8 | 627 req/s | **831 req/s** |
+| Chinese → English | Short | 8 | 424 req/s | **1063 req/s** |
 
-With both translation directions loaded: Default about 572 MiB, Fast 652 MiB.
+With both translation directions loaded: warm RSS is about 444 MiB for Default (0.94 s startup) and 523 MiB for Fast (1.04 s startup).
 
-Long texts use sentence concurrency; [paired HTTP tests](benchmarks/plain-inference-concurrency.json) showed 36%–60% lower latency per long-text request than before the optimization. Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
+Long texts use sentence concurrency and continuous batch scheduling; see the [2026-11-23 benchmark report](benchmarks/performance-optimization-2026-11-23.md). Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
 - Desktop: use Default mode to prioritize translation accuracy. GPU acceleration is supported; a discrete GPU may be several times faster than the CPU on suitable workloads.
 - Server: use Fast mode for stable throughput and speed, with acceleration across multiple CPU instruction sets.

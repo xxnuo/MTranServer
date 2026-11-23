@@ -156,22 +156,22 @@ Les variables d'environnement et les autres options sont dans [API_fr.md](API_fr
 
 ## Performances
 
-Ryzen 9 9950X, quota de 4 CPU, 3 GiB de mémoire, cache désactivé ; médianes de trois séries. Moins de ms et plus de req/s sont préférables.
+Intel Core i5-14400 (Linux x64, CPU uniquement, cache désactivé) ; médianes de trois séries HTTP ABBA, voir le [rapport de performances](benchmarks/performance-optimization-2026-11-23.md). Moins de ms et plus de req/s sont préférables.
 
 | Sens | Entrée | Concurrence | Défaut | Fast |
 | --- | --- | --- | --- | --- |
-| Anglais → chinois | Courte | 1 | 2.9 ms | **2.3 ms** |
-| Anglais → chinois | Paragraphe | 1 | 10.6 ms | **8.8 ms** |
-| Chinois → anglais | Courte | 1 | 3.6 ms | **2.2 ms** |
-| Chinois → anglais | Paragraphe | 1 | 13.9 ms | **8.9 ms** |
-| Anglais → chinois | Texte long (32 phrases) | 1 | 44.8 ms | **26.6 ms** |
-| Chinois → anglais | Texte long (32 phrases) | 1 | 91.8 ms | **34.6 ms** |
-| Anglais → chinois | Courte | 8 | 1148 req/s | **1951 req/s** |
-| Chinois → anglais | Courte | 8 | 796 req/s | **2280 req/s** |
+| Anglais → chinois | Courte | 1 | 3.6 ms | **2.3 ms** |
+| Anglais → chinois | Paragraphe | 1 | 10.2 ms | **7.3 ms** |
+| Chinois → anglais | Courte | 1 | 5.2 ms | **2.3 ms** |
+| Chinois → anglais | Paragraphe | 1 | 18.6 ms | **7.6 ms** |
+| Anglais → chinois | Texte long (32 phrases) | 1 | 53.5 ms | **45.7 ms** |
+| Chinois → anglais | Texte long (32 phrases) | 1 | 102.7 ms | **56.2 ms** |
+| Anglais → chinois | Courte | 8 | 627 req/s | **831 req/s** |
+| Chinois → anglais | Courte | 8 | 424 req/s | **1063 req/s** |
 
-Avec les deux sens de traduction chargés : Défaut environ 572 MiB, Fast 652 MiB.
+Avec les deux sens de traduction chargés : RSS à chaud d'environ 444 MiB en Défaut (démarrage 0.94 s) et 523 MiB en Fast (démarrage 1.04 s).
 
-Les textes longs sont traduits phrase par phrase en parallèle ; les [tests HTTP appariés](benchmarks/plain-inference-concurrency.json) ont montré une latence par requête de texte long réduite de 36% à 60% par rapport à la version avant optimisation. `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
+Les textes longs utilisent le traitement concurrent par phrase et l'ordonnancement continu par lots ; voir le [rapport du 2026-11-23](benchmarks/performance-optimization-2026-11-23.md). `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
 
 - Sur ordinateur : privilégier le mode Défaut pour la précision des traductions. L’accélération GPU est prise en charge ; un GPU dédié peut être plusieurs fois plus rapide que le CPU sur des charges adaptées.
 - Sur serveur : privilégier le mode Fast pour un débit stable et une vitesse élevée, avec une accélération exploitant plusieurs jeux d’instructions CPU.

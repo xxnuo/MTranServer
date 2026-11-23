@@ -1,0 +1,1560 @@
+{
+  "date": "2026-11-23",
+  "baseline_commit": "bde0f20",
+  "candidate_commit": "b711a71",
+  "platform": "linux-x64",
+  "node_version": "v26.13.1",
+  "cpu": "Intel(R) Core(TM) i5-14400",
+  "rounds": 3,
+  "corpus_counts": {
+    "LONG_EN": 1,
+    "LONG_ZH-HANS": 1,
+    "PARA_EN": 3,
+    "PARA_ZH": 2,
+    "SHORT_EN": 10,
+    "SHORT_ZH": 10
+  },
+  "long_text_stats": {
+    "LONG_EN": {
+      "chars": 3244,
+      "lines": 32
+    },
+    "LONG_ZH-HANS": {
+      "chars": 1516,
+      "lines": 32
+    }
+  },
+  "quality_and_compatibility": {
+    "flores_200_total_samples": 4098,
+    "flores_200_exact_tokens": 3971,
+    "flores_200_exact_pct": 96.9,
+    "fast_corpus_exact": "50/50",
+    "pairs": {
+      "en_zh-Hans_fast": {
+        "exact": "991/1025",
+        "chrf_cand_vs_base": 84.86,
+        "chrf_ref_base": 27.26,
+        "chrf_ref_cand": 27.78,
+        "len_ratio": 1.0026
+      },
+      "en_zh-Hans_standard": {
+        "exact": "992/1025",
+        "chrf_cand_vs_base": 88.59,
+        "chrf_ref_base": 29.9,
+        "chrf_ref_cand": 29.88,
+        "len_ratio": 0.987
+      },
+      "zh-Hans_en_fast": {
+        "exact": "994/1024",
+        "chrf_cand_vs_base": 93.51,
+        "chrf_ref_base": 57.89,
+        "chrf_ref_cand": 57.46,
+        "len_ratio": 0.9785
+      },
+      "zh-Hans_en_standard": {
+        "exact": "994/1024",
+        "chrf_cand_vs_base": 93.63,
+        "chrf_ref_base": 58.93,
+        "chrf_ref_cand": 58.5,
+        "len_ratio": 0.9811
+      }
+    },
+    "onnxruntime_web_wasm": "50/50 valid EOS",
+    "verify_fast_service_node": {
+      "version": "v26.13.1",
+      "status": "PASS"
+    },
+    "verify_fast_service_electron": {
+      "version": "39.2.7",
+      "status": "PASS"
+    },
+    "portable_docker_build": {
+      "target": "manylinux_2_28",
+      "max_glibc": "GLIBC_2.27",
+      "status": "PASS"
+    },
+    "baseline_x86_64_isa_audit": {
+      "functions_checked": 1453,
+      "guarded_avx2_fma_fns": 65,
+      "leaks": 0,
+      "weak_comdat_topk9": 0
+    },
+    "cpp_tests_and_sanitizers": "8/8 PASS + packed ssru_test PASS + clang++ -Werror -Wpedantic PASS",
+    "bun_test": {
+      "pass": 321,
+      "fail": 0,
+      "files": 36,
+      "expects": 1643
+    }
+  },
+  "http_abba": {
+    "startup_summary": {
+      "baseline_normal": {
+        "ready_ms": 2147.2796380003274,
+        "warm_rss_mib": 662.7734375,
+        "end_rss_mib": 679.7890625,
+        "peak_mib": 797.9609375
+      },
+      "baseline_fast": {
+        "ready_ms": 2366.106574998412,
+        "warm_rss_mib": 828.77734375,
+        "end_rss_mib": 839.29296875,
+        "peak_mib": 944.5859375
+      },
+      "candidate_normal": {
+        "ready_ms": 941.7903350004053,
+        "warm_rss_mib": 444.15234375,
+        "end_rss_mib": 891.234375,
+        "peak_mib": 902.1171875
+      },
+      "candidate_fast": {
+        "ready_ms": 1043.7226879985246,
+        "warm_rss_mib": 522.73046875,
+        "end_rss_mib": 782.89453125,
+        "peak_mib": 782.89453125
+      }
+    },
+    "equivalence": {
+      "exact": 50,
+      "total": 54,
+      "mismatches": 20
+    },
+    "perf_summary": [
+      {
+        "mode": "normal",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 133.16055750996418,
+          "mean_ms": 7.437509037499998,
+          "p95_ms": 11.300672350000001
+        },
+        "candidate": {
+          "rps": 271.69939439835184,
+          "mean_ms": 3.593938349999996,
+          "p95_ms": 6.435092999999999
+        },
+        "ratio": 2.0403894327193774,
+        "speedup_pct": 104.03894327193774
+      },
+      {
+        "mode": "normal",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 341.1523815008376,
+          "mean_ms": 22.981762341666663,
+          "p95_ms": 35.44364079999997
+        },
+        "candidate": {
+          "rps": 627.367900480358,
+          "mean_ms": 12.467214058333333,
+          "p95_ms": 20.587504400000018
+        },
+        "ratio": 1.8389667916734673,
+        "speedup_pct": 83.89667916734673
+      },
+      {
+        "mode": "normal",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 37.810298187687025,
+          "mean_ms": 26.330603249999992,
+          "p95_ms": 32.54552350000001
+        },
+        "candidate": {
+          "rps": 96.57036116313158,
+          "mean_ms": 10.221624500000004,
+          "p95_ms": 14.214154
+        },
+        "ratio": 2.554075629971621,
+        "speedup_pct": 155.40756299716213
+      },
+      {
+        "mode": "normal",
+        "group": "PARA_EN",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 87.31187368358401,
+          "mean_ms": 89.49220380555556,
+          "p95_ms": 125.23425145
+        },
+        "candidate": {
+          "rps": 184.1658796197119,
+          "mean_ms": 42.03235401388889,
+          "p95_ms": 62.40064555
+        },
+        "ratio": 2.109287910681247,
+        "speedup_pct": 110.9287910681247
+      },
+      {
+        "mode": "normal",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 11.069755059695842,
+          "mean_ms": 90.078482,
+          "p95_ms": 106.58385094999998
+        },
+        "candidate": {
+          "rps": 18.610111629218686,
+          "mean_ms": 53.481176000000005,
+          "p95_ms": 59.42459625
+        },
+        "ratio": 1.6811674268183876,
+        "speedup_pct": 68.11674268183876
+      },
+      {
+        "mode": "normal",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 8.248118489987544,
+          "mean_ms": 935.680783375,
+          "p95_ms": 1043.5193435
+        },
+        "candidate": {
+          "rps": 15.043341799854595,
+          "mean_ms": 441.32778525000003,
+          "p95_ms": 601.396911
+        },
+        "ratio": 1.8238513205303521,
+        "speedup_pct": 82.38513205303522
+      },
+      {
+        "mode": "normal",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 93.78014038762757,
+          "mean_ms": 10.599115937499997,
+          "p95_ms": 20.55505065
+        },
+        "candidate": {
+          "rps": 189.77899351360782,
+          "mean_ms": 5.181372199999999,
+          "p95_ms": 8.391652349999966
+        },
+        "ratio": 2.023658663008841,
+        "speedup_pct": 102.3658663008841
+      },
+      {
+        "mode": "normal",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 205.9021123272927,
+          "mean_ms": 38.380102799999996,
+          "p95_ms": 55.77005600000002
+        },
+        "candidate": {
+          "rps": 424.30282246343575,
+          "mean_ms": 18.345496725,
+          "p95_ms": 29.58058389999998
+        },
+        "ratio": 2.060701649281689,
+        "speedup_pct": 106.07016492816892
+      },
+      {
+        "mode": "normal",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 22.87317891612125,
+          "mean_ms": 43.58847175000002,
+          "p95_ms": 54.878704750000026
+        },
+        "candidate": {
+          "rps": 53.35400498687213,
+          "mean_ms": 18.557318687499997,
+          "p95_ms": 24.05961674999996
+        },
+        "ratio": 2.3326012174576958,
+        "speedup_pct": 133.26012174576957
+      },
+      {
+        "mode": "normal",
+        "group": "PARA_ZH",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 43.99366055017611,
+          "mean_ms": 175.411783625,
+          "p95_ms": 213.58001475
+        },
+        "candidate": {
+          "rps": 102.81783545176702,
+          "mean_ms": 75.37713664583333,
+          "p95_ms": 94.10137015
+        },
+        "ratio": 2.337105714003956,
+        "speedup_pct": 133.71057140039562
+      },
+      {
+        "mode": "normal",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 4.063043041256301,
+          "mean_ms": 245.88194100000004,
+          "p95_ms": 259.23042995000003
+        },
+        "candidate": {
+          "rps": 9.713594661408374,
+          "mean_ms": 102.659333,
+          "p95_ms": 109.20966439999998
+        },
+        "ratio": 2.3907191144115743,
+        "speedup_pct": 139.07191144115743
+      },
+      {
+        "mode": "normal",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 3.1184556631528375,
+          "mean_ms": 2471.311992375,
+          "p95_ms": 2658.483273
+        },
+        "candidate": {
+          "rps": 8.755916194718223,
+          "mean_ms": 800.389694125,
+          "p95_ms": 1074.23418
+        },
+        "ratio": 2.807773186637443,
+        "speedup_pct": 180.7773186637443
+      },
+      {
+        "mode": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 173.6280187423112,
+          "mean_ms": 5.697222074999998,
+          "p95_ms": 9.108482749999984
+        },
+        "candidate": {
+          "rps": 424.5558519568649,
+          "mean_ms": 2.2993024125000012,
+          "p95_ms": 3.5835116999999967
+        },
+        "ratio": 2.445203573894179,
+        "speedup_pct": 144.5203573894179
+      },
+      {
+        "mode": "fast",
+        "group": "SHORT_EN",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 737.8976711180857,
+          "mean_ms": 10.513909162499997,
+          "p95_ms": 16.353631349999976
+        },
+        "candidate": {
+          "rps": 830.903123457279,
+          "mean_ms": 9.366924458333333,
+          "p95_ms": 15.911165849999952
+        },
+        "ratio": 1.1260411246430262,
+        "speedup_pct": 12.60411246430262
+      },
+      {
+        "mode": "fast",
+        "group": "PARA_EN",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 49.48757563998091,
+          "mean_ms": 20.106720874999997,
+          "p95_ms": 27.111463099999987
+        },
+        "candidate": {
+          "rps": 134.48324954251743,
+          "mean_ms": 7.332531958333331,
+          "p95_ms": 9.77576955
+        },
+        "ratio": 2.7175154127750134,
+        "speedup_pct": 171.75154127750133
+      },
+      {
+        "mode": "fast",
+        "group": "PARA_EN",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 187.94158784846752,
+          "mean_ms": 41.20119830555556,
+          "p95_ms": 64.64989160000002
+        },
+        "candidate": {
+          "rps": 232.1446693336972,
+          "mean_ms": 32.585910166666665,
+          "p95_ms": 49.76173630000001
+        },
+        "ratio": 1.2351958498981583,
+        "speedup_pct": 23.519584989815833
+      },
+      {
+        "mode": "fast",
+        "group": "LONG_EN",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 19.688026873132905,
+          "mean_ms": 50.552426249999996,
+          "p95_ms": 56.3875001
+        },
+        "candidate": {
+          "rps": 21.713651117322062,
+          "mean_ms": 45.69611850000001,
+          "p95_ms": 56.21036964999999
+        },
+        "ratio": 1.102886097080323,
+        "speedup_pct": 10.288609708032293
+      },
+      {
+        "mode": "fast",
+        "group": "LONG_EN",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 19.646937919307174,
+          "mean_ms": 380.358122375,
+          "p95_ms": 430.5011815
+        },
+        "candidate": {
+          "rps": 19.6042981227772,
+          "mean_ms": 342.3723278125,
+          "p95_ms": 465.75544074999993
+        },
+        "ratio": 0.9978296975994376,
+        "speedup_pct": -0.2170302400562374
+      },
+      {
+        "mode": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 192.49022810724844,
+          "mean_ms": 5.127945562500002,
+          "p95_ms": 8.395122349999994
+        },
+        "candidate": {
+          "rps": 427.5648332991255,
+          "mean_ms": 2.2661634000000004,
+          "p95_ms": 3.547621850000007
+        },
+        "ratio": 2.2212287735505316,
+        "speedup_pct": 122.12287735505316
+      },
+      {
+        "mode": "fast",
+        "group": "SHORT_ZH",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 866.1399289619457,
+          "mean_ms": 8.949697566666664,
+          "p95_ms": 14.083731849999976
+        },
+        "candidate": {
+          "rps": 1062.8765057339663,
+          "mean_ms": 7.269008141666666,
+          "p95_ms": 12.326901799999991
+        },
+        "ratio": 1.2271417933679678,
+        "speedup_pct": 22.714179336796782
+      },
+      {
+        "mode": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 44.309179473724974,
+          "mean_ms": 22.452815125,
+          "p95_ms": 27.141917750000008
+        },
+        "candidate": {
+          "rps": 130.0899808818951,
+          "mean_ms": 7.548576187499998,
+          "p95_ms": 9.977012499999992
+        },
+        "ratio": 2.9359600522288507,
+        "speedup_pct": 193.59600522288508
+      },
+      {
+        "mode": "fast",
+        "group": "PARA_ZH",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 190.7614386291381,
+          "mean_ms": 38.995098312500005,
+          "p95_ms": 61.74092634999999
+        },
+        "candidate": {
+          "rps": 253.86705235277557,
+          "mean_ms": 29.27946210416667,
+          "p95_ms": 42.11493715
+        },
+        "ratio": 1.3308090680020608,
+        "speedup_pct": 33.08090680020608
+      },
+      {
+        "mode": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 14.991336469176122,
+          "mean_ms": 66.4734865,
+          "p95_ms": 75.46587319999999
+        },
+        "candidate": {
+          "rps": 17.714786830175566,
+          "mean_ms": 56.2263305,
+          "p95_ms": 68.46093110000001
+        },
+        "ratio": 1.1816682833181127,
+        "speedup_pct": 18.166828331811267
+      },
+      {
+        "mode": "fast",
+        "group": "LONG_ZH-HANS",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 15.189124214169656,
+          "mean_ms": 491.7214600625,
+          "p95_ms": 545.7483
+        },
+        "candidate": {
+          "rps": 15.255860018735092,
+          "mean_ms": 435.4701725625,
+          "p95_ms": 568.8879925
+        },
+        "ratio": 1.0043936571736756,
+        "speedup_pct": 0.4393657173675569
+      }
+    ]
+  },
+  "core_abba": {
+    "rss": {
+      "baseline": {
+        "rssMiB": 1173.0625,
+        "maxRssMiB": 1456.75390625
+      },
+      "candidate": {
+        "rssMiB": 1386.61328125,
+        "maxRssMiB": 1556.44921875
+      }
+    },
+    "equivalence": {
+      "exactGroups": 16,
+      "totalGroups": 24,
+      "mismatches": 24
+    },
+    "summary": [
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 235.98489494511958,
+          "meanMs": 4.214703683333336,
+          "p95Ms": 6.46305579999999,
+          "tokPerSec": 2855.417228835947
+        },
+        "candidate": {
+          "rps": 826.5579573967507,
+          "meanMs": 1.191410991666668,
+          "p95Ms": 1.7010414999999226,
+          "tokPerSec": 10001.351284500684
+        },
+        "ratio": 3.5025884075714857,
+        "speedupPct": 250.25884075714856
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 1445.602118761201,
+          "meanMs": 5.41612576666667,
+          "p95Ms": 10.207324450000067,
+          "tokPerSec": 17491.785637010533
+        },
+        "candidate": {
+          "rps": 1353.567177403658,
+          "meanMs": 5.741479816666663,
+          "p95Ms": 9.101009449999987,
+          "tokPerSec": 16378.16284658426
+        },
+        "ratio": 0.9363345279014867,
+        "speedupPct": -6.366547209851325
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 56.48504747710631,
+          "meanMs": 17.676401,
+          "p95Ms": 22.94632989999992,
+          "tokPerSec": 3276.132753672166
+        },
+        "candidate": {
+          "rps": 183.2880275240882,
+          "meanMs": 5.436207520833335,
+          "p95Ms": 6.501120049999997,
+          "tokPerSec": 10630.705596397116
+        },
+        "ratio": 3.2448946351399597,
+        "speedupPct": 224.48946351399596
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 223.35736155989667,
+          "meanMs": 34.05110858333335,
+          "p95Ms": 54.1011828500001,
+          "tokPerSec": 12954.726970474008
+        },
+        "candidate": {
+          "rps": 281.2512321220969,
+          "meanMs": 27.323949375,
+          "p95Ms": 44.16787340000008,
+          "tokPerSec": 16312.571463081622
+        },
+        "ratio": 1.2591983991836109,
+        "speedupPct": 25.919839918361088
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "LONG_SENTS",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 153.27542642427383,
+          "meanMs": 6.507630111111093,
+          "p95Ms": 10.698210399999743,
+          "tokPerSec": 3228.07337469304
+        },
+        "candidate": {
+          "rps": 486.67959664565274,
+          "meanMs": 2.041382494949483,
+          "p95Ms": 3.1022953000000126,
+          "tokPerSec": 10220.271529558708
+        },
+        "ratio": 3.175196494306269,
+        "speedupPct": 217.51964943062688
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "LONG_SENTS",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 774.9285290853804,
+          "meanMs": 10.066078171717152,
+          "p95Ms": 19.946940800000075,
+          "tokPerSec": 16320.464476192103
+        },
+        "candidate": {
+          "rps": 818.6492262958557,
+          "meanMs": 9.320100949494957,
+          "p95Ms": 16.062373800000035,
+          "tokPerSec": 17191.63375221297
+        },
+        "ratio": 1.0564190058431286,
+        "speedupPct": 5.6419005843128645
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 163.52602467420465,
+          "meanMs": 6.097178291666637,
+          "p95Ms": 9.925847049999856,
+          "tokPerSec": 1995.017501025297
+        },
+        "candidate": {
+          "rps": 492.7249773007766,
+          "meanMs": 2.01576560833333,
+          "p95Ms": 3.0417578500001694,
+          "tokPerSec": 6011.244723069474
+        },
+        "ratio": 3.013128817155801,
+        "speedupPct": 201.3128817155801
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 505.1638033413985,
+          "meanMs": 15.51960241666671,
+          "p95Ms": 24.199677499999915,
+          "tokPerSec": 6162.998400765062
+        },
+        "candidate": {
+          "rps": 1072.6599946797846,
+          "meanMs": 7.1352351083333625,
+          "p95Ms": 10.757278299999689,
+          "tokPerSec": 13086.451935093373
+        },
+        "ratio": 2.123390447978836,
+        "speedupPct": 112.33904479788359
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 43.86193480093358,
+          "meanMs": 22.771605437499982,
+          "p95Ms": 29.24485204999964,
+          "tokPerSec": 2558.612863387792
+        },
+        "candidate": {
+          "rps": 135.6373170269548,
+          "meanMs": 7.349475145833367,
+          "p95Ms": 8.469506100000036,
+          "tokPerSec": 7912.176826572363
+        },
+        "ratio": 3.092369674127276,
+        "speedupPct": 209.23696741272758
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 100.07673988661112,
+          "meanMs": 77.38333381249998,
+          "p95Ms": 113.85767550000006,
+          "tokPerSec": 5837.809826718982
+        },
+        "candidate": {
+          "rps": 228.32010032841845,
+          "meanMs": 33.016374583333345,
+          "p95Ms": 52.847246999999676,
+          "tokPerSec": 13318.672519157742
+        },
+        "ratio": 2.281450220971522,
+        "speedupPct": 128.1450220971522
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "LONG_SENTS",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 112.32029008859213,
+          "meanMs": 8.882460090909161,
+          "p95Ms": 14.440295299999706,
+          "tokPerSec": 2358.7260918604347
+        },
+        "candidate": {
+          "rps": 313.67746579709257,
+          "meanMs": 3.1708575454545467,
+          "p95Ms": 5.081684199999927,
+          "tokPerSec": 6596.732159490371
+        },
+        "ratio": 2.792705267674085,
+        "speedupPct": 179.27052676740848
+      },
+      {
+        "kind": "core_addon",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "LONG_SENTS",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 307.5794100365315,
+          "meanMs": 25.63931924242422,
+          "p95Ms": 48.39855029999998,
+          "tokPerSec": 6459.167610767162
+        },
+        "candidate": {
+          "rps": 649.2473259355282,
+          "meanMs": 11.887904090909087,
+          "p95Ms": 21.76193060000014,
+          "tokPerSec": 13653.86800603808
+        },
+        "ratio": 2.1108283088858792,
+        "speedupPct": 111.08283088858792
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 270.5763182907212,
+          "meanMs": 3.686003683333441,
+          "p95Ms": 5.369340200000441,
+          "tokPerSec": 3192.80055583051
+        },
+        "candidate": {
+          "rps": 953.7805951255507,
+          "meanMs": 1.0393527000000176,
+          "p95Ms": 1.56408450000024,
+          "tokPerSec": 11254.611022481498
+        },
+        "ratio": 3.5249965745367247,
+        "speedupPct": 252.49965745367246
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 1446.899302030226,
+          "meanMs": 5.196888241666769,
+          "p95Ms": 9.641167449999465,
+          "tokPerSec": 17073.41176395667
+        },
+        "candidate": {
+          "rps": 1718.084349694751,
+          "meanMs": 4.59132523333332,
+          "p95Ms": 6.992646700000023,
+          "tokPerSec": 20273.395326398062
+        },
+        "ratio": 1.1874249626660334,
+        "speedupPct": 18.742496266603336
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 52.59210208723926,
+          "meanMs": 18.985572843750106,
+          "p95Ms": 22.427399149999562,
+          "tokPerSec": 3418.486635670552
+        },
+        "candidate": {
+          "rps": 175.1458685946667,
+          "meanMs": 5.6905076250000945,
+          "p95Ms": 6.868647749999991,
+          "tokPerSec": 11384.481458653336
+        },
+        "ratio": 3.330269406310028,
+        "speedupPct": 233.02694063100282
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 227.9661150311742,
+          "meanMs": 32.879014031250165,
+          "p95Ms": 55.80979480000042,
+          "tokPerSec": 14817.797477026324
+        },
+        "candidate": {
+          "rps": 281.0883914684305,
+          "meanMs": 27.972311187500026,
+          "p95Ms": 38.083399550000465,
+          "tokPerSec": 18270.74544544798
+        },
+        "ratio": 1.2330270725980124,
+        "speedupPct": 23.302707259801238
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "LONG_SENTS",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 116.04053358181358,
+          "meanMs": 8.5958072254902,
+          "p95Ms": 15.189503450001029,
+          "tokPerSec": 3348.110689522327
+        },
+        "candidate": {
+          "rps": 391.108280543749,
+          "meanMs": 2.541422019607919,
+          "p95Ms": 4.642081949999783,
+          "tokPerSec": 11284.624212159348
+        },
+        "ratio": 3.370445382069885,
+        "speedupPct": 237.04453820698853
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "LONG_SENTS",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 560.4462580802808,
+          "meanMs": 13.212385166666731,
+          "p95Ms": 25.495443649999284,
+          "tokPerSec": 16170.522916963397
+        },
+        "candidate": {
+          "rps": 639.4427589868709,
+          "meanMs": 11.829680509803893,
+          "p95Ms": 22.182828599999795,
+          "tokPerSec": 18449.804310768246
+        },
+        "ratio": 1.1409528563491171,
+        "speedupPct": 14.095285634911715
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 126.18567026401054,
+          "meanMs": 7.906107975000078,
+          "p95Ms": 13.360430849999647,
+          "tokPerSec": 1488.9909091153243
+        },
+        "candidate": {
+          "rps": 299.0136965939768,
+          "meanMs": 3.324898383333304,
+          "p95Ms": 5.577695949999449,
+          "tokPerSec": 3528.361619808926
+        },
+        "ratio": 2.369632748063776,
+        "speedupPct": 136.9632748063776
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 254.15178275286902,
+          "meanMs": 30.544129125000094,
+          "p95Ms": 43.06914939999942,
+          "tokPerSec": 2998.9910364838547
+        },
+        "candidate": {
+          "rps": 727.3600677880182,
+          "meanMs": 10.391536766666734,
+          "p95Ms": 15.26106015000073,
+          "tokPerSec": 8582.848799898615
+        },
+        "ratio": 2.861912121605243,
+        "speedupPct": 186.1912121605243
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 24.064972851747633,
+          "meanMs": 41.51995834375032,
+          "p95Ms": 53.0352449500002,
+          "tokPerSec": 1564.2232353635961
+        },
+        "candidate": {
+          "rps": 62.37995963638427,
+          "meanMs": 15.994103124999924,
+          "p95Ms": 21.468187900000157,
+          "tokPerSec": 4054.6973763649776
+        },
+        "ratio": 2.5921475175009037,
+        "speedupPct": 159.21475175009036
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 46.632784014438954,
+          "meanMs": 159.99662353125018,
+          "p95Ms": 204.5157809500005,
+          "tokPerSec": 3031.130960938532
+        },
+        "candidate": {
+          "rps": 129.1037154092568,
+          "meanMs": 59.88374140624998,
+          "p95Ms": 74.46533584999975,
+          "tokPerSec": 8391.741501601693
+        },
+        "ratio": 2.7685182889634534,
+        "speedupPct": 176.85182889634535
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "LONG_SENTS",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 53.667250855913544,
+          "meanMs": 18.606819509803852,
+          "p95Ms": 30.784636900000415,
+          "tokPerSec": 1545.301134939393
+        },
+        "candidate": {
+          "rps": 138.33739435864877,
+          "meanMs": 7.20343835294115,
+          "p95Ms": 13.906161400000013,
+          "tokPerSec": 3983.3032081505044
+        },
+        "ratio": 2.577687363380297,
+        "speedupPct": 157.7687363380297
+      },
+      {
+        "kind": "core_addon",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "LONG_SENTS",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 104.16732090382273,
+          "meanMs": 74.68960483333328,
+          "p95Ms": 125.31657775000019,
+          "tokPerSec": 2999.4060930836017
+        },
+        "candidate": {
+          "rps": 281.9718307818929,
+          "meanMs": 26.516759313725448,
+          "p95Ms": 48.498057350000046,
+          "tokPerSec": 8119.130068690387
+        },
+        "ratio": 2.7069125742634426,
+        "speedupPct": 170.69125742634427
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 226.13712658362644,
+          "meanMs": 4.4170868000001065,
+          "p95Ms": 6.5835925999981555,
+          "tokPerSec": 2691.0318063451546
+        },
+        "candidate": {
+          "rps": 683.4789813752759,
+          "meanMs": 1.4573636583333913,
+          "p95Ms": 2.2390548500005023,
+          "tokPerSec": 8133.3998783657835
+        },
+        "ratio": 3.022409419014717,
+        "speedupPct": 202.24094190147167
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 1080.1264050329446,
+          "meanMs": 7.128672325000328,
+          "p95Ms": 12.20523159999902,
+          "tokPerSec": 12853.50421989204
+        },
+        "candidate": {
+          "rps": 1363.005957892136,
+          "meanMs": 5.787511408333436,
+          "p95Ms": 7.961547800000335,
+          "tokPerSec": 16219.770898916418
+        },
+        "ratio": 1.2618948592878472,
+        "speedupPct": 26.189485928784716
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 52.37096540410688,
+          "meanMs": 19.088151624999984,
+          "p95Ms": 24.747471749997384,
+          "tokPerSec": 2967.6880395660564
+        },
+        "candidate": {
+          "rps": 176.6173533599654,
+          "meanMs": 5.657080104166766,
+          "p95Ms": 6.800685249999515,
+          "tokPerSec": 10008.31669039804
+        },
+        "ratio": 3.372428825727074,
+        "speedupPct": 237.2428825727074
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 207.1636401260102,
+          "meanMs": 36.550275062499544,
+          "p95Ms": 66.48980694999882,
+          "tokPerSec": 11739.272940473911
+        },
+        "candidate": {
+          "rps": 252.260047693755,
+          "meanMs": 29.148196729166518,
+          "p95Ms": 49.4619566499995,
+          "tokPerSec": 14294.736035979451
+        },
+        "ratio": 1.2176849544655342,
+        "speedupPct": 21.768495446553416
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "LONG_DOC",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 21.030804997805237,
+          "meanMs": 47.54089899999963,
+          "p95Ms": 51.54584050000085,
+          "tokPerSec": 13480.746003593158
+        },
+        "candidate": {
+          "rps": 23.105086844801036,
+          "meanMs": 43.2727093333336,
+          "p95Ms": 52.627268249999815,
+          "tokPerSec": 14787.255580672663
+        },
+        "ratio": 1.0986306442959397,
+        "speedupPct": 9.86306442959397
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "fast",
+        "group": "LONG_DOC",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 18.266719903195085,
+          "meanMs": 312.2423249999999,
+          "p95Ms": 326.6574595000002,
+          "tokPerSec": 11708.967457948049
+        },
+        "candidate": {
+          "rps": 21.616260555314632,
+          "meanMs": 183.93565733333404,
+          "p95Ms": 273.0704817500009,
+          "tokPerSec": 13834.406755401364
+        },
+        "ratio": 1.1833684793915118,
+        "speedupPct": 18.33684793915118
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 158.9991048747895,
+          "meanMs": 6.284903391666648,
+          "p95Ms": 9.725729300000237,
+          "tokPerSec": 1907.989258497474
+        },
+        "candidate": {
+          "rps": 484.27690700104256,
+          "meanMs": 2.061742441666729,
+          "p95Ms": 3.1066990000002987,
+          "tokPerSec": 5811.322884012511
+        },
+        "ratio": 3.045783857603517,
+        "speedupPct": 204.57838576035172
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 454.11092715204006,
+          "meanMs": 17.157506250000097,
+          "p95Ms": 28.013324749999082,
+          "tokPerSec": 5449.33112582448
+        },
+        "candidate": {
+          "rps": 1021.6432656864373,
+          "meanMs": 7.632267408333397,
+          "p95Ms": 13.34785329999977,
+          "tokPerSec": 12259.719188237248
+        },
+        "ratio": 2.24976587128982,
+        "speedupPct": 124.97658712898199
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 42.93680162671581,
+          "meanMs": 23.285163416667046,
+          "p95Ms": 30.01167475000038,
+          "tokPerSec": 2461.7099599317066
+        },
+        "candidate": {
+          "rps": 127.34008125225742,
+          "meanMs": 7.84884702083328,
+          "p95Ms": 9.331714299999112,
+          "tokPerSec": 7300.831325129425
+        },
+        "ratio": 2.9657560979815702,
+        "speedupPct": 196.57560979815702
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 99.66613091968507,
+          "meanMs": 77.36370210416726,
+          "p95Ms": 104.73846985000164,
+          "tokPerSec": 5714.191506061944
+        },
+        "candidate": {
+          "rps": 217.38189234198043,
+          "meanMs": 34.95308402083325,
+          "p95Ms": 50.47202724999988,
+          "tokPerSec": 12463.228494273544
+        },
+        "ratio": 2.1811009450859027,
+        "speedupPct": 118.11009450859027
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "LONG_DOC",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 10.945642149648096,
+          "meanMs": 91.35433099999925,
+          "p95Ms": 108.23780974999954,
+          "tokPerSec": 7016.156617924429
+        },
+        "candidate": {
+          "rps": 20.478552088821854,
+          "meanMs": 48.82288200000039,
+          "p95Ms": 53.389289000000645,
+          "tokPerSec": 13147.23044102363
+        },
+        "ratio": 1.870931993650116,
+        "speedupPct": 87.09319936501161
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "en_zh-Hans",
+        "mode": "normal",
+        "group": "LONG_DOC",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 7.568692593035627,
+          "meanMs": 777.8410131666666,
+          "p95Ms": 791.1417077500009,
+          "tokPerSec": 4851.531952135837
+        },
+        "candidate": {
+          "rps": 20.437144665752268,
+          "meanMs": 198.46475333333333,
+          "p95Ms": 288.7790142500003,
+          "tokPerSec": 13120.646875412955
+        },
+        "ratio": 2.700221262065474,
+        "speedupPct": 170.02212620654743
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 248.71395764014719,
+          "meanMs": 4.018103858333537,
+          "p95Ms": 6.374853099997198,
+          "tokPerSec": 2934.824700153737
+        },
+        "candidate": {
+          "rps": 856.3608039891939,
+          "meanMs": 1.1646695583332984,
+          "p95Ms": 1.680660900001021,
+          "tokPerSec": 10105.057487072487
+        },
+        "ratio": 3.4431553906927213,
+        "speedupPct": 244.31553906927212
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 1324.8148474650095,
+          "meanMs": 5.7584303583338015,
+          "p95Ms": 10.728695600001446,
+          "tokPerSec": 15632.815200087112
+        },
+        "candidate": {
+          "rps": 1545.8903143672364,
+          "meanMs": 5.026017083333378,
+          "p95Ms": 7.483400350000101,
+          "tokPerSec": 18241.50570953339
+        },
+        "ratio": 1.166872727404322,
+        "speedupPct": 16.687272740432203
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 49.78053426977079,
+          "meanMs": 20.08248034374924,
+          "p95Ms": 25.35322230000056,
+          "tokPerSec": 3210.8444604002157
+        },
+        "candidate": {
+          "rps": 168.25281752487606,
+          "meanMs": 5.938020781250032,
+          "p95Ms": 7.1554229999997006,
+          "tokPerSec": 10852.306730354507
+        },
+        "ratio": 3.3798917587561434,
+        "speedupPct": 237.98917587561434
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 227.08552203267774,
+          "meanMs": 32.16047671874912,
+          "p95Ms": 50.811180599995346,
+          "tokPerSec": 14647.016171107714
+        },
+        "candidate": {
+          "rps": 296.7444793749782,
+          "meanMs": 26.422020937500122,
+          "p95Ms": 35.880856450000465,
+          "tokPerSec": 19140.018919686092
+        },
+        "ratio": 1.306752084935985,
+        "speedupPct": 30.675208493598504
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "LONG_DOC",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 15.395578615623343,
+          "meanMs": 64.94246916666695,
+          "p95Ms": 71.98048424999615,
+          "tokPerSec": 14456.448320070318
+        },
+        "candidate": {
+          "rps": 18.80026379778136,
+          "meanMs": 53.1785460000004,
+          "p95Ms": 64.64848299999994,
+          "tokPerSec": 17653.447706116694
+        },
+        "ratio": 1.2211469453121406,
+        "speedupPct": 22.114694531214063
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "fast",
+        "group": "LONG_DOC",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 13.741002746377522,
+          "meanMs": 402.3775199999994,
+          "p95Ms": 431.6649162500016,
+          "tokPerSec": 12902.801578848494
+        },
+        "candidate": {
+          "rps": 17.90520554459739,
+          "meanMs": 220.47566666666717,
+          "p95Ms": 330.56006700000125,
+          "tokPerSec": 16812.98800637695
+        },
+        "ratio": 1.3030494116826852,
+        "speedupPct": 30.304941168268517
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 113.80531722132525,
+          "meanMs": 8.781595658333147,
+          "p95Ms": 16.79139955000173,
+          "tokPerSec": 1342.902743211638
+        },
+        "candidate": {
+          "rps": 283.23203610370206,
+          "meanMs": 3.5250843583335154,
+          "p95Ms": 6.095384000000922,
+          "tokPerSec": 3342.1380260236847
+        },
+        "ratio": 2.488741677621975,
+        "speedupPct": 148.87416776219752
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "SHORT",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 261.5161719116318,
+          "meanMs": 29.719840958333407,
+          "p95Ms": 45.58211104999645,
+          "tokPerSec": 3085.890828557255
+        },
+        "candidate": {
+          "rps": 650.2158727534526,
+          "meanMs": 11.941013058333162,
+          "p95Ms": 20.0843057999984,
+          "tokPerSec": 7672.54729849074
+        },
+        "ratio": 2.4863314111724044,
+        "speedupPct": 148.63314111724043
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 23.65341035084804,
+          "meanMs": 42.270455500000025,
+          "p95Ms": 56.434549450000844,
+          "tokPerSec": 1525.6449676296986
+        },
+        "candidate": {
+          "rps": 63.29863579709806,
+          "meanMs": 15.789851437499692,
+          "p95Ms": 21.33307785000088,
+          "tokPerSec": 4082.762008912825
+        },
+        "ratio": 2.6760891921375145,
+        "speedupPct": 167.60891921375145
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "PARA",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 47.668337460267026,
+          "meanMs": 158.08620556250003,
+          "p95Ms": 210.7521564500039,
+          "tokPerSec": 3074.607766187223
+        },
+        "candidate": {
+          "rps": 123.6813070059217,
+          "meanMs": 62.49039265625004,
+          "p95Ms": 75.61566309999925,
+          "tokPerSec": 7977.444301881949
+        },
+        "ratio": 2.5946217887085687,
+        "speedupPct": 159.46217887085686
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "LONG_DOC",
+        "concurrency": 1,
+        "baseline": {
+          "rps": 3.976978464761039,
+          "meanMs": 251.4373466666669,
+          "p95Ms": 263.8343429999986,
+          "tokPerSec": 3742.3367353401372
+        },
+        "candidate": {
+          "rps": 9.772533834674327,
+          "meanMs": 102.3180450000006,
+          "p95Ms": 117.37970699999823,
+          "tokPerSec": 9195.95433842854
+        },
+        "ratio": 2.457276025320776,
+        "speedupPct": 145.72760253207758
+      },
+      {
+        "kind": "translation_engine",
+        "pair": "zh-Hans_en",
+        "mode": "normal",
+        "group": "LONG_DOC",
+        "concurrency": 8,
+        "baseline": {
+          "rps": 2.900353944741987,
+          "meanMs": 2055.129750333332,
+          "p95Ms": 2067.82045275,
+          "tokPerSec": 2729.2330620022094
+        },
+        "candidate": {
+          "rps": 9.520275295388938,
+          "meanMs": 428.92901983333286,
+          "p95Ms": 620.4691425000001,
+          "tokPerSec": 8958.57905296099
+        },
+        "ratio": 3.2824529270464105,
+        "speedupPct": 228.24529270464103
+      }
+    ]
+  }
+}

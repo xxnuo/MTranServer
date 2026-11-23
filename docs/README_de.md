@@ -156,22 +156,22 @@ Umgebungsvariablen und weitere Optionen stehen in [API_de.md](API_de.md), oder `
 
 ## Leistung
 
-Ryzen 9 9950X, 4-CPU-Kontingent, 3 GiB Arbeitsspeicher, Cache deaktiviert; Median aus drei Runden. Weniger ms und mehr Anfragen/s sind besser.
+Intel Core i5-14400 (Linux x64, nur CPU, Cache deaktiviert); Median aus drei HTTP-ABBA-Runden, Details im [Benchmark-Bericht](benchmarks/performance-optimization-2026-11-23.md). Weniger ms und mehr Anfragen/s sind besser.
 
 | Richtung | Eingabe | Parallelität | Standard | Fast |
 | --- | --- | --- | --- | --- |
-| Englisch → Chinesisch | Kurz | 1 | 2.9 ms | **2.3 ms** |
-| Englisch → Chinesisch | Absatz | 1 | 10.6 ms | **8.8 ms** |
-| Chinesisch → Englisch | Kurz | 1 | 3.6 ms | **2.2 ms** |
-| Chinesisch → Englisch | Absatz | 1 | 13.9 ms | **8.9 ms** |
-| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 44.8 ms | **26.6 ms** |
-| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 91.8 ms | **34.6 ms** |
-| Englisch → Chinesisch | Kurz | 8 | 1148 Anfragen/s | **1951 Anfragen/s** |
-| Chinesisch → Englisch | Kurz | 8 | 796 Anfragen/s | **2280 Anfragen/s** |
+| Englisch → Chinesisch | Kurz | 1 | 3.6 ms | **2.3 ms** |
+| Englisch → Chinesisch | Absatz | 1 | 10.2 ms | **7.3 ms** |
+| Chinesisch → Englisch | Kurz | 1 | 5.2 ms | **2.3 ms** |
+| Chinesisch → Englisch | Absatz | 1 | 18.6 ms | **7.6 ms** |
+| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 53.5 ms | **45.7 ms** |
+| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 102.7 ms | **56.2 ms** |
+| Englisch → Chinesisch | Kurz | 8 | 627 Anfragen/s | **831 Anfragen/s** |
+| Chinesisch → Englisch | Kurz | 8 | 424 Anfragen/s | **1063 Anfragen/s** |
 
-Mit beiden Übersetzungsrichtungen geladen: Standard etwa 572 MiB, Fast 652 MiB.
+Mit beiden Übersetzungsrichtungen geladen: Warm-RSS etwa 444 MiB im Standardmodus (Start 0.94 s) und 523 MiB im Fast-Modus (Start 1.04 s).
 
-Lange Texte werden satzweise parallel übersetzt; [gepaarte HTTP-Tests](benchmarks/plain-inference-concurrency.json) zeigten pro Langtext-Anfrage 36%–60% weniger Latenz als vor der Optimierung. `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
+Lange Texte nutzen parallele Satzverarbeitung und kontinuierliches Batch-Scheduling; Details im [Bericht vom 2026-11-23](benchmarks/performance-optimization-2026-11-23.md). `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 
 - Desktop: Standardmodus für höhere Übersetzungsgenauigkeit empfohlen. GPU-Beschleunigung wird unterstützt; eine dedizierte GPU kann bei geeigneten Aufgaben um ein Mehrfaches schneller als die CPU sein.
 - Server: Fast-Modus für stabilen Durchsatz und hohe Geschwindigkeit empfohlen, mit Beschleunigung durch verschiedene CPU-Befehlssätze.
