@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -84,7 +85,8 @@ class Encoder {
                    const std::size_t* lengths,
                    std::size_t batch_size,
                    EncodedBatch& out,
-                   std::size_t max_threads = 1) const;
+                   std::size_t max_threads = 1,
+                   const std::atomic<std::size_t>* active_submitted = nullptr) const;
 
   bool has_native_fast() const noexcept;
   std::size_t vocab_size() const noexcept { return vocab_size_; }

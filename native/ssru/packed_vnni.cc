@@ -88,14 +88,14 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
         std::memcpy(&v1, a + r + 4, 4);
         const __m256i va0 = _mm256_set1_epi32(v0);
         const __m256i va1 = _mm256_set1_epi32(v1);
-        c0a = _mm256_dpbusd_avx_epi32(c0a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0)));
-        c1a = _mm256_dpbusd_avx_epi32(c1a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1)));
-        c2a = _mm256_dpbusd_avx_epi32(c2a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b2)));
-        c3a = _mm256_dpbusd_avx_epi32(c3a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b3)));
-        c0b = _mm256_dpbusd_avx_epi32(c0b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
-        c1b = _mm256_dpbusd_avx_epi32(c1b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
-        c2b = _mm256_dpbusd_avx_epi32(c2b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b2 + 32)));
-        c3b = _mm256_dpbusd_avx_epi32(c3b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b3 + 32)));
+        c0a = _mm256_dpbusd_avx_epi32(c0a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        c1a = _mm256_dpbusd_avx_epi32(c1a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1)));
+        c2a = _mm256_dpbusd_avx_epi32(c2a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b2)));
+        c3a = _mm256_dpbusd_avx_epi32(c3a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b3)));
+        c0b = _mm256_dpbusd_avx_epi32(c0b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
+        c1b = _mm256_dpbusd_avx_epi32(c1b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
+        c2b = _mm256_dpbusd_avx_epi32(c2b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b2 + 32)));
+        c3b = _mm256_dpbusd_avx_epi32(c3b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b3 + 32)));
       }
       store8Vnni(_mm256_add_epi32(c0a, c0b), vzp, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sums + col)), vscale,
                  fused_bias, separate_bias, col, out + col, relu_minmax, vmax);
@@ -117,10 +117,10 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
         std::memcpy(&v1, a + r + 4, 4);
         const __m256i va0 = _mm256_set1_epi32(v0);
         const __m256i va1 = _mm256_set1_epi32(v1);
-        c0a = _mm256_dpbusd_avx_epi32(c0a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0)));
-        c1a = _mm256_dpbusd_avx_epi32(c1a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1)));
-        c0b = _mm256_dpbusd_avx_epi32(c0b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
-        c1b = _mm256_dpbusd_avx_epi32(c1b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
+        c0a = _mm256_dpbusd_avx_epi32(c0a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        c1a = _mm256_dpbusd_avx_epi32(c1a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1)));
+        c0b = _mm256_dpbusd_avx_epi32(c0b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
+        c1b = _mm256_dpbusd_avx_epi32(c1b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
       }
       store8Vnni(_mm256_add_epi32(c0a, c0b), vzp, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sums + col)), vscale,
                  fused_bias, separate_bias, col, out + col, relu_minmax, vmax);
@@ -134,8 +134,8 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
         std::int32_t v0, v1;
         std::memcpy(&v0, a + r, 4);
         std::memcpy(&v1, a + r + 4, 4);
-        c0a = _mm256_dpbusd_avx_epi32(c0a, _mm256_set1_epi32(v0), _mm256_load_si256(reinterpret_cast<const __m256i*>(b0)));
-        c0b = _mm256_dpbusd_avx_epi32(c0b, _mm256_set1_epi32(v1), _mm256_load_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
+        c0a = _mm256_dpbusd_avx_epi32(c0a, _mm256_set1_epi32(v0), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        c0b = _mm256_dpbusd_avx_epi32(c0b, _mm256_set1_epi32(v1), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
       }
       store8Vnni(_mm256_add_epi32(c0a, c0b), vzp, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sums + col)), vscale,
                  fused_bias, separate_bias, col, out + col, relu_minmax, vmax);
@@ -165,8 +165,8 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
       const std::int8_t* b0 = b0_base;
       const std::int8_t* b1 = b1_base;
       for (std::size_t r = 0; r < k; r += 4, b0 += 32, b1 += 32) {
-        const __m256i vb0 = _mm256_load_si256(reinterpret_cast<const __m256i*>(b0));
-        const __m256i vb1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(b1));
+        const __m256i vb0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0));
+        const __m256i vb1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1));
         std::int32_t x0, x1, x2, x3;
         std::memcpy(&x0, a0 + r, 4); std::memcpy(&x1, a1 + r, 4);
         std::memcpy(&x2, a2 + r, 4); std::memcpy(&x3, a3 + r, 4);
@@ -196,8 +196,8 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
       const std::int8_t* b0 = b0_base;
       const std::int8_t* b1 = b1_base;
       for (std::size_t r = 0; r < k; r += 4, b0 += 32, b1 += 32) {
-        const __m256i vb0 = _mm256_load_si256(reinterpret_cast<const __m256i*>(b0));
-        const __m256i vb1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(b1));
+        const __m256i vb0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0));
+        const __m256i vb1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1));
         std::int32_t x0, x1;
         std::memcpy(&x0, a0 + r, 4); std::memcpy(&x1, a1 + r, 4);
         const __m256i va0 = _mm256_set1_epi32(x0), va1 = _mm256_set1_epi32(x1);
@@ -224,8 +224,8 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
         std::int32_t x0;
         std::memcpy(&x0, a0 + r, 4);
         const __m256i va0 = _mm256_set1_epi32(x0);
-        c0 = _mm256_dpbusd_avx_epi32(c0, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0)));
-        c1 = _mm256_dpbusd_avx_epi32(c1, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1)));
+        c0 = _mm256_dpbusd_avx_epi32(c0, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        c1 = _mm256_dpbusd_avx_epi32(c1, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1)));
       }
       const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(a_zps[mr]));
       const __m256 vsc = _mm256_set1_ps(a_scales[mr] * w_scale);
@@ -246,7 +246,7 @@ MTRAN_VNNI_FMA void multiplyBatchK4Vnni(
       for (std::size_t r = 0; r < k; r += 4, b0 += 32) {
         std::int32_t x0;
         std::memcpy(&x0, a0 + r, 4);
-        c0 = _mm256_dpbusd_avx_epi32(c0, _mm256_set1_epi32(x0), _mm256_load_si256(reinterpret_cast<const __m256i*>(b0)));
+        c0 = _mm256_dpbusd_avx_epi32(c0, _mm256_set1_epi32(x0), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
       }
       const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(a_zps[mr]));
       const __m256 vsc = _mm256_set1_ps(a_scales[mr] * w_scale);
@@ -314,14 +314,14 @@ MTRAN_VNNI_FMA ShortlistTable::ScanResult scanShortlistVnni(
         std::memcpy(&v1, x_u8 + k + 4, 4);
         const __m256i va0 = _mm256_set1_epi32(v0);
         const __m256i va1 = _mm256_set1_epi32(v1);
-        c0a = _mm256_dpbusd_avx_epi32(c0a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0)));
-        c1a = _mm256_dpbusd_avx_epi32(c1a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1)));
-        c2a = _mm256_dpbusd_avx_epi32(c2a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b2)));
-        c3a = _mm256_dpbusd_avx_epi32(c3a, va0, _mm256_load_si256(reinterpret_cast<const __m256i*>(b3)));
-        c0b = _mm256_dpbusd_avx_epi32(c0b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
-        c1b = _mm256_dpbusd_avx_epi32(c1b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
-        c2b = _mm256_dpbusd_avx_epi32(c2b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b2 + 32)));
-        c3b = _mm256_dpbusd_avx_epi32(c3b, va1, _mm256_load_si256(reinterpret_cast<const __m256i*>(b3 + 32)));
+        c0a = _mm256_dpbusd_avx_epi32(c0a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0)));
+        c1a = _mm256_dpbusd_avx_epi32(c1a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1)));
+        c2a = _mm256_dpbusd_avx_epi32(c2a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b2)));
+        c3a = _mm256_dpbusd_avx_epi32(c3a, va0, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b3)));
+        c0b = _mm256_dpbusd_avx_epi32(c0b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b0 + 32)));
+        c1b = _mm256_dpbusd_avx_epi32(c1b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b1 + 32)));
+        c2b = _mm256_dpbusd_avx_epi32(c2b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b2 + 32)));
+        c3b = _mm256_dpbusd_avx_epi32(c3b, va1, _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b3 + 32)));
       }
       record_hot8(j + 0, _mm256_add_epi32(c0a, c0b));
       record_hot8(j + 8, _mm256_add_epi32(c1a, c1b));
@@ -335,8 +335,8 @@ MTRAN_VNNI_FMA ShortlistTable::ScanResult scanShortlistVnni(
         std::int32_t v0, v1;
         std::memcpy(&v0, x_u8 + k, 4);
         std::memcpy(&v1, x_u8 + k + 4, 4);
-        c0a = _mm256_dpbusd_avx_epi32(c0a, _mm256_set1_epi32(v0), _mm256_load_si256(reinterpret_cast<const __m256i*>(bp)));
-        c0b = _mm256_dpbusd_avx_epi32(c0b, _mm256_set1_epi32(v1), _mm256_load_si256(reinterpret_cast<const __m256i*>(bp + 32)));
+        c0a = _mm256_dpbusd_avx_epi32(c0a, _mm256_set1_epi32(v0), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bp)));
+        c0b = _mm256_dpbusd_avx_epi32(c0b, _mm256_set1_epi32(v1), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bp + 32)));
       }
       record_hot8(j, _mm256_add_epi32(c0a, c0b));
     }
@@ -493,7 +493,7 @@ MTRAN_VNNI_FMA void scanShortlistVnniBatch(
         __m256i c4 = _mm256_setzero_si256(), c5 = _mm256_setzero_si256();
         __m256i c6 = _mm256_setzero_si256(), c7 = _mm256_setzero_si256();
         for (std::size_t k = 0; k < dim; k += 8, bp += 64) {
-          const __m256i wb0 = _mm256_load_si256(reinterpret_cast<const __m256i*>(bp));
+          const __m256i wb0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bp));
           std::int32_t v0, v1, v2, v3, v4, v5, v6, v7;
           std::memcpy(&v0, x0 + k, 4); std::memcpy(&v1, x1 + k, 4);
           std::memcpy(&v2, x2 + k, 4); std::memcpy(&v3, x3 + k, 4);
@@ -507,7 +507,7 @@ MTRAN_VNNI_FMA void scanShortlistVnniBatch(
           c5 = _mm256_dpbusd_avx_epi32(c5, _mm256_set1_epi32(v5), wb0);
           c6 = _mm256_dpbusd_avx_epi32(c6, _mm256_set1_epi32(v6), wb0);
           c7 = _mm256_dpbusd_avx_epi32(c7, _mm256_set1_epi32(v7), wb0);
-          const __m256i wb1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(bp + 32));
+          const __m256i wb1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bp + 32));
           std::memcpy(&v0, x0 + k + 4, 4); std::memcpy(&v1, x1 + k + 4, 4);
           std::memcpy(&v2, x2 + k + 4, 4); std::memcpy(&v3, x3 + k + 4, 4);
           std::memcpy(&v4, x4 + k + 4, 4); std::memcpy(&v5, x5 + k + 4, 4);
@@ -539,7 +539,7 @@ MTRAN_VNNI_FMA void scanShortlistVnniBatch(
         __m256i c0 = _mm256_setzero_si256(), c1 = _mm256_setzero_si256();
         __m256i c2 = _mm256_setzero_si256(), c3 = _mm256_setzero_si256();
         for (std::size_t k = 0; k < dim; k += 4, bp += 32) {
-          const __m256i wb = _mm256_load_si256(reinterpret_cast<const __m256i*>(bp));
+          const __m256i wb = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bp));
           std::int32_t v0, v1, v2, v3;
           std::memcpy(&v0, x0 + k, 4); std::memcpy(&v1, x1 + k, 4);
           std::memcpy(&v2, x2 + k, 4); std::memcpy(&v3, x3 + k, 4);
@@ -564,7 +564,7 @@ MTRAN_VNNI_FMA void scanShortlistVnniBatch(
         for (std::size_t k = 0; k < dim; k += 4, bp += 32) {
           std::int32_t v0;
           std::memcpy(&v0, xm + k, 4);
-          c = _mm256_dpbusd_avx_epi32(c, _mm256_set1_epi32(v0), _mm256_load_si256(reinterpret_cast<const __m256i*>(bp)));
+          c = _mm256_dpbusd_avx_epi32(c, _mm256_set1_epi32(v0), _mm256_loadu_si256(reinterpret_cast<const __m256i*>(bp)));
         }
         const __m256i vzp = _mm256_set1_epi32(static_cast<std::int32_t>(x_zps[m]));
         const __m256 rsc = exact_int8 ? _mm256_set1_ps(x_scales[m] * exact_scale)
@@ -741,8 +741,8 @@ MTRAN_VNNI_FMA bool prepareFullQ4Vnni(
       const __m128i p1 = _mm_packs_epi32(_mm256_castsi256_si128(i1), _mm256_extracti128_si256(i1, 1));
       _mm_store_si128(reinterpret_cast<__m128i*>(qa + b * 64 + j), _mm_packs_epi16(p0, p1));
     }
-    const __m256i a0 = _mm256_load_si256(reinterpret_cast<const __m256i*>(qa + b * 64));
-    const __m256i a1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(qa + b * 64 + 32));
+    const __m256i a0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(qa + b * 64));
+    const __m256i a1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(qa + b * 64 + 32));
     const __m256i csum = _mm256_dpbusd_avx_epi32(_mm256_dpbusd_avx_epi32(zero, eight, a0), eight, a1);
     const __m128i c128 = _mm_add_epi32(_mm256_castsi256_si128(csum), _mm256_extracti128_si256(csum, 1));
     const __m128i c64 = _mm_add_epi32(c128, _mm_srli_si128(c128, 8));
@@ -931,6 +931,97 @@ MTRAN_VNNI_FMA void scanFullQ4K4VnniBatchRange(
           for (int c = 0; c < 8; ++c) top.push(out8[c], base_id + c);
         }
       }
+    }
+    if (m + 3 <= rows) {
+      const auto* qa0 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 0]);
+      const auto* qa1 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 1]);
+      const auto* qa2 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 2]);
+      const auto* sa0 = reinterpret_cast<const float*>(work_bufs[m + 0] + sa_off);
+      const auto* sa1 = reinterpret_cast<const float*>(work_bufs[m + 1] + sa_off);
+      const auto* sa2 = reinterpret_cast<const float*>(work_bufs[m + 2] + sa_off);
+      const auto* nc0 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 0] + nc_off);
+      const auto* nc1 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 1] + nc_off);
+      const auto* nc2 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 2] + nc_off);
+      __m256 acc0 = _mm256_setzero_ps(), acc1 = _mm256_setzero_ps(), acc2 = _mm256_setzero_ps();
+      const std::uint8_t* gp = gp_base;
+      const float* gs = gs_base;
+      for (std::size_t b = 0; b < blocks; ++b, gp += 256, gs += 8) {
+        __m256i s0 = _mm256_set1_epi32(nc0[b]);
+        __m256i s1 = _mm256_set1_epi32(nc1[b]);
+        __m256i s2 = _mm256_set1_epi32(nc2[b]);
+        const std::size_t qoff = b * 16;
+        for (std::size_t i = 0; i < 8; ++i) {
+          const __m256i p = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(gp + i * 32));
+          const __m256i lo = _mm256_and_si256(p, mask);
+          const __m256i hi = _mm256_and_si256(_mm256_srli_epi16(p, 4), mask);
+          s0 = _mm256_dpbusd_avx_epi32(
+              _mm256_dpbusd_avx_epi32(s0, lo, _mm256_set1_epi32(qa0[qoff + 2 * i + 0])),
+              hi, _mm256_set1_epi32(qa0[qoff + 2 * i + 1]));
+          s1 = _mm256_dpbusd_avx_epi32(
+              _mm256_dpbusd_avx_epi32(s1, lo, _mm256_set1_epi32(qa1[qoff + 2 * i + 0])),
+              hi, _mm256_set1_epi32(qa1[qoff + 2 * i + 1]));
+          s2 = _mm256_dpbusd_avx_epi32(
+              _mm256_dpbusd_avx_epi32(s2, lo, _mm256_set1_epi32(qa2[qoff + 2 * i + 0])),
+              hi, _mm256_set1_epi32(qa2[qoff + 2 * i + 1]));
+        }
+        const __m256 vgs = _mm256_loadu_ps(gs);
+        acc0 = _mm256_fmadd_ps(_mm256_cvtepi32_ps(s0), _mm256_mul_ps(_mm256_set1_ps(sa0[b]), vgs), acc0);
+        acc1 = _mm256_fmadd_ps(_mm256_cvtepi32_ps(s1), _mm256_mul_ps(_mm256_set1_ps(sa1[b]), vgs), acc1);
+        acc2 = _mm256_fmadd_ps(_mm256_cvtepi32_ps(s2), _mm256_mul_ps(_mm256_set1_ps(sa2[b]), vgs), acc2);
+      }
+      const __m256 vals[3] = {
+        _mm256_add_ps(acc0, vbias), _mm256_add_ps(acc1, vbias), _mm256_add_ps(acc2, vbias),
+      };
+      for (std::size_t i = 0; i < 3; ++i) {
+        auto& top = tops[m + i];
+        if (top.count < 9 || _mm256_movemask_ps(_mm256_cmp_ps(vals[i], _mm256_set1_ps(top.scores[8]), _CMP_GT_OQ)) != 0) {
+          alignas(32) float out8[8];
+          _mm256_store_ps(out8, vals[i]);
+          for (int c = 0; c < 8; ++c) top.push(out8[c], base_id + c);
+        }
+      }
+      m += 3;
+    } else if (m + 2 <= rows) {
+      const auto* qa0 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 0]);
+      const auto* qa1 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 1]);
+      const auto* sa0 = reinterpret_cast<const float*>(work_bufs[m + 0] + sa_off);
+      const auto* sa1 = reinterpret_cast<const float*>(work_bufs[m + 1] + sa_off);
+      const auto* nc0 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 0] + nc_off);
+      const auto* nc1 = reinterpret_cast<const std::int32_t*>(work_bufs[m + 1] + nc_off);
+      __m256 acc0 = _mm256_setzero_ps(), acc1 = _mm256_setzero_ps();
+      const std::uint8_t* gp = gp_base;
+      const float* gs = gs_base;
+      for (std::size_t b = 0; b < blocks; ++b, gp += 256, gs += 8) {
+        __m256i s0 = _mm256_set1_epi32(nc0[b]);
+        __m256i s1 = _mm256_set1_epi32(nc1[b]);
+        const std::size_t qoff = b * 16;
+        for (std::size_t i = 0; i < 8; ++i) {
+          const __m256i p = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(gp + i * 32));
+          const __m256i lo = _mm256_and_si256(p, mask);
+          const __m256i hi = _mm256_and_si256(_mm256_srli_epi16(p, 4), mask);
+          s0 = _mm256_dpbusd_avx_epi32(
+              _mm256_dpbusd_avx_epi32(s0, lo, _mm256_set1_epi32(qa0[qoff + 2 * i + 0])),
+              hi, _mm256_set1_epi32(qa0[qoff + 2 * i + 1]));
+          s1 = _mm256_dpbusd_avx_epi32(
+              _mm256_dpbusd_avx_epi32(s1, lo, _mm256_set1_epi32(qa1[qoff + 2 * i + 0])),
+              hi, _mm256_set1_epi32(qa1[qoff + 2 * i + 1]));
+        }
+        const __m256 vgs = _mm256_loadu_ps(gs);
+        acc0 = _mm256_fmadd_ps(_mm256_cvtepi32_ps(s0), _mm256_mul_ps(_mm256_set1_ps(sa0[b]), vgs), acc0);
+        acc1 = _mm256_fmadd_ps(_mm256_cvtepi32_ps(s1), _mm256_mul_ps(_mm256_set1_ps(sa1[b]), vgs), acc1);
+      }
+      const __m256 vals[2] = {
+        _mm256_add_ps(acc0, vbias), _mm256_add_ps(acc1, vbias),
+      };
+      for (std::size_t i = 0; i < 2; ++i) {
+        auto& top = tops[m + i];
+        if (top.count < 9 || _mm256_movemask_ps(_mm256_cmp_ps(vals[i], _mm256_set1_ps(top.scores[8]), _CMP_GT_OQ)) != 0) {
+          alignas(32) float out8[8];
+          _mm256_store_ps(out8, vals[i]);
+          for (int c = 0; c < 8; ++c) top.push(out8[c], base_id + c);
+        }
+      }
+      m += 2;
     }
     for (; m < rows; ++m) {
       const auto* qam = reinterpret_cast<const std::int32_t*>(work_bufs[m]);

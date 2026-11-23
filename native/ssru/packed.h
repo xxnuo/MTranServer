@@ -158,18 +158,26 @@ class FullVocabQ4 {
   void argMaxBatch(const float* x_rows, std::size_t rows, std::size_t x_stride,
                    std::int64_t* out_tokens, std::size_t max_threads = 1) const;
 
+#if defined(_MSC_VER) && !defined(__clang__)
+#define MTRAN_PACKED_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#define MTRAN_PACKED_INLINE __attribute__((always_inline)) inline
+#else
+#define MTRAN_PACKED_INLINE inline
+#endif
+
   struct TopK9 {
     float scores[9];
     std::uint32_t ids[9];
     int count = 0;
-    void init() noexcept {
+    MTRAN_PACKED_INLINE void init() noexcept {
       count = 0;
       for (int i = 0; i < 9; ++i) {
         scores[i] = -std::numeric_limits<float>::infinity();
         ids[i] = 0;
       }
     }
-    void push(float s, std::uint32_t id) noexcept {
+    MTRAN_PACKED_INLINE void push(float s, std::uint32_t id) noexcept {
       if (count == 9 && !(s > scores[8])) return;
       int pos = count < 9 ? count++ : 8;
       while (pos > 0 && s > scores[pos - 1]) {
@@ -181,6 +189,7 @@ class FullVocabQ4 {
       ids[pos] = id;
     }
   };
+#undef MTRAN_PACKED_INLINE
 
  private:
   struct Impl;

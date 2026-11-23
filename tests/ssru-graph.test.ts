@@ -5,7 +5,7 @@ import protobuf from 'protobufjs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { buildModel, type Mode } from '../src/converter/graph';
+import { buildModel, roundEven, type Mode } from '../src/converter/graph';
 import { readRelease, type ModelConfig, type Weight } from '../src/converter/release';
 import schema from '../src/converter/schema.json';
 
@@ -174,15 +174,28 @@ test('native SSRU compact INT8 graph stores 0x4101 weights as INT8 + scalar scal
   const tensors = new Map<string, any>(g.initializer.map((t: any) => [t.name, t]));
   assert(!g.initializer.some((t: any) => t.name.endsWith('_QuantMultA')));
   for (let i = 0; i < int8Names.length; i++) {
-    const name = int8Names[i], scaleName = scaleNames[i];
+    const name = int8Names[i], scaleName = scaleNames[i], w = weights.get(name)!;
     assert(weightNames.includes(name));
     assert.equal(scaleName, `${name}_int8_scale`);
     const wt = tensors.get(name), st = tensors.get(scaleName);
     assert.equal(wt.dataType, 3);
-    assert.deepEqual(wt.rawData, Buffer.from(weights.get(name)!.int8!.buffer));
     assert.equal(st.dataType, 1);
     assert.deepEqual(st.dims, undefined);
-    assert.deepEqual(st.rawData, floatBytes(Float32Array.of(weights.get(name)!.int8Scale!)));
+    if (name === 'Wemb' || name === 'decoder_Wemb' || name === 'encoder_Wemb') {
+      assert.deepEqual(wt.rawData, Buffer.from(w.int8!.buffer));
+      assert.deepEqual(st.rawData, floatBytes(Float32Array.of(w.int8Scale!)));
+    } else {
+      let amax = 0;
+      for (let j = 0; j < w.values.length; j++) amax = Math.max(amax, Math.abs(w.values[j]));
+      let scale = Math.fround(Math.fround(amax * 2) / 254);
+      if (scale < 2 ** -126) scale = 1;
+      const expectedQ = new Uint8Array(w.values.length);
+      for (let j = 0; j < expectedQ.length; j++) {
+        expectedQ[j] = Math.max(-128, Math.min(127, roundEven(Math.fround(w.values[j] / scale))));
+      }
+      assert.deepEqual(wt.rawData, Buffer.from(expectedQ));
+      assert.deepEqual(st.rawData, floatBytes(Float32Array.of(scale)));
+    }
   }
   for (const name of weightNames) {
     if (!int8Names.includes(name)) assert.equal(tensors.get(name).dataType, 1);

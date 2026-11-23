@@ -1,4 +1,4 @@
-// Compile this translation unit only with -mavx512f -mavx512bw -mavx512dq -mavx512vl -mavx512vnni
+// Compile this translation unit only with -mavx512f -mavx512bw -mavx512dq -mavx512vl -mavx512vnni -mfma
 // (or /arch:AVX512 on MSVC); callers stay baseline.
 #include "packed.h"
 #include <immintrin.h>
@@ -16,7 +16,7 @@
 #if defined(_MSC_VER) && !defined(__clang__)
 #define MTRAN_AVX512_VNNI __declspec(noinline)
 #else
-#define MTRAN_AVX512_VNNI __attribute__((target("avx512f,avx512bw,avx512dq,avx512vl,avx512vnni"), noinline))
+#define MTRAN_AVX512_VNNI __attribute__((target("avx512f,avx512bw,avx512dq,avx512vl,avx512vnni,fma"), noinline))
 #endif
 
 namespace mtran::ssru::packed {

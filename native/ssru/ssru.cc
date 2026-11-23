@@ -30,12 +30,14 @@
 namespace mtran::ssru {
 namespace {
 
+#ifdef MTRAN_SSRU_PACKED
 constexpr std::size_t kPosTableMaxPos = 512;
 
 #if defined(__linux__) && defined(__aarch64__)
 constexpr bool kUseFusedBias = true;
 #else
 constexpr bool kUseFusedBias = false;
+#endif
 #endif
 
 std::size_t multiply(std::size_t a, std::size_t b) {
@@ -236,13 +238,15 @@ struct BatchWorkspace::Scratch {
   std::vector<float> ffn_a, ffn_b, scores, projection, bias, logits;
   std::vector<std::size_t> slot_req, slot_pos, slot_loop_max;
   std::vector<std::int64_t> slot_prev_token, chosen_tokens;
+  std::vector<Request> slot_reqs, refill_reqs;
+  std::vector<BatchResult> slot_results;
   std::vector<CandPair> union_pairs;
   std::vector<std::int64_t> union_ids;
   std::vector<std::uint32_t> slot_masks;
 #ifdef MTRAN_SSRU_PACKED
   packed::Workspace packed_ws;
   std::vector<std::uint8_t> a_q, a_zps;
-  std::vector<float> a_scales, relu_maxs;
+  std::vector<float> a_scales, relu_maxs, norm_mins, norm_maxs;
 #endif
 };
 
@@ -695,16 +699,45 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
                           std::size_t max_threads,
                           std::size_t max_active_batch,
                           LinearBackend backend,
-                          MathBackend math) const {
+                          MathBackend math,
+                          const std::atomic<std::size_t>* active_submitted) const {
+  decodeBatchImpl(requests, count, workspace, {}, max_threads, max_active_batch,
+                  active_submitted, backend, math);
+}
+
+void Decoder::decodeBatchStreaming(const Request* initial_requests, std::size_t initial_count,
+                                   BatchWorkspace& workspace,
+                                   const BatchCallbacks& callbacks,
+                                   std::size_t max_threads,
+                                   std::size_t max_active_batch,
+                                   const std::atomic<std::size_t>* active_submitted,
+                                   LinearBackend backend,
+                                   MathBackend math) const {
+  decodeBatchImpl(initial_requests, initial_count, workspace, callbacks, max_threads,
+                  max_active_batch, active_submitted, backend, math);
+}
+
+void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initial_count,
+                              BatchWorkspace& workspace,
+                              const BatchCallbacks& callbacks,
+                              std::size_t max_threads,
+                              std::size_t max_active_batch,
+                              const std::atomic<std::size_t>* active_submitted,
+                              LinearBackend backend,
+                              MathBackend math) const {
   if (!workspace.scratch_) workspace.scratch_ = std::make_unique<BatchWorkspace::Scratch>();
   auto& s = *workspace.scratch_;
+  const bool has_on_complete = static_cast<bool>(callbacks.on_complete);
+  const bool has_try_refill = static_cast<bool>(callbacks.try_refill);
 
   try {
-    if (count == 0) {
+    if (initial_count == 0 && !has_try_refill) {
       workspace.results_.clear();
       return;
     }
-    if (!requests) throw std::invalid_argument("SSRU null batch requests");
+    if (initial_count > 0 && !initial_requests) {
+      throw std::invalid_argument("SSRU null batch requests");
+    }
 
     const std::size_t dim = config_.dim;
     const std::size_t heads = config_.heads;
@@ -712,9 +745,8 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
     const std::size_t depth = config_.depth;
     const std::size_t vocab = vocab_size_;
 
-    std::size_t max_src_len = 0;
-    for (std::size_t i = 0; i < count; ++i) {
-      const auto& r = requests[i];
+    std::size_t max_src_len = 1;
+    const auto validateRequest = [&](const Request& r) {
       const bool full_vocab = (r.candidate_count == 0);
       if (!r.source_length || (!full_vocab && !r.candidate_ids) ||
           r.eos_id < 0 || static_cast<std::uint64_t>(r.eos_id) >= vocab ||
@@ -749,30 +781,73 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
           throw std::invalid_argument("SSRU candidate outside vocabulary");
       }
       max_src_len = std::max(max_src_len, r.source_length);
+    };
+
+    for (std::size_t i = 0; i < initial_count; ++i) {
+      validateRequest(initial_requests[i]);
     }
 
-    const std::size_t b_cap = std::min(count, std::clamp<std::size_t>(max_active_batch, 1, 32));
+    const std::size_t clamped_cap = std::clamp<std::size_t>(max_active_batch, 1, 32);
+    const std::size_t b_cap = has_try_refill ? clamped_cap : std::min(initial_count, clamped_cap);
     for (auto& res : workspace.results_) {
       res.tokens.clear();
       res.ended_with_eos = false;
     }
-    workspace.results_.resize(count);
+    if (!has_on_complete) {
+      workspace.results_.resize(initial_count);
+    } else {
+      workspace.results_.clear();
+    }
 
     s.slot_req.resize(b_cap);
     s.slot_pos.resize(b_cap);
     s.slot_loop_max.resize(b_cap);
     s.slot_prev_token.resize(b_cap);
     s.chosen_tokens.resize(b_cap);
+    s.slot_reqs.resize(b_cap);
+    s.slot_results.resize(b_cap);
 
-    std::size_t active = b_cap;
-    std::size_t next_req = b_cap;
+    const auto copyTensorViews = [](std::vector<TensorView>& dst, const std::vector<TensorView>& src) {
+      if (dst.size() != src.size()) dst.resize(src.size());
+      for (std::size_t i = 0; i < src.size(); ++i) {
+        dst[i].data = src[i].data;
+        dst[i].size = src[i].size;
+        dst[i].shape.assign(src[i].shape.begin(), src[i].shape.end());
+      }
+    };
+    const auto copySlotReq = [&](Request& dst, const Request& src) {
+      dst.source_length = src.source_length;
+      dst.eos_id = src.eos_id;
+      dst.candidate_ids = src.candidate_ids;
+      dst.candidate_count = src.candidate_count;
+      copyTensorViews(dst.keys, src.keys);
+      copyTensorViews(dst.values, src.values);
+    };
+    const auto clearSlotReq = [](Request& dst) {
+      dst.candidate_ids = nullptr;
+      dst.candidate_count = 0;
+      dst.source_length = 0;
+      for (auto& kv : dst.keys) {
+        kv.data = nullptr;
+        kv.size = 0;
+      }
+      for (auto& kv : dst.values) {
+        kv.data = nullptr;
+        kv.size = 0;
+      }
+    };
+
+    std::size_t active = std::min(initial_count, b_cap);
+    std::size_t next_req = active;
     for (std::size_t m = 0; m < active; ++m) {
       s.slot_req[m] = m;
+      copySlotReq(s.slot_reqs[m], initial_requests[m]);
       s.slot_pos[m] = 0;
       s.slot_prev_token[m] = 0;
-      s.slot_loop_max[m] = requests[m].source_length * 3;
-      workspace.results_[m].tokens.reserve(s.slot_loop_max[m] + 1);
-      workspace.results_[m].ended_with_eos = false;
+      s.slot_loop_max[m] = s.slot_reqs[m].source_length * 3;
+      s.slot_results[m].tokens.clear();
+      s.slot_results[m].tokens.reserve(s.slot_loop_max[m] + 1);
+      s.slot_results[m].ended_with_eos = false;
     }
 
     const std::size_t cap_dim = multiply(b_cap, dim);
@@ -787,48 +862,200 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
     const float attn_scale = static_cast<float>(1.0 / std::sqrt(static_cast<double>(head_dim)));
     bool shortlist_union_dirty = true;
 
+    std::size_t score_threads = 1;
 #ifdef MTRAN_SSRU_PACKED
     if (native_) {
       auto& pool = PcorePool::instance();
       const std::size_t capped = std::max<std::size_t>(1, max_threads);
-      const std::size_t threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+      score_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+    }
+#endif
+    s.scores.resize(multiply(score_threads, max_src_len));
+
+    const auto admitRefills = [&]() {
+      if (!has_try_refill || active >= b_cap) return;
+      s.refill_reqs.clear();
+      const std::size_t base_id = callbacks.try_refill(s.refill_reqs, b_cap - active);
+      if (s.refill_reqs.size() > b_cap - active) {
+        throw std::invalid_argument("SSRU refill exceeds batch capacity");
+      }
+      for (std::size_t i = 0; i < s.refill_reqs.size(); ++i) {
+        validateRequest(s.refill_reqs[i]);
+        const std::size_t slot = active++;
+        s.slot_req[slot] = base_id + i;
+        copySlotReq(s.slot_reqs[slot], s.refill_reqs[i]);
+        s.slot_pos[slot] = 0;
+        s.slot_prev_token[slot] = 0;
+        s.slot_loop_max[slot] = s.slot_reqs[slot].source_length * 3;
+        s.slot_results[slot].tokens.clear();
+        s.slot_results[slot].tokens.reserve(s.slot_loop_max[slot] + 1);
+        s.slot_results[slot].ended_with_eos = false;
+        for (std::size_t l = 0; l < depth; ++l) {
+          std::fill_n(s.cells.data() + l * cap_dim + slot * dim, dim, 0.0f);
+        }
+        shortlist_union_dirty = true;
+      }
+      const std::size_t needed_scores = multiply(score_threads, max_src_len);
+      if (s.scores.size() < needed_scores) s.scores.resize(needed_scores);
+    };
+
+    const auto retireSlot = [&](std::size_t req_idx, std::size_t slot) {
+      if (has_on_complete) {
+        BatchResult done = std::move(s.slot_results[slot]);
+        callbacks.on_complete(req_idx, std::move(done));
+      } else {
+        if (req_idx >= workspace.results_.size()) workspace.results_.resize(req_idx + 1);
+        auto& dst = workspace.results_[req_idx];
+        dst.ended_with_eos = s.slot_results[slot].ended_with_eos;
+        dst.tokens.assign(s.slot_results[slot].tokens.begin(), s.slot_results[slot].tokens.end());
+      }
+    };
+
+    const auto recordAndRetire = [&]() {
+      for (std::size_t m = active; m-- > 0;) {
+        const std::size_t req_idx = s.slot_req[m];
+        const std::int64_t tok = s.chosen_tokens[m];
+        if (tok < 0 || static_cast<std::uint64_t>(tok) >= vocab)
+          throw std::runtime_error("SSRU invalid batch token");
+        s.slot_results[m].tokens.push_back(tok);
+        const bool hit_eos = (tok == s.slot_reqs[m].eos_id);
+        const bool hit_max = (s.slot_pos[m] >= s.slot_loop_max[m]);
+        if (hit_eos) s.slot_results[m].ended_with_eos = true;
+        if (hit_eos || hit_max) {
+          shortlist_union_dirty = true;
+          clearSlotReq(s.slot_reqs[m]);
+          retireSlot(req_idx, m);
+          if (next_req < initial_count) {
+            const std::size_t nr = next_req++;
+            s.slot_req[m] = nr;
+            copySlotReq(s.slot_reqs[m], initial_requests[nr]);
+            s.slot_pos[m] = 0;
+            s.slot_prev_token[m] = 0;
+            s.slot_loop_max[m] = s.slot_reqs[m].source_length * 3;
+            s.slot_results[m].tokens.clear();
+            s.slot_results[m].tokens.reserve(s.slot_loop_max[m] + 1);
+            s.slot_results[m].ended_with_eos = false;
+            for (std::size_t l = 0; l < depth; ++l) {
+              std::fill_n(s.cells.data() + l * cap_dim + m * dim, dim, 0.0f);
+            }
+          } else {
+            const std::size_t last = active - 1;
+            if (m != last) {
+              s.slot_req[m] = s.slot_req[last];
+              copySlotReq(s.slot_reqs[m], s.slot_reqs[last]);
+              s.slot_pos[m] = s.slot_pos[last];
+              s.slot_prev_token[m] = s.slot_prev_token[last];
+              s.slot_loop_max[m] = s.slot_loop_max[last];
+              s.slot_results[m].ended_with_eos = s.slot_results[last].ended_with_eos;
+              s.slot_results[m].tokens.assign(s.slot_results[last].tokens.begin(),
+                                              s.slot_results[last].tokens.end());
+              for (std::size_t l = 0; l < depth; ++l) {
+                float* c_layer = s.cells.data() + l * cap_dim;
+                std::copy_n(c_layer + last * dim, dim, c_layer + m * dim);
+              }
+            }
+            clearSlotReq(s.slot_reqs[last]);
+            --active;
+          }
+        } else {
+          s.slot_prev_token[m] = tok;
+          ++s.slot_pos[m];
+        }
+      }
+      admitRefills();
+    };
+
+    admitRefills();
+    if (active == 0) return;
+
+#ifdef MTRAN_SSRU_PACKED
+    if (native_) {
+      auto& pool = PcorePool::instance();
+      const std::size_t threads = score_threads;
+      std::size_t step_threads = threads;
 
       s.a_q.resize(multiply(b_cap, std::max(dim, max_ffn_width_)));
       s.a_scales.resize(b_cap);
       s.a_zps.resize(b_cap);
       s.relu_maxs.resize(multiply(threads, b_cap));
-      s.scores.resize(multiply(threads, max_src_len));
+      s.norm_mins.resize(b_cap);
+      s.norm_maxs.resize(b_cap);
 
       const auto quantizeActiveRows = [&](const float* src, std::size_t cols) {
-        for (std::size_t m = 0; m < active; ++m) {
-          packed::quantizeLinearU8(src + m * cols, 1, cols, s.a_q.data() + m * cols,
-                                   s.a_scales[m], s.a_zps[m]);
+        if (active >= 4 && step_threads >= 2) {
+          const std::size_t team = std::min(step_threads, active);
+          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
+            const std::size_t mb = (active * tid) / nt;
+            const std::size_t me = (active * (tid + 1)) / nt;
+            for (std::size_t m = mb; m < me; ++m) {
+              packed::quantizeLinearU8(src + m * cols, 1, cols, s.a_q.data() + m * cols,
+                                       s.a_scales[m], s.a_zps[m]);
+            }
+          });
+        } else {
+          for (std::size_t m = 0; m < active; ++m) {
+            packed::quantizeLinearU8(src + m * cols, 1, cols, s.a_q.data() + m * cols,
+                                     s.a_scales[m], s.a_zps[m]);
+          }
         }
       };
 
-      const auto shardMatmul = [&](const PackedDecMat& pm, float* dst, bool relu, bool allow_parallel) {
-        const std::size_t chunks = pm.cols / 32;
-        if (!allow_parallel || threads <= 1 || chunks <= 1) {
-          runDecMultiplySlice(pm, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                              active, dst, pm.cols, s.relu_maxs.data(), relu, 0, pm.cols);
-        } else {
-          const std::size_t team = std::min(threads, chunks);
+      const auto normAndQuantize = [&](const float* ln_scale, const float* ln_bias) {
+        if (active >= 4 && step_threads >= 2) {
+          const std::size_t team = std::min(step_threads, active);
           pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
-            const std::size_t cb = (chunks * tid) / nt;
-            const std::size_t ce = (chunks * (tid + 1)) / nt;
-            if (cb < ce) {
-              runDecMultiplySlice(pm, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
-                                  active, dst, pm.cols, s.relu_maxs.data() + tid * active,
-                                  relu, cb * 32, ce * 32);
+            const std::size_t mb = (active * tid) / nt;
+            const std::size_t me = (active * (tid + 1)) / nt;
+            if (mb < me) {
+              const std::size_t cnt = me - mb;
+              ops::instanceNormAffine(s.x.data() + mb * dim, ln_scale, ln_bias,
+                                      cnt, dim, s.x.data() + mb * dim,
+                                      s.norm_mins.data() + mb, s.norm_maxs.data() + mb);
+              packed::quantizeLinearU8FromMinMax(
+                  s.x.data() + mb * dim, cnt, dim, dim,
+                  s.norm_mins.data() + mb, s.norm_maxs.data() + mb,
+                  s.a_q.data() + mb * dim, dim,
+                  s.a_scales.data() + mb, s.a_zps.data() + mb);
             }
           });
+        } else {
+          ops::instanceNormAffine(s.x.data(), ln_scale, ln_bias, active, dim, s.x.data(),
+                                  s.norm_mins.data(), s.norm_maxs.data());
+          packed::quantizeLinearU8FromMinMax(
+              s.x.data(), active, dim, dim,
+              s.norm_mins.data(), s.norm_maxs.data(),
+              s.a_q.data(), dim, s.a_scales.data(), s.a_zps.data());
         }
+      };
+
+      const auto shardMatmul = [&](const PackedDecMat& pm, float* dst, bool relu, bool allow_parallel) -> std::size_t {
+        const std::size_t chunks = pm.cols / 32;
+        if (!allow_parallel || step_threads <= 1 || chunks <= 1) {
+          runDecMultiplySlice(pm, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                              active, dst, pm.cols, s.relu_maxs.data(), relu, 0, pm.cols);
+          return 1;
+        }
+        const std::size_t team = std::min(step_threads, chunks);
+        pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
+          const std::size_t cb = (chunks * tid) / nt;
+          const std::size_t ce = (chunks * (tid + 1)) / nt;
+          if (cb < ce) {
+            runDecMultiplySlice(pm, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                                active, dst, pm.cols, s.relu_maxs.data() + tid * active,
+                                relu, cb * 32, ce * 32);
+          }
+        });
+        return team;
       };
 
       const std::size_t q_chunks = dim / 32;
       const std::size_t rnn_chunks = 2 * q_chunks;
 
       while (active > 0) {
+        step_threads = (active == 1 && active_submitted &&
+                        active_submitted->load(std::memory_order_relaxed) > 1)
+                           ? 1
+                           : threads;
         std::size_t max_active_src_len = 0;
         bool any_pos0 = false;
         bool all_pos0 = true;
@@ -838,7 +1065,7 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
           const std::size_t pos = s.slot_pos[m];
           any_pos0 = any_pos0 || (pos == 0);
           all_pos0 = all_pos0 && (pos == 0);
-          max_active_src_len = std::max(max_active_src_len, requests[s.slot_req[m]].source_length);
+          max_active_src_len = std::max(max_active_src_len, s.slot_reqs[m].source_length);
           float* dst = s.x.data() + m * dim;
           if (pos == 0) {
             native_->pos_table.addScaledEmbed(nullptr, 0.0f, 0, dst);
@@ -861,7 +1088,6 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
             }
           }
         }
-        finite(s.x.data(), active * dim, "batch position");
 
         // 2. Decoder layers.
         for (std::size_t li = 0; li < depth; ++li) {
@@ -870,15 +1096,15 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
           const bool use_step0_mixed = (kUseFusedBias && li == 0 && any_pos0 && !all_pos0);
 
           // 2a. SSRU recurrent gate + state sharing one activation quantization.
-          quantizeActiveRows(s.x.data(), dim);
+          if (li == 0) quantizeActiveRows(s.x.data(), dim);
           const PackedDecMat& gate_mat = use_step0_all ? pl.gate_step0 : pl.gate;
-          if (threads <= 1) {
+          if (step_threads <= 1) {
             runDecMultiplySlice(gate_mat, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
                                 active, s.gate.data(), dim, nullptr, false, 0, dim);
             runDecMultiplySlice(pl.state, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
                                 active, s.update.data(), dim, nullptr, false, 0, dim);
           } else {
-            const std::size_t team = std::min(threads, rnn_chunks);
+            const std::size_t team = std::min(step_threads, rnn_chunks);
             pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
               const std::size_t gb = (rnn_chunks * tid) / nt;
               const std::size_t ge = (rnn_chunks * (tid + 1)) / nt;
@@ -904,19 +1130,13 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
               }
             }
           }
-          finite(s.gate.data(), active * dim, "batch gate");
-          finite(s.update.data(), active * dim, "batch update");
 
           float* cell_layer = s.cells.data() + li * cap_dim;
           ops::ssruGateUpdate(s.gate.data(), s.update.data(), s.x.data(),
                               active, dim, cell_layer, s.x.data());
-          finite(cell_layer, active * dim, "batch cell");
-          ops::instanceNormAffine(s.x.data(), pl.rnn_ln_scale, pl.rnn_ln_bias,
-                                  active, dim, s.x.data());
-          finite(s.x.data(), active * dim, "batch rnn norm");
+          normAndQuantize(pl.rnn_ln_scale, pl.rnn_ln_bias);
 
           // 2b. Cross-attention query -> crossAttention -> output -> residual + norm.
-          quantizeActiveRows(s.x.data(), dim);
           const PackedDecMat& query_mat = use_step0_all ? pl.query_step0 : pl.query;
           shardMatmul(query_mat, s.query.data(), false, active >= 3);
           if (use_step0_mixed) {
@@ -928,70 +1148,115 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
               }
             }
           }
-          finite(s.query.data(), active * dim, "batch query");
 
           const std::size_t total_heads = active * heads;
-          if (threads <= 1 || (active == 1 && max_active_src_len < 32)) {
+          if (step_threads <= 1 || (active == 1 && max_active_src_len < 32)) {
             for (std::size_t m = 0; m < active; ++m) {
-              const auto& req = requests[s.slot_req[m]];
+              const auto& req = s.slot_reqs[m];
               ops::crossAttention(s.query.data() + m * dim, req.keys[li].data,
                                   req.values[li].data, heads, head_dim, req.source_length,
                                   s.scores.data(), s.context.data() + m * dim, 0, heads);
             }
           } else {
-            const std::size_t team = std::min(threads, total_heads);
+            const std::size_t team = std::min(step_threads, total_heads);
             pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
               float* t_scores = s.scores.data() + tid * max_src_len;
               for (std::size_t idx = tid; idx < total_heads; idx += nt) {
                 const std::size_t m = idx / heads;
                 const std::size_t h = idx % heads;
-                const auto& req = requests[s.slot_req[m]];
+                const auto& req = s.slot_reqs[m];
                 ops::crossAttention(s.query.data() + m * dim, req.keys[li].data,
                                     req.values[li].data, heads, head_dim, req.source_length,
                                     t_scores, s.context.data() + m * dim, h, h + 1);
               }
             });
           }
-          finite(s.context.data(), active * dim, "batch context");
 
           quantizeActiveRows(s.context.data(), dim);
           shardMatmul(pl.attn, s.output.data(), false, active >= 3);
           for (std::size_t i = 0; i < active * dim; ++i) s.x[i] += s.output[i];
-          ops::instanceNormAffine(s.x.data(), pl.attn_ln_scale, pl.attn_ln_bias,
-                                  active, dim, s.x.data());
-          finite(s.x.data(), active * dim, "batch attention norm");
+          normAndQuantize(pl.attn_ln_scale, pl.attn_ln_bias);
 
           // 2c. FFN (ReLU fused on hidden layers) + residual + norm.
           const float* ffn_in = s.x.data();
+          bool prev_relu_minmax = false;
+          std::size_t prev_team = 1;
           for (std::size_t j = 0; j < pl.ffn.size(); ++j) {
             const bool has_relu = (j + 1 < pl.ffn.size());
             float* ffn_out = has_relu ? (j % 2 ? s.ffn_b.data() : s.ffn_a.data()) : s.output.data();
-            quantizeActiveRows(ffn_in, pl.ffn[j].rows);
+            if (j > 0) {
+              if (prev_relu_minmax) {
+                const std::size_t cols = pl.ffn[j].rows;
+                for (std::size_t m = 0; m < active; ++m) {
+                  s.norm_mins[m] = 0.0f;
+                  float mx = s.relu_maxs[m];
+                  for (std::size_t t = 1; t < prev_team; ++t) {
+                    mx = std::max(mx, s.relu_maxs[t * active + m]);
+                  }
+                  s.norm_maxs[m] = mx;
+                }
+                if (active >= 4 && step_threads >= 2) {
+                  const std::size_t qteam = std::min(step_threads, active);
+                  pool.parallelFor(qteam, [&](std::size_t tid, std::size_t nt) {
+                    const std::size_t mb = (active * tid) / nt;
+                    const std::size_t me = (active * (tid + 1)) / nt;
+                    if (mb < me) {
+                      packed::quantizeLinearU8FromMinMax(
+                          ffn_in + mb * cols, me - mb, cols, cols,
+                          s.norm_mins.data() + mb, s.norm_maxs.data() + mb,
+                          s.a_q.data() + mb * cols, cols,
+                          s.a_scales.data() + mb, s.a_zps.data() + mb);
+                    }
+                  });
+                } else {
+                  packed::quantizeLinearU8FromMinMax(
+                      ffn_in, active, cols, cols,
+                      s.norm_mins.data(), s.norm_maxs.data(),
+                      s.a_q.data(), cols, s.a_scales.data(), s.a_zps.data());
+                }
+              } else {
+                quantizeActiveRows(ffn_in, pl.ffn[j].rows);
+              }
+            }
             const bool parallel_ffn = (pl.ffn[j].cols >= dim * 2) ||
                                       (pl.ffn[j].rows >= dim * 2) || (active >= 3);
-            shardMatmul(pl.ffn[j], ffn_out, has_relu, parallel_ffn);
+            prev_team = shardMatmul(pl.ffn[j], ffn_out, has_relu, parallel_ffn);
+            prev_relu_minmax = (has_relu && pl.ffn[j].weight != nullptr);
             ffn_in = ffn_out;
           }
           for (std::size_t i = 0; i < active * dim; ++i) s.x[i] += ffn_in[i];
-          ops::instanceNormAffine(s.x.data(), pl.ffn_ln_scale, pl.ffn_ln_bias,
-                                  active, dim, s.x.data());
-          finite(s.x.data(), active * dim, "batch ffn norm");
+          if (li + 1 < depth) {
+            normAndQuantize(pl.ffn_ln_scale, pl.ffn_ln_bias);
+          } else if (active >= 4 && step_threads >= 2) {
+            const std::size_t team = std::min(step_threads, active);
+            pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
+              const std::size_t mb = (active * tid) / nt;
+              const std::size_t me = (active * (tid + 1)) / nt;
+              if (mb < me) {
+                ops::instanceNormAffine(s.x.data() + mb * dim, pl.ffn_ln_scale, pl.ffn_ln_bias,
+                                        me - mb, dim, s.x.data() + mb * dim);
+              }
+            });
+          } else {
+            ops::instanceNormAffine(s.x.data(), pl.ffn_ln_scale, pl.ffn_ln_bias,
+                                    active, dim, s.x.data());
+          }
         }
 
         // 3. Logit projection & argmax.
         bool any_full = false;
         bool any_short = false;
         for (std::size_t m = 0; m < active; ++m) {
-          if (requests[s.slot_req[m]].candidate_count == 0) any_full = true;
+          if (s.slot_reqs[m].candidate_count == 0) any_full = true;
           else any_short = true;
         }
         if (any_full && !any_short) {
           native_->getFullVocab().argMaxBatch(s.x.data(), active, dim,
-                                              s.chosen_tokens.data(), threads);
+                                              s.chosen_tokens.data(), step_threads);
         } else if (!any_full && any_short) {
           const auto& sl = native_->getShortlist();
           if (active == 1) {
-            const auto& req = requests[s.slot_req[0]];
+            const auto& req = s.slot_reqs[0];
             const std::size_t best = sl.argmax(s.x.data(), req.candidate_ids,
                                                req.candidate_count, s.packed_ws, true);
             if (best >= req.candidate_count)
@@ -1001,7 +1266,7 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
             if (shortlist_union_dirty) {
               s.union_pairs.clear();
               for (std::size_t m = 0; m < active; ++m) {
-                const auto& req = requests[s.slot_req[m]];
+                const auto& req = s.slot_reqs[m];
                 const std::uint32_t bit = static_cast<std::uint32_t>(1u) << m;
                 for (std::size_t j = 0; j < req.candidate_count; ++j) {
                   s.union_pairs.push_back(CandPair{req.candidate_ids[j], bit});
@@ -1026,10 +1291,10 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
           }
         } else {
           for (std::size_t m = 0; m < active; ++m) {
-            const auto& req = requests[s.slot_req[m]];
+            const auto& req = s.slot_reqs[m];
             const float* row = s.x.data() + m * dim;
             if (req.candidate_count == 0) {
-              native_->getFullVocab().argMaxBatch(row, 1, dim, &s.chosen_tokens[m], threads);
+              native_->getFullVocab().argMaxBatch(row, 1, dim, &s.chosen_tokens[m], step_threads);
             } else {
               const std::size_t best = native_->getShortlist().argmax(
                   row, req.candidate_ids, req.candidate_count, s.packed_ws, true);
@@ -1041,57 +1306,18 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
         }
 
         // 4. Record tokens, retire completed requests, and refill/compact slots.
-        for (std::size_t m = active; m-- > 0;) {
-          const std::size_t req_idx = s.slot_req[m];
-          const std::int64_t tok = s.chosen_tokens[m];
-          if (tok < 0 || static_cast<std::uint64_t>(tok) >= vocab)
-            throw std::runtime_error("SSRU invalid batch token");
-          workspace.results_[req_idx].tokens.push_back(tok);
-          const bool hit_eos = (tok == requests[req_idx].eos_id);
-          const bool hit_max = (s.slot_pos[m] >= s.slot_loop_max[m]);
-          if (hit_eos) workspace.results_[req_idx].ended_with_eos = true;
-          if (hit_eos || hit_max) {
-            shortlist_union_dirty = true;
-            if (next_req < count) {
-              const std::size_t nr = next_req++;
-              s.slot_req[m] = nr;
-              s.slot_pos[m] = 0;
-              s.slot_prev_token[m] = 0;
-              s.slot_loop_max[m] = requests[nr].source_length * 3;
-              workspace.results_[nr].tokens.reserve(s.slot_loop_max[m] + 1);
-              workspace.results_[nr].ended_with_eos = false;
-              for (std::size_t l = 0; l < depth; ++l) {
-                std::fill_n(s.cells.data() + l * cap_dim + m * dim, dim, 0.0f);
-              }
-            } else {
-              const std::size_t last = active - 1;
-              if (m != last) {
-                s.slot_req[m] = s.slot_req[last];
-                s.slot_pos[m] = s.slot_pos[last];
-                s.slot_prev_token[m] = s.slot_prev_token[last];
-                s.slot_loop_max[m] = s.slot_loop_max[last];
-                for (std::size_t l = 0; l < depth; ++l) {
-                  float* c_layer = s.cells.data() + l * cap_dim;
-                  std::copy_n(c_layer + last * dim, dim, c_layer + m * dim);
-                }
-              }
-              --active;
-            }
-          } else {
-            s.slot_prev_token[m] = tok;
-            ++s.slot_pos[m];
-          }
-        }
+        recordAndRetire();
       }
       return;
     }
 #else
     (void)max_threads;
+    (void)active_submitted;
 #endif
     (void)shortlist_union_dirty;
 
     // Scalar / LinearBackend continuous-batching fallback.
-    s.scores.resize(max_src_len);
+    if (s.scores.size() < max_src_len) s.scores.resize(max_src_len);
     const auto runLinear = [&](const Linear& l, const float* input, float* output,
                                bool separate_bias, std::size_t m) {
       if (backend.matmul) {
@@ -1166,7 +1392,7 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
           } else normalize(x_row, dim, layer.rnn_norm.scale, layer.rnn_norm.bias);
 
           runLinear(layer.query, s.x.data(), s.query.data(), sep, m);
-          const auto& req = requests[s.slot_req[m]];
+          const auto& req = s.slot_reqs[m];
           const float* keys = req.keys[li].data;
           const float* values = req.values[li].data;
           float* q_row = s.query.data() + m * dim;
@@ -1230,7 +1456,7 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
       }
 
       for (std::size_t m = 0; m < active; ++m) {
-        const auto& req = requests[s.slot_req[m]];
+        const auto& req = s.slot_reqs[m];
         const float* x_row = s.x.data() + m * dim;
         if (req.candidate_count == 0) {
           if (backend.argmax_full) {
@@ -1305,47 +1531,10 @@ void Decoder::decodeBatch(const Request* requests, std::size_t count,
         }
       }
 
-      for (std::size_t m = active; m-- > 0;) {
-        const std::size_t req_idx = s.slot_req[m];
-        const std::int64_t tok = s.chosen_tokens[m];
-        if (tok < 0 || static_cast<std::uint64_t>(tok) >= vocab)
-          throw std::runtime_error("SSRU invalid batch token");
-        workspace.results_[req_idx].tokens.push_back(tok);
-        const bool hit_eos = (tok == requests[req_idx].eos_id);
-        const bool hit_max = (s.slot_pos[m] >= s.slot_loop_max[m]);
-        if (hit_eos) workspace.results_[req_idx].ended_with_eos = true;
-        if (hit_eos || hit_max) {
-          if (next_req < count) {
-            const std::size_t nr = next_req++;
-            s.slot_req[m] = nr;
-            s.slot_pos[m] = 0;
-            s.slot_prev_token[m] = 0;
-            s.slot_loop_max[m] = requests[nr].source_length * 3;
-            workspace.results_[nr].tokens.reserve(s.slot_loop_max[m] + 1);
-            workspace.results_[nr].ended_with_eos = false;
-            for (std::size_t l = 0; l < depth; ++l)
-              std::fill_n(s.cells.data() + l * cap_dim + m * dim, dim, 0.0f);
-          } else {
-            const std::size_t last = active - 1;
-            if (m != last) {
-              s.slot_req[m] = s.slot_req[last];
-              s.slot_pos[m] = s.slot_pos[last];
-              s.slot_prev_token[m] = s.slot_prev_token[last];
-              s.slot_loop_max[m] = s.slot_loop_max[last];
-              for (std::size_t l = 0; l < depth; ++l) {
-                float* c_layer = s.cells.data() + l * cap_dim;
-                std::copy_n(c_layer + last * dim, dim, c_layer + m * dim);
-              }
-            }
-            --active;
-          }
-        } else {
-          s.slot_prev_token[m] = tok;
-          ++s.slot_pos[m];
-        }
-      }
+      recordAndRetire();
     }
   } catch (...) {
+    s.slot_reqs.clear();
     workspace.results_.clear();
     throw;
   }

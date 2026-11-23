@@ -876,6 +876,37 @@ void decode_batch_and_int8_weights() {
   CHECK(bw.results().size() == 6);
   for (std::size_t r = 0; r < 6; ++r)
     CHECK(bw.results()[r].tokens == expected_tokens[r]);
+
+  // Continuous-batching streaming API: empty initial + wave refill + immediate callbacks.
+  {
+    std::vector<BatchResult> streamed(reqs.size());
+    std::vector<bool> seen(reqs.size(), false);
+    std::size_t cursor = 0;
+    std::size_t completed_count = 0;
+    std::atomic<std::size_t> active_submitted{2};
+    BatchCallbacks cb;
+    cb.on_complete = [&](std::size_t idx, BatchResult&& res) {
+      CHECK(idx < streamed.size());
+      CHECK(!seen[idx]);
+      seen[idx] = true;
+      streamed[idx] = std::move(res);
+      ++completed_count;
+    };
+    cb.try_refill = [&](std::vector<Request>& out, std::size_t max_new) -> std::size_t {
+      const std::size_t base = cursor;
+      const std::size_t wave = std::min<std::size_t>({max_new, reqs.size() - cursor, 2});
+      for (std::size_t i = 0; i < wave; ++i) out.push_back(reqs[cursor++]);
+      return base;
+    };
+    i8_dec.decodeBatchStreaming(nullptr, 0, bw, cb, 2, 3, &active_submitted);
+    CHECK(completed_count == reqs.size());
+    CHECK(bw.results().empty());
+    for (std::size_t r = 0; r < reqs.size(); ++r) {
+      CHECK(seen[r]);
+      CHECK(streamed[r].tokens == expected_tokens[r]);
+      CHECK(streamed[r].ended_with_eos == expected_eos[r]);
+    }
+  }
 }
 
 #if defined(MTRAN_SSRU_PACKED) || defined(MTRAN_TEST_ENCODER)
@@ -1204,6 +1235,41 @@ void encoder_and_packed_batch_e2e() {
       dec.decodeBatch(r1.data(), 1, bw_single, 1, 1);
       CHECK(bw_batch.results()[b].tokens == bw_single.results()[0].tokens);
       CHECK(bw_batch.results()[b].ended_with_eos == bw_single.results()[0].ended_with_eos);
+    }
+
+    // Streaming refill e2e (Packed Normal mode): verify continuous-batching wave refill + compaction.
+    {
+      std::vector<BatchResult> streamed(6);
+      std::vector<bool> seen(6, false);
+      std::size_t cursor = 2;
+      std::atomic<std::size_t> active_submitted{4};
+      BatchCallbacks cb;
+      cb.on_complete = [&](std::size_t idx, BatchResult&& res) {
+        CHECK(idx < 6);
+        CHECK(!seen[idx]);
+        seen[idx] = true;
+        streamed[idx] = std::move(res);
+      };
+      cb.try_refill = [&](std::vector<Request>& out, std::size_t max_new) -> std::size_t {
+        const std::size_t base = cursor;
+        const std::size_t take = std::min<std::size_t>({max_new, 6 - cursor, 2});
+        for (std::size_t i = 0; i < take; ++i) out.push_back(reqs_batch[cursor++]);
+        return base;
+      };
+      dec.decodeBatchStreaming(reqs_batch.data(), 2, bw_batch, cb, 4, 3, &active_submitted);
+      for (std::size_t b = 0; b < 6; ++b) {
+        CHECK(seen[b]);
+        EncodedBatch eb1;
+        enc.encodeBatch(&ptrs[b], &lens[b], 1, eb1, 1);
+        std::vector<Request> r1;
+        eb1.populate_requests(r1);
+        r1[0].eos_id = 0;
+        r1[0].candidate_ids = nullptr;
+        r1[0].candidate_count = 0;
+        dec.decodeBatch(r1.data(), 1, bw_single, 1, 1);
+        CHECK(streamed[b].tokens == bw_single.results()[0].tokens);
+        CHECK(streamed[b].ended_with_eos == bw_single.results()[0].ended_with_eos);
+      }
     }
   }
 }

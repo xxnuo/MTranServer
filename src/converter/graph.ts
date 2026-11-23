@@ -210,10 +210,23 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
       const w = weights.get(name);
       if (!w?.int8 || w.int8Scale === undefined || !(w.int8Scale > 0) || !Number.isFinite(w.int8Scale) || w.int8.length !== w.values.length) continue;
       const t = initializerMap.get(name)!;
+      const isEmb = name === b.emb || name === encEmb;
+      let scale = w.int8Scale;
+      let raw: Uint8Array;
+      if (isEmb) {
+        raw = new Uint8Array(w.int8.buffer, w.int8.byteOffset, w.int8.byteLength);
+      } else {
+        let amax = 0;
+        for (let i = 0; i < w.values.length; i++) amax = Math.max(amax, Math.abs(w.values[i]));
+        scale = Math.fround(Math.fround(amax * 2) / 254);
+        if (scale < 2 ** -126) scale = 1;
+        raw = new Uint8Array(w.values.length);
+        for (let i = 0; i < raw.length; i++) raw[i] = Math.max(-128, Math.min(127, roundEven(Math.fround(w.values[i] / scale))));
+      }
       t.dataType = 3;
-      t.rawData = new Uint8Array(w.int8.buffer, w.int8.byteOffset, w.int8.byteLength);
+      t.rawData = raw;
       const scaleName = `${name}_int8_scale`;
-      g.initializer.push(ft(scaleName, [], [w.int8Scale]));
+      g.initializer.push(ft(scaleName, [], [scale]));
       int8WeightNames.push(name);
       int8ScaleNames.push(scaleName);
     }

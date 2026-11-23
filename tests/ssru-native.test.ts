@@ -49,7 +49,14 @@ function fixture(tied: boolean) {
   };
   const emb = tied ? 'Wemb' : 'decoder_Wemb';
   add(emb, [12, dim]); weights.get(emb)!.values[2 * dim] = 1;
-  if (!tied) add('encoder_Wemb', [13, dim]);
+  weights.get(emb)!.int8Scale = 1 / 127;
+  weights.get(emb)!.int8 = new Int8Array(weights.get(emb)!.values.length);
+  weights.get(emb)!.int8![2 * dim] = 127;
+  if (!tied) {
+    add('encoder_Wemb', [13, dim]);
+    weights.get('encoder_Wemb')!.int8Scale = 1 / 127;
+    weights.get('encoder_Wemb')!.int8 = new Int8Array(weights.get('encoder_Wemb')!.values.length);
+  }
   add('decoder_ff_logit_out_b', [1, 12]);
   const bias = weights.get('decoder_ff_logit_out_b')!.values;
   bias.fill(-100); bias[1] = 1000; bias[2] = bias[3] = bias[4] = 0;
@@ -66,7 +73,6 @@ function fixture(tied: boolean) {
 let directory = '', binary = '', probeBinary = '';
 const files: Record<string, string> = {};
 const malformed: { name: string; file: string; pattern: string }[] = [];
-const kvCases: { name: string; file: string; pattern: string; validAtTwo: boolean }[] = [];
 
 beforeAll(async () => {
   if (skipReason) return;
@@ -76,7 +82,7 @@ beforeAll(async () => {
   const child = Bun.spawn([compiler!, '-std=c++20', '-O1', '-Wall', '-Wextra', '-shared', '-fPIC', '-pthread',
     '-I', include!, '-I', path.join(root, 'native/onnx-async'), '-DMTRAN_NATIVE_SSRU',
     path.join(root, 'native/onnx-async/addon.cc'), path.join(root, 'native/onnx-async/ssru_op.cc'),
-    path.join(root, 'native/ssru/ssru.cc'),
+    path.join(root, 'native/ssru/ssru.cc'), path.join(root, 'native/ssru/encoder.cc'),
     ...(process.platform === 'darwin' ? ['-undefined', 'dynamic_lookup'] : ['-ldl']), '-o', binary],
   { cwd: root, stdout: 'pipe', stderr: 'pipe' });
   const timer = setTimeout(() => child.kill(), 60_000);
@@ -86,7 +92,7 @@ beforeAll(async () => {
   } finally { clearTimeout(timer); }
   probeBinary = path.join(directory, 'kleidi-test');
   const probe = Bun.spawn([compiler!, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-ffp-contract=off', '-pthread',
-    path.join(root, 'native/onnx-async/kleidi_test.cc'), path.join(root, 'native/ssru/ssru.cc'),
+    path.join(root, 'native/onnx-async/kleidi_test.cc'), path.join(root, 'native/ssru/ssru.cc'), path.join(root, 'native/ssru/encoder.cc'),
     ...(process.platform === 'darwin' ? [] : ['-ldl']), '-o', probeBinary],
   { cwd: root, stdout: 'pipe', stderr: 'pipe' });
   const [probeOut, probeErr, probeExit] = await Promise.all([
@@ -102,6 +108,11 @@ beforeAll(async () => {
     const native = buildModel(weights, config, 'qall', true, true);
     save(name + '-native', native); if (tied) bytes = native;
   }
+  {
+    const { weights, config } = fixture(true);
+    save('shared-standard', buildModel(weights, config, 'fp32', false));
+    save('shared-std-native', buildModel(weights, config, 'qall', false, true));
+  }
   const mutate = (name: string, change: (g: any, n: any) => void) => {
     const model = modelType.toObject(modelType.decode(Buffer.from(bytes)), { longs: Number, bytes: Buffer }) as any;
     change(model.graph, model.graph.node.at(-1));
@@ -112,10 +123,11 @@ beforeAll(async () => {
   const attr = (n: any, name: string) => n.attribute.find((a: any) => a.name === name);
   const tensor = (g: any, name: string) => g.initializer.find((t: any) => t.name === name);
   bad('missing-attribute', 'attribute|No attribute', (_g, n) => { n.attribute = n.attribute.filter((a: any) => a.name !== 'dim'); });
-  for (const [name, value] of [['dim', 2], ['heads', 3], ['depth', 0], ['ffn_depth', 0]] as const)
+  for (const [name, value] of [['dim', 2], ['heads', 3], ['enc_depth', 0], ['dec_depth', 0], ['ffn_depth', 0], ['tied_embeddings', 2]] as const)
     bad('invalid-' + name, 'SSRU.*(configuration|count)', (_g, n) => { attr(n, name).i = value; });
   bad('weight-count', 'SSRU.*count', (_g, n) => { attr(n, 'weight_names').strings.pop(); });
   bad('empty-weight-names', 'SSRU.*weight count', (_g, n) => { attr(n, 'weight_names').strings = []; });
+  bad('int8-scale-count', 'SSRU.*count', (_g, n) => { attr(n, 'int8_scale_names').strings.pop(); });
   for (const name of ['decoder_l1_rnn_W', 'position_offset'])
     bad('duplicate-' + name, '[Dd]uplicate.*weight', (_g, n) => {
       const names = attr(n, 'weight_names').strings;
@@ -128,8 +140,9 @@ beforeAll(async () => {
   });
   bad('matrix-shape', 'SSRU invalid matrix', (g) => { tensor(g, 'decoder_l1_rnn_W').dims = [2, 8]; });
   bad('bias-shape', 'SSRU invalid output bias', (g) => { tensor(g, 'decoder_ff_logit_out_b').dims = [2, 6]; });
-  bad('nonfinite-weight', '[Nn]on.?finite.*(weight|matrix)', (g) => { tensor(g, 'decoder_l1_rnn_W').rawData.writeFloatLE(NaN, 0); });
+  bad('nonfinite-weight', '[Nn]on.?finite.*(value|weight|matrix)', (g) => { tensor(g, 'decoder_l1_rnn_W').rawData.writeFloatLE(NaN, 0); });
   bad('nonfloat-weight', 'Type.*(Error|invalid)|type.*(float|tensor)', (g) => { tensor(g, 'decoder_l1_rnn_W').dataType = 6; });
+  bad('nonint8-weight', 'type.*(int8|tensor)|SSRU invalid tensor type', (g) => { tensor(g, 'Wemb').dataType = 2; });
   for (const keepInitializer of [true, false])
     bad('overridable-weight-' + keepInitializer, 'SSRU weights must be immutable initializers', (g) => {
       const name = 'decoder_l1_rnn_W';
@@ -143,18 +156,6 @@ beforeAll(async () => {
       { name: 'sum_weight_input', opType: 'ReduceSum', input: ['weight_float'], output: ['weight_sum'], attribute: [{ name: 'axes', type: 7, ints: [0] }, { name: 'keepdims', type: 2, i: 0 }] },
       { name: 'dynamic_weight', opType: 'Add', input: [weight.name, 'weight_sum'], output: ['decoder_l1_rnn_W'] });
   });
-  for (const [name, index] of [['keys', 3], ['values', 5]] as const) {
-    for (const nonfinite of [false, true]) {
-      const label = name + (nonfinite ? '-nonfinite' : '-shape');
-      const file = mutate(label, (g, n) => {
-        const rawData = Buffer.alloc(8 * 4);
-        if (nonfinite) rawData.writeFloatLE(Infinity, 0);
-        g.initializer.push({ name: label, dims: [1, 2, 2, 2], dataType: 1, rawData });
-        n.input[index] = label;
-      });
-      kvCases.push({ name: label, file, pattern: nonfinite ? 'SSRU nonfinite value' : 'SSRU invalid K/V dimensions', validAtTwo: !nonfinite });
-    }
-  }
 }, 90_000);
 
 afterAll(() => { if (directory) rmSync(directory, { recursive: true, force: true }); });
@@ -171,9 +172,9 @@ async function runNode(body: string) {
     const ort = require('onnxruntime-node');
     const addon = require(${JSON.stringify(binary)});
     const files = ${JSON.stringify(files)}, library = ${JSON.stringify(library)};
-    const malformed = ${JSON.stringify(malformed)}, kvCases = ${JSON.stringify(kvCases)};
+    const malformed = ${JSON.stringify(malformed)};
     const tokens = xs => BigInt64Array.from(xs, BigInt);
-    const run = (handle, x = [0, 2], ids = [1, 2, 3, 4], eos = 2) => addon.run(handle, tokens(x), tokens(ids), BigInt(eos));
+    const run = (handle, x = [0, 2], ids = [1, 2, 3, 4], eos = 2) => addon.run(handle, tokens(x), ids === null ? null : tokens(ids), BigInt(eos));
     const initialize = file => addon.init(file, library, 1);
     const reference = async (session, x, ids, eos) => {
       const feeds = { X: new ort.Tensor('int64', tokens(x), [x.length]), eos_id: new ort.Tensor('int64', tokens([eos]), [1]), candidate_ids: new ort.Tensor('int64', tokens(ids), [ids.length]) };
@@ -193,7 +194,7 @@ async function runNode(body: string) {
   } finally { clearTimeout(timer); }
 }
 
-nativeTest('SSRU addon matches ordinary Fast ORT with defined EOS, token ties and length limits', async () => {
+nativeTest('SSRU addon matches ordinary Fast ORT with defined EOS, token ties, full-vocab and runBatch', async () => {
   await runNode(`
     for (const name of ['shared', 'separate']) {
       const session = await ort.InferenceSession.create(files[name + '-fast'], { intraOpNumThreads: 1, interOpNumThreads: 1, logSeverityLevel: 3 });
@@ -215,8 +216,27 @@ nativeTest('SSRU addon matches ordinary Fast ORT with defined EOS, token ties an
           assert.deepEqual(Array.from(await run(ordinary, x, ids, eos), Number), expected);
           assert.deepEqual(Array.from(await run(native, x, ids, eos), Number), expected);
         }
+        const eosTwoCases = cases.filter(([, , eos]) => eos === 2);
+        assert.deepEqual(await addon.runBatch(native, [], [], 2n), []);
+        const batchNative = await addon.runBatch(native, eosTwoCases.map(([x]) => tokens(x)), eosTwoCases.map(([, ids]) => tokens(ids)), 2n);
+        const batchOrd = await addon.runBatch(ordinary, eosTwoCases.map(([x]) => tokens(x)), eosTwoCases.map(([, ids]) => tokens(ids)), 2n);
+        for (let i = 0; i < eosTwoCases.length; i++) {
+          assert.deepEqual(Array.from(batchNative[i], Number), eosTwoCases[i][3]);
+          assert.deepEqual(Array.from(batchOrd[i], Number), eosTwoCases[i][3]);
+        }
       } finally { if (native) await addon.close(native); if (ordinary) await addon.close(ordinary); await session.release(); }
     }
+    // Full-vocab (no candidate_ids) run and runBatch match FP32 standard graph.
+    const stdBase = await initialize(files['shared-standard']);
+    const stdNative = await initialize(files['shared-std-native']);
+    try {
+      const baseRes = await run(stdBase, [0, 2], null, 2);
+      const natRes = await run(stdNative, [0, 2], null, 2);
+      assert.deepEqual(Array.from(natRes, Number), Array.from(baseRes, Number));
+      const natBatch = await addon.runBatch(stdNative, [tokens([2]), tokens([0, 2])], [null, null], 2n);
+      assert.deepEqual(Array.from(natBatch[0], Number), Array.from(await run(stdBase, [2], null, 2), Number));
+      assert.deepEqual(Array.from(natBatch[1], Number), Array.from(baseRes, Number));
+    } finally { await addon.close(stdNative); await addon.close(stdBase); }
   `);
 }, 60_000);
 
@@ -234,7 +254,7 @@ nativeTest('SSRU initialization rejects malformed attrs, weight names, shapes an
   `);
 }, 60_000);
 
-nativeTest('SSRU validates runtime K/V, EOS and candidate inputs without poisoning later runs', async () => {
+nativeTest('SSRU validates runtime EOS, candidate and runBatch inputs without poisoning later runs', async () => {
   await runNode(`
     const handle = await initialize(files['shared-native']);
     try {
@@ -246,20 +266,14 @@ nativeTest('SSRU validates runtime K/V, EOS and candidate inputs without poisoni
         () => addon.run(handle, new Int32Array([0]), tokens([2]), 2n),
         () => addon.run(handle, tokens([0]), new Int32Array([2]), 2n),
         () => run(handle, [99], [2]),
+        () => addon.runBatch(handle, [tokens([0])], [tokens([2]), tokens([2])], 2n),
+        () => addon.runBatch(handle, [tokens([0])], [null], 2n),
       ];
       for (const operation of bad) {
         await assert.rejects(operation);
         assert.deepEqual(await run(handle), tokens([3, 2]));
       }
     } finally { await addon.close(handle); }
-    for (const item of kvCases) {
-      const session = await initialize(item.file);
-      try {
-        if (item.validAtTwo) assert.deepEqual(await run(session), tokens([3, 2]));
-        await assert.rejects(run(session, item.validAtTwo ? [0, 0, 2] : [0, 2]), new RegExp(item.pattern), item.name);
-        if (item.validAtTwo) assert.deepEqual(await run(session), tokens([3, 2]));
-      } finally { await addon.close(session); }
-    }
   `);
 }, 60_000);
 

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -120,6 +122,15 @@ struct BatchResult {
   bool ended_with_eos = false;
 };
 
+struct BatchCallbacks {
+  // Invoked immediately when a request finishes (receiving its assigned request index).
+  std::function<void(std::size_t request_index, BatchResult&& result)> on_complete;
+  // Invoked after slot retirement when active < max_active_batch. Append up to
+  // max_new requests into out_requests and return the starting request_index for
+  // out_requests[0] (assigns base + i for i < added).
+  std::function<std::size_t(std::vector<Request>& out_requests, std::size_t max_new)> try_refill;
+};
+
 // Reusable workspace across successive decodeBatch calls. On failure results are cleared.
 class BatchWorkspace {
  public:
@@ -174,7 +185,17 @@ class Decoder {
                    std::size_t max_threads = 1,
                    std::size_t max_active_batch = 16,
                    LinearBackend backend = {},
-                   MathBackend math = {}) const;
+                   MathBackend math = {},
+                   const std::atomic<std::size_t>* active_submitted = nullptr) const;
+
+  void decodeBatchStreaming(const Request* initial_requests, std::size_t initial_count,
+                            BatchWorkspace& workspace,
+                            const BatchCallbacks& callbacks,
+                            std::size_t max_threads = 1,
+                            std::size_t max_active_batch = 8,
+                            const std::atomic<std::size_t>* active_submitted = nullptr,
+                            LinearBackend backend = {},
+                            MathBackend math = {}) const;
 
   bool has_native_fast() const noexcept;
   std::size_t vocab_size() const noexcept { return vocab_size_; }
@@ -193,6 +214,14 @@ class Decoder {
     std::vector<Linear> ffn;
   };
   struct NativeState;
+  void decodeBatchImpl(const Request* initial_requests, std::size_t initial_count,
+                       BatchWorkspace& workspace,
+                       const BatchCallbacks& callbacks,
+                       std::size_t max_threads,
+                       std::size_t max_active_batch,
+                       const std::atomic<std::size_t>* active_submitted,
+                       LinearBackend backend,
+                       MathBackend math) const;
   Config config_;
   TensorView embedding_;
   Int8TensorView int8_embedding_;

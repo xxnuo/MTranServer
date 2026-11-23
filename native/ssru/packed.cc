@@ -17,8 +17,18 @@
 #endif
 #include <immintrin.h>
 #elif defined(__aarch64__) || defined(_M_ARM64)
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <arm64_neon.h>
+#else
 #include <arm_neon.h>
+#endif
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #elif defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -29,9 +39,9 @@
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#define MTRAN_AVX2
-#define MTRAN_AVX2_FMA
-#define MTRAN_DOTPROD
+#define MTRAN_AVX2 __declspec(noinline)
+#define MTRAN_AVX2_FMA __declspec(noinline)
+#define MTRAN_DOTPROD __declspec(noinline)
 #else
 #define MTRAN_AVX2 __attribute__((target("avx2"), noinline))
 #define MTRAN_AVX2_FMA __attribute__((target("avx2,fma"), noinline))
@@ -220,7 +230,7 @@ MTRAN_AVX2 void dotAvx2(const std::uint8_t* a, const std::int8_t* b, std::size_t
     const auto x = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(a + j));
     __m256i row[8];
     for (std::size_t lane = 0; lane < 8; ++lane) {
-      const auto w = _mm256_load_si256(reinterpret_cast<const __m256i*>(b + lane * 32));
+      const auto w = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b + lane * 32));
       if constexpr (ortSaturation) {
         row[lane] = _mm256_madd_epi16(_mm256_maddubs_epi16(x, w), ones);
       } else {
@@ -1039,10 +1049,13 @@ MTRAN_DOTPROD ShortlistTable::ScanResult scanShortlistSdot(
     const int32x4_t sum01 = vpaddq_s32(a0, a1);
     const int32x4_t sum23 = vpaddq_s32(a2, a3);
     const int32x4_t sum4 = vpaddq_s32(sum01, sum23);
-    const int32x4_t rsums = {meta[ts[0]].sum, meta[ts[1]].sum, meta[ts[2]].sum, meta[ts[3]].sum};
-    const float32x4_t raw_rsc = {meta[ts[0]].scale, meta[ts[1]].scale, meta[ts[2]].scale, meta[ts[3]].scale};
+    const std::int32_t rsums_arr[4] = {meta[ts[0]].sum, meta[ts[1]].sum, meta[ts[2]].sum, meta[ts[3]].sum};
+    const float raw_rsc_arr[4] = {meta[ts[0]].scale, meta[ts[1]].scale, meta[ts[2]].scale, meta[ts[3]].scale};
+    const float rbias_arr[4] = {meta[ts[0]].bias, meta[ts[1]].bias, meta[ts[2]].bias, meta[ts[3]].bias};
+    const int32x4_t rsums = vld1q_s32(rsums_arr);
+    const float32x4_t raw_rsc = vld1q_f32(raw_rsc_arr);
     const float32x4_t rscales = exact_int8 ? vexact : vmulq_f32(vxscale, raw_rsc);
-    const float32x4_t rbias = {meta[ts[0]].bias, meta[ts[1]].bias, meta[ts[2]].bias, meta[ts[3]].bias};
+    const float32x4_t rbias = vld1q_f32(rbias_arr);
     const int32x4_t corr = vmlaq_s32(sum4, rsums, vzp);
     const float32x4_t vals = vfmaq_f32(rbias, vcvtq_f32_s32(corr), rscales);
     vst1q_f32(approx_out + j, vals);
@@ -1057,7 +1070,7 @@ MTRAN_DOTPROD ShortlistTable::ScanResult scanShortlistSdot(
       }
     }
   }
-  const int32_t zp_u = static_cast<int32_t>(x_zp);
+  const std::int32_t zp_u = static_cast<std::int32_t>(x_zp);
   for (; j < candidate_count; ++j) {
     const auto t = static_cast<std::size_t>(candidate_ids[j]);
     const auto* row = emb_q8 + t * dim;
@@ -1108,9 +1121,12 @@ MTRAN_DOTPROD void scanShortlistSdotBatch(
     const std::int8_t* r1 = emb_q8 + ts[1] * dim;
     const std::int8_t* r2 = emb_q8 + ts[2] * dim;
     const std::int8_t* r3 = emb_q8 + ts[3] * dim;
-    const int32x4_t rsums = {meta[ts[0]].sum, meta[ts[1]].sum, meta[ts[2]].sum, meta[ts[3]].sum};
-    const float32x4_t raw_rsc = {meta[ts[0]].scale, meta[ts[1]].scale, meta[ts[2]].scale, meta[ts[3]].scale};
-    const float32x4_t rbias = {meta[ts[0]].bias, meta[ts[1]].bias, meta[ts[2]].bias, meta[ts[3]].bias};
+    const std::int32_t rsums_arr[4] = {meta[ts[0]].sum, meta[ts[1]].sum, meta[ts[2]].sum, meta[ts[3]].sum};
+    const float raw_rsc_arr[4] = {meta[ts[0]].scale, meta[ts[1]].scale, meta[ts[2]].scale, meta[ts[3]].scale};
+    const float rbias_arr[4] = {meta[ts[0]].bias, meta[ts[1]].bias, meta[ts[2]].bias, meta[ts[3]].bias};
+    const int32x4_t rsums = vld1q_s32(rsums_arr);
+    const float32x4_t raw_rsc = vld1q_f32(raw_rsc_arr);
+    const float32x4_t rbias = vld1q_f32(rbias_arr);
     for (std::size_t m = 0; m < rows; ++m) {
       const std::int8_t* sm = x_s8_buf + m * dim;
       int32x4_t a0 = vdupq_n_s32(0), a1 = a0, a2 = a0, a3 = a0;
@@ -1336,10 +1352,10 @@ const char* backend() noexcept {
   const auto dot = selectDot();
 #if defined(__x86_64__) || defined(_M_X64)
 #if defined(MTRAN_SSRU_HAVE_AVX512VNNI) && !defined(MTRAN_SSRU_NO_VNNI) && !defined(MTRAN_SSRU_NO_AVX512VNNI)
-  if (features() & detail::Avx512Vnni) return "packed-avx512vnni";
+  if ((features() & detail::Avx512Vnni) && hasFma()) return "packed-avx512vnni";
 #endif
 #if defined(MTRAN_SSRU_HAVE_VNNI) && !defined(MTRAN_SSRU_NO_VNNI)
-  if (features() & detail::AvxVnni) return "packed-avxvnni";
+  if ((features() & detail::AvxVnni) && hasFma()) return "packed-avxvnni";
 #endif
   if (dot == dotAvx2<true>) return "packed-avx2-ort";
   return dot ? "packed-avx2" : nullptr;
@@ -1601,7 +1617,7 @@ struct Weight::Impl {
   void initLayout(bool enable_vnni) {
 #if defined(__x86_64__) || defined(_M_X64)
     const unsigned f = features();
-    if (enable_vnni) {
+    if (enable_vnni && hasFma()) {
 #if defined(MTRAN_SSRU_HAVE_AVX512VNNI) && !defined(MTRAN_SSRU_NO_VNNI) && !defined(MTRAN_SSRU_NO_AVX512VNNI)
       if (f & detail::Avx512Vnni) {
         layout_ = Layout::K4Vnni512_16;
@@ -1886,7 +1902,7 @@ struct ShortlistTable::Impl {
     if (avx512vnni_) hot_block_ = 16;
     else if (vnni_) hot_block_ = 8;
     else return;
-    hot_count_ = std::min<std::size_t>(vocab_, 256) & ~(hot_block_ - 1);
+    hot_count_ = std::min<std::size_t>(vocab_, 2048) & ~(hot_block_ - 1);
     if (hot_count_ == 0) return;
     hot_q8_k4_.resize(hot_count_ * dim_);
     const std::int8_t* src = emb_q8_.data();
@@ -1908,13 +1924,15 @@ struct ShortlistTable::Impl {
   void initFlags() {
 #if defined(__x86_64__) || defined(_M_X64)
     const unsigned f = features();
+    const bool fma = hasFma();
     avx2_ = (f & detail::Avx2) != 0;
 #if defined(MTRAN_SSRU_HAVE_AVX512VNNI) && !defined(MTRAN_SSRU_NO_VNNI) && !defined(MTRAN_SSRU_NO_AVX512VNNI)
-    avx512vnni_ = (f & detail::Avx512Vnni) != 0;
+    avx512vnni_ = (f & detail::Avx512Vnni) != 0 && fma;
 #endif
 #if defined(MTRAN_SSRU_HAVE_VNNI) && !defined(MTRAN_SSRU_NO_VNNI)
-    vnni_ = (f & detail::AvxVnni) != 0;
+    vnni_ = (f & detail::AvxVnni) != 0 && fma;
 #endif
+    (void)fma;
     use_q8_ = avx2_ && dim_ % 32 == 0 && dim_ <= std::size_t(INT32_MAX) / (255 * 128);
 #elif defined(__aarch64__) || defined(_M_ARM64)
     use_q8_ = hasDotprod() && dim_ % 32 == 0 && dim_ <= std::size_t(INT32_MAX) / (255 * 128);
@@ -2369,15 +2387,16 @@ struct FullVocabQ4::Impl {
   void packQ4Layout() {
 #if defined(__x86_64__) || defined(_M_X64)
     const unsigned f = features();
+    const bool fma = hasFma();
     avx2_ = (f & detail::Avx2) != 0;
 #if defined(MTRAN_SSRU_HAVE_AVX512VNNI) && !defined(MTRAN_SSRU_NO_VNNI) && !defined(MTRAN_SSRU_NO_AVX512VNNI)
-    avx512vnni_ = (f & detail::Avx512Vnni) != 0;
+    avx512vnni_ = (f & detail::Avx512Vnni) != 0 && fma;
 #endif
 #if defined(MTRAN_SSRU_HAVE_VNNI) && !defined(MTRAN_SSRU_NO_VNNI)
-    vnni_ = (f & detail::AvxVnni) != 0;
+    vnni_ = (f & detail::AvxVnni) != 0 && fma;
 #endif
     group_width_ = avx512vnni_ ? 16 : 8;
-    simd_ready_ = avx2_ && hasFma() && (dim_ % 64 == 0) && vocab_ >= group_width_;
+    simd_ready_ = avx2_ && fma && (dim_ % 64 == 0) && vocab_ >= group_width_;
     if (simd_ready_) {
       const std::size_t groups = vocab_ / group_width_;
       // [vocab/gw][blocks][8_chunks][gw_cols][4_k_nibbles]

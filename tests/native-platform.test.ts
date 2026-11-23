@@ -224,7 +224,7 @@ test.skipIf(!platforms.includes(process.platform as any) || !architectures.inclu
         const models = ${JSON.stringify(models)}, library = ${JSON.stringify(library)};
         (async () => {
           assert.equal(addon.ssruVersion, 1);
-          assert(['invokeop', 'packed-avxvnni', 'packed-avx2', 'packed-avx2-ort', 'packed-sdot', 'packed-neon'].includes(addon.ssruBackend));
+          assert(['invokeop', 'packed-avx512vnni', 'packed-avxvnni', 'packed-avx2', 'packed-avx2-ort', 'packed-sdot', 'packed-neon'].includes(addon.ssruBackend));
           await assert.rejects(addon.init(models[0], library + '.missing'));
           await assert.rejects(addon.init(models[0] + '.missing', library));
           await assert.rejects(addon.init(models[0] + '\0suffix', library), /NUL/);

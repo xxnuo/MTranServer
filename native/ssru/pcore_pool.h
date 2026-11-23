@@ -14,6 +14,7 @@ class PcorePool {
   static PcorePool& instance();
 
   std::size_t pcoreCount() const noexcept;
+  static std::size_t recommendedWorkerCount() noexcept;
 
   // Executes fn(ctx, tid, nthreads) across 1..min(max_threads, pcoreCount())
   // threads. Caller executes tid=0. Thread-safe and fallback-safe when busy.
@@ -35,6 +36,8 @@ class PcorePool {
   // Pins the calling thread to the detected P-core CPU set (Linux),
   // sets user-interactive QoS (macOS), or raises thread priority (Windows).
   static void pinCurrentThreadToPcores() noexcept;
+  // Pins worker `worker_idx` (P-cores first, P-core HT siblings next, E-cores last on Linux).
+  static void pinWorkerThread(std::size_t worker_idx) noexcept;
 
  private:
   PcorePool();

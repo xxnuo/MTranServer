@@ -30,12 +30,14 @@
 namespace mtran::ssru {
 namespace {
 
+#ifdef MTRAN_SSRU_PACKED
 constexpr std::size_t kPosTableMaxPos = 512;
 
 #if defined(__linux__) && defined(__aarch64__)
 constexpr bool kUseFusedBias = true;
 #else
 constexpr bool kUseFusedBias = false;
+#endif
 #endif
 
 std::size_t multiply(std::size_t a, std::size_t b) {
@@ -549,7 +551,8 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                           const std::size_t* lengths,
                           std::size_t batch_size,
                           EncodedBatch& out,
-                          std::size_t max_threads) const {
+                          std::size_t max_threads,
+                          const std::atomic<std::size_t>* active_submitted) const {
   if (!out.scratch_) out.scratch_ = std::make_unique<EncodedBatch::Scratch>();
   auto& s = *out.scratch_;
 
@@ -616,13 +619,17 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
     if (native_) {
       auto& pool = PcorePool::instance();
       const std::size_t capped = std::max<std::size_t>(1, max_threads);
-      const std::size_t threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+      const std::size_t base_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+      const auto effThreads = [&]() noexcept -> std::size_t {
+        if (active_submitted && active_submitted->load(std::memory_order_relaxed) > 1) return 1;
+        return base_threads;
+      };
 
       s.a_q.resize(multiply(total_tokens, std::max(dim, max_ffn_width_)));
       s.a_scales.resize(total_tokens);
       s.a_zps.resize(total_tokens);
-      s.relu_maxs.resize(multiply(threads, total_tokens));
-      s.scores.resize(multiply(threads, multiply(heads, max_len)));
+      s.relu_maxs.resize(multiply(base_threads, total_tokens));
+      s.scores.resize(multiply(base_threads, multiply(heads, max_len)));
 
       // Step 1: Embed + sqrt(dim) + sinusoidal positional encoding (ragged).
       for (std::size_t b = 0; b < batch_size; ++b) {
@@ -661,6 +668,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
       finite(s.x.data(), total_dim, "encoder embedding");
 
       const auto quantizePerSentence = [&](const float* src, std::size_t cols) {
+        const std::size_t threads = effThreads();
         if (threads > 1 && batch_size >= 2) {
           const std::size_t team = std::min(threads, batch_size);
           pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
@@ -690,6 +698,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
       };
 
       const auto shardMatmul = [&](const PackedLinear& pl, float* dst, bool relu) {
+        const std::size_t threads = effThreads();
         const std::size_t chunks = pl.cols / 32;
         if (threads <= 1 || chunks <= 1) {
           runMultiplySlice(pl, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
@@ -710,6 +719,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
       };
 
       const auto normAndAdd = [&](const float* residual_add, const float* scale, const float* bias) {
+        const std::size_t threads = effThreads();
         if (threads <= 1 || total_tokens < 4) {
           for (std::size_t i = 0; i < total_dim; ++i) s.x[i] += residual_add[i];
           ops::instanceNormAffine(s.x.data(), scale, bias, total_tokens, dim, s.x.data());
@@ -727,7 +737,6 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
             }
           });
         }
-        finite(s.x.data(), total_dim, "encoder norm");
       };
 
       const std::size_t qkv_chunks_per_mat = dim / 32;
@@ -739,13 +748,14 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
         quantizePerSentence(s.x.data(), dim);
         const PackedLinear* qkv_mats[3] = {&layer.q, &layer.k, &layer.v};
         float* qkv_outs[3] = {s.q.data(), s.k.data(), s.v.data()};
-        if (threads <= 1) {
+        const std::size_t qkv_threads = effThreads();
+        if (qkv_threads <= 1) {
           for (std::size_t m = 0; m < 3; ++m) {
             runMultiplySlice(*qkv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
                              total_tokens, qkv_outs[m], dim, nullptr, false, 0, dim);
           }
         } else {
-          const std::size_t team = std::min(threads, total_qkv_chunks);
+          const std::size_t team = std::min(qkv_threads, total_qkv_chunks);
           pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
             const std::size_t gb = (total_qkv_chunks * tid) / nt;
             const std::size_t ge = (total_qkv_chunks * (tid + 1)) / nt;
@@ -764,7 +774,8 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
         }
 
         // 2. Per-sentence ragged self-attention across (batch, head) slices.
-        if (threads <= 1) {
+        const std::size_t attn_threads = effThreads();
+        if (attn_threads <= 1) {
           for (std::size_t b = 0; b < batch_size; ++b) {
             const std::size_t off = out.offsets_[b] * dim;
             ops::selfAttention(s.q.data() + off, s.k.data() + off, s.v.data() + off,
@@ -772,7 +783,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                                s.attn.data() + off, 0, heads);
           }
         } else {
-          const std::size_t team = std::min(threads, total_attn_heads);
+          const std::size_t team = std::min(attn_threads, total_attn_heads);
           const std::size_t scratch_stride = heads * max_len;
           pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
             float* t_scores = s.scores.data() + tid * scratch_stride;
@@ -786,7 +797,6 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
             }
           });
         }
-        finite(s.attn.data(), total_dim, "encoder attention");
 
         // 3. Wo + residual + instanceNormAffine.
         quantizePerSentence(s.attn.data(), dim);
@@ -810,14 +820,15 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
       const std::size_t num_kv = native_->kv_mats.size();
       const std::size_t kv_chunks_per_mat = dim / 32;
       const std::size_t total_kv_chunks = num_kv * kv_chunks_per_mat;
-      if (threads <= 1) {
+      const std::size_t kv_threads = effThreads();
+      if (kv_threads <= 1) {
         for (std::size_t m = 0; m < num_kv; ++m) {
           runMultiplySlice(native_->kv_mats[m], s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
                            total_tokens, s.kv_proj.data() + m * total_dim, dim,
                            nullptr, false, 0, dim);
         }
       } else {
-        const std::size_t team = std::min(threads, total_kv_chunks);
+        const std::size_t team = std::min(kv_threads, total_kv_chunks);
         pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
           const std::size_t gb = (total_kv_chunks * tid) / nt;
           const std::size_t ge = (total_kv_chunks * (tid + 1)) / nt;
@@ -838,7 +849,8 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
 
       // Direct transpose into decoder K [heads, head_dim, src_len] and V [heads, src_len, head_dim].
       const std::size_t total_scatter = batch_size * num_kv;
-      if (threads <= 1 || total_scatter <= 1) {
+      const std::size_t scatter_threads = effThreads();
+      if (scatter_threads <= 1 || total_scatter <= 1) {
         for (std::size_t idx = 0; idx < total_scatter; ++idx) {
           const std::size_t b = idx / num_kv;
           const std::size_t m = idx % num_kv;
@@ -850,7 +862,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                       dst_base + (d_layer * total_tokens + out.offsets_[b]) * dim);
         }
       } else {
-        const std::size_t team = std::min(threads, total_scatter);
+        const std::size_t team = std::min(scatter_threads, total_scatter);
         pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
           for (std::size_t idx = tid; idx < total_scatter; idx += nt) {
             const std::size_t b = idx / num_kv;
@@ -868,6 +880,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
     }
 #else
     (void)max_threads;
+    (void)active_submitted;
 #endif
 
     // Scalar ragged fallback (standalone tests / non-32-aligned synthetic dimensions).

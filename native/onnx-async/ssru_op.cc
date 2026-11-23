@@ -1,8 +1,10 @@
 #include "ssru_op.h"
+#include "../ssru/encoder.h"
 #include "../ssru/ssru.h"
 #include "../ssru/kleidi.h"
 #ifdef MTRAN_SSRU_PACKED
 #include "../ssru/packed.h"
+#include "../ssru/pcore_pool.h"
 #endif
 #include <algorithm>
 #include <atomic>
@@ -14,10 +16,12 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <regex>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #ifdef _MSC_VER
 #pragma fp_contract(off)
@@ -64,7 +68,7 @@ void* data(const OrtApi* api, const OrtValue* value) {
 }
 mtran::ssru::TensorView floatView(const OrtApi* api, const OrtValue* value) {
   auto s = shape(api, value);
-  if (s.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT) throw std::runtime_error("SSRU expects float weights and K/V");
+  if (s.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT) throw std::runtime_error("SSRU invalid tensor type: expected float tensor");
   return {static_cast<const float*>(data(api, value)), s.size, std::move(s.dims)};
 }
 size_t attribute(const OrtApi* api, const OrtKernelInfo* info, const char* name) {
@@ -73,17 +77,21 @@ size_t attribute(const OrtApi* api, const OrtKernelInfo* info, const char* name)
   if (value < 1 || value > 65536) throw std::runtime_error("Invalid SSRU configuration");
   return static_cast<size_t>(value);
 }
-std::vector<std::string> weightNames(const OrtApi* api, const OrtKernelInfo* info) {
+std::vector<std::string> stringArrayAttribute(const OrtApi* api, const OrtKernelInfo* info, const char* name, bool allowEmpty) {
   OrtAllocator* allocator = nullptr;
   check(api, api->GetAllocatorWithDefaultOptions(&allocator));
   char** names = nullptr; size_t count = 0;
-  check(api, api->KernelInfoGetAttributeArray_string(info, "weight_names", allocator, &names, &count));
+  check(api, api->KernelInfoGetAttributeArray_string(info, name, allocator, &names, &count));
   struct Cleanup {
     OrtAllocator* allocator; char** names; size_t count;
     ~Cleanup() { for (size_t i = 0; i < count; ++i) allocator->Free(allocator, names[i]); if (names) allocator->Free(allocator, names); }
   } cleanup{allocator, names, count};
-  if (count == 0 || count > 4096) throw std::runtime_error("Invalid SSRU weight count");
+  if ((!allowEmpty && count == 0) || count > 4096) throw std::runtime_error("Invalid SSRU weight count");
+  if (count == 0) return {};
   return {names, names + count};
+}
+std::vector<std::string> weightNames(const OrtApi* api, const OrtKernelInfo* info) {
+  return stringArrayAttribute(api, info, "weight_names", false);
 }
 
 // Constant int8 W=[1,1], scale=.1, bias=.125, X=[-3.3,4.4]. Only prepacked
@@ -631,7 +639,525 @@ const OrtCustomOp& operation() {
   }();
   return op;
 }
+
+thread_local mtran::onnx_async::ScopedTranslateCapture* g_capture = nullptr;
+
+struct TranslateKernel final : public mtran::onnx_async::SsruTranslateKernel {
+  const OrtApi* api;
+  std::unique_ptr<mtran::ssru::Encoder> encoder;
+  std::unique_ptr<mtran::ssru::Decoder> decoder;
+  size_t inputCount = 0;
+  bool candInput = false;
+  std::atomic<uint32_t> activeRuns{0};
+
+  struct BatchBuffers {
+    mtran::ssru::EncodedBatch encoded;
+    mtran::ssru::BatchWorkspace dec_ws;
+    std::vector<mtran::ssru::Request> requests;
+  };
+  struct LiveGroup {
+    mtran::ssru::EncodedBatch encoded;
+    std::size_t pending_slots = 0;
+  };
+  struct SlotMeta {
+    std::size_t caller_id = 0;
+    LiveGroup* group = nullptr;
+  };
+  struct ContinuousBuffers {
+    mtran::ssru::BatchWorkspace dec_ws;
+    std::vector<std::unique_ptr<LiveGroup>> free_groups;
+    std::vector<std::unique_ptr<LiveGroup>> active_groups;
+    std::unordered_map<std::size_t, SlotMeta> slot_meta;
+  };
+  std::mutex poolMutex;
+  std::vector<std::unique_ptr<BatchBuffers>> bufferPool;
+  std::vector<std::unique_ptr<ContinuousBuffers>> continuousPool;
+
+  explicit TranslateKernel(const OrtApi* a) : api(a) {}
+
+  void initialize(const OrtKernelInfo* info) {
+    const size_t dim = attribute(api, info, "dim");
+    const size_t heads = attribute(api, info, "heads");
+    const size_t encDepth = attribute(api, info, "enc_depth");
+    const size_t decDepth = attribute(api, info, "dec_depth");
+    const size_t ffnDepth = attribute(api, info, "ffn_depth");
+    int64_t tiedAttr = -1;
+    check(api, api->KernelInfoGetAttribute_int64(info, "tied_embeddings", &tiedAttr));
+    if (tiedAttr != 0 && tiedAttr != 1) throw std::runtime_error("Invalid SSRU configuration");
+    const bool tied = tiedAttr == 1;
+
+    const auto names = weightNames(api, info);
+    const auto int8Names = stringArrayAttribute(api, info, "int8_weight_names", true);
+    const auto int8ScaleNames = stringArrayAttribute(api, info, "int8_scale_names", true);
+    if (int8Names.size() != int8ScaleNames.size())
+      throw std::runtime_error("SSRU int8 weight/scale count mismatch");
+
+    check(api, api->KernelInfo_GetInputCount(info, &inputCount));
+    if (inputCount != 3 + names.size() + int8ScaleNames.size())
+      throw std::runtime_error("SSRU input/weight count mismatch");
+
+    int constCand = 0;
+    const OrtValue* candVal = nullptr;
+    const bool hasConstCand =
+        api->KernelInfoGetConstantInput_tensor(info, 2, &constCand, &candVal) == nullptr &&
+        constCand && candVal;
+    if (hasConstCand) {
+      auto cs = shape(api, candVal);
+      if (cs.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || cs.size != 0)
+        throw std::runtime_error("Invalid SSRU constant candidate input");
+      candInput = false;
+    } else {
+      candInput = true;
+    }
+
+    std::unordered_map<std::string, float> int8Scales;
+    int8Scales.reserve(int8Names.size());
+    const size_t firstScale = 3 + names.size();
+    for (size_t k = 0; k < int8Names.size(); ++k) {
+      int constant = 0;
+      const OrtValue* val = nullptr;
+      check(api, api->KernelInfoGetConstantInput_tensor(info, firstScale + k, &constant, &val));
+      if (!constant || !val) throw std::runtime_error("SSRU weights must be immutable initializers");
+      auto sv = floatView(api, val);
+      if (sv.size != 1) throw std::runtime_error("Invalid SSRU int8 scale shape");
+      const float scaleVal = sv.data[0];
+      if (!std::isfinite(scaleVal) || scaleVal < 0.0f)
+        throw std::runtime_error("Invalid SSRU int8 scale");
+      if (!int8Scales.emplace(int8Names[k], scaleVal).second)
+        throw std::runtime_error("Duplicate SSRU weight: " + int8Names[k]);
+    }
+
+    std::vector<mtran::ssru::NamedTensor> fpWeights;
+    std::vector<mtran::ssru::NamedInt8Tensor> i8Weights;
+    fpWeights.reserve(names.size());
+    i8Weights.reserve(int8Names.size());
+    std::unordered_set<std::string> seenWeights;
+    seenWeights.reserve(names.size());
+    size_t matchedInt8 = 0;
+
+    for (size_t i = 0; i < names.size(); ++i) {
+      if (!seenWeights.insert(names[i]).second)
+        throw std::runtime_error("SSRU duplicate weight: " + names[i]);
+      int constant = 0;
+      const OrtValue* value = nullptr;
+      check(api, api->KernelInfoGetConstantInput_tensor(info, 3 + i, &constant, &value));
+      if (!constant || !value) throw std::runtime_error("SSRU weights must be immutable initializers");
+
+      const auto scaleIt = int8Scales.find(names[i]);
+      if (scaleIt != int8Scales.end()) {
+        auto s = shape(api, value);
+        if (s.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8)
+          throw std::runtime_error("SSRU invalid tensor type: expected int8 tensor");
+        i8Weights.push_back({names[i],
+            {static_cast<const int8_t*>(data(api, value)), s.size, std::move(s.dims), scaleIt->second}});
+        ++matchedInt8;
+      } else {
+        fpWeights.push_back({names[i], floatView(api, value)});
+      }
+    }
+    if (matchedInt8 != int8Names.size())
+      throw std::runtime_error("SSRU int8 weight missing from weight_names");
+    if (tied) {
+      if (!seenWeights.count("Wemb")) throw std::runtime_error("SSRU missing weight: Wemb");
+    } else {
+      if (!seenWeights.count("encoder_Wemb") || !seenWeights.count("decoder_Wemb"))
+        throw std::runtime_error("SSRU missing weight: encoder_Wemb or decoder_Wemb");
+    }
+
+    encoder = std::make_unique<mtran::ssru::Encoder>(
+        mtran::ssru::EncoderConfig{dim, heads, encDepth, decDepth, ffnDepth}, fpWeights, i8Weights);
+    decoder = std::make_unique<mtran::ssru::Decoder>(
+        mtran::ssru::Config{dim, heads, decDepth, ffnDepth}, fpWeights, i8Weights);
+  }
+
+  bool hasCandidates() const noexcept override { return candInput; }
+
+  void translateBatch(const std::int64_t* const* inputs,
+                      const std::size_t* input_lens,
+                      const std::int64_t* const* cands,
+                      const std::size_t* cand_lens,
+                      std::size_t batch_size,
+                      std::int64_t eos_id,
+                      std::vector<std::vector<std::int64_t>>& outputs,
+                      std::size_t max_threads,
+                      const std::atomic<std::size_t>* active_submitted = nullptr) override {
+    if (batch_size == 0) {
+      outputs.clear();
+      return;
+    }
+    if (!inputs || !input_lens || (candInput && (!cands || !cand_lens)))
+      throw std::invalid_argument("SSRU null batch arguments");
+    if (!candInput && cands && cand_lens) {
+      for (std::size_t b = 0; b < batch_size; ++b) {
+        if (cand_lens[b] != 0) throw std::invalid_argument("Standard graph requires null candidates");
+      }
+    }
+    if (eos_id < 0 || static_cast<std::uint64_t>(eos_id) >= decoder->vocab_size())
+      throw std::invalid_argument("SSRU invalid request");
+
+    std::unique_ptr<BatchBuffers> bufs;
+    {
+      std::lock_guard lock(poolMutex);
+      if (!bufferPool.empty()) {
+        bufs = std::move(bufferPool.back());
+        bufferPool.pop_back();
+      }
+    }
+    if (!bufs) bufs = std::make_unique<BatchBuffers>();
+    struct ReturnPool {
+      TranslateKernel& self;
+      std::unique_ptr<BatchBuffers> bufs;
+      ~ReturnPool() {
+        if (bufs) {
+          std::lock_guard lock(self.poolMutex);
+          if (self.bufferPool.size() < 16) self.bufferPool.push_back(std::move(bufs));
+        }
+      }
+    } poolGuard{*this, std::move(bufs)};
+
+    auto& b = *poolGuard.bufs;
+    encoder->encodeBatch(inputs, input_lens, batch_size, b.encoded, max_threads, active_submitted);
+    b.encoded.populate_requests(b.requests);
+    for (std::size_t i = 0; i < batch_size; ++i) {
+      b.requests[i].eos_id = eos_id;
+      b.requests[i].candidate_ids = candInput ? cands[i] : nullptr;
+      b.requests[i].candidate_count = candInput ? cand_lens[i] : 0;
+    }
+    decoder->decodeBatch(b.requests.data(), batch_size, b.dec_ws, max_threads,
+                         std::min<std::size_t>(batch_size, 16), {}, {}, active_submitted);
+    const auto& results = b.dec_ws.results();
+    outputs.resize(batch_size);
+    for (std::size_t i = 0; i < batch_size; ++i) {
+      outputs[i] = results[i].tokens;
+    }
+  }
+
+  void translateContinuous(const mtran::onnx_async::ContinuousItem* initial_items,
+                           std::size_t initial_count,
+                           const mtran::onnx_async::ContinuousHook& hook,
+                           std::size_t max_threads,
+                           std::size_t max_active_batch,
+                           const std::atomic<std::size_t>* active_submitted = nullptr) override {
+    if (initial_count == 0 && !hook.pop_refill) return;
+
+    std::unique_ptr<ContinuousBuffers> cbufs;
+    {
+      std::lock_guard lock(poolMutex);
+      if (!continuousPool.empty()) {
+        cbufs = std::move(continuousPool.back());
+        continuousPool.pop_back();
+      }
+    }
+    if (!cbufs) {
+      cbufs = std::make_unique<ContinuousBuffers>();
+      cbufs->slot_meta.reserve(32);
+    }
+    struct ReturnContinuousPool {
+      TranslateKernel& self;
+      std::unique_ptr<ContinuousBuffers> cbufs;
+      ~ReturnContinuousPool() {
+        if (cbufs) {
+          cbufs->slot_meta.clear();
+          while (!cbufs->active_groups.empty()) {
+            cbufs->active_groups.back()->pending_slots = 0;
+            cbufs->free_groups.push_back(std::move(cbufs->active_groups.back()));
+            cbufs->active_groups.pop_back();
+          }
+          std::lock_guard lock(self.poolMutex);
+          if (self.continuousPool.size() < 8) self.continuousPool.push_back(std::move(cbufs));
+        }
+      }
+    } poolGuard{*this, std::move(cbufs)};
+
+    auto& cb = *poolGuard.cbufs;
+    const std::size_t vocab = decoder->vocab_size();
+    std::size_t next_seq = 0;
+
+    const auto acquireGroup = [&]() -> std::unique_ptr<LiveGroup> {
+      if (!cb.free_groups.empty()) {
+        auto g = std::move(cb.free_groups.back());
+        cb.free_groups.pop_back();
+        g->pending_slots = 0;
+        return g;
+      }
+      return std::make_unique<LiveGroup>();
+    };
+
+    const auto releaseGroupSlot = [&](LiveGroup* grp) {
+      if (!grp) return;
+      if (grp->pending_slots > 0) --grp->pending_slots;
+      if (grp->pending_slots == 0) {
+        for (std::size_t i = 0; i < cb.active_groups.size(); ++i) {
+          if (cb.active_groups[i].get() == grp) {
+            if (i + 1 != cb.active_groups.size()) {
+              std::swap(cb.active_groups[i], cb.active_groups.back());
+            }
+            cb.free_groups.push_back(std::move(cb.active_groups.back()));
+            cb.active_groups.pop_back();
+            break;
+          }
+        }
+      }
+    };
+
+    const auto admitItems = [&](const mtran::onnx_async::ContinuousItem* items,
+                                std::size_t n,
+                                std::vector<mtran::ssru::Request>& out_reqs,
+                                std::size_t& out_base_seq) {
+      out_reqs.clear();
+      if (!n) return;
+      std::vector<const mtran::onnx_async::ContinuousItem*> valid;
+      valid.reserve(n);
+      for (std::size_t i = 0; i < n; ++i) {
+        const auto& it = items[i];
+        const char* err = nullptr;
+        if (!it.input || it.input_len == 0) {
+          err = "SSRU null or empty input";
+        } else if (it.eos_id < 0 || static_cast<std::uint64_t>(it.eos_id) >= vocab) {
+          err = "SSRU invalid eos";
+        } else if (!candInput && it.cand_len != 0) {
+          err = "Standard graph requires null candidates";
+        } else if (candInput && it.cand_len > 0 && !it.cand) {
+          err = "SSRU null candidates";
+        }
+        if (err) {
+          if (hook.on_error) hook.on_error(it.id, err);
+          continue;
+        }
+        valid.push_back(&it);
+      }
+      if (valid.empty()) return;
+
+      out_base_seq = next_seq;
+      const std::size_t vn = valid.size();
+      std::vector<const std::int64_t*> ptrs(vn);
+      std::vector<std::size_t> lens(vn);
+      for (std::size_t i = 0; i < vn; ++i) {
+        ptrs[i] = valid[i]->input;
+        lens[i] = valid[i]->input_len;
+      }
+
+      auto grp = acquireGroup();
+      std::vector<mtran::ssru::Request> encoded_reqs;
+      bool batch_ok = false;
+      try {
+        encoder->encodeBatch(ptrs.data(), lens.data(), vn, grp->encoded, max_threads, active_submitted);
+        grp->encoded.populate_requests(encoded_reqs);
+        batch_ok = true;
+      } catch (const std::exception& ex) {
+        cb.free_groups.push_back(std::move(grp));
+        if (vn == 1) {
+          if (hook.on_error) hook.on_error(valid[0]->id, ex.what());
+          return;
+        }
+      } catch (...) {
+        cb.free_groups.push_back(std::move(grp));
+        if (vn == 1) {
+          if (hook.on_error) hook.on_error(valid[0]->id, "Unknown native encode failure");
+          return;
+        }
+      }
+
+      if (batch_ok) {
+        grp->pending_slots = vn;
+        for (std::size_t i = 0; i < vn; ++i) {
+          auto req = std::move(encoded_reqs[i]);
+          req.eos_id = valid[i]->eos_id;
+          req.candidate_ids = candInput ? valid[i]->cand : nullptr;
+          req.candidate_count = candInput ? valid[i]->cand_len : 0;
+          cb.slot_meta.emplace(out_base_seq + i, SlotMeta{valid[i]->id, grp.get()});
+          out_reqs.push_back(std::move(req));
+        }
+        next_seq += vn;
+        cb.active_groups.push_back(std::move(grp));
+        return;
+      }
+
+      // Isolate malformed individual inputs when a group encode fails.
+      std::size_t admitted = 0;
+      for (std::size_t i = 0; i < vn; ++i) {
+        auto g1 = acquireGroup();
+        try {
+          encoder->encodeBatch(&ptrs[i], &lens[i], 1, g1->encoded, 1, active_submitted);
+          g1->encoded.populate_requests(encoded_reqs);
+          auto req = std::move(encoded_reqs[0]);
+          req.eos_id = valid[i]->eos_id;
+          req.candidate_ids = candInput ? valid[i]->cand : nullptr;
+          req.candidate_count = candInput ? valid[i]->cand_len : 0;
+          g1->pending_slots = 1;
+          cb.slot_meta.emplace(out_base_seq + admitted, SlotMeta{valid[i]->id, g1.get()});
+          out_reqs.push_back(std::move(req));
+          cb.active_groups.push_back(std::move(g1));
+          ++admitted;
+        } catch (const std::exception& ex) {
+          cb.free_groups.push_back(std::move(g1));
+          if (hook.on_error) hook.on_error(valid[i]->id, ex.what());
+        } catch (...) {
+          cb.free_groups.push_back(std::move(g1));
+          if (hook.on_error) hook.on_error(valid[i]->id, "Unknown native encode failure");
+        }
+      }
+      next_seq += admitted;
+    };
+
+    std::vector<mtran::ssru::Request> init_reqs;
+    std::size_t init_base = 0;
+    admitItems(initial_items, initial_count, init_reqs, init_base);
+    if (init_reqs.empty() && !hook.pop_refill) return;
+
+    std::vector<mtran::onnx_async::ContinuousItem> pending_refill;
+    mtran::ssru::BatchCallbacks dec_cb;
+    dec_cb.on_complete = [&](std::size_t seq_id, mtran::ssru::BatchResult&& res) {
+      auto it = cb.slot_meta.find(seq_id);
+      if (it == cb.slot_meta.end()) return;
+      const std::size_t caller_id = it->second.caller_id;
+      LiveGroup* grp = it->second.group;
+      cb.slot_meta.erase(it);
+      releaseGroupSlot(grp);
+      if (hook.on_complete) hook.on_complete(caller_id, std::move(res.tokens));
+    };
+    dec_cb.try_refill = [&](std::vector<mtran::ssru::Request>& out_reqs, std::size_t max_new) -> std::size_t {
+      out_reqs.clear();
+      if (!hook.pop_refill) return next_seq;
+      std::size_t base_seq = next_seq;
+      while (out_reqs.empty()) {
+        pending_refill.clear();
+        hook.pop_refill(pending_refill, max_new);
+        if (pending_refill.empty()) break;
+        admitItems(pending_refill.data(), pending_refill.size(), out_reqs, base_seq);
+      }
+      return base_seq;
+    };
+
+    try {
+      decoder->decodeBatchStreaming(
+          init_reqs.empty() ? nullptr : init_reqs.data(), init_reqs.size(),
+          cb.dec_ws, dec_cb, max_threads, std::clamp<std::size_t>(max_active_batch, 1, 16),
+          active_submitted);
+    } catch (const std::exception& ex) {
+      for (const auto& kv : cb.slot_meta) {
+        if (hook.on_error) hook.on_error(kv.second.caller_id, ex.what());
+      }
+      cb.slot_meta.clear();
+      throw;
+    } catch (...) {
+      for (const auto& kv : cb.slot_meta) {
+        if (hook.on_error) hook.on_error(kv.second.caller_id, "Unknown native decode failure");
+      }
+      cb.slot_meta.clear();
+      throw;
+    }
+  }
+
+  void compute(OrtKernelContext* context) {
+    size_t count = 0;
+    check(api, api->KernelContext_GetInputCount(context, &count));
+    if (count != inputCount) throw std::runtime_error("SSRU runtime input count mismatch");
+    const auto get = [&](size_t index) {
+      const OrtValue* value = nullptr;
+      check(api, api->KernelContext_GetInput(context, index, &value));
+      if (!value) throw std::runtime_error("Missing SSRU input");
+      return value;
+    };
+    const auto* x = get(0);
+    const auto* eos = get(1);
+    const auto* candidates = get(2);
+    const auto xs = shape(api, x), es = shape(api, eos), cs = shape(api, candidates);
+    if (xs.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || xs.dims.size() != 1 || xs.size == 0 ||
+        es.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || es.dims != std::vector<int64_t>{1} ||
+        cs.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 || cs.dims.size() != 1)
+      throw std::runtime_error("Invalid SSRU token input shape");
+    if (!candInput && cs.size != 0)
+      throw std::runtime_error("Standard graph requires empty candidates");
+
+    const int64_t* xPtr = static_cast<const int64_t*>(data(api, x));
+    const size_t xLen = xs.size;
+    const int64_t eosVal = *static_cast<const int64_t*>(data(api, eos));
+    const int64_t* candPtr = cs.size ? static_cast<const int64_t*>(data(api, candidates)) : nullptr;
+    const size_t candLen = cs.size;
+
+    activeRuns.fetch_add(1, std::memory_order_relaxed);
+    struct ActiveGuard {
+      std::atomic<uint32_t>& cnt;
+      ~ActiveGuard() { cnt.fetch_sub(1, std::memory_order_relaxed); }
+    } activeGuard{activeRuns};
+
+#ifdef MTRAN_SSRU_PACKED
+    const size_t maxThreads = activeRuns.load(std::memory_order_relaxed) <= 1
+        ? mtran::ssru::PcorePool::instance().pcoreCount()
+        : 1;
+#else
+    const size_t maxThreads = 1;
+#endif
+
+    std::vector<std::vector<std::int64_t>> outVecs;
+    translateBatch(&xPtr, &xLen, candInput ? &candPtr : nullptr,
+                   candInput ? &candLen : nullptr, 1, eosVal, outVecs, maxThreads);
+    const auto& tokens = outVecs[0];
+    const int64_t dims[] = {static_cast<int64_t>(tokens.size())};
+    OrtValue* result = nullptr;
+    check(api, api->KernelContext_GetOutput(context, 0, dims, 1, &result));
+    std::memcpy(data(api, result), tokens.data(), tokens.size() * sizeof(int64_t));
+  }
+};
+
+const OrtCustomOp& translateOperation() {
+  static const OrtCustomOp op = [] {
+    OrtCustomOp o{}; o.version = ORT_API_VERSION;
+    o.GetName = [](const OrtCustomOp*) { return "SsruTranslate"; };
+    o.GetExecutionProviderType = [](const OrtCustomOp*) { return "CPUExecutionProvider"; };
+    o.GetInputTypeCount = [](const OrtCustomOp*) -> size_t { return 4; };
+    o.GetInputType = [](const OrtCustomOp*, size_t i) {
+      return i < 3 ? ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 : ONNX_TENSOR_ELEMENT_DATA_TYPE_UNDEFINED;
+    };
+    o.GetOutputTypeCount = [](const OrtCustomOp*) -> size_t { return 1; };
+    o.GetOutputType = [](const OrtCustomOp*, size_t) { return ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64; };
+    o.GetInputCharacteristic = [](const OrtCustomOp*, size_t i) {
+      return i == 3 ? INPUT_OUTPUT_VARIADIC : INPUT_OUTPUT_REQUIRED;
+    };
+    o.GetOutputCharacteristic = [](const OrtCustomOp*, size_t) { return INPUT_OUTPUT_REQUIRED; };
+    o.GetInputMemoryType = [](const OrtCustomOp*, size_t) { return OrtMemTypeDefault; };
+    o.GetVariadicInputMinArity = [](const OrtCustomOp*) { return 1; };
+    o.GetVariadicInputHomogeneity = [](const OrtCustomOp*) { return 0; };
+    o.GetStartVersion = [](const OrtCustomOp*) { return 1; };
+    o.GetEndVersion = [](const OrtCustomOp*) { return 1; };
+    o.CreateKernelV2 = [](const OrtCustomOp*, const OrtApi* api, const OrtKernelInfo* info, void** output) -> OrtStatus* {
+      try {
+        auto kernel = std::make_unique<TranslateKernel>(api);
+        kernel->initialize(info);
+        if (g_capture) g_capture->record(kernel.get());
+        *output = kernel.release();
+        return nullptr;
+      } catch (const std::exception& e) {
+        return api->CreateStatus(ORT_FAIL, e.what());
+      } catch (...) {
+        return api->CreateStatus(ORT_FAIL, "SSRU initialization failed");
+      }
+    };
+    o.KernelComputeV2 = [](void* raw, OrtKernelContext* context) -> OrtStatus* {
+      auto* kernel = static_cast<TranslateKernel*>(raw);
+      try { kernel->compute(context); return nullptr; }
+      catch (const std::exception& e) { return kernel->api->CreateStatus(ORT_FAIL, e.what()); }
+      catch (...) { return kernel->api->CreateStatus(ORT_FAIL, "SSRU execution failed"); }
+    };
+    o.KernelDestroy = [](void* raw) { delete static_cast<TranslateKernel*>(raw); };
+    return o;
+  }();
+  return op;
+}
 }  // namespace
+
+namespace mtran::onnx_async {
+
+ScopedTranslateCapture::ScopedTranslateCapture() noexcept : previous_(g_capture) {
+  g_capture = this;
+}
+
+ScopedTranslateCapture::~ScopedTranslateCapture() noexcept {
+  g_capture = previous_;
+}
+
+}  // namespace mtran::onnx_async
 
 const char* ssruBackend() noexcept {
 #ifdef MTRAN_SSRU_PACKED
@@ -643,7 +1169,8 @@ const char* ssruBackend() noexcept {
 OrtCustomOpDomain* createSsruDomain(const OrtApi* api) {
   OrtCustomOpDomain* domain = nullptr;
   check(api, api->CreateCustomOpDomain("com.mtran", &domain));
-  const auto status = api->CustomOpDomain_Add(domain, &operation());
+  OrtStatus* status = api->CustomOpDomain_Add(domain, &operation());
+  if (!status) status = api->CustomOpDomain_Add(domain, &translateOperation());
   if (status) { api->ReleaseCustomOpDomain(domain); check(api, status); }
   return domain;
 }

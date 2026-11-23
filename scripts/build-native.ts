@@ -61,36 +61,66 @@ export function buildNative(): string | null {
     const packed: string[] = [];
     {
       const vnni: string[] = [];
+      const avx512: string[] = [];
       if (arch === 'x64' && (!windows || /clang-cl(?:\.exe)?$/i.test(compiler))) {
-        const object = path.join(buildDirectory, windows ? 'packed-vnni.obj' : 'packed-vnni.o');
         const include = path.join(root, 'native/ssru/third_party/xsimd/include');
-        const source = path.join(root, 'native/ssru/packed_vnni.cc');
-        // Preserve Gemmology's VNNI kernel in its own TU; failure keeps exact AVX2.
-        const result = spawnSync(compiler, windows ? [
-          '/nologo', '/std:c++20', '/O2', '/EHsc', '/MD', '/fp:precise', '/DNOMINMAX',
-          ...target, '/clang:-mavx2', '/clang:-mavxvnni', '/I', include, '/c', source, `/Fo${object}`,
-        ] : [
-          '-std=c++20', '-O3', '-Wall', '-Wextra', '-fPIC', '-ffp-contract=off',
-          ...target, '-mavx2', '-mavxvnni', '-I', include, '-c', source, '-o', object,
-        ], { encoding: 'utf8', env });
-        if (result.status === 0) vnni.push(object);
-        else console.warn(`[native] VNNI compilation unavailable; retaining exact AVX2: ${result.error?.message || result.stderr.trim() || result.stdout.trim()}`);
+        {
+          const object = path.join(buildDirectory, windows ? 'packed-vnni.obj' : 'packed-vnni.o');
+          const source = path.join(root, 'native/ssru/packed_vnni.cc');
+          // Preserve VNNI kernel in its own TU (no cross-TU LTO); failure keeps exact AVX2.
+          const result = spawnSync(compiler, windows ? [
+            '/nologo', '/std:c++20', '/O2', '/EHsc', '/MD', '/fp:precise', '/DNOMINMAX',
+            ...target, '/clang:-mavx2', '/clang:-mavxvnni', '/clang:-mfma', '/I', include, '/c', source, `/Fo${object}`,
+          ] : [
+            '-std=c++20', '-O3', '-Wall', '-Wextra', '-fPIC', '-ffp-contract=off',
+            ...target, '-mavx2', '-mavxvnni', '-mfma', '-I', include, '-c', source, '-o', object,
+          ], { encoding: 'utf8', env });
+          if (result.status === 0) vnni.push(object);
+          else console.warn(`[native] VNNI compilation unavailable; retaining exact AVX2: ${result.error?.message || result.stderr.trim() || result.stdout.trim()}`);
+        }
+        {
+          const object = path.join(buildDirectory, windows ? 'packed-avx512vnni.obj' : 'packed-avx512vnni.o');
+          const source = path.join(root, 'native/ssru/packed_avx512vnni.cc');
+          // Keep AVX-512 VNNI strictly isolated in its own TU with runtime CPUID gating.
+          const result = spawnSync(compiler, windows ? [
+            '/nologo', '/std:c++20', '/O2', '/EHsc', '/MD', '/fp:precise', '/DNOMINMAX',
+            ...target, '/clang:-mavx512f', '/clang:-mavx512bw', '/clang:-mavx512dq', '/clang:-mavx512vl', '/clang:-mavx512vnni', '/clang:-mfma',
+            '/c', source, `/Fo${object}`,
+          ] : [
+            '-std=c++20', '-O3', '-Wall', '-Wextra', '-fPIC', '-ffp-contract=off',
+            ...target, '-mavx512f', '-mavx512bw', '-mavx512dq', '-mavx512vl', '-mavx512vnni', '-mfma',
+            '-c', source, '-o', object,
+          ], { encoding: 'utf8', env });
+          if (result.status === 0) avx512.push(object);
+          else console.warn(`[native] AVX-512 VNNI compilation unavailable: ${result.error?.message || result.stderr.trim() || result.stdout.trim()}`);
+        }
       }
       // packed.cc dispatches optional ISA functions itself; keep this object baseline-safe.
       const object = path.join(buildDirectory, windows ? 'packed.obj' : 'packed.o');
+      const isaDefines = [
+        ...(vnni.length ? [windows ? '/DMTRAN_SSRU_HAVE_VNNI' : '-DMTRAN_SSRU_HAVE_VNNI'] : []),
+        ...(avx512.length ? [windows ? '/DMTRAN_SSRU_HAVE_AVX512VNNI' : '-DMTRAN_SSRU_HAVE_AVX512VNNI'] : []),
+      ];
       const result = spawnSync(compiler, windows ? [
         '/nologo', '/std:c++20', '/O2', '/EHsc', '/MD', '/utf-8', '/fp:precise', '/DNOMINMAX',
-        ...target, ...(vnni.length ? ['/DMTRAN_SSRU_HAVE_VNNI'] : []),
+        ...target, ...isaDefines,
         '/c', path.join(root, 'native/ssru/packed.cc'), `/Fo${object}`,
       ] : [
         '-std=c++20', '-O3', '-Wall', '-Wextra', '-fPIC', '-ffp-contract=off',
-        ...target, ...(vnni.length ? ['-DMTRAN_SSRU_HAVE_VNNI'] : []),
+        ...target, ...isaDefines,
         '-c', path.join(root, 'native/ssru/packed.cc'), '-o', object,
       ], { encoding: 'utf8', env });
-      if (result.status === 0) packed.push(windows ? '/DMTRAN_SSRU_PACKED' : '-DMTRAN_SSRU_PACKED', object, ...vnni);
+      if (result.status === 0) packed.push(windows ? '/DMTRAN_SSRU_PACKED' : '-DMTRAN_SSRU_PACKED', object, ...vnni, ...avx512);
       else console.warn(`[native] Packed compilation unavailable; retaining InvokeOp: ${result.error?.message || result.stderr.trim() || result.stdout.trim()}`);
     }
-    const sources = [path.join(native, 'addon.cc'), path.join(native, 'ssru_op.cc'), path.join(root, 'native/ssru/ssru.cc')];
+    const sources = [
+      path.join(native, 'addon.cc'),
+      path.join(native, 'ssru_op.cc'),
+      path.join(root, 'native/ssru/ssru.cc'),
+      path.join(root, 'native/ssru/encoder.cc'),
+      path.join(root, 'native/ssru/ops.cc'),
+      path.join(root, 'native/ssru/pcore_pool.cc'),
+    ];
     const result = spawnSync(compiler, windows ? [
       '/nologo', '/std:c++20', '/O2', '/W4', '/EHsc', '/MD', '/LD', '/utf-8', '/fp:precise',
       '/DNOMINMAX', '/DWIN32_LEAN_AND_MEAN', '/DBUILDING_NODE_EXTENSION', '/DMTRAN_NATIVE_SSRU',

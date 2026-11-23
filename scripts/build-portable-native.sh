@@ -49,17 +49,23 @@ packed=(-DMTRAN_SSRU_PACKED "$build/packed.o")
 vnni=()
 c++ --version | head -n 1
 if [[ $arch == x64 ]]; then
-  # Only this TU enables VNNI; packed.cc performs runtime CPU dispatch.
-  c++ "${common[@]}" -mavx2 -mavxvnni -isystem native/ssru/third_party/xsimd/include \
+  # Only isolated TUs enable VNNI/AVX-512 VNNI (no LTO); packed.cc performs runtime CPU dispatch.
+  c++ "${common[@]}" -mavx2 -mavxvnni -mfma -isystem native/ssru/third_party/xsimd/include \
     -c native/ssru/packed_vnni.cc -o "$build/packed-vnni.o"
   vnni=(-DMTRAN_SSRU_HAVE_VNNI)
   packed+=("$build/packed-vnni.o")
+  if c++ "${common[@]}" -mavx512f -mavx512bw -mavx512dq -mavx512vl -mavx512vnni -mfma \
+    -c native/ssru/packed_avx512vnni.cc -o "$build/packed-avx512vnni.o"; then
+    vnni+=(-DMTRAN_SSRU_HAVE_AVX512VNNI)
+    packed+=("$build/packed-avx512vnni.o")
+  fi
 fi
 c++ "${common[@]}" "${vnni[@]}" -c native/ssru/packed.cc -o "$build/packed.o"
 artifact="$build/onnx-async-linux-$arch.node"
 c++ "${common[@]}" -shared \
   -I /node-headers -I native/onnx-async -DMTRAN_NATIVE_SSRU \
-  native/onnx-async/addon.cc native/onnx-async/ssru_op.cc native/ssru/ssru.cc \
+  native/onnx-async/addon.cc native/onnx-async/ssru_op.cc \
+  native/ssru/ssru.cc native/ssru/encoder.cc native/ssru/ops.cc native/ssru/pcore_pool.cc \
   "${packed[@]}" -ldl -o "$artifact"
 
 # Reject an ABI regression before replacing an existing output artifact.

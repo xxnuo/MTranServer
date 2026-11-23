@@ -21,15 +21,27 @@ test.skipIf(!supported)('packed SSRU exact and ORT-saturating goldens with basel
     };
     const common = msvc ? ['/nologo', '/std:c++20', '/O2', '/W4', '/EHsc', '/fp:precise']
       : ['-std=c++20', '-O2', '-Wall', '-Wextra', '-ffp-contract=off'];
+    const poolObj = path.join(directory, msvc ? 'pcore_pool.obj' : 'pcore_pool.o');
+    run(msvc
+      ? [...common, '/c', path.join(root, 'native/ssru/pcore_pool.cc'), `/Fo${poolObj}`]
+      : [...common, '-pthread', '-c', path.join(root, 'native/ssru/pcore_pool.cc'), '-o', poolObj]);
     const vnni: string[] = [];
+    const avx512: string[] = [];
     if (!msvc && process.arch === 'x64') {
       const probe = path.join(directory, 'probe.cc');
       writeFileSync(probe, '');
-      if (spawnSync(compiler, ['-mavx2', '-mavxvnni', '-c', probe, '-o', path.join(directory, 'probe.o')], { stdio: 'ignore' }).status === 0) {
+      if (spawnSync(compiler, ['-mavx2', '-mavxvnni', '-mfma', '-c', probe, '-o', path.join(directory, 'probe.o')], { stdio: 'ignore' }).status === 0) {
         const object = path.join(directory, 'vnni.o');
-        run([...common, '-mavx2', '-mavxvnni', '-I', path.join(root, 'native/ssru/third_party/xsimd/include'),
+        run([...common, '-Wno-unused-parameter', '-mavx2', '-mavxvnni', '-mfma',
+          '-I', path.join(root, 'native/ssru/third_party/xsimd/include'),
           '-c', path.join(root, 'native/ssru/packed_vnni.cc'), '-o', object]);
         vnni.push(object);
+      }
+      if (spawnSync(compiler, ['-mavx512f', '-mavx512bw', '-mavx512dq', '-mavx512vl', '-mavx512vnni', '-mfma', '-c', probe, '-o', path.join(directory, 'probe512.o')], { stdio: 'ignore' }).status === 0) {
+        const object = path.join(directory, 'avx512.o');
+        run([...common, '-Wno-unused-parameter', '-mavx512f', '-mavx512bw', '-mavx512dq', '-mavx512vl', '-mavx512vnni', '-mfma',
+          '-c', path.join(root, 'native/ssru/packed_avx512vnni.cc'), '-o', object]);
+        avx512.push(object);
       }
     }
     const modes = process.arch === 'x64' ? ['auto', 'no-vnni', 'exact-avx2', 'ort-avx2'] : ['auto', 'no-vnni'];
@@ -41,6 +53,7 @@ test.skipIf(!supported)('packed SSRU exact and ORT-saturating goldens with basel
       const define = disableVnni ? [msvc ? '/DMTRAN_SSRU_NO_VNNI' : '-DMTRAN_SSRU_NO_VNNI',
         msvc ? '/DMTRAN_SSRU_NO_DOTPROD' : '-DMTRAN_SSRU_NO_DOTPROD'] : [];
       if (vnni.length) define.push('-DMTRAN_SSRU_HAVE_VNNI');
+      if (avx512.length) define.push('-DMTRAN_SSRU_HAVE_AVX512VNNI');
       // Explicit arithmetic tests; NO_VNNI alone must retain the host's ORT semantics.
       if (mode === 'exact-avx2') define.push(msvc ? '/DMTRAN_SSRU_TEST_AVX2_EXACT' : '-DMTRAN_SSRU_TEST_AVX2_EXACT');
       if (mode === 'ort-avx2') define.push(msvc ? '/DMTRAN_SSRU_TEST_AVX2_ORT' : '-DMTRAN_SSRU_TEST_AVX2_ORT');
@@ -48,7 +61,7 @@ test.skipIf(!supported)('packed SSRU exact and ORT-saturating goldens with basel
       run(msvc ? [...common, ...define, '/c', source, `/Fo${object}`] : [...common, ...define, '-c', source, '-o', object]);
       const main = path.join(root, 'native/ssru/packed_test.cc');
       // Neither object is globally compiled for an optional ISA; unsupported hosts must run safely.
-      run(msvc ? [...common, main, object, `/Fe${binary}`] : [...common, '-pthread', main, object, ...vnni, '-o', binary]);
+      run(msvc ? [...common, main, object, poolObj, `/Fe${binary}`] : [...common, '-pthread', main, object, poolObj, ...vnni, ...avx512, '-o', binary]);
       const result = spawnSync(binary, [], { encoding: 'utf8' });
       assert.equal(result.status, 0, result.error?.message || result.stderr + result.stdout);
       assert.match(result.stdout, /PASS: scalar golden|SKIP: packed CPU\/OS unavailable/);

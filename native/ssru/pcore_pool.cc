@@ -17,6 +17,8 @@
 
 #if defined(__x86_64__) || defined(_M_X64)
 #include <immintrin.h>
+#elif defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
 #endif
 
 #if defined(__linux__)
@@ -90,6 +92,8 @@ std::vector<int> parseCpuList(const char* text) {
 struct LinuxTopology {
   std::vector<int> all_pcore_cpus;
   std::vector<std::vector<int>> physical_pcore_groups;
+  std::vector<int> worker_cpus;
+  std::size_t physical_core_count = 0;
 };
 
 LinuxTopology detectLinuxTopology() {
@@ -104,6 +108,12 @@ LinuxTopology detectLinuxTopology() {
 
   char buf[4096];
   std::vector<int> candidate_cpus;
+  std::vector<int> all_allowed_cpus;
+  const unsigned hw = std::max(1u, std::thread::hardware_concurrency());
+  const int scan_limit = std::min<int>(CPU_SETSIZE, std::max<int>(static_cast<int>(hw) * 2, 256));
+  for (int c = 0; c < scan_limit; ++c) {
+    if (is_allowed(c)) all_allowed_cpus.push_back(c);
+  }
   if (readFileLine("/sys/devices/cpu_core/cpus", buf, sizeof(buf))) {
     for (int c : parseCpuList(buf)) {
       if (is_allowed(c)) candidate_cpus.push_back(c);
@@ -114,10 +124,7 @@ LinuxTopology detectLinuxTopology() {
     // preferring highest-capacity CPUs if ARM big.LITTLE exposes cpu_capacity.
     std::vector<std::pair<int, int>> cap_cpus;
     int max_cap = -1;
-    const unsigned hw = std::max(1u, std::thread::hardware_concurrency());
-    const int scan_limit = std::min<int>(CPU_SETSIZE, std::max<int>(static_cast<int>(hw) * 2, 256));
-    for (int c = 0; c < scan_limit; ++c) {
-      if (!is_allowed(c)) continue;
+    for (int c : all_allowed_cpus) {
       char cap_path[128];
       std::snprintf(cap_path, sizeof(cap_path), "/sys/devices/system/cpu/cpu%d/cpu_capacity", c);
       int cap = 1024;
@@ -157,6 +164,44 @@ LinuxTopology detectLinuxTopology() {
       visited[c] = true;
     }
     topo.physical_pcore_groups.push_back(std::move(group));
+  }
+
+  // Group remaining non-P-core CPUs (e.g. E-cores) by physical core siblings.
+  std::vector<std::vector<int>> ecore_groups;
+  for (int c : all_allowed_cpus) {
+    if (std::binary_search(candidate_cpus.begin(), candidate_cpus.end(), c) || visited[c]) continue;
+    char sib_path[128];
+    std::snprintf(sib_path, sizeof(sib_path), "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", c);
+    std::vector<int> group;
+    if (readFileLine(sib_path, buf, sizeof(buf))) {
+      for (int s : parseCpuList(buf)) {
+        if (!std::binary_search(candidate_cpus.begin(), candidate_cpus.end(), s) && is_allowed(s)) {
+          group.push_back(s);
+          visited[s] = true;
+        }
+      }
+    }
+    if (group.empty()) {
+      group.push_back(c);
+      visited[c] = true;
+    }
+    ecore_groups.push_back(std::move(group));
+  }
+
+  // Ordered worker affinity: primary P-cores first, physical E-cores next,
+  // and SMT siblings last so every distinct physical execution core stays busy first.
+  for (const auto& g : topo.physical_pcore_groups) {
+    if (!g.empty()) topo.worker_cpus.push_back(g[0]);
+  }
+  for (const auto& g : ecore_groups) {
+    if (!g.empty()) topo.worker_cpus.push_back(g[0]);
+  }
+  topo.physical_core_count = topo.worker_cpus.size();
+  for (const auto& g : topo.physical_pcore_groups) {
+    for (std::size_t i = 1; i < g.size(); ++i) topo.worker_cpus.push_back(g[i]);
+  }
+  for (const auto& g : ecore_groups) {
+    for (std::size_t i = 1; i < g.size(); ++i) topo.worker_cpus.push_back(g[i]);
   }
   return topo;
 }
@@ -288,9 +333,17 @@ struct PcorePool::Impl {
         stop.store(true, std::memory_order_seq_cst);
       }
       cv.notify_all();
+#ifdef _WIN32
+      // On Windows, static dtors inside a .node DLL run under DllMain(DLL_PROCESS_DETACH)
+      // with the loader lock held after ExitProcess killed threads; join() would deadlock.
+      for (auto& t : workers) {
+        if (t.joinable()) t.detach();
+      }
+#else
       for (auto& t : workers) {
         if (t.joinable()) t.join();
       }
+#endif
     }
   }
 };
@@ -307,6 +360,16 @@ std::size_t PcorePool::pcoreCount() const noexcept {
   return impl_->pcore_count;
 }
 
+std::size_t PcorePool::recommendedWorkerCount() noexcept {
+  const std::size_t hw = std::max<std::size_t>(1, std::thread::hardware_concurrency());
+#if defined(__linux__)
+  const auto& topo = instance().impl_->topo;
+  if (topo.physical_core_count > 0) return std::min<std::size_t>({12, topo.physical_core_count, hw});
+  if (!topo.worker_cpus.empty()) return std::min<std::size_t>({12, topo.worker_cpus.size(), hw});
+#endif
+  return std::min<std::size_t>(12, hw);
+}
+
 void PcorePool::pinCurrentThreadToPcores() noexcept {
 #if defined(__linux__)
   const auto& topo = instance().impl_->topo;
@@ -315,6 +378,23 @@ void PcorePool::pinCurrentThreadToPcores() noexcept {
   pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
 #elif defined(_WIN32)
   SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+#endif
+}
+
+void PcorePool::pinWorkerThread(std::size_t worker_idx) noexcept {
+#if defined(__linux__)
+  const auto& wcpus = instance().impl_->topo.worker_cpus;
+  if (!wcpus.empty()) {
+    pinMask({wcpus[worker_idx % wcpus.size()]});
+  }
+#elif defined(__APPLE__)
+  (void)worker_idx;
+  pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#elif defined(_WIN32)
+  (void)worker_idx;
+  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+#else
+  (void)worker_idx;
 #endif
 }
 
