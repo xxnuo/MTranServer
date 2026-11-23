@@ -43,8 +43,26 @@ test('native SSRU cache coalesces conversions under a lock, keeps ordinary graph
   const call = convert.mock.calls[0];
   expect(call).toEqual([model.sourceModel, model.sourceVocab, model.targetVocab, expect.stringContaining(result.model + '.'), true, model.lex, undefined, true]);
   expect(call[3]).not.toBe(result.model);
-  expect(JSON.parse(await readFile(result.model + '.json', 'utf8'))).toEqual({ identity: result.identity, sha256: await converter.fileHash(result.model) });
+  expect(JSON.parse(await readFile(result.model + '.json', 'utf8'))).toMatchObject({ identity: result.identity, sha256: await converter.fileHash(result.model) });
   expect((await readdir(model.directory)).some(name => name.endsWith('.tmp') || name.endsWith('.lock'))).toBe(false);
+});
+
+test('settled warm boot uses statSync fast-path without re-hashing source or cached onnx', async () => {
+  const model = await fixture(), convert = worker();
+  const sourceModelSha256 = await converter.fileHash(model.sourceModel);
+  const withHash = { ...model, sourceModelSha256 };
+  const first = await ensureNativeSsru(withHash);
+  expect(convert).toHaveBeenCalledTimes(1);
+  await new Promise(resolve => setTimeout(resolve, 35));
+  const hashSpy = spyOn(converter, 'fileHash');
+  const second = await ensureNativeSsru(withHash);
+  expect(second).toEqual(first);
+  expect(hashSpy).not.toHaveBeenCalled();
+  await writeFile(first.model, 'corrupted-size-diff');
+  await new Promise(resolve => setTimeout(resolve, 35));
+  const rebuilt = await ensureNativeSsru(withHash);
+  expect(rebuilt).toEqual(first);
+  expect(convert).toHaveBeenCalledTimes(2);
 });
 
 test('cache identity changes with original identity and actual source hash', async () => {

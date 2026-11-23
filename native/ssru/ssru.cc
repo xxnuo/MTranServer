@@ -4,8 +4,16 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <unordered_map>
+
+#ifdef MTRAN_SSRU_PACKED
+#include "ops.h"
+#include "packed.h"
+#include "pcore_pool.h"
+#endif
+
 #if defined(__x86_64__) || defined(_M_X64)
 #include <emmintrin.h>
 #elif defined(__aarch64__) || defined(_M_ARM64)
@@ -22,6 +30,14 @@
 namespace mtran::ssru {
 namespace {
 
+constexpr std::size_t kPosTableMaxPos = 512;
+
+#if defined(__linux__) && defined(__aarch64__)
+constexpr bool kUseFusedBias = true;
+#else
+constexpr bool kUseFusedBias = false;
+#endif
+
 std::size_t multiply(std::size_t a, std::size_t b) {
   if (b && a > std::numeric_limits<std::size_t>::max() / b)
     throw std::invalid_argument("SSRU tensor size overflow");
@@ -37,6 +53,19 @@ void validate(const TensorView& tensor, const char* name) {
   }
   if (!tensor.data || size != tensor.size)
     throw std::invalid_argument(std::string("SSRU invalid storage: ") + name);
+}
+
+void validateInt8(const Int8TensorView& tensor, const char* name) {
+  std::size_t size = 1;
+  for (auto dim : tensor.shape) {
+    if (dim <= 0 || static_cast<std::uint64_t>(dim) > std::numeric_limits<std::size_t>::max())
+      throw std::invalid_argument(std::string("SSRU invalid shape: ") + name);
+    size = multiply(size, static_cast<std::size_t>(dim));
+  }
+  if (!tensor.data || size != tensor.size)
+    throw std::invalid_argument(std::string("SSRU invalid storage: ") + name);
+  if (!std::isfinite(tensor.scale) || tensor.scale < 0.0f)
+    throw std::invalid_argument(std::string("SSRU invalid scale: ") + name);
 }
 
 void finite(const float* data, std::size_t size, const char* name) {
@@ -90,17 +119,206 @@ void normalize(float* x, std::size_t dim, const float* scale, const float* bias)
   finite(x, dim, "normalization");
 }
 
+float readEmbedValue(const TensorView& fp_emb, const Int8TensorView& i8_emb,
+                     std::size_t token, std::size_t col, std::size_t dim) noexcept {
+  if (i8_emb.data)
+    return static_cast<float>(i8_emb.data[token * dim + col]) * i8_emb.scale;
+  return fp_emb.data[token * dim + col];
+}
+
+void scalarLinearBatch(const Matrix& fp, const Int8TensorView& q8, const float* bias,
+                       const float* input, std::size_t rows, float* output) {
+  const std::size_t in_dim = q8.data ? static_cast<std::size_t>(q8.shape[0]) : fp.rows;
+  const std::size_t out_dim = q8.data ? static_cast<std::size_t>(q8.shape[1]) : fp.cols;
+  for (std::size_t r = 0; r < rows; ++r) {
+    const float* x = input + r * in_dim;
+    float* y = output + r * out_dim;
+    for (std::size_t c = 0; c < out_dim; ++c) {
+      float sum = 0.0f;
+      if (q8.data) {
+        const float ws = q8.scale;
+        for (std::size_t k = 0; k < in_dim; ++k)
+          sum += x[k] * (static_cast<float>(q8.data[k * out_dim + c]) * ws);
+      } else {
+        for (std::size_t k = 0; k < in_dim; ++k)
+          sum += x[k] * fp.data[k * out_dim + c];
+      }
+      y[c] = bias ? (sum + bias[c]) : sum;
+    }
+  }
+  finite(output, multiply(rows, out_dim), "decoder scalar linear");
+}
+
+#ifdef MTRAN_SSRU_PACKED
+struct PackedDecMat {
+  std::unique_ptr<packed::Weight> weight;
+  const float* extra_bias = nullptr;
+  std::size_t rows = 0;
+  std::size_t cols = 0;
+};
+
+struct PackedDecLayer {
+  PackedDecMat gate, gate_step0, state;
+  const float* rnn_ln_scale = nullptr;
+  const float* rnn_ln_bias = nullptr;
+  PackedDecMat query, query_step0, attn;
+  const float* attn_ln_scale = nullptr;
+  const float* attn_ln_bias = nullptr;
+  std::vector<PackedDecMat> ffn;
+  const float* ffn_ln_scale = nullptr;
+  const float* ffn_ln_bias = nullptr;
+};
+
+void addDecExtraBiasSlice(const float* bias, std::size_t rows, std::size_t stride,
+                          std::size_t col_begin, std::size_t col_end, bool relu,
+                          float* out) {
+  for (std::size_t r = 0; r < rows; ++r) {
+    float* row = out + r * stride;
+    if (relu) {
+      for (std::size_t c = col_begin; c < col_end; ++c)
+        row[c] = std::max(0.0f, row[c] + bias[c]);
+    } else if (bias) {
+      for (std::size_t c = col_begin; c < col_end; ++c)
+        row[c] += bias[c];
+    }
+  }
+}
+
+void runDecMultiplySlice(const PackedDecMat& pl,
+                         const std::uint8_t* a_q,
+                         const float* a_scales,
+                         const std::uint8_t* a_zps,
+                         std::size_t rows,
+                         float* out,
+                         std::size_t out_stride,
+                         float* out_maxs,
+                         bool relu,
+                         std::size_t col_begin,
+                         std::size_t col_end) {
+  if (relu && !pl.extra_bias) {
+    pl.weight->multiplyBatchReluMinMax(a_q, a_scales, a_zps, rows, out, out_stride,
+                                       out_maxs, col_begin, col_end);
+    return;
+  }
+  if (pl.extra_bias && kUseFusedBias && col_begin == 0 && col_end == pl.cols) {
+    for (std::size_t r = 0; r < rows; ++r) {
+      pl.weight->multiply(a_q + r * pl.rows, 1, a_scales[r], a_zps[r],
+                          out + r * out_stride, pl.extra_bias, nullptr);
+      if (relu) {
+        float* row = out + r * out_stride;
+        float mx = 0.0f;
+        for (std::size_t c = 0; c < pl.cols; ++c) {
+          const float v = std::max(0.0f, row[c]);
+          row[c] = v;
+          if (v > mx) mx = v;
+        }
+        if (out_maxs) out_maxs[r] = mx;
+      }
+    }
+    return;
+  }
+  pl.weight->multiplyBatch(a_q, a_scales, a_zps, rows, out, out_stride, col_begin, col_end);
+  if (pl.extra_bias || relu) {
+    addDecExtraBiasSlice(pl.extra_bias, rows, out_stride, col_begin, col_end, relu, out);
+  }
+}
+#endif
+
+struct CandPair {
+  std::int64_t id;
+  std::uint32_t bit;
+};
+
 }  // namespace
 
-Decoder::Decoder(Config config, const std::vector<NamedTensor>& weights) : config_(config) {
+struct BatchWorkspace::Scratch {
+  std::vector<float> cells, x, gate, update, query, context, output;
+  std::vector<float> ffn_a, ffn_b, scores, projection, bias, logits;
+  std::vector<std::size_t> slot_req, slot_pos, slot_loop_max;
+  std::vector<std::int64_t> slot_prev_token, chosen_tokens;
+  std::vector<CandPair> union_pairs;
+  std::vector<std::int64_t> union_ids;
+  std::vector<std::uint32_t> slot_masks;
+#ifdef MTRAN_SSRU_PACKED
+  packed::Workspace packed_ws;
+  std::vector<std::uint8_t> a_q, a_zps;
+  std::vector<float> a_scales, relu_maxs;
+#endif
+};
+
+BatchWorkspace::BatchWorkspace() : scratch_(std::make_unique<Scratch>()) {}
+BatchWorkspace::~BatchWorkspace() = default;
+BatchWorkspace::BatchWorkspace(BatchWorkspace&&) noexcept = default;
+BatchWorkspace& BatchWorkspace::operator=(BatchWorkspace&&) noexcept = default;
+
+#ifdef MTRAN_SSRU_PACKED
+struct Decoder::NativeState {
+  ops::PosTable pos_table;
+  std::vector<PackedDecLayer> layers;
+  TensorView fp_emb;
+  Int8TensorView i8_emb;
+  const float* output_bias = nullptr;
+  std::size_t vocab = 0;
+  std::size_t dim = 0;
+  mutable std::once_flag shortlist_once;
+  mutable std::unique_ptr<const packed::ShortlistTable> shortlist;
+  mutable std::once_flag full_vocab_once;
+  mutable std::unique_ptr<const packed::FullVocabQ4> full_vocab;
+
+  NativeState(ops::PosTable pt, std::vector<PackedDecLayer> ls,
+              TensorView fp_e, Int8TensorView i8_e, const float* ob,
+              std::size_t v, std::size_t d)
+      : pos_table(std::move(pt)), layers(std::move(ls)),
+        fp_emb(std::move(fp_e)), i8_emb(std::move(i8_e)),
+        output_bias(ob), vocab(v), dim(d) {}
+
+  const packed::ShortlistTable& getShortlist() const {
+    std::call_once(shortlist_once, [&] {
+      if (i8_emb.data) {
+        shortlist = std::make_unique<const packed::ShortlistTable>(
+            packed::ShortlistTable::createInt8(i8_emb.data, i8_emb.scale, output_bias,
+                                               vocab, dim, false));
+      } else {
+        shortlist = std::make_unique<const packed::ShortlistTable>(
+            fp_emb.data, output_bias, vocab, dim, false);
+      }
+    });
+    return *shortlist;
+  }
+
+  const packed::FullVocabQ4& getFullVocab() const {
+    std::call_once(full_vocab_once, [&] {
+      if (i8_emb.data) {
+        full_vocab = std::make_unique<const packed::FullVocabQ4>(
+            packed::FullVocabQ4::createInt8(i8_emb.data, i8_emb.scale, output_bias,
+                                            vocab, dim, false));
+      } else {
+        full_vocab = std::make_unique<const packed::FullVocabQ4>(
+            fp_emb.data, output_bias, vocab, dim, false);
+      }
+    });
+    return *full_vocab;
+  }
+};
+#else
+struct Decoder::NativeState {};
+#endif
+
+Decoder::Decoder(Config config, const std::vector<NamedTensor>& weights,
+                 const std::vector<NamedInt8Tensor>& int8_weights)
+    : config_(config) {
   const auto dim = config.dim;
   if (dim < 4 || dim % 2 || !config.heads || dim % config.heads ||
       !config.depth || !config.ffn_depth || dim > static_cast<std::size_t>(INT64_MAX))
     throw std::invalid_argument("SSRU invalid configuration");
   multiply(config.depth, dim);
   std::unordered_map<std::string, const TensorView*> names;
+  std::unordered_map<std::string, const Int8TensorView*> i8_names;
   for (const auto& weight : weights)
     if (!names.emplace(weight.name, &weight.tensor).second)
+      throw std::invalid_argument("SSRU duplicate weight: " + weight.name);
+  for (const auto& weight : int8_weights)
+    if (names.count(weight.name) || !i8_names.emplace(weight.name, &weight.tensor).second)
       throw std::invalid_argument("SSRU duplicate weight: " + weight.name);
   const auto get = [&](const std::string& name) -> const TensorView& {
     const auto it = names.find(name);
@@ -118,24 +336,49 @@ Decoder::Decoder(Config config, const std::vector<NamedTensor>& weights) : confi
   };
   const auto linear = [&](const std::string& name, const std::string& bias,
                           std::size_t input, std::size_t output = 0) {
+    if (const auto i8_it = i8_names.find(name); i8_it != i8_names.end()) {
+      const auto& t = *i8_it->second;
+      validateInt8(t, name.c_str());
+      if (t.shape.size() != 2 || t.shape[0] != static_cast<std::int64_t>(input) ||
+          (output && t.shape[1] != static_cast<std::int64_t>(output)))
+        throw std::invalid_argument("SSRU invalid matrix: " + name);
+      const auto cols = static_cast<std::size_t>(t.shape[1]);
+      return Linear{Matrix{name, nullptr, input, cols}, t,
+                    bias.empty() ? nullptr : vector(bias, cols)};
+    }
     const auto& t = get(name);
     if (t.shape.size() != 2 || t.shape[0] != static_cast<std::int64_t>(input) ||
         (output && t.shape[1] != static_cast<std::int64_t>(output)))
       throw std::invalid_argument("SSRU invalid matrix: " + name);
     finite(t.data, t.size, name.c_str());
     const auto cols = static_cast<std::size_t>(t.shape[1]);
-    return Linear{Matrix{name, t.data, input, cols}, bias.empty() ? nullptr : vector(bias, cols)};
+    return Linear{Matrix{name, t.data, input, cols}, Int8TensorView{},
+                  bias.empty() ? nullptr : vector(bias, cols)};
   };
   const auto norm = [&](const std::string& prefix) {
     return Norm{vector(prefix + "_scale", dim), vector(prefix + "_bias", dim)};
   };
-  embedding_ = get(names.count("Wemb") ? "Wemb" : "decoder_Wemb");
-  if (embedding_.shape.size() != 2 || embedding_.shape[1] != static_cast<std::int64_t>(dim) ||
-      embedding_.shape[0] < 2)
-    throw std::invalid_argument("SSRU invalid target embedding");
-  finite(embedding_.data, embedding_.size, "embedding");
+  const std::string emb_name =
+      (i8_names.count("Wemb") || names.count("Wemb")) ? "Wemb" : "decoder_Wemb";
+  if (const auto i8_it = i8_names.find(emb_name); i8_it != i8_names.end()) {
+    validateInt8(*i8_it->second, emb_name.c_str());
+    int8_embedding_ = *i8_it->second;
+    if (int8_embedding_.shape.size() != 2 ||
+        int8_embedding_.shape[1] != static_cast<std::int64_t>(dim) ||
+        int8_embedding_.shape[0] < 2)
+      throw std::invalid_argument("SSRU invalid target embedding");
+    vocab_size_ = static_cast<std::size_t>(int8_embedding_.shape[0]);
+  } else {
+    embedding_ = get(emb_name);
+    if (embedding_.shape.size() != 2 ||
+        embedding_.shape[1] != static_cast<std::int64_t>(dim) ||
+        embedding_.shape[0] < 2)
+      throw std::invalid_argument("SSRU invalid target embedding");
+    finite(embedding_.data, embedding_.size, "embedding");
+    vocab_size_ = static_cast<std::size_t>(embedding_.shape[0]);
+  }
   const auto& bias = get("decoder_ff_logit_out_b");
-  const auto vocab = embedding_.shape[0];
+  const auto vocab = static_cast<std::int64_t>(vocab_size_);
   if (bias.shape != std::vector<std::int64_t>{vocab} &&
       bias.shape != std::vector<std::int64_t>{1, vocab})
     throw std::invalid_argument("SSRU invalid output bias");
@@ -179,6 +422,73 @@ Decoder::Decoder(Config config, const std::vector<NamedTensor>& weights) : confi
       offset_[i] = static_cast<float>((i / half) * pi / 2);
     }
   }
+
+#ifdef MTRAN_SSRU_PACKED
+  if (packed::backend() != nullptr && dim >= 32 && dim % 32 == 0 && vocab_size_ >= 9) {
+    bool all_packable = true;
+    for (const auto& l : layers_) {
+      for (const auto& f : l.ffn) {
+        if (f.weight.rows % 32 != 0 || f.weight.cols % 32 != 0 ||
+            f.weight.rows > static_cast<std::size_t>(INT32_MAX / (255 * 128))) {
+          all_packable = false;
+          break;
+        }
+      }
+      if (!all_packable) break;
+    }
+    if (all_packable) {
+      const auto packMat = [](const Linear& l, bool force_separate) -> PackedDecMat {
+        PackedDecMat pm;
+        pm.rows = l.weight.rows;
+        pm.cols = l.weight.cols;
+        const bool fuse = kUseFusedBias && !force_separate;
+        if (l.int8_weight.data) {
+          pm.weight = std::make_unique<packed::Weight>(packed::Weight::packInt8(
+              l.int8_weight.data, l.int8_weight.scale, pm.rows, pm.cols,
+              fuse ? l.bias : nullptr, fuse ? nullptr : l.bias, true));
+          pm.extra_bias = nullptr;
+        } else {
+          pm.weight = std::make_unique<packed::Weight>(l.weight.data, pm.rows, pm.cols);
+          pm.extra_bias = l.bias;
+        }
+        return pm;
+      };
+      std::vector<PackedDecLayer> packed_layers;
+      packed_layers.reserve(layers_.size());
+      for (std::size_t li = 0; li < layers_.size(); ++li) {
+        const auto& l = layers_[li];
+        PackedDecLayer pl;
+        pl.gate = packMat(l.gate, false);
+        if (kUseFusedBias && li == 0) pl.gate_step0 = packMat(l.gate, true);
+        pl.state = packMat(l.state, false);
+        pl.rnn_ln_scale = l.rnn_norm.scale;
+        pl.rnn_ln_bias = l.rnn_norm.bias;
+        pl.query = packMat(l.query, false);
+        if (kUseFusedBias && li == 0) pl.query_step0 = packMat(l.query, true);
+        pl.attn = packMat(l.attention, false);
+        pl.attn_ln_scale = l.attention_norm.scale;
+        pl.attn_ln_bias = l.attention_norm.bias;
+        pl.ffn.reserve(l.ffn.size());
+        for (const auto& f : l.ffn) pl.ffn.push_back(packMat(f, false));
+        pl.ffn_ln_scale = l.ffn_norm.scale;
+        pl.ffn_ln_bias = l.ffn_norm.bias;
+        packed_layers.push_back(std::move(pl));
+      }
+      native_ = std::make_unique<NativeState>(
+          ops::PosTable::create(frequency_.data(), offset_.data(), dim, kPosTableMaxPos),
+          std::move(packed_layers), embedding_, int8_embedding_, output_bias_,
+          vocab_size_, dim);
+    }
+  }
+#endif
+}
+
+Decoder::~Decoder() = default;
+Decoder::Decoder(Decoder&&) noexcept = default;
+Decoder& Decoder::operator=(Decoder&&) noexcept = default;
+
+bool Decoder::has_native_fast() const noexcept {
+  return native_ != nullptr;
 }
 
 void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, MathBackend math) const {
@@ -187,13 +497,15 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
   try {
     const auto dim = config_.dim;
     const auto head_dim = dim / config_.heads;
-    const auto vocab = static_cast<std::size_t>(embedding_.shape[0]);
+    const auto vocab = vocab_size_;
     const bool full_vocab = (r.candidate_count == 0 && backend.argmax_full != nullptr);
     if (!backend.matmul || !r.source_length || (!full_vocab && (!r.candidate_count || !r.candidate_ids)) ||
         r.eos_id < 0 || static_cast<std::uint64_t>(r.eos_id) >= vocab ||
         r.keys.size() != config_.depth || r.values.size() != config_.depth ||
         r.source_length > static_cast<std::size_t>(INT64_MAX))
       throw std::invalid_argument("SSRU invalid request");
+    if (!full_vocab && backend.argmax_shortlist && !embedding_.data)
+      throw std::invalid_argument("SSRU FP32 embedding required for shortlist callback");
     const auto loop_count = multiply(r.source_length, 3);
     if (loop_count >= static_cast<std::size_t>(INT64_MAX))
       throw std::invalid_argument("SSRU generation length overflow");
@@ -230,15 +542,17 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
         const auto token = static_cast<std::size_t>(r.candidate_ids[j]);
         w.bias_[j] = token == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[token];
         for (std::size_t k = 0; k < dim; ++k)
-          w.projection_[k * r.candidate_count + j] = embedding_.data[token * dim + k];
+          w.projection_[k * r.candidate_count + j] = readEmbedValue(embedding_, int8_embedding_, token, k, dim);
       }
     }
     const Matrix projection{"shortlist_projection_T", w.projection_.data(), dim, r.candidate_count};
     const auto matmul = [&](const Matrix& matrix, const float* input, float* output) {
+      if (!matrix.data) throw std::invalid_argument("SSRU FP32 matrix required for LinearBackend");
       backend.matmul(backend.context, matrix, input, 1, output);
       finite(output, matrix.cols, matrix.name.c_str());
     };
     const auto linear = [&](const Linear& l, const float* input, float* output, bool separate_bias = false) {
+      if (!l.weight.data) throw std::invalid_argument("SSRU FP32 matrix required for LinearBackend");
       if (l.bias && backend.matmul_bias) {
         backend.matmul_bias(backend.context, l.weight, input, 1, l.bias, separate_bias, output);
         finite(output, l.weight.cols, "linear fused bias");
@@ -255,18 +569,25 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
     const float embedding_scale = static_cast<float>(std::sqrt(static_cast<double>(dim)));
     const float attention_scale = static_cast<float>(1 / std::sqrt(static_cast<double>(head_dim)));
     for (std::size_t position = 0; position <= loop_count; ++position) {
-      const float* embedding = position ? embedding_.data + static_cast<std::size_t>(w.tokens_.back()) * dim : nullptr;
+      const std::size_t prev_token = position ? static_cast<std::size_t>(w.tokens_.back()) : 0;
       for (std::size_t j = 0; j < dim; ++j) {
         const float phase = static_cast<float>(position) * frequency_[j] + offset_[j];
         w.x_[j] = phase;
       }
       if (math.sin) math.sin(math.context,w.x_.data(),dim);
       else for(auto& phase:w.x_) phase=std::sin(phase);
-      for(std::size_t j=0;j<dim;++j) w.x_[j]=(embedding?embedding[j]*embedding_scale:0.0f)+w.x_[j];
+      if (position) {
+        for (std::size_t j = 0; j < dim; ++j) {
+          const float e = readEmbedValue(embedding_, int8_embedding_, prev_token, j, dim);
+          w.x_[j] = e * embedding_scale + w.x_[j];
+        }
+      }
       finite(w.x_.data(), dim, "position");
       for (std::size_t layer_index = 0; layer_index < config_.depth; ++layer_index) {
         const auto& layer = layers_[layer_index];
         if (backend.matmul_pair) {
+          if (!layer.gate.weight.data || !layer.state.weight.data)
+            throw std::invalid_argument("SSRU FP32 matrix required for LinearBackend");
           backend.matmul_pair(backend.context, layer.gate.weight, layer.gate.bias, position == 0 && layer_index == 0,
                               w.gate_.data(), layer.state.weight, w.update_.data(), w.x_.data(), 1);
           finite(w.gate_.data(), dim, "linear gate");
@@ -365,6 +686,667 @@ void Decoder::decode(const Request& r, LinearBackend backend, Workspace& w, Math
   } catch (...) {
     w.tokens_.clear();
     w.ended_with_eos_ = false;
+    throw;
+  }
+}
+
+void Decoder::decodeBatch(const Request* requests, std::size_t count,
+                          BatchWorkspace& workspace,
+                          std::size_t max_threads,
+                          std::size_t max_active_batch,
+                          LinearBackend backend,
+                          MathBackend math) const {
+  if (!workspace.scratch_) workspace.scratch_ = std::make_unique<BatchWorkspace::Scratch>();
+  auto& s = *workspace.scratch_;
+
+  try {
+    if (count == 0) {
+      workspace.results_.clear();
+      return;
+    }
+    if (!requests) throw std::invalid_argument("SSRU null batch requests");
+
+    const std::size_t dim = config_.dim;
+    const std::size_t heads = config_.heads;
+    const std::size_t head_dim = dim / heads;
+    const std::size_t depth = config_.depth;
+    const std::size_t vocab = vocab_size_;
+
+    std::size_t max_src_len = 0;
+    for (std::size_t i = 0; i < count; ++i) {
+      const auto& r = requests[i];
+      const bool full_vocab = (r.candidate_count == 0);
+      if (!r.source_length || (!full_vocab && !r.candidate_ids) ||
+          r.eos_id < 0 || static_cast<std::uint64_t>(r.eos_id) >= vocab ||
+          r.keys.size() != depth || r.values.size() != depth ||
+          r.source_length > static_cast<std::size_t>(INT64_MAX))
+        throw std::invalid_argument("SSRU invalid request");
+      if (!native_ && full_vocab && backend.matmul && !backend.argmax_full)
+        throw std::invalid_argument("SSRU full-vocab callback missing");
+      if (!native_ && !full_vocab && backend.matmul && backend.argmax_shortlist && !embedding_.data)
+        throw std::invalid_argument("SSRU FP32 embedding required for shortlist callback");
+      const auto loop_count = multiply(r.source_length, 3);
+      if (loop_count >= static_cast<std::size_t>(INT64_MAX))
+        throw std::invalid_argument("SSRU generation length overflow");
+      const auto kv_size = multiply(dim, r.source_length);
+      const auto h_i64 = static_cast<std::int64_t>(heads);
+      const auto hd_i64 = static_cast<std::int64_t>(head_dim);
+      const auto sl_i64 = static_cast<std::int64_t>(r.source_length);
+      for (std::size_t l = 0; l < depth; ++l) {
+        validate(r.keys[l], "keys");
+        validate(r.values[l], "values");
+        const auto& ks = r.keys[l].shape;
+        const auto& vs = r.values[l].shape;
+        if (ks.size() != 4 || ks[0] != 1 || ks[1] != h_i64 || ks[2] != hd_i64 || ks[3] != sl_i64 ||
+            vs.size() != 4 || vs[0] != 1 || vs[1] != h_i64 || vs[2] != sl_i64 || vs[3] != hd_i64 ||
+            r.keys[l].size != kv_size || r.values[l].size != kv_size)
+          throw std::invalid_argument("SSRU invalid K/V dimensions");
+        finite(r.keys[l].data, kv_size, "keys");
+        finite(r.values[l].data, kv_size, "values");
+      }
+      for (std::size_t j = 0; j < r.candidate_count; ++j) {
+        if (r.candidate_ids[j] < 0 || static_cast<std::uint64_t>(r.candidate_ids[j]) >= vocab)
+          throw std::invalid_argument("SSRU candidate outside vocabulary");
+      }
+      max_src_len = std::max(max_src_len, r.source_length);
+    }
+
+    const std::size_t b_cap = std::min(count, std::clamp<std::size_t>(max_active_batch, 1, 32));
+    for (auto& res : workspace.results_) {
+      res.tokens.clear();
+      res.ended_with_eos = false;
+    }
+    workspace.results_.resize(count);
+
+    s.slot_req.resize(b_cap);
+    s.slot_pos.resize(b_cap);
+    s.slot_loop_max.resize(b_cap);
+    s.slot_prev_token.resize(b_cap);
+    s.chosen_tokens.resize(b_cap);
+
+    std::size_t active = b_cap;
+    std::size_t next_req = b_cap;
+    for (std::size_t m = 0; m < active; ++m) {
+      s.slot_req[m] = m;
+      s.slot_pos[m] = 0;
+      s.slot_prev_token[m] = 0;
+      s.slot_loop_max[m] = requests[m].source_length * 3;
+      workspace.results_[m].tokens.reserve(s.slot_loop_max[m] + 1);
+      workspace.results_[m].ended_with_eos = false;
+    }
+
+    const std::size_t cap_dim = multiply(b_cap, dim);
+    s.cells.assign(multiply(depth, cap_dim), 0.0f);
+    for (auto* buf : {&s.x, &s.gate, &s.update, &s.query, &s.context, &s.output})
+      buf->resize(cap_dim);
+    const std::size_t cap_ffn = multiply(b_cap, max_ffn_width_);
+    s.ffn_a.resize(cap_ffn);
+    s.ffn_b.resize(cap_ffn);
+
+    const float emb_scale = static_cast<float>(std::sqrt(static_cast<double>(dim)));
+    const float attn_scale = static_cast<float>(1.0 / std::sqrt(static_cast<double>(head_dim)));
+    bool shortlist_union_dirty = true;
+
+#ifdef MTRAN_SSRU_PACKED
+    if (native_) {
+      auto& pool = PcorePool::instance();
+      const std::size_t capped = std::max<std::size_t>(1, max_threads);
+      const std::size_t threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+
+      s.a_q.resize(multiply(b_cap, std::max(dim, max_ffn_width_)));
+      s.a_scales.resize(b_cap);
+      s.a_zps.resize(b_cap);
+      s.relu_maxs.resize(multiply(threads, b_cap));
+      s.scores.resize(multiply(threads, max_src_len));
+
+      const auto quantizeActiveRows = [&](const float* src, std::size_t cols) {
+        for (std::size_t m = 0; m < active; ++m) {
+          packed::quantizeLinearU8(src + m * cols, 1, cols, s.a_q.data() + m * cols,
+                                   s.a_scales[m], s.a_zps[m]);
+        }
+      };
+
+      const auto shardMatmul = [&](const PackedDecMat& pm, float* dst, bool relu, bool allow_parallel) {
+        const std::size_t chunks = pm.cols / 32;
+        if (!allow_parallel || threads <= 1 || chunks <= 1) {
+          runDecMultiplySlice(pm, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                              active, dst, pm.cols, s.relu_maxs.data(), relu, 0, pm.cols);
+        } else {
+          const std::size_t team = std::min(threads, chunks);
+          pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
+            const std::size_t cb = (chunks * tid) / nt;
+            const std::size_t ce = (chunks * (tid + 1)) / nt;
+            if (cb < ce) {
+              runDecMultiplySlice(pm, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                                  active, dst, pm.cols, s.relu_maxs.data() + tid * active,
+                                  relu, cb * 32, ce * 32);
+            }
+          });
+        }
+      };
+
+      const std::size_t q_chunks = dim / 32;
+      const std::size_t rnn_chunks = 2 * q_chunks;
+
+      while (active > 0) {
+        std::size_t max_active_src_len = 0;
+        bool any_pos0 = false;
+        bool all_pos0 = true;
+
+        // 1. Embed + positional encoding across all active slots.
+        for (std::size_t m = 0; m < active; ++m) {
+          const std::size_t pos = s.slot_pos[m];
+          any_pos0 = any_pos0 || (pos == 0);
+          all_pos0 = all_pos0 && (pos == 0);
+          max_active_src_len = std::max(max_active_src_len, requests[s.slot_req[m]].source_length);
+          float* dst = s.x.data() + m * dim;
+          if (pos == 0) {
+            native_->pos_table.addScaledEmbed(nullptr, 0.0f, 0, dst);
+          } else {
+            const auto tok = static_cast<std::size_t>(s.slot_prev_token[m]);
+            if (pos < kPosTableMaxPos) {
+              if (int8_embedding_.data) {
+                native_->pos_table.addScaledEmbedInt8(
+                    int8_embedding_.data + tok * dim, int8_embedding_.scale, emb_scale, pos, dst);
+              } else {
+                native_->pos_table.addScaledEmbed(
+                    embedding_.data + tok * dim, emb_scale, pos, dst);
+              }
+            } else {
+              const float fp = static_cast<float>(pos);
+              for (std::size_t d = 0; d < dim; ++d) {
+                const float e = readEmbedValue(embedding_, int8_embedding_, tok, d, dim);
+                dst[d] = e * emb_scale + std::sin(fp * frequency_[d] + offset_[d]);
+              }
+            }
+          }
+        }
+        finite(s.x.data(), active * dim, "batch position");
+
+        // 2. Decoder layers.
+        for (std::size_t li = 0; li < depth; ++li) {
+          const auto& pl = native_->layers[li];
+          const bool use_step0_all = (kUseFusedBias && li == 0 && all_pos0);
+          const bool use_step0_mixed = (kUseFusedBias && li == 0 && any_pos0 && !all_pos0);
+
+          // 2a. SSRU recurrent gate + state sharing one activation quantization.
+          quantizeActiveRows(s.x.data(), dim);
+          const PackedDecMat& gate_mat = use_step0_all ? pl.gate_step0 : pl.gate;
+          if (threads <= 1) {
+            runDecMultiplySlice(gate_mat, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                                active, s.gate.data(), dim, nullptr, false, 0, dim);
+            runDecMultiplySlice(pl.state, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                                active, s.update.data(), dim, nullptr, false, 0, dim);
+          } else {
+            const std::size_t team = std::min(threads, rnn_chunks);
+            pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
+              const std::size_t gb = (rnn_chunks * tid) / nt;
+              const std::size_t ge = (rnn_chunks * (tid + 1)) / nt;
+              if (gb < q_chunks) {
+                const std::size_t le = std::min(ge, q_chunks);
+                runDecMultiplySlice(gate_mat, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                                    active, s.gate.data(), dim, nullptr, false, gb * 32, le * 32);
+              }
+              if (ge > q_chunks) {
+                const std::size_t lb = std::max(gb, q_chunks) - q_chunks;
+                const std::size_t le = ge - q_chunks;
+                runDecMultiplySlice(pl.state, s.a_q.data(), s.a_scales.data(), s.a_zps.data(),
+                                    active, s.update.data(), dim, nullptr, false, lb * 32, le * 32);
+              }
+            });
+          }
+          if (use_step0_mixed) {
+            for (std::size_t m = 0; m < active; ++m) {
+              if (s.slot_pos[m] == 0) {
+                runDecMultiplySlice(pl.gate_step0, s.a_q.data() + m * dim, &s.a_scales[m],
+                                    &s.a_zps[m], 1, s.gate.data() + m * dim, dim,
+                                    nullptr, false, 0, dim);
+              }
+            }
+          }
+          finite(s.gate.data(), active * dim, "batch gate");
+          finite(s.update.data(), active * dim, "batch update");
+
+          float* cell_layer = s.cells.data() + li * cap_dim;
+          ops::ssruGateUpdate(s.gate.data(), s.update.data(), s.x.data(),
+                              active, dim, cell_layer, s.x.data());
+          finite(cell_layer, active * dim, "batch cell");
+          ops::instanceNormAffine(s.x.data(), pl.rnn_ln_scale, pl.rnn_ln_bias,
+                                  active, dim, s.x.data());
+          finite(s.x.data(), active * dim, "batch rnn norm");
+
+          // 2b. Cross-attention query -> crossAttention -> output -> residual + norm.
+          quantizeActiveRows(s.x.data(), dim);
+          const PackedDecMat& query_mat = use_step0_all ? pl.query_step0 : pl.query;
+          shardMatmul(query_mat, s.query.data(), false, active >= 3);
+          if (use_step0_mixed) {
+            for (std::size_t m = 0; m < active; ++m) {
+              if (s.slot_pos[m] == 0) {
+                runDecMultiplySlice(pl.query_step0, s.a_q.data() + m * dim, &s.a_scales[m],
+                                    &s.a_zps[m], 1, s.query.data() + m * dim, dim,
+                                    nullptr, false, 0, dim);
+              }
+            }
+          }
+          finite(s.query.data(), active * dim, "batch query");
+
+          const std::size_t total_heads = active * heads;
+          if (threads <= 1 || (active == 1 && max_active_src_len < 32)) {
+            for (std::size_t m = 0; m < active; ++m) {
+              const auto& req = requests[s.slot_req[m]];
+              ops::crossAttention(s.query.data() + m * dim, req.keys[li].data,
+                                  req.values[li].data, heads, head_dim, req.source_length,
+                                  s.scores.data(), s.context.data() + m * dim, 0, heads);
+            }
+          } else {
+            const std::size_t team = std::min(threads, total_heads);
+            pool.parallelFor(team, [&](std::size_t tid, std::size_t nt) {
+              float* t_scores = s.scores.data() + tid * max_src_len;
+              for (std::size_t idx = tid; idx < total_heads; idx += nt) {
+                const std::size_t m = idx / heads;
+                const std::size_t h = idx % heads;
+                const auto& req = requests[s.slot_req[m]];
+                ops::crossAttention(s.query.data() + m * dim, req.keys[li].data,
+                                    req.values[li].data, heads, head_dim, req.source_length,
+                                    t_scores, s.context.data() + m * dim, h, h + 1);
+              }
+            });
+          }
+          finite(s.context.data(), active * dim, "batch context");
+
+          quantizeActiveRows(s.context.data(), dim);
+          shardMatmul(pl.attn, s.output.data(), false, active >= 3);
+          for (std::size_t i = 0; i < active * dim; ++i) s.x[i] += s.output[i];
+          ops::instanceNormAffine(s.x.data(), pl.attn_ln_scale, pl.attn_ln_bias,
+                                  active, dim, s.x.data());
+          finite(s.x.data(), active * dim, "batch attention norm");
+
+          // 2c. FFN (ReLU fused on hidden layers) + residual + norm.
+          const float* ffn_in = s.x.data();
+          for (std::size_t j = 0; j < pl.ffn.size(); ++j) {
+            const bool has_relu = (j + 1 < pl.ffn.size());
+            float* ffn_out = has_relu ? (j % 2 ? s.ffn_b.data() : s.ffn_a.data()) : s.output.data();
+            quantizeActiveRows(ffn_in, pl.ffn[j].rows);
+            const bool parallel_ffn = (pl.ffn[j].cols >= dim * 2) ||
+                                      (pl.ffn[j].rows >= dim * 2) || (active >= 3);
+            shardMatmul(pl.ffn[j], ffn_out, has_relu, parallel_ffn);
+            ffn_in = ffn_out;
+          }
+          for (std::size_t i = 0; i < active * dim; ++i) s.x[i] += ffn_in[i];
+          ops::instanceNormAffine(s.x.data(), pl.ffn_ln_scale, pl.ffn_ln_bias,
+                                  active, dim, s.x.data());
+          finite(s.x.data(), active * dim, "batch ffn norm");
+        }
+
+        // 3. Logit projection & argmax.
+        bool any_full = false;
+        bool any_short = false;
+        for (std::size_t m = 0; m < active; ++m) {
+          if (requests[s.slot_req[m]].candidate_count == 0) any_full = true;
+          else any_short = true;
+        }
+        if (any_full && !any_short) {
+          native_->getFullVocab().argMaxBatch(s.x.data(), active, dim,
+                                              s.chosen_tokens.data(), threads);
+        } else if (!any_full && any_short) {
+          const auto& sl = native_->getShortlist();
+          if (active == 1) {
+            const auto& req = requests[s.slot_req[0]];
+            const std::size_t best = sl.argmax(s.x.data(), req.candidate_ids,
+                                               req.candidate_count, s.packed_ws, true);
+            if (best >= req.candidate_count)
+              throw std::runtime_error("SSRU invalid shortlist index");
+            s.chosen_tokens[0] = req.candidate_ids[best];
+          } else {
+            if (shortlist_union_dirty) {
+              s.union_pairs.clear();
+              for (std::size_t m = 0; m < active; ++m) {
+                const auto& req = requests[s.slot_req[m]];
+                const std::uint32_t bit = static_cast<std::uint32_t>(1u) << m;
+                for (std::size_t j = 0; j < req.candidate_count; ++j) {
+                  s.union_pairs.push_back(CandPair{req.candidate_ids[j], bit});
+                }
+              }
+              std::sort(s.union_pairs.begin(), s.union_pairs.end(),
+                        [](const CandPair& a, const CandPair& b) { return a.id < b.id; });
+              s.union_ids.clear();
+              s.slot_masks.clear();
+              for (const auto& p : s.union_pairs) {
+                if (!s.union_ids.empty() && s.union_ids.back() == p.id) {
+                  s.slot_masks.back() |= p.bit;
+                } else {
+                  s.union_ids.push_back(p.id);
+                  s.slot_masks.push_back(p.bit);
+                }
+              }
+              shortlist_union_dirty = false;
+            }
+            sl.argMaxBatch(s.x.data(), active, dim, s.union_ids.data(),
+                           s.slot_masks.data(), s.union_ids.size(), s.chosen_tokens.data());
+          }
+        } else {
+          for (std::size_t m = 0; m < active; ++m) {
+            const auto& req = requests[s.slot_req[m]];
+            const float* row = s.x.data() + m * dim;
+            if (req.candidate_count == 0) {
+              native_->getFullVocab().argMaxBatch(row, 1, dim, &s.chosen_tokens[m], threads);
+            } else {
+              const std::size_t best = native_->getShortlist().argmax(
+                  row, req.candidate_ids, req.candidate_count, s.packed_ws, true);
+              if (best >= req.candidate_count)
+                throw std::runtime_error("SSRU invalid shortlist index");
+              s.chosen_tokens[m] = req.candidate_ids[best];
+            }
+          }
+        }
+
+        // 4. Record tokens, retire completed requests, and refill/compact slots.
+        for (std::size_t m = active; m-- > 0;) {
+          const std::size_t req_idx = s.slot_req[m];
+          const std::int64_t tok = s.chosen_tokens[m];
+          if (tok < 0 || static_cast<std::uint64_t>(tok) >= vocab)
+            throw std::runtime_error("SSRU invalid batch token");
+          workspace.results_[req_idx].tokens.push_back(tok);
+          const bool hit_eos = (tok == requests[req_idx].eos_id);
+          const bool hit_max = (s.slot_pos[m] >= s.slot_loop_max[m]);
+          if (hit_eos) workspace.results_[req_idx].ended_with_eos = true;
+          if (hit_eos || hit_max) {
+            shortlist_union_dirty = true;
+            if (next_req < count) {
+              const std::size_t nr = next_req++;
+              s.slot_req[m] = nr;
+              s.slot_pos[m] = 0;
+              s.slot_prev_token[m] = 0;
+              s.slot_loop_max[m] = requests[nr].source_length * 3;
+              workspace.results_[nr].tokens.reserve(s.slot_loop_max[m] + 1);
+              workspace.results_[nr].ended_with_eos = false;
+              for (std::size_t l = 0; l < depth; ++l) {
+                std::fill_n(s.cells.data() + l * cap_dim + m * dim, dim, 0.0f);
+              }
+            } else {
+              const std::size_t last = active - 1;
+              if (m != last) {
+                s.slot_req[m] = s.slot_req[last];
+                s.slot_pos[m] = s.slot_pos[last];
+                s.slot_prev_token[m] = s.slot_prev_token[last];
+                s.slot_loop_max[m] = s.slot_loop_max[last];
+                for (std::size_t l = 0; l < depth; ++l) {
+                  float* c_layer = s.cells.data() + l * cap_dim;
+                  std::copy_n(c_layer + last * dim, dim, c_layer + m * dim);
+                }
+              }
+              --active;
+            }
+          } else {
+            s.slot_prev_token[m] = tok;
+            ++s.slot_pos[m];
+          }
+        }
+      }
+      return;
+    }
+#else
+    (void)max_threads;
+#endif
+    (void)shortlist_union_dirty;
+
+    // Scalar / LinearBackend continuous-batching fallback.
+    s.scores.resize(max_src_len);
+    const auto runLinear = [&](const Linear& l, const float* input, float* output,
+                               bool separate_bias, std::size_t m) {
+      if (backend.matmul) {
+        if (!l.weight.data) throw std::invalid_argument("SSRU FP32 matrix required for LinearBackend");
+        const float* in_row = input + m * l.weight.rows;
+        float* out_row = output + m * l.weight.cols;
+        if (l.bias && backend.matmul_bias) {
+          backend.matmul_bias(backend.context, l.weight, in_row, 1, l.bias, separate_bias, out_row);
+          finite(out_row, l.weight.cols, "linear fused bias");
+        } else {
+          backend.matmul(backend.context, l.weight, in_row, 1, out_row);
+          if (l.bias) {
+            for (std::size_t c = 0; c < l.weight.cols; ++c) out_row[c] += l.bias[c];
+          }
+          finite(out_row, l.weight.cols, l.weight.name.c_str());
+        }
+        return;
+      }
+      scalarLinearBatch(l.weight, l.int8_weight, l.bias,
+                        input + m * l.weight.rows, 1, output + m * l.weight.cols);
+    };
+
+    while (active > 0) {
+      for (std::size_t m = 0; m < active; ++m) {
+        const std::size_t pos = s.slot_pos[m];
+        const std::size_t prev_tok = pos ? static_cast<std::size_t>(s.slot_prev_token[m]) : 0;
+        float* x_row = s.x.data() + m * dim;
+        for (std::size_t j = 0; j < dim; ++j)
+          x_row[j] = static_cast<float>(pos) * frequency_[j] + offset_[j];
+        if (math.sin) math.sin(math.context, x_row, dim);
+        else for (std::size_t j = 0; j < dim; ++j) x_row[j] = std::sin(x_row[j]);
+        if (pos) {
+          for (std::size_t j = 0; j < dim; ++j)
+            x_row[j] = readEmbedValue(embedding_, int8_embedding_, prev_tok, j, dim) * emb_scale + x_row[j];
+        }
+        finite(x_row, dim, "batch scalar position");
+      }
+
+      for (std::size_t li = 0; li < depth; ++li) {
+        const auto& layer = layers_[li];
+        for (std::size_t m = 0; m < active; ++m) {
+          const bool sep = (s.slot_pos[m] == 0 && li == 0);
+          if (backend.matmul && backend.matmul_pair) {
+            if (!layer.gate.weight.data || !layer.state.weight.data)
+              throw std::invalid_argument("SSRU FP32 matrix required for LinearBackend");
+            backend.matmul_pair(backend.context, layer.gate.weight, layer.gate.bias, sep,
+                                s.gate.data() + m * dim, layer.state.weight,
+                                s.update.data() + m * dim, s.x.data() + m * dim, 1);
+            finite(s.gate.data() + m * dim, dim, "linear gate");
+            finite(s.update.data() + m * dim, dim, "linear state");
+          } else {
+            runLinear(layer.gate, s.x.data(), s.gate.data(), sep, m);
+            runLinear(layer.state, s.x.data(), s.update.data(), false, m);
+          }
+          if (math.sigmoid) {
+            math.sigmoid(math.context, s.gate.data() + m * dim, dim);
+            finite(s.gate.data() + m * dim, dim, "callback sigmoid");
+          }
+          float* cell = s.cells.data() + li * cap_dim + m * dim;
+          float* x_row = s.x.data() + m * dim;
+          const float* gate_row = s.gate.data() + m * dim;
+          const float* upd_row = s.update.data() + m * dim;
+          for (std::size_t j = 0; j < dim; ++j) {
+            const float g = math.sigmoid ? gate_row[j] : 1.0f / (1.0f + std::exp(-gate_row[j]));
+            cell[j] = g * cell[j] + (1.0f - g) * upd_row[j];
+            x_row[j] += std::max(0.0f, cell[j]);
+          }
+          finite(cell, dim, "recurrent cell");
+          if (math.normalize) {
+            math.normalize(math.context, x_row, dim, layer.rnn_norm.scale, layer.rnn_norm.bias);
+            finite(x_row, dim, "callback normalization");
+          } else normalize(x_row, dim, layer.rnn_norm.scale, layer.rnn_norm.bias);
+
+          runLinear(layer.query, s.x.data(), s.query.data(), sep, m);
+          const auto& req = requests[s.slot_req[m]];
+          const float* keys = req.keys[li].data;
+          const float* values = req.values[li].data;
+          float* q_row = s.query.data() + m * dim;
+          float* ctx_row = s.context.data() + m * dim;
+          if (math.attention) {
+            math.attention(math.context, q_row, keys, values, heads, head_dim,
+                           req.source_length, ctx_row);
+          } else {
+            for (std::size_t h = 0; h < heads; ++h) {
+              for (std::size_t sp = 0; sp < req.source_length; ++sp) {
+                float score = 0.0f;
+                for (std::size_t k = 0; k < head_dim; ++k)
+                  score += q_row[h * head_dim + k] * keys[(h * head_dim + k) * req.source_length + sp];
+                s.scores[sp] = score * attn_scale;
+              }
+              finite(s.scores.data(), req.source_length, "attention scores");
+              const float mx = *std::max_element(s.scores.begin(), s.scores.begin() + static_cast<std::ptrdiff_t>(req.source_length));
+              float total = 0.0f;
+              for (std::size_t sp = 0; sp < req.source_length; ++sp) {
+                s.scores[sp] = std::exp(s.scores[sp] - mx);
+                total += s.scores[sp];
+              }
+              if (!std::isfinite(total) || total <= 0.0f) throw std::runtime_error("SSRU invalid softmax");
+              for (std::size_t sp = 0; sp < req.source_length; ++sp) s.scores[sp] /= total;
+              for (std::size_t k = 0; k < head_dim; ++k) {
+                float sum = 0.0f;
+                for (std::size_t sp = 0; sp < req.source_length; ++sp)
+                  sum += s.scores[sp] * values[(h * req.source_length + sp) * head_dim + k];
+                ctx_row[h * head_dim + k] = sum;
+              }
+            }
+          }
+          finite(ctx_row, dim, "attention context");
+
+          runLinear(layer.attention, s.context.data(), s.output.data(), false, m);
+          for (std::size_t j = 0; j < dim; ++j) x_row[j] += s.output[m * dim + j];
+          if (math.normalize) {
+            math.normalize(math.context, x_row, dim, layer.attention_norm.scale, layer.attention_norm.bias);
+            finite(x_row, dim, "callback normalization");
+          } else normalize(x_row, dim, layer.attention_norm.scale, layer.attention_norm.bias);
+
+          const float* ffn_in = s.x.data();
+          for (std::size_t j = 0; j < layer.ffn.size(); ++j) {
+            const bool has_relu = (j + 1 < layer.ffn.size());
+            float* ffn_out = has_relu ? (j % 2 ? s.ffn_b.data() : s.ffn_a.data()) : s.output.data();
+            runLinear(layer.ffn[j], ffn_in, ffn_out, false, m);
+            if (has_relu) {
+              float* out_row = ffn_out + m * layer.ffn[j].weight.cols;
+              for (std::size_t k = 0; k < layer.ffn[j].weight.cols; ++k)
+                out_row[k] = std::max(0.0f, out_row[k]);
+            }
+            ffn_in = ffn_out;
+          }
+          const float* final_ffn = ffn_in + m * dim;
+          for (std::size_t j = 0; j < dim; ++j) x_row[j] += final_ffn[j];
+          if (math.normalize) {
+            math.normalize(math.context, x_row, dim, layer.ffn_norm.scale, layer.ffn_norm.bias);
+            finite(x_row, dim, "callback normalization");
+          } else normalize(x_row, dim, layer.ffn_norm.scale, layer.ffn_norm.bias);
+        }
+      }
+
+      for (std::size_t m = 0; m < active; ++m) {
+        const auto& req = requests[s.slot_req[m]];
+        const float* x_row = s.x.data() + m * dim;
+        if (req.candidate_count == 0) {
+          if (backend.argmax_full) {
+            const std::size_t tok = backend.argmax_full(backend.context, x_row, dim);
+            if (tok >= vocab) throw std::runtime_error("SSRU invalid full-vocab token");
+            s.chosen_tokens[m] = static_cast<std::int64_t>(tok);
+          } else {
+            std::size_t best = 0;
+            float best_logit = -std::numeric_limits<float>::infinity();
+            for (std::size_t t = 0; t < vocab; ++t) {
+              float dot = 0.0f;
+              for (std::size_t k = 0; k < dim; ++k)
+                dot += x_row[k] * readEmbedValue(embedding_, int8_embedding_, t, k, dim);
+              const float logit = dot + (t == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[t]);
+              if (!std::isfinite(logit) && !(logit == -std::numeric_limits<float>::infinity() && t == 1))
+                throw std::runtime_error("SSRU nonfinite logit");
+              if (t == 0 || logit > best_logit) {
+                best_logit = logit;
+                best = t;
+              }
+            }
+            s.chosen_tokens[m] = static_cast<std::int64_t>(best);
+          }
+        } else {
+          if (backend.argmax_shortlist) {
+            const std::size_t best = backend.argmax_shortlist(
+                backend.context, x_row, dim, embedding_.data, output_bias_,
+                req.candidate_ids, req.candidate_count);
+            if (best >= req.candidate_count) throw std::runtime_error("SSRU invalid shortlist index");
+            s.chosen_tokens[m] = req.candidate_ids[best];
+          } else if (backend.matmul) {
+            s.projection.resize(multiply(dim, req.candidate_count));
+            s.bias.resize(req.candidate_count);
+            s.logits.resize(req.candidate_count);
+            for (std::size_t j = 0; j < req.candidate_count; ++j) {
+              const auto token = static_cast<std::size_t>(req.candidate_ids[j]);
+              s.bias[j] = token == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[token];
+              for (std::size_t k = 0; k < dim; ++k)
+                s.projection[k * req.candidate_count + j] =
+                    readEmbedValue(embedding_, int8_embedding_, token, k, dim);
+            }
+            const Matrix projection{"shortlist_projection_T", s.projection.data(), dim, req.candidate_count};
+            backend.matmul(backend.context, projection, x_row, 1, s.logits.data());
+            finite(s.logits.data(), req.candidate_count, projection.name.c_str());
+            std::size_t best = 0;
+            for (std::size_t j = 0; j < req.candidate_count; ++j) {
+              s.logits[j] += s.bias[j];
+              if (!std::isfinite(s.logits[j]) &&
+                  !(s.logits[j] == -std::numeric_limits<float>::infinity() && req.candidate_ids[j] == 1))
+                throw std::runtime_error("SSRU nonfinite logit");
+              if (s.logits[j] > s.logits[best]) best = j;
+            }
+            s.chosen_tokens[m] = req.candidate_ids[best];
+          } else {
+            std::size_t best = 0;
+            float best_logit = 0.0f;
+            for (std::size_t j = 0; j < req.candidate_count; ++j) {
+              const auto token = static_cast<std::size_t>(req.candidate_ids[j]);
+              float dot = 0.0f;
+              for (std::size_t k = 0; k < dim; ++k)
+                dot += x_row[k] * readEmbedValue(embedding_, int8_embedding_, token, k, dim);
+              const float logit = dot + (token == 1 ? -std::numeric_limits<float>::infinity() : output_bias_[token]);
+              if (!std::isfinite(logit) && !(logit == -std::numeric_limits<float>::infinity() && token == 1))
+                throw std::runtime_error("SSRU nonfinite logit");
+              if (j == 0 || logit > best_logit) {
+                best_logit = logit;
+                best = j;
+              }
+            }
+            s.chosen_tokens[m] = req.candidate_ids[best];
+          }
+        }
+      }
+
+      for (std::size_t m = active; m-- > 0;) {
+        const std::size_t req_idx = s.slot_req[m];
+        const std::int64_t tok = s.chosen_tokens[m];
+        if (tok < 0 || static_cast<std::uint64_t>(tok) >= vocab)
+          throw std::runtime_error("SSRU invalid batch token");
+        workspace.results_[req_idx].tokens.push_back(tok);
+        const bool hit_eos = (tok == requests[req_idx].eos_id);
+        const bool hit_max = (s.slot_pos[m] >= s.slot_loop_max[m]);
+        if (hit_eos) workspace.results_[req_idx].ended_with_eos = true;
+        if (hit_eos || hit_max) {
+          if (next_req < count) {
+            const std::size_t nr = next_req++;
+            s.slot_req[m] = nr;
+            s.slot_pos[m] = 0;
+            s.slot_prev_token[m] = 0;
+            s.slot_loop_max[m] = requests[nr].source_length * 3;
+            workspace.results_[nr].tokens.reserve(s.slot_loop_max[m] + 1);
+            workspace.results_[nr].ended_with_eos = false;
+            for (std::size_t l = 0; l < depth; ++l)
+              std::fill_n(s.cells.data() + l * cap_dim + m * dim, dim, 0.0f);
+          } else {
+            const std::size_t last = active - 1;
+            if (m != last) {
+              s.slot_req[m] = s.slot_req[last];
+              s.slot_pos[m] = s.slot_pos[last];
+              s.slot_prev_token[m] = s.slot_prev_token[last];
+              s.slot_loop_max[m] = s.slot_loop_max[last];
+              for (std::size_t l = 0; l < depth; ++l) {
+                float* c_layer = s.cells.data() + l * cap_dim;
+                std::copy_n(c_layer + last * dim, dim, c_layer + m * dim);
+              }
+            }
+            --active;
+          }
+        } else {
+          s.slot_prev_token[m] = tok;
+          ++s.slot_pos[m];
+        }
+      }
+    }
+  } catch (...) {
+    workspace.results_.clear();
     throw;
   }
 }

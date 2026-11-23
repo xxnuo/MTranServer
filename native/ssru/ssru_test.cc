@@ -1,5 +1,9 @@
 #include "ssru.h"
 
+#if defined(MTRAN_SSRU_PACKED) || defined(MTRAN_TEST_ENCODER)
+#include "encoder.h"
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -713,6 +717,498 @@ void shortlist_callbacks() {
   }
 }
 
+struct OwnedInt8 {
+  std::vector<std::int8_t> data;
+  std::vector<std::int64_t> shape;
+  float scale = 0.0f;
+  Int8TensorView view() const { return {data.data(), data.size(), shape, scale}; }
+};
+
+bool is_matrix_weight(const std::string& name) {
+  if (name.find("_ln_") != std::string::npos) return false;
+  return name == "Wemb" || name == "decoder_Wemb" || name == "encoder_Wemb" ||
+         name.find("_Wf") != std::string::npos || name.find("_Wq") != std::string::npos ||
+         name.find("_Wk") != std::string::npos || name.find("_Wv") != std::string::npos ||
+         name.find("_Wo") != std::string::npos || name.find("_ffn_W") != std::string::npos ||
+         (name.size() >= 6 && name.compare(name.size() - 6, 6, "_rnn_W") == 0);
+}
+
+void quantize_fixture_weights(const std::map<std::string, Owned>& src,
+                              std::map<std::string, Owned>& fp_out,
+                              std::map<std::string, OwnedInt8>& i8_out,
+                              std::map<std::string, Owned>& deq_out) {
+  fp_out.clear();
+  i8_out.clear();
+  deq_out.clear();
+  for (const auto& [name, t] : src) {
+    if (!is_matrix_weight(name)) {
+      fp_out.emplace(name, t);
+      deq_out.emplace(name, t);
+      continue;
+    }
+    float mx = 0.0f;
+    for (float v : t.data) mx = std::max(mx, std::abs(v));
+    const float scale = mx > 0.0f ? mx / 127.0f : 0.0f;
+    OwnedInt8 q{std::vector<std::int8_t>(t.data.size()), t.shape, scale};
+    Owned d{std::vector<float>(t.data.size()), t.shape};
+    for (std::size_t i = 0; i < t.data.size(); ++i) {
+      const long rv = scale > 0.0f ? std::lround(t.data[i] / scale) : 0L;
+      const auto qi = static_cast<std::int8_t>(std::clamp<long>(rv, -127L, 127L));
+      q.data[i] = qi;
+      d.data[i] = static_cast<float>(qi) * scale;
+    }
+    i8_out.emplace(name, std::move(q));
+    deq_out.emplace(name, std::move(d));
+  }
+}
+
+void decode_batch_and_int8_weights() {
+  Fixture f({8, 2, 2, 2}, 4, false);
+  std::map<std::string, Owned> fp_only, deq;
+  std::map<std::string, OwnedInt8> i8_map;
+  quantize_fixture_weights(f.weights, fp_only, i8_map, deq);
+
+  std::vector<NamedTensor> fp_vec, deq_vec;
+  for (const auto& [n, t] : fp_only) fp_vec.push_back({n, t.view()});
+  for (const auto& [n, t] : deq) deq_vec.push_back({n, t.view()});
+  std::vector<NamedInt8Tensor> i8_vec;
+  for (const auto& [n, t] : i8_map) i8_vec.push_back({n, t.view()});
+
+  Decoder ref_dec(f.config, deq_vec);
+  Decoder i8_dec(f.config, fp_vec, i8_vec);
+
+  // Reject negative/NaN INT8 scales and duplicate FP32+INT8 tensor names.
+  {
+    auto bad_i8 = i8_vec;
+    bad_i8[0].tensor.scale = -0.1f;
+    rejects([&] { Decoder d(f.config, fp_vec, bad_i8); });
+    bad_i8[0].tensor.scale = std::numeric_limits<float>::quiet_NaN();
+    rejects([&] { Decoder d(f.config, fp_vec, bad_i8); });
+    auto dup_fp = fp_vec;
+    dup_fp.push_back({"decoder_l1_rnn_Wf", f.weights.at("decoder_l1_rnn_Wf").view()});
+    rejects([&] { Decoder d(f.config, dup_fp, i8_vec); });
+  }
+
+  // Build 6 mixed requests: different lengths, eos IDs, shortlist vs full-vocab.
+  std::vector<std::vector<Owned>> all_keys(6), all_vals(6);
+  std::vector<std::vector<std::int64_t>> cand_lists = {
+      {8, 3, 2, 0},
+      {0},
+      {5, 9, 4, 2, 1, 7},
+      {10, 6, 3},
+      {},  // full-vocab
+      {7, 8, 2, 4, 5},
+  };
+  const std::size_t src_lens[6] = {1, 3, 2, 4, 2, 3};
+  const std::int64_t eos_ids[6] = {0, 0, 5, 6, 0, 2};
+  std::vector<Request> reqs(6);
+  for (std::size_t r = 0; r < 6; ++r) {
+    reqs[r].source_length = src_lens[r];
+    reqs[r].eos_id = eos_ids[r];
+    reqs[r].candidate_count = cand_lists[r].size();
+    reqs[r].candidate_ids = cand_lists[r].empty() ? nullptr : cand_lists[r].data();
+    all_keys[r].reserve(f.config.depth);
+    all_vals[r].reserve(f.config.depth);
+    for (std::size_t l = 0; l < f.config.depth; ++l) {
+      all_keys[r].push_back(f.make({1, 2, 4, static_cast<std::int64_t>(src_lens[r])}, 0.4f));
+      all_vals[r].push_back(f.make({1, 2, static_cast<std::int64_t>(src_lens[r]), 4}, 0.6f));
+      reqs[r].keys.push_back(all_keys[r].back().view());
+      reqs[r].values.push_back(all_vals[r].back().view());
+    }
+  }
+
+  // Reference per-request single decode on deq weights.
+  struct FullArgCtx { const float* emb; const float* bias; std::size_t vocab, dim; };
+  FullArgCtx arg_ctx{deq.at("decoder_Wemb").data.data(), deq.at("decoder_ff_logit_out_b").data.data(),
+                     11, f.config.dim};
+  LinearBackend ref_backend{&arg_ctx, scalar};
+  ref_backend.argmax_full = [](void* raw, const float* x, std::size_t) -> std::size_t {
+    const auto& c = *static_cast<const FullArgCtx*>(raw);
+    std::size_t best = 0;
+    float best_v = -std::numeric_limits<float>::infinity();
+    for (std::size_t t = 0; t < c.vocab; ++t) {
+      float dot = 0.0f;
+      for (std::size_t k = 0; k < c.dim; ++k) dot += x[k] * c.emb[t * c.dim + k];
+      const float v = dot + (t == 1 ? -std::numeric_limits<float>::infinity() : c.bias[t]);
+      if (t == 0 || v > best_v) { best_v = v; best = t; }
+    }
+    return best;
+  };
+  std::vector<std::vector<std::int64_t>> expected_tokens(6);
+  std::vector<bool> expected_eos(6);
+  Workspace sw;
+  for (std::size_t r = 0; r < 6; ++r) {
+    ref_dec.decode(reqs[r], ref_backend, sw);
+    expected_tokens[r] = sw.tokens();
+    expected_eos[r] = sw.ended_with_eos();
+  }
+
+  // Continuous batching with max_active_batch = 3 forces refill + tail compaction.
+  BatchWorkspace bw;
+  i8_dec.decodeBatch(reqs.data(), 0, bw);
+  CHECK(bw.results().empty());
+
+  i8_dec.decodeBatch(reqs.data(), reqs.size(), bw, 1, 3);
+  CHECK(bw.results().size() == 6);
+  for (std::size_t r = 0; r < 6; ++r) {
+    CHECK(bw.results()[r].tokens == expected_tokens[r]);
+    CHECK(bw.results()[r].ended_with_eos == expected_eos[r]);
+  }
+
+  // Steady-state reuse preserves results and triggers 0 allocations.
+  allocations = 0;
+  count_allocations = true;
+  i8_dec.decodeBatch(reqs.data(), reqs.size(), bw, 1, 3);
+  const std::size_t steady_allocs = allocations;
+  count_allocations = false;
+  CHECK(steady_allocs == 0);
+  for (std::size_t r = 0; r < 6; ++r) {
+    CHECK(bw.results()[r].tokens == expected_tokens[r]);
+    CHECK(bw.results()[r].ended_with_eos == expected_eos[r]);
+  }
+
+  // Failure recovery clears previous results.
+  auto bad_reqs = reqs;
+  bad_reqs[2].eos_id = 999;
+  rejects([&] { i8_dec.decodeBatch(bad_reqs.data(), bad_reqs.size(), bw, 1, 3); });
+  CHECK(bw.results().empty());
+  i8_dec.decodeBatch(reqs.data(), reqs.size(), bw, 2, 16);
+  CHECK(bw.results().size() == 6);
+  for (std::size_t r = 0; r < 6; ++r)
+    CHECK(bw.results()[r].tokens == expected_tokens[r]);
+}
+
+#if defined(MTRAN_SSRU_PACKED) || defined(MTRAN_TEST_ENCODER)
+struct FullModelFixture {
+  EncoderConfig enc_cfg;
+  Config dec_cfg;
+  std::size_t vocab;
+  std::map<std::string, Owned> weights;
+
+  Owned make(std::vector<std::int64_t> shape, float scale, float shift = 0.0f) {
+    std::size_t size = 1;
+    for (auto d : shape) size *= static_cast<std::size_t>(d);
+    Owned t{std::vector<float>(size), std::move(shape)};
+    const auto seed = weights.size() + 7;
+    for (std::size_t i = 0; i < size; ++i)
+      t.data[i] = shift + scale * static_cast<float>(std::sin((i + 1) * 1.13 + seed * 1.71));
+    return t;
+  }
+
+  FullModelFixture(std::size_t dim, std::size_t heads, std::size_t enc_d,
+                   std::size_t dec_d, std::size_t v, bool tied)
+      : enc_cfg{dim, heads, enc_d, dec_d, 2}, dec_cfg{dim, heads, dec_d, 2}, vocab(v) {
+    const auto d = static_cast<std::int64_t>(dim);
+    const auto vs = static_cast<std::int64_t>(vocab);
+    const auto add = [&](const std::string& name, std::vector<std::int64_t> shape,
+                         float scale = 0.11f, float shift = 0.0f) {
+      weights.emplace(name, make(std::move(shape), scale, shift));
+    };
+    const auto norm = [&](const std::string& name) {
+      add(name + "_scale", {1, d}, 0.05f, 1.0f);
+      add(name + "_bias", {1, d}, 0.02f);
+    };
+    if (tied) {
+      add("Wemb", {vs, d}, 0.35f);
+    } else {
+      add("encoder_Wemb", {vs, d}, 0.35f);
+      add("decoder_Wemb", {vs, d}, 0.35f);
+    }
+    add("decoder_ff_logit_out_b", {1, vs}, 0.09f);
+    for (std::size_t l = 1; l <= enc_d; ++l) {
+      const auto p = "encoder_l" + std::to_string(l);
+      for (const auto* s : {"Wq", "Wk", "Wv", "Wo"}) add(p + "_self_" + s, {d, d});
+      for (const auto* s : {"bq", "bk", "bv", "bo"}) add(p + "_self_" + s, {1, d});
+      norm(p + "_self_Wo_ln");
+      const auto ffn_w = static_cast<std::int64_t>(dim * 2);
+      add(p + "_ffn_W1", {d, ffn_w});
+      add(p + "_ffn_b1", {1, ffn_w});
+      add(p + "_ffn_W2", {ffn_w, d});
+      add(p + "_ffn_b2", {1, d});
+      norm(p + "_ffn_ffn_ln");
+    }
+    for (std::size_t l = 1; l <= dec_d; ++l) {
+      const auto p = "decoder_l" + std::to_string(l);
+      add(p + "_rnn_Wf", {d, d});
+      add(p + "_rnn_bf", {1, d});
+      add(p + "_rnn_W", {d, d});
+      norm(p + "_rnn_ffn_ln");
+      for (const auto* s : {"Wq", "Wk", "Wv", "Wo"}) add(p + "_context_" + s, {d, d});
+      for (const auto* s : {"bq", "bk", "bv", "bo"}) add(p + "_context_" + s, {1, d});
+      norm(p + "_context_Wo_ln");
+      const auto ffn_w = static_cast<std::int64_t>(dim * 2);
+      add(p + "_ffn_W1", {d, ffn_w});
+      add(p + "_ffn_b1", {1, ffn_w});
+      add(p + "_ffn_W2", {ffn_w, d});
+      add(p + "_ffn_b2", {1, d});
+      norm(p + "_ffn_ffn_ln");
+    }
+  }
+};
+
+void reference_encode(const FullModelFixture& f,
+                      const std::map<std::string, Owned>& w,
+                      const std::vector<std::int64_t>& seq,
+                      std::vector<std::vector<double>>& out_keys,
+                      std::vector<std::vector<double>>& out_vals) {
+  const std::size_t dim = f.enc_cfg.dim;
+  const std::size_t heads = f.enc_cfg.heads;
+  const std::size_t head_dim = dim / heads;
+  const std::size_t len = seq.size();
+  const auto& emb = w.count("Wemb") ? w.at("Wemb") : w.at("encoder_Wemb");
+  const double emb_scale = std::sqrt(static_cast<double>(dim));
+  const double attn_scale = 1.0 / std::sqrt(static_cast<double>(head_dim));
+  const std::size_t half = dim / 2;
+  const double pi = std::acos(-1.0);
+  std::vector<double> freq(dim), offset(dim);
+  for (std::size_t i = 0; i < dim; ++i) {
+    freq[i] = std::pow(1e-4, static_cast<double>(i % half) / (half - 1));
+    offset[i] = static_cast<double>(i / half) * pi / 2.0;
+  }
+
+  std::vector<double> x(len * dim);
+  for (std::size_t t = 0; t < len; ++t) {
+    const auto tok = static_cast<std::size_t>(seq[t]);
+    for (std::size_t d = 0; d < dim; ++d)
+      x[t * dim + d] = static_cast<double>(emb.data[tok * dim + d]) * emb_scale +
+                       std::sin(static_cast<double>(t) * freq[d] + offset[d]);
+  }
+
+  const auto lin = [&](const std::vector<double>& in, std::size_t rows,
+                       const std::string& wn, const std::string& bn) {
+    const auto& wm = w.at(wn);
+    const auto& bv = w.at(bn);
+    const std::size_t in_d = static_cast<std::size_t>(wm.shape[0]);
+    const std::size_t out_d = static_cast<std::size_t>(wm.shape[1]);
+    std::vector<double> y(rows * out_d, 0.0);
+    for (std::size_t r = 0; r < rows; ++r) {
+      for (std::size_t c = 0; c < out_d; ++c) {
+        double s = 0.0;
+        for (std::size_t k = 0; k < in_d; ++k) s += in[r * in_d + k] * wm.data[k * out_d + c];
+        y[r * out_d + c] = s + bv.data[c];
+      }
+    }
+    return y;
+  };
+  const auto ln = [&](std::vector<double>& a, const std::string& p) {
+    const auto& sc = w.at(p + "_scale").data;
+    const auto& bi = w.at(p + "_bias").data;
+    for (std::size_t r = 0; r < len; ++r) {
+      double mean = 0.0;
+      for (std::size_t d = 0; d < dim; ++d) mean += a[r * dim + d];
+      mean /= static_cast<double>(dim);
+      double var = 0.0;
+      for (std::size_t d = 0; d < dim; ++d) {
+        const double diff = a[r * dim + d] - mean;
+        var += diff * diff;
+      }
+      var /= static_cast<double>(dim);
+      const double inv = 1.0 / std::sqrt(var + 1e-6);
+      for (std::size_t d = 0; d < dim; ++d)
+        a[r * dim + d] = (a[r * dim + d] - mean) * inv * sc[d] + bi[d];
+    }
+  };
+
+  for (std::size_t l = 1; l <= f.enc_cfg.enc_depth; ++l) {
+    const auto p = "encoder_l" + std::to_string(l);
+    const auto q = lin(x, len, p + "_self_Wq", p + "_self_bq");
+    const auto k = lin(x, len, p + "_self_Wk", p + "_self_bk");
+    const auto v = lin(x, len, p + "_self_Wv", p + "_self_bv");
+    std::vector<double> attn(len * dim, 0.0);
+    for (std::size_t h = 0; h < heads; ++h) {
+      for (std::size_t qi = 0; qi < len; ++qi) {
+        std::vector<double> sc(len);
+        double mx = -1e30;
+        for (std::size_t ki = 0; ki < len; ++ki) {
+          double dot = 0.0;
+          for (std::size_t d = 0; d < head_dim; ++d)
+            dot += q[qi * dim + h * head_dim + d] * k[ki * dim + h * head_dim + d];
+          sc[ki] = dot * attn_scale;
+          mx = std::max(mx, sc[ki]);
+        }
+        double tot = 0.0;
+        for (std::size_t ki = 0; ki < len; ++ki) {
+          sc[ki] = std::exp(sc[ki] - mx);
+          tot += sc[ki];
+        }
+        for (std::size_t ki = 0; ki < len; ++ki) sc[ki] /= tot;
+        for (std::size_t d = 0; d < head_dim; ++d) {
+          double s = 0.0;
+          for (std::size_t ki = 0; ki < len; ++ki)
+            s += sc[ki] * v[ki * dim + h * head_dim + d];
+          attn[qi * dim + h * head_dim + d] = s;
+        }
+      }
+    }
+    const auto o = lin(attn, len, p + "_self_Wo", p + "_self_bo");
+    for (std::size_t i = 0; i < x.size(); ++i) x[i] += o[i];
+    ln(x, p + "_self_Wo_ln");
+
+    auto h1 = lin(x, len, p + "_ffn_W1", p + "_ffn_b1");
+    for (double& val : h1) val = std::max(0.0, val);
+    const auto h2 = lin(h1, len, p + "_ffn_W2", p + "_ffn_b2");
+    for (std::size_t i = 0; i < x.size(); ++i) x[i] += h2[i];
+    ln(x, p + "_ffn_ffn_ln");
+  }
+
+  out_keys.resize(f.enc_cfg.dec_depth);
+  out_vals.resize(f.enc_cfg.dec_depth);
+  for (std::size_t dl = 1; dl <= f.enc_cfg.dec_depth; ++dl) {
+    const auto p = "decoder_l" + std::to_string(dl) + "_context_";
+    const auto k = lin(x, len, p + "Wk", p + "bk");
+    const auto v = lin(x, len, p + "Wv", p + "bv");
+    auto& kt = out_keys[dl - 1];
+    auto& vt = out_vals[dl - 1];
+    kt.resize(len * dim);
+    vt.resize(len * dim);
+    for (std::size_t h = 0; h < heads; ++h) {
+      for (std::size_t s = 0; s < len; ++s) {
+        for (std::size_t d = 0; d < head_dim; ++d) {
+          kt[(h * head_dim + d) * len + s] = k[s * dim + h * head_dim + d];
+          vt[(h * len + s) * head_dim + d] = v[s * dim + h * head_dim + d];
+        }
+      }
+    }
+  }
+}
+
+void encoder_and_packed_batch_e2e() {
+  // 1. Verify scalar Encoder exactness vs double reference (including seq > 512 and tied=false).
+  {
+    FullModelFixture f(8, 2, 2, 2, 16, false);
+    std::map<std::string, Owned> fp_only, deq;
+    std::map<std::string, OwnedInt8> i8_map;
+    quantize_fixture_weights(f.weights, fp_only, i8_map, deq);
+    std::vector<NamedTensor> fp_vec;
+    for (const auto& [n, t] : fp_only) fp_vec.push_back({n, t.view()});
+    std::vector<NamedInt8Tensor> i8_vec;
+    for (const auto& [n, t] : i8_map) i8_vec.push_back({n, t.view()});
+
+    Encoder enc(f.enc_cfg, fp_vec, i8_vec);
+    CHECK(!enc.has_native_fast());
+    std::vector<std::int64_t> seq0 = {2, 5, 11};
+    std::vector<std::int64_t> seq1(520);
+    for (std::size_t i = 0; i < seq1.size(); ++i) seq1[i] = static_cast<std::int64_t>(i % 16);
+    const std::int64_t* ptrs[2] = {seq0.data(), seq1.data()};
+    const std::size_t lens[2] = {seq0.size(), seq1.size()};
+    EncodedBatch eb;
+    enc.encodeBatch(ptrs, lens, 2, eb, 4);
+    CHECK(eb.batch_size() == 2 && eb.dec_depth() == 2);
+
+    for (std::size_t b = 0; b < 2; ++b) {
+      std::vector<std::vector<double>> exp_k, exp_v;
+      reference_encode(f, deq, b == 0 ? seq0 : seq1, exp_k, exp_v);
+      for (std::size_t dl = 0; dl < f.enc_cfg.dec_depth; ++dl) {
+        const auto kv = eb.key_view(b, dl);
+        const auto vv = eb.value_view(b, dl);
+        for (std::size_t i = 0; i < kv.size; ++i)
+          CHECK(std::abs(kv.data[i] - exp_k[dl][i]) < 5e-4);
+        for (std::size_t i = 0; i < vv.size; ++i)
+          CHECK(std::abs(vv.data[i] - exp_v[dl][i]) < 5e-4);
+      }
+    }
+
+    // Invalid batch inputs rejected and EncodedBatch cleared cleanly.
+    const std::size_t zero_len[1] = {0};
+    rejects([&] { enc.encodeBatch(ptrs, zero_len, 1, eb); });
+    CHECK(eb.batch_size() == 0);
+    std::vector<std::int64_t> bad_tok = {99};
+    const std::int64_t* bad_ptr[1] = {bad_tok.data()};
+    const std::size_t one_len[1] = {1};
+    rejects([&] { enc.encodeBatch(bad_ptr, one_len, 1, eb); });
+    CHECK(eb.batch_size() == 0);
+  }
+
+  // 2. Verify dim=64 packed INT8 Encoder + Decoder::decodeBatch (c=1 vs c=6, Fast + Normal).
+  {
+    FullModelFixture f(64, 8, 2, 2, 32, true);
+    std::map<std::string, Owned> fp_only, deq;
+    std::map<std::string, OwnedInt8> i8_map;
+    quantize_fixture_weights(f.weights, fp_only, i8_map, deq);
+    std::vector<NamedTensor> fp_vec;
+    for (const auto& [n, t] : fp_only) fp_vec.push_back({n, t.view()});
+    std::vector<NamedInt8Tensor> i8_vec;
+    for (const auto& [n, t] : i8_map) i8_vec.push_back({n, t.view()});
+
+    Encoder enc(f.enc_cfg, fp_vec, i8_vec);
+    Decoder dec(f.dec_cfg, fp_vec, i8_vec);
+#ifdef MTRAN_SSRU_PACKED
+    CHECK(enc.has_native_fast());
+    CHECK(dec.has_native_fast());
+#endif
+
+    std::vector<std::vector<std::int64_t>> inputs = {
+        {3, 9, 15},
+        {4, 12, 2, 20, 7},
+        {1},
+        {8, 19, 25, 4},
+        {6, 14},
+        {30, 5, 11, 17, 22, 2},
+    };
+    const std::int64_t* ptrs[6];
+    std::size_t lens[6];
+    for (std::size_t b = 0; b < 6; ++b) {
+      ptrs[b] = inputs[b].data();
+      lens[b] = inputs[b].size();
+    }
+
+    // Encode + decode B=6 at once vs B=1 one-by-one (Shortlist Fast mode).
+    EncodedBatch eb_batch;
+    enc.encodeBatch(ptrs, lens, 6, eb_batch, 4);
+    std::vector<Request> reqs_batch;
+    eb_batch.populate_requests(reqs_batch);
+    std::vector<std::vector<std::int64_t>> cands = {
+        {2, 5, 10, 0},
+        {1, 3, 7, 15, 22, 0},
+        {0},
+        {4, 8, 12, 16, 20},
+        {2, 10, 18, 26, 0},
+        {3, 9, 27, 0},
+    };
+    for (std::size_t b = 0; b < 6; ++b) {
+      reqs_batch[b].eos_id = 0;
+      reqs_batch[b].candidate_ids = cands[b].data();
+      reqs_batch[b].candidate_count = cands[b].size();
+    }
+    BatchWorkspace bw_batch, bw_single;
+    dec.decodeBatch(reqs_batch.data(), reqs_batch.size(), bw_batch, 4, 3);
+    CHECK(bw_batch.results().size() == 6);
+
+    for (std::size_t b = 0; b < 6; ++b) {
+      EncodedBatch eb1;
+      enc.encodeBatch(&ptrs[b], &lens[b], 1, eb1, 1);
+      std::vector<Request> r1;
+      eb1.populate_requests(r1);
+      r1[0].eos_id = 0;
+      r1[0].candidate_ids = cands[b].data();
+      r1[0].candidate_count = cands[b].size();
+      dec.decodeBatch(r1.data(), 1, bw_single, 1, 1);
+      CHECK(bw_batch.results()[b].tokens == bw_single.results()[0].tokens);
+      CHECK(bw_batch.results()[b].ended_with_eos == bw_single.results()[0].ended_with_eos);
+    }
+
+    // Normal mode (candidate_count = 0 -> FullVocabQ4::argMaxBatch).
+    for (std::size_t b = 0; b < 6; ++b) {
+      reqs_batch[b].candidate_ids = nullptr;
+      reqs_batch[b].candidate_count = 0;
+    }
+    dec.decodeBatch(reqs_batch.data(), reqs_batch.size(), bw_batch, 4, 3);
+    for (std::size_t b = 0; b < 6; ++b) {
+      EncodedBatch eb1;
+      enc.encodeBatch(&ptrs[b], &lens[b], 1, eb1, 1);
+      std::vector<Request> r1;
+      eb1.populate_requests(r1);
+      r1[0].eos_id = 0;
+      r1[0].candidate_ids = nullptr;
+      r1[0].candidate_count = 0;
+      dec.decodeBatch(r1.data(), 1, bw_single, 1, 1);
+      CHECK(bw_batch.results()[b].tokens == bw_single.results()[0].tokens);
+      CHECK(bw_batch.results()[b].ended_with_eos == bw_single.results()[0].ended_with_eos);
+    }
+  }
+}
+#endif
+
 }  // namespace
 
 int main() {
@@ -724,7 +1220,11 @@ int main() {
     math_callbacks();
     bias_callbacks();
     shortlist_callbacks();
-    std::cout << "PASS: scalar stage reference, EOS/ties, invalid inputs, failure recovery, allocations, concurrency, math callbacks, bias callbacks\n";
+    decode_batch_and_int8_weights();
+#if defined(MTRAN_SSRU_PACKED) || defined(MTRAN_TEST_ENCODER)
+    encoder_and_packed_batch_e2e();
+#endif
+    std::cout << "PASS: scalar stage reference, EOS/ties, invalid inputs, failure recovery, allocations, concurrency, math callbacks, bias callbacks, batch/INT8 decode\n";
   } catch (const std::exception& error) {
     std::cerr << "FAIL: " << error.what() << '\n';
     return 1;
