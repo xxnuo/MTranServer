@@ -75,4 +75,10 @@ class TeamBarrier {
   alignas(64) std::atomic<bool> cancelled_{false};
 };
 
+namespace detail {
+// Parses Linux cgroup v2 cpu.max ("<quota> <period>" or "max <period>") into a
+// rounded-up CPU count, or returns 0 when unlimited / invalid.
+std::size_t parseCgroupCpuMax(const char* text) noexcept;
+}  // namespace detail
+
 }  // namespace mtran::ssru

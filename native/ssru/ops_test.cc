@@ -273,6 +273,18 @@ void testPcorePool() {
   const std::size_t plogical = pool.pcoreLogicalCount();
   assert(pcores >= 1);
   assert(plogical >= pcores);
+  assert(mtran::ssru::PcorePool::recommendedWorkerCount() >= 1);
+
+  assert(mtran::ssru::detail::parseCgroupCpuMax("400000 100000\n") == 4);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("50000 100000\n") == 1);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("150000 100000\n") == 2);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("max 100000\n") == 0);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("max\n") == 0);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("-1 100000") == 0);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("400000 0") == 0);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("0 100000") == 0);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("") == 0);
+  assert(mtran::ssru::detail::parseCgroupCpuMax("bad") == 0);
 
   for (std::size_t req : {std::size_t{1}, std::size_t{2}, std::size_t{4}, std::size_t{6}, std::size_t{32}}) {
     std::atomic<std::size_t> count{0};

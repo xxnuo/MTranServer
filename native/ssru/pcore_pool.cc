@@ -2,12 +2,14 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cerrno>
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -55,6 +57,26 @@ inline void cpuRelax() noexcept {
 #endif
 }
 
+unsigned long long parsePositiveUll(const char* text, const char** next_out) noexcept {
+  if (!text) return 0;
+  const char* p = text;
+  while (*p == ' ' || *p == '\t') ++p;
+  if (*p < '0' || *p > '9') return 0;
+  errno = 0;
+  char* end = nullptr;
+  const unsigned long long val = std::strtoull(p, &end, 10);
+  if (end == p || errno == ERANGE || val == 0) return 0;
+  if (next_out) *next_out = end;
+  return val;
+}
+
+std::size_t ceilDivQuota(unsigned long long quota, unsigned long long period) noexcept {
+  if (quota == 0 || period == 0) return 0;
+  const unsigned long long q = quota / period + (quota % period != 0 ? 1ULL : 0ULL);
+  const unsigned long long max_sz = static_cast<unsigned long long>(std::numeric_limits<std::size_t>::max());
+  return static_cast<std::size_t>(std::min(q, max_sz));
+}
+
 #if defined(__linux__)
 
 bool readFileLine(const char* path, char* buf, std::size_t buf_size) noexcept {
@@ -96,6 +118,7 @@ struct LinuxTopology {
   std::vector<int> ecore_cpus;
   std::vector<int> worker_cpus;
   std::size_t physical_core_count = 0;
+  std::size_t allowed_cpu_count = 0;
 };
 
 LinuxTopology detectLinuxTopology() {
@@ -215,6 +238,7 @@ LinuxTopology detectLinuxTopology() {
     }
   }
   topo.physical_core_count = topo.worker_cpus.size();
+  topo.allowed_cpu_count = all_allowed_cpus.size();
   for (const auto& g : topo.physical_pcore_groups) {
     for (std::size_t i = 1; i < g.size(); ++i) {
       topo.pcore_ht_siblings.push_back(g[i]);
@@ -225,6 +249,94 @@ LinuxTopology detectLinuxTopology() {
     for (std::size_t i = 1; i < g.size(); ++i) topo.worker_cpus.push_back(g[i]);
   }
   return topo;
+}
+
+std::size_t parseCgroupV1Quota(const char* quota_text, const char* period_text) noexcept {
+  const unsigned long long quota = parsePositiveUll(quota_text, nullptr);
+  const unsigned long long period = parsePositiveUll(period_text, nullptr);
+  return ceilDivQuota(quota, period);
+}
+
+bool hasCgroupController(const std::string& controllers, const char* target) noexcept {
+  const std::size_t tlen = std::strlen(target);
+  std::size_t start = 0;
+  while (start <= controllers.size()) {
+    const std::size_t comma = controllers.find(',', start);
+    const std::size_t len = (comma == std::string::npos) ? (controllers.size() - start) : (comma - start);
+    if (len == tlen && controllers.compare(start, len, target) == 0) return true;
+    if (comma == std::string::npos) break;
+    start = comma + 1;
+  }
+  return false;
+}
+
+std::size_t detectLinuxCgroupCpuQuota() {
+  std::size_t best = 0;
+  auto update_min = [&](std::size_t q) noexcept {
+    if (q > 0 && (best == 0 || q < best)) best = q;
+  };
+
+  char buf[256];
+  auto check_v2_dir = [&](const std::string& dir) {
+    const std::string path = dir + "/cpu.max";
+    if (readFileLine(path.c_str(), buf, sizeof(buf))) {
+      update_min(detail::parseCgroupCpuMax(buf));
+    }
+  };
+  auto check_v1_dir = [&](const std::string& dir) {
+    char qbuf[128], pbuf[128];
+    const std::string qpath = dir + "/cpu.cfs_quota_us";
+    const std::string ppath = dir + "/cpu.cfs_period_us";
+    if (readFileLine(qpath.c_str(), qbuf, sizeof(qbuf)) &&
+        readFileLine(ppath.c_str(), pbuf, sizeof(pbuf))) {
+      update_min(parseCgroupV1Quota(qbuf, pbuf));
+    }
+  };
+  auto walk_hierarchy = [&](const std::string& base, const std::string& rel, auto&& check_dir) {
+    std::string cur = (rel == "/") ? std::string() : rel;
+    while (!cur.empty() && cur.back() == '/') cur.pop_back();
+    for (;;) {
+      check_dir(base + cur);
+      if (cur.empty()) break;
+      const std::size_t slash = cur.rfind('/');
+      if (slash == std::string::npos) {
+        cur.clear();
+      } else {
+        cur.resize(slash);
+      }
+    }
+  };
+
+  if (std::FILE* f = std::fopen("/proc/self/cgroup", "r")) {
+    char line[1024];
+    while (std::fgets(line, sizeof(line), f)) {
+      std::size_t len = std::strlen(line);
+      while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) line[--len] = '\0';
+      const std::string s(line, len);
+      const std::size_t c1 = s.find(':');
+      if (c1 == std::string::npos) continue;
+      const std::size_t c2 = s.find(':', c1 + 1);
+      if (c2 == std::string::npos) continue;
+      const std::string controllers = s.substr(c1 + 1, c2 - c1 - 1);
+      std::string rel = s.substr(c2 + 1);
+      if (!rel.empty() && rel[0] != '/') rel.insert(rel.begin(), '/');
+      if (controllers.empty()) {
+        walk_hierarchy("/sys/fs/cgroup", rel, check_v2_dir);
+      } else if (hasCgroupController(controllers, "cpu")) {
+        walk_hierarchy("/sys/fs/cgroup/" + controllers, rel, check_v1_dir);
+        if (controllers != "cpu") walk_hierarchy("/sys/fs/cgroup/cpu", rel, check_v1_dir);
+        if (controllers != "cpu,cpuacct") walk_hierarchy("/sys/fs/cgroup/cpu,cpuacct", rel, check_v1_dir);
+      }
+    }
+    std::fclose(f);
+  }
+
+  if (best == 0) {
+    check_v2_dir("/sys/fs/cgroup");
+    check_v1_dir("/sys/fs/cgroup/cpu");
+    check_v1_dir("/sys/fs/cgroup/cpu,cpuacct");
+  }
+  return best;
 }
 
 void pinMask(const std::vector<int>& cpus) noexcept {
@@ -257,6 +369,25 @@ std::size_t detectApplePcores() noexcept {
 
 }  // namespace
 
+namespace detail {
+
+std::size_t parseCgroupCpuMax(const char* text) noexcept {
+  if (!text) return 0;
+  const char* p = text;
+  while (*p == ' ' || *p == '\t') ++p;
+  if (std::strncmp(p, "max", 3) == 0 &&
+      (p[3] == '\0' || p[3] == ' ' || p[3] == '\t' || p[3] == '\n' || p[3] == '\r')) {
+    return 0;
+  }
+  const char* next = nullptr;
+  const unsigned long long quota = parsePositiveUll(p, &next);
+  if (quota == 0 || !next) return 0;
+  const unsigned long long period = parsePositiveUll(next, nullptr);
+  return ceilDivQuota(quota, period);
+}
+
+}  // namespace detail
+
 struct PcorePool::Impl {
   struct alignas(64) WorkerState {
     std::atomic<std::uint64_t> target_epoch{0};
@@ -267,6 +398,8 @@ struct PcorePool::Impl {
   std::size_t ecore_count = 0;
 #if defined(__linux__)
   LinuxTopology topo;
+  std::size_t cgroup_cpu_quota = 0;
+  bool pin_individual_cpus = true;
 #endif
   std::atomic<bool> team_busy{false};
   std::mutex mu;
@@ -285,6 +418,7 @@ struct PcorePool::Impl {
   Impl() {
 #if defined(__linux__)
     topo = detectLinuxTopology();
+    cgroup_cpu_quota = detectLinuxCgroupCpuQuota();
     if (!topo.physical_pcore_groups.empty()) {
       pcore_count = topo.physical_pcore_groups.size();
       std::size_t logical = 0;
@@ -295,6 +429,15 @@ struct PcorePool::Impl {
       pcore_logical_count = pcore_count;
     }
     ecore_count = topo.ecore_cpus.size();
+    if (cgroup_cpu_quota > 0) {
+      pcore_count = std::min(pcore_count, cgroup_cpu_quota);
+      pcore_logical_count = std::min(pcore_logical_count, cgroup_cpu_quota);
+      const std::size_t ecore_budget =
+          cgroup_cpu_quota > pcore_count ? (cgroup_cpu_quota - pcore_count) : 0;
+      ecore_count = std::min(ecore_count, ecore_budget);
+      pin_individual_cpus =
+          (topo.allowed_cpu_count == 0) || (cgroup_cpu_quota >= topo.allowed_cpu_count);
+    }
 #elif defined(__APPLE__)
     pcore_count = detectApplePcores();
     pcore_logical_count = pcore_count;
@@ -312,7 +455,9 @@ struct PcorePool::Impl {
     for (std::size_t w = 0; w < nworkers; ++w) {
       workers.emplace_back([this, w] {
 #if defined(__linux__)
-        if (w + 1 < topo.physical_pcore_groups.size()) {
+        if (!pin_individual_cpus) {
+          if (!topo.all_pcore_cpus.empty()) pinMask(topo.all_pcore_cpus);
+        } else if (w + 1 < topo.physical_pcore_groups.size()) {
           if (!topo.physical_pcore_groups[w + 1].empty()) {
             pinMask({topo.physical_pcore_groups[w + 1][0]});
           }
@@ -406,11 +551,21 @@ std::size_t PcorePool::ecoreCount() const noexcept {
 std::size_t PcorePool::recommendedWorkerCount() noexcept {
   const std::size_t hw = std::max<std::size_t>(1, std::thread::hardware_concurrency());
 #if defined(__linux__)
-  const auto& topo = instance().impl_->topo;
-  if (topo.physical_core_count > 0) return std::min<std::size_t>({12, topo.physical_core_count, hw});
-  if (!topo.worker_cpus.empty()) return std::min<std::size_t>({12, topo.worker_cpus.size(), hw});
-#endif
+  const auto& inst = *instance().impl_;
+  const auto& topo = inst.topo;
+  std::size_t rec = hw;
+  if (topo.physical_core_count > 0) {
+    rec = std::min<std::size_t>({12, topo.physical_core_count, hw});
+  } else if (!topo.worker_cpus.empty()) {
+    rec = std::min<std::size_t>({12, topo.worker_cpus.size(), hw});
+  } else {
+    rec = std::min<std::size_t>(12, hw);
+  }
+  if (inst.cgroup_cpu_quota > 0) rec = std::min(rec, inst.cgroup_cpu_quota);
+  return std::max<std::size_t>(1, rec);
+#else
   return std::min<std::size_t>(12, hw);
+#endif
 }
 
 void PcorePool::pinCurrentThreadToPcores() noexcept {
@@ -426,8 +581,11 @@ void PcorePool::pinCurrentThreadToPcores() noexcept {
 
 void PcorePool::pinWorkerThread(std::size_t worker_idx) noexcept {
 #if defined(__linux__)
-  const auto& wcpus = instance().impl_->topo.worker_cpus;
-  if (!wcpus.empty()) {
+  const auto& inst = *instance().impl_;
+  const auto& wcpus = inst.topo.worker_cpus;
+  if (!inst.pin_individual_cpus) {
+    if (!inst.topo.all_pcore_cpus.empty()) pinMask(inst.topo.all_pcore_cpus);
+  } else if (!wcpus.empty()) {
     pinMask({wcpus[worker_idx % wcpus.size()]});
   }
 #elif defined(__APPLE__)
@@ -443,9 +601,14 @@ void PcorePool::pinWorkerThread(std::size_t worker_idx) noexcept {
 
 void PcorePool::pinEcoreThread(std::size_t ecore_idx) noexcept {
 #if defined(__linux__)
-  const auto& ecpus = instance().impl_->topo.ecore_cpus;
-  if (!ecpus.empty()) {
-    pinMask({ecpus[ecore_idx % ecpus.size()]});
+  const auto& inst = *instance().impl_;
+  const auto& ecpus = inst.topo.ecore_cpus;
+  if (inst.ecore_count > 0 && !ecpus.empty()) {
+    if (inst.pin_individual_cpus) {
+      pinMask({ecpus[ecore_idx % ecpus.size()]});
+    } else {
+      pinMask(ecpus);
+    }
   }
 #else
   (void)ecore_idx;
