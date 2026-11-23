@@ -2938,9 +2938,10 @@ struct FullVocabQ4::Impl {
     pool.parallelFor(nthreads, [&](std::size_t tid, std::size_t nt) {
       struct CancelGuard {
         mtran::ssru::TeamBarrier& b;
+        bool active = false;
         bool done = false;
-        ~CancelGuard() { if (!done) b.cancel(); }
-      } cancel_guard{barrier};
+        ~CancelGuard() { if (!done && active) b.cancel(); }
+      } cancel_guard{barrier, nt > 1};
       argMaxBatchInTeam(bs, x_rows, rows, x_stride, out_tokens,
                         (nt > 1) ? &barrier : nullptr, tid, nt);
       cancel_guard.done = true;

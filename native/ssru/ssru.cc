@@ -1045,11 +1045,13 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
         pool.parallelFor(step_threads, [&](std::size_t tid, std::size_t nt) {
           struct BarrierCancelGuard {
             TeamBarrier& b;
+            bool active = false;
             bool done = false;
             ~BarrierCancelGuard() {
-              if (!done) b.cancel();
+              if (!done && active) b.cancel();
             }
-          } cancel_guard{barrier};
+          } cancel_guard{barrier, nt > 1};
+          const auto syncBarrier = [&]() -> bool { return nt <= 1 || barrier.arriveAndWait(); };
 
           auto shardDecMat = [&](const PackedDecMat& pm, float* dst, bool relu) -> std::size_t {
             const std::size_t chunks = pm.cols / 32;
@@ -1093,7 +1095,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
             packed::quantizeLinearU8(dst, 1, dim, s.a_q.data() + m * dim,
                                      s.a_scales[m], s.a_zps[m]);
           }
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
 
           // 2. Decoder layers.
           for (std::size_t li = 0; li < depth; ++li) {
@@ -1128,7 +1130,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                 }
               }
             }
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
 
             // Fused ssruGateUpdate + instanceNormAffine + quantizeLinearU8FromMinMax per slot.
             float* cell_layer = s.cells.data() + li * cap_dim;
@@ -1142,7 +1144,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                   xm, 1, dim, dim, &s.norm_mins[m], &s.norm_maxs[m],
                   s.a_q.data() + m * dim, dim, &s.a_scales[m], &s.a_zps[m]);
             }
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
 
             // 2b. Cross-attention query -> crossAttention -> output -> residual + norm.
             const PackedDecMat& query_mat = use_step0_all ? pl.query_step0 : pl.query;
@@ -1156,7 +1158,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                 }
               }
             }
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
 
             if (active == 1 && max_active_src_len < 32) {
               if (tid == 0) {
@@ -1178,16 +1180,16 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                                     req.values[li].data, heads, head_dim, req.source_length,
                                     t_scores, s.context.data() + m * dim, h, h + 1);
               }
-              if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+              if (!syncBarrier()) { cancel_guard.done = true; return; }
               for (std::size_t m = tid; m < active; m += nt) {
                 packed::quantizeLinearU8(s.context.data() + m * dim, 1, dim, s.a_q.data() + m * dim,
                                          s.a_scales[m], s.a_zps[m]);
               }
             }
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
 
             shardDecMat(pl.attn, s.output.data(), false);
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
 
             for (std::size_t m = tid; m < active; m += nt) {
               float* xm = s.x.data() + m * dim;
@@ -1199,7 +1201,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                   xm, 1, dim, dim, &s.norm_mins[m], &s.norm_maxs[m],
                   s.a_q.data() + m * dim, dim, &s.a_scales[m], &s.a_zps[m]);
             }
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
 
             // 2c. FFN (ReLU fused on hidden layers) + residual + norm.
             const float* ffn_in = s.x.data();
@@ -1225,12 +1227,12 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                                              s.a_q.data() + m * cols, s.a_scales[m], s.a_zps[m]);
                   }
                 }
-                if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+                if (!syncBarrier()) { cancel_guard.done = true; return; }
               }
               prev_team = shardDecMat(pl.ffn[j], ffn_out, has_relu);
               prev_relu_minmax = (has_relu && pl.ffn[j].weight != nullptr);
               ffn_in = ffn_out;
-              if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+              if (!syncBarrier()) { cancel_guard.done = true; return; }
             }
 
             const bool is_last_layer = (li + 1 == depth);
@@ -1249,7 +1251,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
               }
             }
             if (!is_last_layer || any_short) {
-              if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+              if (!syncBarrier()) { cancel_guard.done = true; return; }
             }
           }
 
@@ -1270,7 +1272,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                     throw std::runtime_error("SSRU invalid shortlist index");
                   s.shard_idxs[tid] = cb + best_local;
                 }
-                if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+                if (!syncBarrier()) { cancel_guard.done = true; return; }
                 if (tid == 0) {
                   std::size_t best_t = 0;
                   for (std::size_t t = 1; t < st; ++t) {

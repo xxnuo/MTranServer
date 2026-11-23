@@ -644,11 +644,13 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
       pool.parallelFor(team_threads, [&](std::size_t tid, std::size_t nt) {
         struct BarrierCancelGuard {
           TeamBarrier& b;
+          bool active = false;
           bool done = false;
           ~BarrierCancelGuard() {
-            if (!done) b.cancel();
+            if (!done && active) b.cancel();
           }
-        } cancel_guard{barrier};
+        } cancel_guard{barrier, nt > 1};
+        const auto syncBarrier = [&]() -> bool { return nt <= 1 || barrier.arriveAndWait(); };
 
         const std::size_t tb = (total_tokens * tid) / nt;
         const std::size_t te = (total_tokens * (tid + 1)) / nt;
@@ -734,12 +736,12 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
           }
           finite(s.x.data() + tb * dim, (te - tb) * dim, "encoder embedding");
         }
-        if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+        if (!syncBarrier()) { cancel_guard.done = true; return; }
 
         for (const auto& layer : native_->layers) {
           // 1. Single shared quantization of x -> Q, K, V in one parallel slice.
           quantizeX(s.x.data(), dim);
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
 
           const PackedLinear* qkv_mats[3] = {&layer.q, &layer.k, &layer.v};
           float* qkv_outs[3] = {s.q.data(), s.k.data(), s.v.data()};
@@ -756,7 +758,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                                (lb - mb) * 32, (le - mb) * 32);
             }
           }
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
 
           // 2. Per-sentence ragged self-attention across (batch, head) slices.
           float* t_scores = s.scores.data() + tid * scratch_stride;
@@ -768,15 +770,15 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                                lengths[b], heads, head_dim, t_scores,
                                s.attn.data() + off, h, h + 1);
           }
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
 
           // 3. Wo + residual + instanceNormAffine.
           quantizeX(s.attn.data(), dim);
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
           shardCols(layer.o, s.proj.data(), false);
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
           normAddSlice(s.proj.data(), layer.self_ln_scale, layer.self_ln_bias);
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
 
           // 4. FFN + residual + instanceNormAffine.
           const float* ffn_in = s.x.data();
@@ -784,18 +786,18 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
             const bool has_relu = (j + 1 < layer.ffn.size());
             float* ffn_out = has_relu ? (j % 2 ? s.ffn_b.data() : s.ffn_a.data()) : s.proj.data();
             quantizeX(ffn_in, layer.ffn[j].rows);
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
             shardCols(layer.ffn[j], ffn_out, has_relu);
-            if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+            if (!syncBarrier()) { cancel_guard.done = true; return; }
             ffn_in = ffn_out;
           }
           normAddSlice(ffn_in, layer.ffn_ln_scale, layer.ffn_ln_bias);
-          if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+          if (!syncBarrier()) { cancel_guard.done = true; return; }
         }
 
         // 5. Fused decoder K/V projections sharing one quantization of encoder output.
         quantizeX(s.x.data(), dim);
-        if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+        if (!syncBarrier()) { cancel_guard.done = true; return; }
 
         const std::size_t kgb = (total_kv_chunks * tid) / nt;
         const std::size_t kge = (total_kv_chunks * (tid + 1)) / nt;
@@ -810,7 +812,7 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
                              nullptr, false, (lb - mb) * 32, (le - mb) * 32);
           }
         }
-        if (!barrier.arriveAndWait()) { cancel_guard.done = true; return; }
+        if (!syncBarrier()) { cancel_guard.done = true; return; }
 
         // Check finite & direct-transpose into decoder K/V slices (zero extra barrier).
         for (std::size_t idx = tid; idx < total_scatter; idx += nt) {

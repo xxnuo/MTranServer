@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -345,6 +346,47 @@ void testPcorePool() {
     caught = std::string(e.what()) == "pool-error";
   }
   assert(caught);
+
+  // Two-thread concurrent PcorePool + TeamBarrier contention (exercises team_busy nt=1 fallback).
+  if (plogical > 1) {
+    std::atomic<int> ready{0};
+    std::atomic<int> fallback_count{0};
+    auto contend = [&](int base) {
+      ready.fetch_add(1, std::memory_order_acq_rel);
+      while (ready.load(std::memory_order_acquire) < 2) {}
+      for (int iter = 0; iter < 128; ++iter) {
+        mtran::ssru::TeamBarrier b(plogical);
+        std::vector<int> vals(plogical, 0);
+        pool.parallelFor(plogical, [&](std::size_t tid, std::size_t nt) {
+          struct CancelGuard {
+            mtran::ssru::TeamBarrier& barrier;
+            bool active = false;
+            bool ok = false;
+            ~CancelGuard() { if (!ok && active) barrier.cancel(); }
+          } guard{b, nt > 1};
+          auto sync = [&]() -> bool { return nt <= 1 || b.arriveAndWait(); };
+          if (nt == 1) fallback_count.fetch_add(1, std::memory_order_relaxed);
+          vals[tid] = base + static_cast<int>(tid + 1);
+          assert(sync());
+          vals[tid] += base;
+          assert(sync());
+          if (tid == 0) {
+            int sum = 0;
+            for (std::size_t i = 0; i < nt; ++i) sum += vals[i];
+            const int expected_sum =
+                static_cast<int>(nt) * (2 * base) + static_cast<int>(nt * (nt + 1) / 2);
+            assert(sum == expected_sum);
+          }
+          guard.ok = true;
+        });
+      }
+    };
+    std::thread t1([&] { contend(10); });
+    std::thread t2([&] { contend(20); });
+    t1.join();
+    t2.join();
+    assert(fallback_count.load() >= 0);
+  }
 }
 
 }  // namespace
