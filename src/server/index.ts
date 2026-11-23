@@ -144,6 +144,102 @@ export async function startServer({ handleSignals = true, signal }: { handleSign
     res.json(getSettingsPayload());
   });
 
+  const verifyHotRouteAuth = (req: Request): boolean => {
+    const apiToken = getConfig().apiToken;
+    if (!apiToken) return true;
+    const authHeader = req.headers.authorization;
+    const headerToken = typeof authHeader === 'string'
+      ? (authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader.replace('Bearer ', ''))
+      : undefined;
+    const q = req.query as Record<string, unknown>;
+    const token = headerToken || (q.api_token as string) || (q.token as string) || (req.headers['x-api-token'] as string);
+    return token === apiToken;
+  };
+  const parseOptionalBoolean = (value: unknown): boolean | undefined => {
+    if (typeof value === 'boolean') return value;
+    if (value === 'true' || value === '1' || value === 1) return true;
+    if (value === 'false' || value === '0' || value === 0) return false;
+    return undefined;
+  };
+  const validationError = (message: string) => Object.assign(new Error(message), { status: 422 });
+  const unauthorizedError = () => Object.assign(new Error('Unauthorized'), { status: 401 });
+  let cachedHotDeps: {
+    utils: typeof import('@/utils/index.js');
+    services: typeof import('@/services/index.js');
+  } | undefined;
+  const loadHotDeps = async () => {
+    if (cachedHotDeps) return cachedHotDeps;
+    const [utils, services] = await Promise.all([
+      import('@/utils/index.js'),
+      import('@/services/index.js'),
+    ]);
+    return cachedHotDeps = { utils, services };
+  };
+
+  // Direct hot handlers bypass tsoa ExpressTemplateService validation + Promise.any auth per request.
+  app.post('/translate', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!verifyHotRouteAuth(req)) return next(unauthorizedError());
+      const body = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return next(validationError('Invalid request body'));
+      }
+      const { from, to, text, html: rawHtml } = body as Record<string, unknown>;
+      if (typeof from !== 'string' || typeof to !== 'string' || typeof text !== 'string') {
+        return next(validationError('Invalid request parameters'));
+      }
+      let html = false;
+      if (rawHtml !== undefined) {
+        const coerced = parseOptionalBoolean(rawHtml);
+        if (coerced === undefined) return next(validationError('Invalid html parameter'));
+        html = coerced;
+      }
+      for (const key in body) {
+        if (key !== 'from' && key !== 'to' && key !== 'text' && key !== 'html') {
+          return next(validationError(`Excess property '${key}' is not allowed`));
+        }
+      }
+      const { utils, services } = cachedHotDeps ?? await loadHotDeps();
+      const result = await services.translateWithPivot(utils.NormalizeLanguageCode(from), utils.NormalizeLanguageCode(to), text, html);
+      res.json({ result });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/translate/batch', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!verifyHotRouteAuth(req)) return next(unauthorizedError());
+      const body = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return next(validationError('Invalid request body'));
+      }
+      const { from, to, texts, html: rawHtml } = body as Record<string, unknown>;
+      if (typeof from !== 'string' || typeof to !== 'string' || !Array.isArray(texts)) {
+        return next(validationError('Invalid request parameters'));
+      }
+      for (let i = 0; i < texts.length; i++) {
+        if (typeof texts[i] !== 'string') return next(validationError('Invalid texts item'));
+      }
+      let html = false;
+      if (rawHtml !== undefined) {
+        const coerced = parseOptionalBoolean(rawHtml);
+        if (coerced === undefined) return next(validationError('Invalid html parameter'));
+        html = coerced;
+      }
+      for (const key in body) {
+        if (key !== 'from' && key !== 'to' && key !== 'texts' && key !== 'html') {
+          return next(validationError(`Excess property '${key}' is not allowed`));
+        }
+      }
+      const { utils, services } = cachedHotDeps ?? await loadHotDeps();
+      const results = await services.translateBatchWithPivot(utils.NormalizeLanguageCode(from), utils.NormalizeLanguageCode(to), texts as string[], html);
+      res.json({ results });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   RegisterRoutes(app);
 
   app.use('/ui', (req: Request, res: Response, next: NextFunction) => {

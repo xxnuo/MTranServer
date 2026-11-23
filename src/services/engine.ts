@@ -17,12 +17,20 @@ interface EngineInfo {
   fromLang: string;
   toLang: string;
   timer?: NodeJS.Timeout;
+  timerTimeoutMs?: number;
+  touched?: boolean;
+  manifestPath: string;
+  manifestModelDir: string;
+  manifestCheckedAt: number;
 }
 
 const engines = new Map<string, EngineInfo>();
 const inFlightTranslations = new WeakMap<TranslationEngine, Map<string, Promise<string>>>();
 const loadingPromises = new Map<string, { lexicalShortlist: boolean; workersPerLanguage: number; promise: Promise<EngineInfo> }>();
 const manifestIdentityCache = new Map<string, { ino: bigint; size: bigint; mtimeNs: bigint; ctimeNs: bigint; identity: unknown }>();
+const tuningStringCache = new WeakMap<object, string>();
+const EMPTY_CACHE_ARGS: readonly unknown[] = [];
+const MANIFEST_CHECK_INTERVAL_MS = 2000;
 let warmupPromise: Promise<void> | undefined;
 let warmupController: AbortController | undefined;
 const zhCommaTest = /,/;
@@ -94,10 +102,22 @@ async function getOrCreateSingleEngine(
       const existingFast = engines.get(key);
       if (existingFast && existingFast.lexicalShortlist === (fastConfig.lexicalShortlist === true)
         && existingFast.workersPerLanguage === fastConfig.workersPerLanguage) {
-        const manifestPath = path.join(fastConfig.modelDir, `${fromLang}_${toLang}`, 'manifest.json');
-        if (readManifestIdentitySync(manifestPath) === existingFast.engine.identity) {
-          existingFast.lastUsed = new Date();
-          resetIdleTimer(existingFast);
+        const now = Date.now();
+        let valid = existingFast.manifestModelDir === fastConfig.modelDir
+          && now - existingFast.manifestCheckedAt < MANIFEST_CHECK_INTERVAL_MS;
+        if (!valid) {
+          const manifestPath = existingFast.manifestModelDir === fastConfig.modelDir
+            ? existingFast.manifestPath
+            : path.join(fastConfig.modelDir, `${fromLang}_${toLang}`, 'manifest.json');
+          if (readManifestIdentitySync(manifestPath) === existingFast.engine.identity) {
+            existingFast.manifestModelDir = fastConfig.modelDir;
+            existingFast.manifestPath = manifestPath;
+            existingFast.manifestCheckedAt = now;
+            valid = true;
+          }
+        }
+        if (valid) {
+          touchIdleTimer(existingFast);
           return existingFast.engine;
         }
       }
@@ -109,13 +129,16 @@ async function getOrCreateSingleEngine(
           request.lexicalShortlist = config.lexicalShortlist === true;
           request.workersPerLanguage = config.workersPerLanguage;
           const existing = engines.get(key);
+          const manifestPath = path.join(config.modelDir, `${fromLang}_${toLang}`, 'manifest.json');
           if (existing) {
             resetIdleTimer(existing);
-            const manifestPath = path.join(getConfig().modelDir, `${fromLang}_${toLang}`, 'manifest.json');
             const identity = await readFile(manifestPath, 'utf8').then(s => JSON.parse(s).identity).catch(() => null);
             if (identity === existing.engine.identity && existing.lexicalShortlist === request.lexicalShortlist
               && existing.workersPerLanguage === request.workersPerLanguage) {
               existing.lastUsed = new Date();
+              existing.manifestModelDir = config.modelDir;
+              existing.manifestPath = manifestPath;
+              existing.manifestCheckedAt = Date.now();
               resetIdleTimer(existing);
               return existing;
             }
@@ -147,6 +170,9 @@ async function getOrCreateSingleEngine(
             lastUsed: new Date(),
             fromLang,
             toLang,
+            manifestPath,
+            manifestModelDir: config.modelDir,
+            manifestCheckedAt: Date.now(),
           };
           resetIdleTimer(info);
           engines.set(key, info);
@@ -171,20 +197,45 @@ async function getOrCreateSingleEngine(
   }
 }
 
+function touchIdleTimer(info: EngineInfo) {
+  if (warmupPromise) {
+    if (info.timer) {
+      clearTimeout(info.timer);
+      info.timer = undefined;
+      info.timerTimeoutMs = undefined;
+    }
+    info.touched = false;
+    return;
+  }
+  const timeout = getConfig().workerIdleTimeout * 1000;
+  if (info.timer && info.timerTimeoutMs === timeout) {
+    info.touched = true;
+    return;
+  }
+  resetIdleTimer(info);
+}
+
 function resetIdleTimer(info: EngineInfo) {
   if (info.timer) {
     clearTimeout(info.timer);
   }
   info.timer = undefined;
+  info.timerTimeoutMs = undefined;
+  info.touched = false;
   if (warmupPromise) return;
 
   const config = getConfig();
   const timeout = config.workerIdleTimeout * 1000;
+  info.timerTimeoutMs = timeout;
 
   info.timer = setTimeout(() => {
     const key = `${info.fromLang}-${info.toLang}`;
     if (engines.get(key) !== info) return;
-    if (info.engine.busy) { resetIdleTimer(info); return; }
+    if (info.engine.busy || info.touched) {
+      info.lastUsed = new Date();
+      resetIdleTimer(info);
+      return;
+    }
     logger.info(`Engine ${key} idle timeout, stopping...`);
     void info.engine.destroy().catch(error => logger.error(`Engine cleanup failed: ${error}`));
     engines.delete(key);
@@ -228,6 +279,38 @@ export function warmupEngines(): Promise<void> {
   });
 }
 
+function serializeTuning(tuning: unknown): string {
+  if (!tuning || typeof tuning !== 'object') return String(tuning ?? '');
+  let cached = tuningStringCache.get(tuning);
+  if (cached === undefined) {
+    cached = JSON.stringify(tuning);
+    tuningStringCache.set(tuning, cached);
+  }
+  return cached;
+}
+
+function getCachePrefix(fromLang: string, toLang: string, engine: TranslationEngine, isHTML: boolean) {
+  const backend = engine.backend;
+  const tuning = serializeTuning(backend?.tuning);
+  return {
+    flat: `${fromLang}\0${toLang}\0${engine.identity}\0${backend?.provider ?? ''}\0${backend?.runtime ?? ''}\0${backend?.cpuThreads ?? ''}\0${tuning}\0${isHTML ? '1' : '0'}`,
+    tuning,
+    backend,
+  };
+}
+
+function buildCacheArgs(
+  fromLang: string,
+  toLang: string,
+  engine: TranslationEngine,
+  tuning: string,
+  text: string,
+  isHTML: boolean
+): unknown[] {
+  const backend = engine.backend;
+  return [fromLang, toLang, engine.identity, backend?.provider, backend?.runtime, backend?.cpuThreads, tuning, text, isHTML];
+}
+
 async function translateSingleLanguageText(
   fromLang: string,
   toLang: string,
@@ -235,15 +318,19 @@ async function translateSingleLanguageText(
   isHTML: boolean
 ): Promise<string> {
   const engine = await getOrCreateSingleEngine(fromLang, toLang, text);
-  const cacheKey = () => [fromLang, toLang, engine.identity, engine.backend?.provider, engine.backend?.runtime, engine.backend?.cpuThreads, engine.backend?.tuning, text, isHTML];
-  const startKey = cacheKey();
+  if (getConfig().cacheSize <= 0) {
+    const cached = readCache(EMPTY_CACHE_ARGS as any[]);
+    if (cached !== null) return cached;
+    return engine.translateAsync(text, { html: isHTML });
+  }
+  const startPrefix = getCachePrefix(fromLang, toLang, engine, isHTML);
+  const startKey = buildCacheArgs(fromLang, toLang, engine, startPrefix.tuning, text, isHTML);
   const cached = readCache(startKey);
   if (cached !== null) return cached;
-  if (getConfig().cacheSize <= 0) return engine.translateAsync(text, { html: isHTML });
-  const key = JSON.stringify(startKey);
+  const key = `${startPrefix.flat}\0${text}`;
   const translate = async () => {
     const result = await engine.translateAsync(text, { html: isHTML });
-    if (JSON.stringify(cacheKey()) === key) writeCache(result, startKey);
+    if (getCachePrefix(fromLang, toLang, engine, isHTML).flat === startPrefix.flat) writeCache(result, startKey);
     return result;
   };
 
@@ -257,6 +344,148 @@ async function translateSingleLanguageText(
   const promise = translate().finally(() => pending.delete(key));
   pending.set(key, promise);
   return promise;
+}
+
+async function translateSingleLanguageBatch(
+  fromLang: string,
+  toLang: string,
+  texts: string[],
+  isHTML: boolean
+): Promise<string[]> {
+  if (texts.length === 0) return [];
+  if (texts.length === 1) return [await translateSingleLanguageText(fromLang, toLang, texts[0], isHTML)];
+
+  const engine = await getOrCreateSingleEngine(fromLang, toLang, texts[0]);
+  if (getConfig().cacheSize <= 0) {
+    readCache(EMPTY_CACHE_ARGS as any[]);
+    return typeof engine.translateBatchAsync === 'function'
+      ? engine.translateBatchAsync(texts, { html: isHTML })
+      : Promise.all(texts.map(text => engine.translateAsync(text, { html: isHTML })));
+  }
+
+  const startPrefix = getCachePrefix(fromLang, toLang, engine, isHTML);
+  const results = new Array<Promise<string> | string>(texts.length);
+  let pending = inFlightTranslations.get(engine);
+  if (!pending) {
+    pending = new Map();
+    inFlightTranslations.set(engine, pending);
+  }
+
+  const misses: Array<{ text: string; key: string; startKey: unknown[]; resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
+  for (let i = 0; i < texts.length; i++) {
+    const text = texts[i];
+    const startKey = buildCacheArgs(fromLang, toLang, engine, startPrefix.tuning, text, isHTML);
+    const cached = readCache(startKey);
+    if (cached !== null) {
+      results[i] = cached;
+      continue;
+    }
+    const key = `${startPrefix.flat}\0${text}`;
+    const existing = pending.get(key);
+    if (existing) {
+      results[i] = existing;
+      continue;
+    }
+    let resolve!: (v: string) => void;
+    let reject!: (e: unknown) => void;
+    const itemPromise = new Promise<string>((res, rej) => { resolve = res; reject = rej; });
+    const tracked = itemPromise.finally(() => pending!.delete(key));
+    pending.set(key, tracked);
+    misses.push({ text, key, startKey, resolve, reject });
+    results[i] = tracked;
+  }
+
+  if (misses.length > 0) {
+    const batchInputs = misses.map(m => m.text);
+    const batchPromise = typeof engine.translateBatchAsync === 'function'
+      ? engine.translateBatchAsync(batchInputs, { html: isHTML })
+      : Promise.all(batchInputs.map(t => engine.translateAsync(t, { html: isHTML })));
+    batchPromise.then(
+      batchResults => {
+        const stable = getCachePrefix(fromLang, toLang, engine, isHTML).flat === startPrefix.flat;
+        for (let i = 0; i < misses.length; i++) {
+          const value = batchResults[i];
+          if (stable) writeCache(value, misses[i].startKey);
+          misses[i].resolve(value);
+        }
+      },
+      error => {
+        for (const miss of misses) miss.reject(error);
+      }
+    );
+  }
+
+  return Promise.all(results);
+}
+
+async function translateSegmentBatch(
+  fromLang: string,
+  toLang: string,
+  texts: string[],
+  isHTML: boolean
+): Promise<string[]> {
+  if (fromLang === toLang) return texts;
+  if (!needsPivotTranslation(fromLang, toLang)) return translateSingleLanguageBatch(fromLang, toLang, texts, isHTML);
+  const intermediate = await translateSingleLanguageBatch(fromLang, 'en', texts, isHTML);
+  return translateSingleLanguageBatch('en', toLang, intermediate, isHTML);
+}
+
+export async function translateBatchWithPivot(
+  fromLang: string,
+  toLang: string,
+  texts: string[],
+  isHTML: boolean = false
+): Promise<string[]> {
+  if (texts.length === 0) return [];
+  if (texts.length === 1) return [await translateWithPivot(fromLang, toLang, texts[0], isHTML)];
+
+  let results: string[];
+  if (fromLang !== 'auto' && fromLang === toLang) {
+    results = [...texts];
+  } else if (fromLang !== 'auto') {
+    results = await translateSegmentBatch(fromLang, toLang, texts, isHTML);
+  } else if (isHTML) {
+    results = await Promise.all(texts.map(text => translateWithPivot(fromLang, toLang, text, true)));
+  } else {
+    const config = getConfig();
+    const detected = await Promise.all(texts.map(async text => {
+      const segments = await detectMultipleLanguages(text);
+      if (segments.length <= 1) {
+        const lang = segments.length === 1 ? segments[0].language : await detectLanguage(text);
+        if (!lang) throw new Error('Failed to detect source language');
+        return { lang, text, multi: false as const };
+      }
+      return { lang: '', text, multi: true as const };
+    }));
+    const groups = new Map<string, number[]>();
+    const out = new Array<string>(texts.length);
+    const complexPromises: Array<Promise<void>> = [];
+    for (let i = 0; i < detected.length; i++) {
+      const item = detected[i];
+      if (!item.multi && item.lang === toLang) {
+        out[i] = item.text;
+      } else if (!item.multi && item.text.length <= config.maxSentenceLength) {
+        let indices = groups.get(item.lang);
+        if (!indices) { indices = []; groups.set(item.lang, indices); }
+        indices.push(i);
+      } else {
+        complexPromises.push(
+          translateWithPivot(fromLang, toLang, item.text, false).then(res => { out[i] = res; })
+        );
+      }
+    }
+    const groupPromises = [...groups.entries()].map(async ([lang, indices]) => {
+      const batchTexts = indices.map(idx => texts[idx]);
+      const batchOut = await translateSegmentBatch(lang, toLang, batchTexts, false);
+      for (let j = 0; j < indices.length; j++) out[indices[j]] = batchOut[j];
+    });
+    await Promise.all([...groupPromises, ...complexPromises]);
+    results = out;
+  }
+
+  if (!toLang.startsWith('zh')) return results;
+  const { fullwidthZhPunctuation } = getConfig();
+  return results.map(r => formatChinesePunctuation(r, toLang, isHTML, fullwidthZhPunctuation));
 }
 
 async function translateSegment(
@@ -334,25 +563,25 @@ export async function translateWithPivot(
       }
     } else {
       logger.debug(`Detected ${segments.length} language segments`);
+      const translatedSegments = await Promise.all(
+        segments.map(async seg => {
+          if (seg.language === toLang) return seg.text;
+          try {
+            return await translateSegment(seg.language, toLang, seg.text, isHTML);
+          } catch (error) {
+            logger.error(`Failed to translate segment: ${error}`);
+            return seg.text;
+          }
+        })
+      );
       result = '';
       let lastEnd = 0;
-
-      for (const seg of segments) {
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
         if (seg.start > lastEnd) {
           result += text.substring(lastEnd, seg.start);
         }
-
-        if (seg.language === toLang) {
-          result += seg.text;
-        } else {
-          try {
-            const translated = await translateSegment(seg.language, toLang, seg.text, isHTML);
-            result += translated;
-          } catch (error) {
-            logger.error(`Failed to translate segment: ${error}`);
-            result += seg.text;
-          }
-        }
+        result += translatedSegments[i];
         lastEnd = seg.end;
       }
 
@@ -380,25 +609,25 @@ async function translateLongText(
   const sentences = Array.from(segmenterAny.segment(text)) as Array<{ segment: string, index: number }>;
 
   logger.debug(`Split into ${sentences.length} sentences`);
+  const segments = sentences.map(s => s.segment);
+  if (segments.length === 0) return '';
 
-  const results: string[] = [];
-
-  for (let i = 0; i < sentences.length; i++) {
-    const { segment } = sentences[i];
-    try {
-      const translated = await translateSegment(fromLang, toLang, segment, false);
-      results.push(translated);
-
-      if ((i + 1) % 10 === 0) {
-        logger.debug(`Translated ${i + 1}/${sentences.length} sentences`);
-      }
-    } catch (error) {
-      logger.error(`Failed to translate sentence ${i + 1}: ${error}`);
-      results.push(segment);
-    }
+  try {
+    const translated = await translateSegmentBatch(fromLang, toLang, segments, false);
+    return translated.join('');
+  } catch {
+    const results = await Promise.all(
+      segments.map(async (segment, i) => {
+        try {
+          return await translateSegment(fromLang, toLang, segment, false);
+        } catch (error) {
+          logger.error(`Failed to translate sentence ${i + 1}: ${error}`);
+          return segment;
+        }
+      })
+    );
+    return results.join('');
   }
-
-  return results.join('');
 }
 
 export function getEngineRuntimes() {

@@ -7,12 +7,14 @@ import * as logger from '../logger/index.js';
 
 export type InferenceSession = Pick<ort.InferenceSession, 'inputNames' | 'run' | 'release'> & {
   runRaw?(input: BigInt64Array, candidates: BigInt64Array | null, eos: bigint): Promise<BigInt64Array>;
+  runBatch?(inputs: BigInt64Array[], candidates: (BigInt64Array | null)[], eos: bigint): Promise<BigInt64Array[]>;
 };
 export class NativeRunError extends Error {}
 interface NativeBinding {
   ssruVersion?: number;
   init(model: string, library: string, cpuThreads: number): Promise<object>;
   run(handle: object, input: BigInt64Array, candidates: BigInt64Array | null, eos: bigint): Promise<BigInt64Array>;
+  runBatch?(handle: object, inputs: BigInt64Array[], candidates: (BigInt64Array | null)[], eos: bigint): Promise<BigInt64Array[]>;
   close(handle: object): Promise<void>;
 }
 
@@ -50,10 +52,21 @@ export async function createNativeSession(model: string, inputNames: readonly st
       try { return await binding.run(handle, input, candidates, eos); }
       catch (error) { throw new NativeRunError(String(error)); }
     };
+    const runBatch = async (inputs: BigInt64Array[], candidates: (BigInt64Array | null)[], eos: bigint): Promise<BigInt64Array[]> => {
+      if (closed) throw new Error('ONNX session is closing');
+      if (inputs.length === 0) return [];
+      if (inputs.length !== candidates.length) throw new Error('Batch inputs and candidates length mismatch');
+      if (typeof binding.runBatch === 'function') {
+        try { return await binding.runBatch(handle, inputs, candidates, eos); }
+        catch (error) { throw new NativeRunError(String(error)); }
+      }
+      return Promise.all(inputs.map((input, i) => runRaw(input, candidates[i] ?? null, eos)));
+    };
     return {
       inputNames: [...inputNames],
       release: () => closed ??= binding.close(handle),
       runRaw,
+      runBatch,
       run: async feeds => {
         if (closed) throw new Error('ONNX session is closing');
         const input = feeds.X.data, ids = inputNames.includes('candidate_ids') ? feeds.candidate_ids?.data : null, eos = feeds.eos_id.data;
