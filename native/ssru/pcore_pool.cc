@@ -30,14 +30,6 @@
 #include <pthread.h>
 #include <sys/qos.h>
 #include <sys/sysctl.h>
-#elif defined(_WIN32)
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
 #endif
 
 namespace mtran::ssru {
@@ -469,8 +461,6 @@ struct PcorePool::Impl {
         }
 #elif defined(__APPLE__)
         pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
-#elif defined(_WIN32)
-        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #endif
         std::uint64_t seen = 0;
         for (;;) {
@@ -574,8 +564,6 @@ void PcorePool::pinCurrentThreadToPcores() noexcept {
   if (!topo.all_pcore_cpus.empty()) pinMask(topo.all_pcore_cpus);
 #elif defined(__APPLE__)
   pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
-#elif defined(_WIN32)
-  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #endif
 }
 
@@ -591,9 +579,6 @@ void PcorePool::pinWorkerThread(std::size_t worker_idx) noexcept {
 #elif defined(__APPLE__)
   (void)worker_idx;
   pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
-#elif defined(_WIN32)
-  (void)worker_idx;
-  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #else
   (void)worker_idx;
 #endif
@@ -623,12 +608,14 @@ bool TeamBarrier::arriveAndWaitSlow() noexcept {
     generation_.store(gen + 1, std::memory_order_release);
     return !cancelled_.load(std::memory_order_acquire);
   }
+  std::size_t spins = 0;
   for (;;) {
     if (cancelled_.load(std::memory_order_acquire)) return false;
     if (generation_.load(std::memory_order_acquire) != gen) {
       return !cancelled_.load(std::memory_order_acquire);
     }
-    cpuRelax();
+    if ((++spins & 4095) == 0) std::this_thread::yield();
+    else cpuRelax();
   }
 }
 
@@ -668,8 +655,10 @@ void PcorePool::runTeam(std::size_t max_threads,
     caller_exc = std::current_exception();
   }
 
+  std::size_t spins = 0;
   while (impl_->remaining.load(std::memory_order_acquire) != 0) {
-    cpuRelax();
+    if ((++spins & 4095) == 0) std::this_thread::yield();
+    else cpuRelax();
   }
 
   if (caller_exc) std::rethrow_exception(caller_exc);

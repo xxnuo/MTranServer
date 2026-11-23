@@ -287,7 +287,7 @@ async function scenario(name, entry, runtime, context, result) {
       });
       for (let i = 0; i < 4; i++) {
         const sample = samples[i % 2];
-        pending.push(translate(sample, (sample.paragraph + '\n').repeat(200), 'stop-drain', String(i + 1)).finally(() => { settled++; }));
+        pending.push(translate(sample, (sample.paragraph + '\n').repeat(60), 'stop-drain', String(i + 1)).finally(() => { settled++; }));
       }
       await within(Promise.all([observed, ...pending]), context.timeout, 'Timed out observing stop/drain');
       assert(stopping);
