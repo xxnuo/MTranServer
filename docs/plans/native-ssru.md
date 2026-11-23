@@ -1,5 +1,20 @@
 # ONNX 原生 SSRU 解码执行器实施计划
 
+## 后续目标：v5.5.0 双模式全栈加速、cgroup 配额适配与六平台复验
+
+v5.5.0 在 v5.4 基础上落地 `com.mtran::SsruTranslate` 全栈原生引擎（ragged C++ 编码器、双模式解码：Fast `ShortlistTable` + 普通模式 `--no-fast` 全词表 `FullVocabQ4`、持久化 `PcorePool` + `TeamBarrier` 团队并行与连续批调度、`N x K4` AVX-512 VNNI / AVX-VNNI 内核，并消除 `model.onnx` 双重加载及冗余 FP32 嵌入副本），补充 Linux cgroup v2/v1 CPU 配额感知以避免受限容器过度并发与单核绑核竞争，修复 Windows `PcorePool` 将工作线程设为 `THREAD_PRIORITY_HIGHEST` 引发的 Node 主事件循环饿死问题，并修复 ARM64 SDOT `FullVocabQ4` 分块排列、NEON 非点积回退与双重 bias 处理、`use_step0_mixed` 连续批屏障竞态、`a_q` 对齐及 `fastExpNeon` / `softmaxRowNeon` / `instanceNormAffine` 数值对齐。
+
+- 实体机同口径三方复测（`kompiler.lan`，`AMD Ryzen 9 9950X` 共享宿主机 Docker 4 CPU 配额 `400000 100000` / 3 GiB 内存，于 `299ece2` 基础完成，之后合入上述跨平台与构建修复并发布 `v5.5.0`）：三轮交替 5193 次正式 CPU HTTP 请求下，Fast 相比 LinguaSpark 短句单请求 `1.45 / 1.40 ms`（快 2.45–2.46 倍）、短句 8 并发 `1974.17 / 2134.26 req/s`（高 60%–68%）、段落单请求快 3.84–4.48 倍、32 句长文单请求快 7.03–11.69 倍、4 并发高 3.13–5.79 倍；普通模式（`--no-fast`）长文 4 并发达 LinguaSpark 1.82–4.47 倍，热态/峰值 RSS 降至 `442.3 MiB`（Fast 峰值 `512.9 MiB`）。详见 [cpu-comparison-2026-11-23.md](../benchmarks/cpu-comparison-2026-11-23.md)。
+- 六平台托管 CI 全栈复验（`native-ssru-platform-check` [Run 45330075187](https://github.com/xxnuo/MTranServer/actions/runs/45330075187)，提交 `791920c`；六平台运行器均为 GitHub Actions 托管环境含虚拟机，不作为 Windows/macOS 实体机验收）：全部 13 项任务（6 项 `verify`、`package` 打包与 6 项 `consumer` 禁脚本 `.tgz` 安装 HTTP 验证）全部通过；Linux/macOS 运行器 C++ 单测（`ssru_test`、`ops_test`、`packed_test`）及六平台 Node HTTP、Electron HTTP（含 Linux 三次冷启动）均通过；每平台完成 4098 条双模式校验（26 条语料 + 4048 条双向 FLORES-200 devtest × `fast`/`standard`），全部 100% EOS、非空、并发一致且长度比 0.9986–1.0019：
+  - `linux-x64`（`Intel Xeon 6975P-C`，`packed-avx512vnni`）：语料 exact `100.00%` / chrF `100.00%`，FLORES exact `94.37%–96.15%` / chrF `99.17%–99.61%`，长度比 `0.9987–0.9993`，`c=1` `2.33–2.40x`、`c=8` `1.83–2.32x`。
+  - `win32-x64`（`AMD EPYC 9V45` / consumer `EPYC 7763`，`packed-avx2`）：语料 exact `100.00%` / chrF `100.00%`，FLORES exact `94.37%–96.15%` / chrF `99.17%–99.61%`，长度比 `0.9987–0.9993`（共享虚拟化宿主下 `c=1` `0.58–1.27x`）。
+  - `darwin-x64`（`Intel Core i7-8700B`，`packed-avx2-ort`）：语料 exact `91.67%–100.00%` / chrF `99.72%–100.00%`，FLORES exact `95.65%–96.74%` / chrF `99.35%–99.76%`，长度比 `0.9998–1.0006`，`c=1` `0.58–2.04x`、`c=8` `0.87–1.72x`。
+  - `linux-arm64`（`unknown`，`packed-sdot`）：语料 exact `91.67%–92.31%` / chrF `98.75%–98.87%`，FLORES exact `83.20%–88.34%` / chrF `97.14%–98.83%`，长度比 `0.9986–1.0004`，`c=1` `2.87–2.99x`、`c=8` `1.21–1.44x`。
+  - `win32-arm64`（`Cobalt 100`，`packed-sdot`）：语料 exact `84.62%–92.31%` / chrF `98.59%–99.56%`，FLORES exact `81.32%–85.87%` / chrF `96.96%–98.74%`，长度比 `1.0006–1.0019`，`c=1` `2.49–2.80x`、`c=8` `1.08–1.34x`。
+  - `darwin-arm64`（`Apple M1 (Virtual)`，`packed-sdot`）：语料 exact `83.33%–92.31%` / chrF `98.38%–98.70%`，FLORES exact `87.35%–89.53%` / chrF `97.89%–99.01%`，长度比 `0.9996–1.0001`，`c=1` `1.21–1.60x`、`c=8` `0.72–0.84x`（受 3 vCPU 虚拟化与并发对照影响）。
+- ARM64 跨系统基线分歧与多维度门禁：`en_zh-Hans fast` 上实测证明 Apple M1 与 Windows Cobalt 100 的 ORT 1.30 原版编码器基线自身存在至少 `161/1012`（`15.91%`，`zh-Hans_en fast` 至少 `144/1012` / `14.23%`）的跨系统差异，而我方确定性 ARM64 候选译文在两系统共同差异集上重合度达 `100%`。据此在 `verify-ssru-platform.ts` 与 `collect-native.ts` 联合校验证据下限：token-exact（x64 `>= 90%`、ARM64 `>= 80%`）、chrF（语料 `>= 95%`、FLORES `>= 96%`）、长度比（`0.95–1.05`）及 100% EOS / 非空 / 并发一致性。
+- 本地 Linux x64 完整核对：`ops.cc` 对齐后通过本地 `packed-avxvnni` 4098 条 FLORES 校验（corpus `100.00%`，FLORES `96.64%–97.04%`，chrF `99.46%–99.78%`）；`pcore_pool.cc` 终版通过 GCC 8 项测试含 ASan/UBSan、Clang 4 项单测、Node 构建及 `verify-fast-service` 停机排空；`collect-native.ts` 定稿后通过六平台实测产物组装校验、`tsc --noEmit` 与全套 321 项单元测试。
+
 ## 后续目标：Fast 默认路径与六平台原生适配
 
 5.4.1追加验收：实体M4的29条差异已定位并修复，正式CI发行插件2049/2049逐token一致，最终tarball禁脚本安装及HTTP通过。新六平台CI和六平台安装包全部通过，本地302项测试、类型检查、Node／library构建与packed sanitizers通过。2026-11-16用户确认原生架构托管运行器满足验收要求，明确标注虚拟机即可，本目标已验收完成。六平台运行器含虚拟机，Linux三台及Apple M4另有实体设备证据；不将Windows／Intel Mac运行器称为实体设备。下述5.4.0失败记录保留为历史。
