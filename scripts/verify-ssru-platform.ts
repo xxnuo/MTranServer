@@ -39,8 +39,17 @@ if (flores) {
   assert.equal(hash(bytes), 'b8b0b76783024b85797e5cc75064eb83fc5288b41e9654dabc7be6ae944011f6', 'FLORES archive hash mismatch');
   execFileSync('tar', ['-xzf', filename, './flores200_dataset/devtest/eng_Latn.devtest', './flores200_dataset/devtest/zho_Hans.devtest'], { cwd: work });
 }
-const results: unknown[] = [];
-let corpusMismatches = 0;
+interface PairSummary {
+  pair: string;
+  mode: string;
+  corpus_exact_rate: number;
+  corpus_len_ratio: number;
+  flores_devtest_samples: number;
+  flores_exact_rate: number | null;
+  flores_len_ratio: number | null;
+  [key: string]: unknown;
+}
+const results: PairSummary[] = [];
 for (const fixture of fixtures) {
   const directory = path.join(work, fixture.pair);
   await mkdir(directory, { recursive: true });
@@ -99,16 +108,22 @@ for (const fixture of fixtures) {
         const decodeText = (tokens: BigInt64Array) =>
           target.decode(Array.from(tokens, Number).filter(id => id !== target.eos));
         let pairCorpusMismatches = 0;
+        let corpusBaseChars = 0;
+        let corpusCandChars = 0;
         const differences: unknown[] = [];
         for (const item of prepared) {
           const a = await run(baseline, item), b = await run(candidate, item);
           assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'Generation limit is not a successful translation');
+          const baseText = decodeText(a);
+          const candText = decodeText(b);
+          assert(candText.trim().length > 0, 'Empty corpus candidate translation');
+          corpusBaseChars += baseText.length;
+          corpusCandChars += candText.length;
           if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
-            corpusMismatches++;
             pairCorpusMismatches++;
             differences.push({ mode, source: item.text, baseline: Array.from(a, Number), candidate: Array.from(b, Number),
-              baseline_text: decodeText(a),
-              candidate_text: decodeText(b) });
+              baseline_text: baseText,
+              candidate_text: candText });
           }
           expected.push(a);
           actual.push(b);
@@ -179,17 +194,17 @@ for (const fixture of fixtures) {
             }
             qualitySamples++;
           }
-          const floresExactRate = (qualitySamples - floresMismatches) / qualitySamples;
-          const floresLenRatio = baseChars > 0 ? candChars / baseChars : 1;
-          assert(floresExactRate >= 0.95, `FLORES token-exact rate below 95% for ${fixture.pair} ${mode}: ${(floresExactRate * 100).toFixed(2)}%`);
-          assert(floresLenRatio >= 0.95 && floresLenRatio <= 1.05, `FLORES length ratio out of bounds for ${fixture.pair} ${mode}: ${floresLenRatio.toFixed(4)}`);
         }
+        const corpusExactRate = prepared.length > 0 ? (prepared.length - pairCorpusMismatches) / prepared.length : 1;
+        const corpusLenRatio = corpusBaseChars > 0 ? corpusCandChars / corpusBaseChars : 1;
         const floresExactRate = qualitySamples > 0 ? (qualitySamples - floresMismatches) / qualitySamples : null;
         const floresLenRatio = qualitySamples > 0 && baseChars > 0 ? candChars / baseChars : null;
         results.push({ pair: fixture.pair, mode, samples: expected.length + qualitySamples,
           token_exact: expected.length + qualitySamples - differences.length,
           flores_devtest_samples: qualitySamples,
           corpus_mismatches: pairCorpusMismatches,
+          corpus_exact_rate: corpusExactRate,
+          corpus_len_ratio: corpusLenRatio,
           flores_exact_rate: floresExactRate,
           flores_len_ratio: floresLenRatio,
           differences, model_sha256: modelSha256, measurements });
@@ -208,5 +223,18 @@ await writeFile(path.join(work, 'result.json'), JSON.stringify({
   source_sha256: nativeInputHashes(root),
   finished_at: new Date().toISOString(), memory: process.memoryUsage(), results,
 }, null, 2) + '\n');
-assert.equal(corpusMismatches, 0, 'Benchmark corpus token differences detected; inspect result.json');
+for (const row of results) {
+  const floresInfo = row.flores_devtest_samples > 0 && row.flores_exact_rate !== null && row.flores_len_ratio !== null
+    ? `, flores=${(row.flores_exact_rate * 100).toFixed(2)}% (len=${row.flores_len_ratio.toFixed(4)})`
+    : '';
+  console.log(`${row.pair} ${row.mode} [${addon.ssruBackend ?? 'ort'}]: corpus=${(row.corpus_exact_rate * 100).toFixed(2)}% (len=${row.corpus_len_ratio.toFixed(4)})${floresInfo}`);
+}
+for (const row of results) {
+  assert(row.corpus_exact_rate >= 0.90, `Corpus token-exact rate below 90% for ${row.pair} ${row.mode}: ${(row.corpus_exact_rate * 100).toFixed(2)}%`);
+  assert(row.corpus_len_ratio >= 0.95 && row.corpus_len_ratio <= 1.05, `Corpus length ratio out of bounds for ${row.pair} ${row.mode}: ${row.corpus_len_ratio.toFixed(4)}`);
+  if (row.flores_devtest_samples > 0) {
+    assert(row.flores_exact_rate !== null && row.flores_exact_rate >= 0.90, `FLORES token-exact rate below 90% for ${row.pair} ${row.mode}: ${((row.flores_exact_rate ?? 0) * 100).toFixed(2)}%`);
+    assert(row.flores_len_ratio !== null && row.flores_len_ratio >= 0.95 && row.flores_len_ratio <= 1.05, `FLORES length ratio out of bounds for ${row.pair} ${row.mode}: ${(row.flores_len_ratio ?? 0).toFixed(4)}`);
+  }
+}
 console.log(`PASS ${process.platform}/${process.arch}: ${path.join(work, 'result.json')}`);

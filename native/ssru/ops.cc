@@ -914,12 +914,14 @@ void PosTable::addScaledEmbed(const float* embed, float scale,
     }
     return;
 #endif
+#if !defined(__aarch64__) && !defined(_M_ARM64)
     if (embed) {
       for (std::size_t j = 0; j < dim; ++j) out[j] = embed[j] * scale + pos_vec[j];
     } else {
       std::copy_n(pos_vec, dim, out);
     }
     return;
+#endif
   }
 
   const float fp = static_cast<float>(pos);
@@ -1060,6 +1062,7 @@ void instanceNormAffine(const float* x, const float* scale, const float* bias,
   }
   return;
 #endif
+#if !defined(__aarch64__) && !defined(_M_ARM64)
   const float inv_dim = 1.0f / static_cast<float>(dim);
   for (std::size_t r = 0; r < rows; ++r) {
     const float* xr = x + r * dim;
@@ -1083,6 +1086,7 @@ void instanceNormAffine(const float* x, const float* scale, const float* bias,
     if (out_mins) out_mins[r] = rmin;
     if (out_maxs) out_maxs[r] = rmax;
   }
+#endif
 }
 
 void ssruGateUpdate(const float* wf, const float* w, const float* x,
@@ -1120,6 +1124,7 @@ void ssruGateUpdate(const float* wf, const float* w, const float* x,
   }
   return;
 #endif
+#if !defined(__aarch64__) && !defined(_M_ARM64)
   const std::size_t total = rows * dim;
   for (std::size_t i = 0; i < total; ++i) {
     const float gate = 1.0f / (1.0f + std::exp(-wf[i]));
@@ -1127,6 +1132,7 @@ void ssruGateUpdate(const float* wf, const float* w, const float* x,
     cell[i] = c;
     out[i] = x[i] + std::max(0.0f, c);
   }
+#endif
 }
 
 void crossAttention(const float* q, const float* k_t, const float* v,
@@ -1180,6 +1186,7 @@ void crossAttention(const float* q, const float* k_t, const float* v,
   }
   return;
 #endif
+#if !defined(__aarch64__) && !defined(_M_ARM64)
   const float scale = static_cast<float>(1.0 / std::sqrt(static_cast<double>(head_dim)));
   for (std::size_t h = head_begin; h < head_end; ++h) {
     const float* qh = q + h * head_dim;
@@ -1205,6 +1212,7 @@ void crossAttention(const float* q, const float* k_t, const float* v,
       oh[k] = sum;
     }
   }
+#endif
 }
 
 void selfAttentionStrided(const float* q, const float* k, const float* v, std::size_t qkv_stride,
@@ -1261,6 +1269,7 @@ void selfAttentionStrided(const float* q, const float* k, const float* v, std::s
   }
   return;
 #endif
+#if !defined(__aarch64__) && !defined(_M_ARM64)
   const std::size_t out_stride = heads * head_dim;
   const float scale = static_cast<float>(1.0 / std::sqrt(static_cast<double>(head_dim)));
   for (std::size_t h = head_begin; h < head_end; ++h) {
@@ -1290,6 +1299,7 @@ void selfAttentionStrided(const float* q, const float* k, const float* v, std::s
       }
     }
   }
+#endif
 }
 
 void selfAttention(const float* q, const float* k, const float* v,

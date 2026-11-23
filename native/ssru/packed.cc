@@ -933,7 +933,7 @@ MTRAN_DOTPROD void multiplyBatchSdot(
   if (relu_minmax && out_maxs) {
     for (std::size_t m = 0; m < rows; ++m) out_maxs[m] = 0.0f;
   }
-  const std::int32x4_t xorb = vdupq_n_s32(-2139062144);
+  const int32x4_t xorb = vdupq_n_s32(-2139062144);
   for (std::size_t col = col_begin; col < col_end; col += 8) {
     const std::size_t blk_idx = col / block;
     const std::size_t blk_off = col % block;
