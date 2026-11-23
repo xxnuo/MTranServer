@@ -202,7 +202,8 @@ void runDecMultiplySlice(const PackedDecMat& pl,
                                        out_maxs, col_begin, col_end);
     return;
   }
-  if (pl.extra_bias && kUseFusedBias && col_begin == 0 && col_end == pl.cols) {
+  if (pl.extra_bias && kUseFusedBias && col_begin == 0 && col_end == pl.cols &&
+      reinterpret_cast<std::uintptr_t>(a_q) % 32 == 0) {
     for (std::size_t r = 0; r < rows; ++r) {
       pl.weight->multiply(a_q + r * pl.rows, 1, a_scales[r], a_zps[r],
                           out + r * out_stride, pl.extra_bias, nullptr);
@@ -1121,12 +1122,15 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
                                     active, s.update.data(), dim, nullptr, false, lb * 32, le * 32);
               }
             }
-            if (use_step0_mixed && tid == 0) {
-              for (std::size_t m = 0; m < active; ++m) {
-                if (s.slot_pos[m] == 0) {
-                  runDecMultiplySlice(pl.gate_step0, s.a_q.data() + m * dim, &s.a_scales[m],
-                                      &s.a_zps[m], 1, s.gate.data() + m * dim, dim,
-                                      nullptr, false, 0, dim);
+            if (use_step0_mixed) {
+              if (!syncBarrier()) { cancel_guard.done = true; return; }
+              if (tid == 0) {
+                for (std::size_t m = 0; m < active; ++m) {
+                  if (s.slot_pos[m] == 0) {
+                    runDecMultiplySlice(pl.gate_step0, s.a_q.data() + m * dim, &s.a_scales[m],
+                                        &s.a_zps[m], 1, s.gate.data() + m * dim, dim,
+                                        nullptr, false, 0, dim);
+                  }
                 }
               }
             }
@@ -1149,12 +1153,15 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
             // 2b. Cross-attention query -> crossAttention -> output -> residual + norm.
             const PackedDecMat& query_mat = use_step0_all ? pl.query_step0 : pl.query;
             shardDecMat(query_mat, s.query.data(), false);
-            if (use_step0_mixed && tid == 0) {
-              for (std::size_t m = 0; m < active; ++m) {
-                if (s.slot_pos[m] == 0) {
-                  runDecMultiplySlice(pl.query_step0, s.a_q.data() + m * dim, &s.a_scales[m],
-                                      &s.a_zps[m], 1, s.query.data() + m * dim, dim,
-                                      nullptr, false, 0, dim);
+            if (use_step0_mixed) {
+              if (!syncBarrier()) { cancel_guard.done = true; return; }
+              if (tid == 0) {
+                for (std::size_t m = 0; m < active; ++m) {
+                  if (s.slot_pos[m] == 0) {
+                    runDecMultiplySlice(pl.query_step0, s.a_q.data() + m * dim, &s.a_scales[m],
+                                        &s.a_zps[m], 1, s.query.data() + m * dim, dim,
+                                        nullptr, false, 0, dim);
+                  }
                 }
               }
             }

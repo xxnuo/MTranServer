@@ -311,7 +311,8 @@ void runMultiplySlice(const PackedLinear& pl,
                                        out_maxs, col_begin, col_end);
     return;
   }
-  if (pl.extra_bias && kUseFusedBias && col_begin == 0 && col_end == pl.cols) {
+  if (pl.extra_bias && kUseFusedBias && col_begin == 0 && col_end == pl.cols &&
+      reinterpret_cast<std::uintptr_t>(a_q) % 32 == 0) {
     for (std::size_t r = 0; r < rows; ++r) {
       pl.weight->multiply(a_q + r * pl.rows, 1, a_scales[r], a_zps[r],
                           out + r * out_stride, pl.extra_bias, nullptr);

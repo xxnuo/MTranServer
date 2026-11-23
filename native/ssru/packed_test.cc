@@ -226,6 +226,44 @@ static void dqlAndShortlistGolden() {
         assert(tail.argmax(x.data(), workspace, false) == 12);
       }
     }
+    {
+      constexpr std::size_t vocab = 64, dim = 64;
+      std::vector<float> emb(vocab * dim, 0.0f), bias(vocab, 0.0f), x(dim, 0.0f);
+      bias[1] = -std::numeric_limits<float>::infinity();
+      for (std::size_t k = 16; k < 32; ++k) {
+        x[k] = 2.0f;
+        emb[21 * dim + k] = 1.0f;
+        for (std::size_t r = 24; r < 40; ++r) emb[r * dim + k] = -1.5f;
+      }
+      for (std::size_t k = 32; k < 48; ++k) {
+        x[k] = -2.0f;
+        emb[21 * dim + k] = -1.0f;
+        for (std::size_t r = 24; r < 40; ++r) emb[r * dim + k] = 1.5f;
+      }
+      const FullVocabQ4 q4_quarter(emb.data(), bias.data(), vocab, dim);
+      assert(q4_quarter.argmax(x.data(), workspace, false) == 21);
+      assert(q4_quarter.argmax(x.data(), workspace, true) == 21);
+    }
+    {
+      constexpr std::size_t vocab = 64, dim = 128;
+      constexpr float min_pos = 0.0625f;
+      std::vector<std::int8_t> emb_q8(vocab * dim, 0);
+      std::vector<float> bias(vocab, 0.0f), x(dim, 0.0f);
+      bias[1] = -std::numeric_limits<float>::infinity();
+      for (std::size_t k = 16; k < 32; ++k) {
+        x[k] = 2.0f;
+        emb_q8[21 * dim + k] = 16;
+        for (std::size_t r = 24; r < 40; ++r) emb_q8[r * dim + k] = -24;
+      }
+      for (std::size_t k = 32; k < 48; ++k) {
+        x[k] = -2.0f;
+        emb_q8[21 * dim + k] = -16;
+        for (std::size_t r = 24; r < 40; ++r) emb_q8[r * dim + k] = 24;
+      }
+      const FullVocabQ4 q4_quarter_i8 = FullVocabQ4::createInt8(emb_q8.data(), min_pos, bias.data(), vocab, dim);
+      assert(q4_quarter_i8.argmax(x.data(), workspace, false) == 21);
+      assert(q4_quarter_i8.argmax(x.data(), workspace, true) == 21);
+    }
     std::vector<float> ok_emb(9 * 8, 1.f), ok_bias(9, 0.f), bad_x(8, 1.f);
     rejects([&] { FullVocabQ4 bad(ok_emb.data(), ok_bias.data(), 8, 8); });
     FullVocabQ4 small(ok_emb.data(), ok_bias.data(), 9, 8);

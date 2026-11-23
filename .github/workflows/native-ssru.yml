@@ -104,6 +104,11 @@ jobs:
         run: bash scripts/build-portable-native.sh dist
       - name: Build target verification runner
         run: bun build scripts/verify-ssru-platform.ts --target=node --packages=external --outfile=.tmp/ssru-platform/verify.mjs
+      - name: Run C++ unit tests
+        if: runner.os != 'Windows'
+        run: |
+          make -C native/ssru test ops-test packed-test
+          rm -rf native/ssru/.tmp
       - name: Verify architecture and real-model execution
         run: |
           node -e 'if(process.platform+"-"+process.arch!=="${{ matrix.platform }}")throw Error("Runner architecture mismatch")'

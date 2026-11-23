@@ -960,12 +960,13 @@ MTRAN_DOTPROD void multiplyBatchSdot(
       if (fused_bias) {
         r0 = vfmaq_f32(vld1q_f32(fused_bias + col), f0, vsc);
         r1 = vfmaq_f32(vld1q_f32(fused_bias + col + 4), f1, vsc);
-      } else if (separate_bias) {
-        r0 = vaddq_f32(vmulq_f32(f0, vsc), vld1q_f32(separate_bias + col));
-        r1 = vaddq_f32(vmulq_f32(f1, vsc), vld1q_f32(separate_bias + col + 4));
       } else {
         r0 = vmulq_f32(f0, vsc);
         r1 = vmulq_f32(f1, vsc);
+      }
+      if (separate_bias) {
+        r0 = vaddq_f32(r0, vld1q_f32(separate_bias + col));
+        r1 = vaddq_f32(r1, vld1q_f32(separate_bias + col + 4));
       }
       if (relu_minmax) {
         const float32x4_t z = vdupq_n_f32(0.0f);
@@ -980,28 +981,15 @@ MTRAN_DOTPROD void multiplyBatchSdot(
 }
 
 void dotNeon(const std::uint8_t* a, const std::int8_t* b, std::size_t k, std::int32_t* result) {
-  auto l0 = vdupq_n_s32(0), l1 = l0, h0 = l0, h1 = l0;
-  const int16x8_t bias = vdupq_n_s16(128);
-  for (std::size_t j = 0; j < k; j += 8, b += 64) {
-    const int16x8_t av = vreinterpretq_s16_u16(vmovl_u8(vld1_u8(a + j)));
-    const int8x8_t al = vmovn_s16(vsubq_s16(av, bias));
-    for (int p = 0; p < 8; ++p) {
-      const int16x8_t prod = vmull_s8(al, vld1_s8(b + p * 8));
-      auto& acc = p < 4 ? (p & 1 ? l1 : l0) : (p & 1 ? h1 : h0);
-      if (p < 2 || (p >= 4 && p < 6)) acc = vaddw_s16(acc, vget_low_s16(prod));
-      else acc = vaddw_s16(acc, vget_high_s16(prod));
-    }
+  auto lo = vdupq_n_s32(0), hi = vdupq_n_s32(0);
+  for (std::size_t j = 0; j < k; ++j, b += 8) {
+    const auto w = vmovl_s8(vld1_s8(b));
+    const auto av = static_cast<std::int16_t>(a[j]);
+    lo = vmlal_n_s16(lo, vget_low_s16(w), av);
+    hi = vmlal_n_s16(hi, vget_high_s16(w), av);
   }
-  const int32x4_t zero = vdupq_n_s32(0);
-  const auto lo = vpaddq_s32(vpaddq_s32(l0, l1), zero), hi = vpaddq_s32(vpaddq_s32(h0, h1), zero);
-  vst1q_s32(result, vdupq_n_s32(0)); vst1q_s32(result + 4, vdupq_n_s32(0));
-  std::int32_t s[8];
-  (void)lo; (void)hi;
-  std::fill_n(s, 8, 0);
-  for (std::size_t row = 0; row < k; ++row)
-    for (std::size_t lane = 0; lane < 8; ++lane)
-      s[lane] += (static_cast<std::int32_t>(a[row]) - 128) * b[-static_cast<std::ptrdiff_t>(k * 8) + row * 8 + lane];
-  std::copy_n(s, 8, result);
+  vst1q_s32(result, lo);
+  vst1q_s32(result + 4, hi);
 }
 
 MTRAN_DOTPROD ShortlistTable::ScanResult scanShortlistSdot(
@@ -1254,7 +1242,7 @@ MTRAN_DOTPROD void scanFullQ4SdotRange(
   #define MTRAN_SDOT_Q4_STEP(cp, sb, c_acc) do { \
     const uint8x16_t p0_ = vld1q_u8(cp), p1_ = vld1q_u8((cp) + 16); \
     const int32x4_t d_ = vdotq_s32(vdotq_s32(vdotq_s32(vdotq_s32(nc, av0, vreinterpretq_s8_u8(vandq_u8(p0_, low_mask))), \
-      av1, vreinterpretq_s8_u8(vshrq_n_u8(p0_, 4))), av2, vreinterpretq_s8_u8(vandq_u8(p1_, low_mask))), \
+      av2, vreinterpretq_s8_u8(vshrq_n_u8(p0_, 4))), av1, vreinterpretq_s8_u8(vandq_u8(p1_, low_mask))), \
       av3, vreinterpretq_s8_u8(vshrq_n_u8(p1_, 4))); \
     c_acc = vfmaq_f32(c_acc, vcvtq_f32_s32(d_), vdupq_n_f32(sa_b * (sb))); \
   } while (0)

@@ -111,9 +111,10 @@ for (const fixture of fixtures) {
         let corpusBaseChars = 0;
         let corpusCandChars = 0;
         const differences: unknown[] = [];
-        for (const item of prepared) {
+        for (const [idx, item] of prepared.entries()) {
           const a = await run(baseline, item), b = await run(candidate, item);
-          assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'Generation limit is not a successful translation');
+          assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)),
+            `Generation limit is not a successful translation (${fixture.pair} ${mode} corpus #${idx}: base_eos=${a.includes(BigInt(target.eos))} base_len=${a.length} cand_eos=${b.includes(BigInt(target.eos))} cand_len=${b.length})`);
           const baseText = decodeText(a);
           const candText = decodeText(b);
           assert(candText.trim().length > 0, 'Empty corpus candidate translation');
@@ -180,7 +181,8 @@ for (const fixture of fixtures) {
           }));
           for (let idx = 0; idx < floresItems.length; idx++) {
             const a = baseOutputs[idx], b = candOutputs[idx];
-            assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)), 'FLORES generation limit');
+            assert(a.includes(BigInt(target.eos)) && b.includes(BigInt(target.eos)),
+              `FLORES generation limit (${fixture.pair} ${mode} #${idx}: base_eos=${a.includes(BigInt(target.eos))} base_len=${a.length} cand_eos=${b.includes(BigInt(target.eos))} cand_len=${b.length})`);
             const baseText = decodeText(a);
             const candText = decodeText(b);
             assert(candText.trim().length > 0, 'Empty FLORES candidate translation');
