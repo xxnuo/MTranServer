@@ -4,6 +4,10 @@
 #include <limits>
 #include <memory>
 
+namespace mtran::ssru {
+class TeamBarrier;
+}
+
 namespace mtran::ssru::packed {
 namespace detail {
 enum X86Feature : unsigned { Avx2 = 1, AvxVnni = 2, Avx512Vnni = 4 };
@@ -154,6 +158,27 @@ class FullVocabQ4 {
   FullVocabQ4& operator=(const FullVocabQ4&) = delete;
 
   std::size_t argmax(const float* x, Workspace& workspace, bool allow_parallel = false) const;
+
+  class BatchScratch {
+   public:
+    BatchScratch();
+    ~BatchScratch();
+    BatchScratch(BatchScratch&&) noexcept;
+    BatchScratch& operator=(BatchScratch&&) noexcept;
+   private:
+    friend class FullVocabQ4;
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+  };
+
+  void reserveBatchScratch(BatchScratch& scratch, std::size_t max_rows,
+                           std::size_t max_threads) const;
+
+  void argMaxBatchInTeam(BatchScratch& scratch, const float* x_rows,
+                         std::size_t rows, std::size_t x_stride,
+                         std::int64_t* out_tokens,
+                         mtran::ssru::TeamBarrier* barrier,
+                         std::size_t tid, std::size_t nt) const;
 
   // Batched full-vocab Q4 argmax with PcorePool sharding. Writes winning token IDs into out_tokens.
   void argMaxBatch(const float* x_rows, std::size_t rows, std::size_t x_stride,

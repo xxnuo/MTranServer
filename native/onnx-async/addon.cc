@@ -163,17 +163,11 @@ struct State {
     bool pre_failed = false;
     std::string pre_error;
   };
-  struct WorkerSlot {
-    std::condition_variable cv;
-    bool idle = false;
-    bool woken = false;
-  };
   OrtCustomOpDomain *ssruDomain = nullptr;
   mtran::onnx_async::SsruTranslateKernel *translateKernel = nullptr;
   std::mutex batchMutex;
+  std::condition_variable batchCv;
   std::condition_variable ecoreCv;
-  std::vector<std::unique_ptr<WorkerSlot>> workerSlots;
-  std::deque<std::unique_ptr<BatchTask>> fastQueue;
   std::deque<ContUnit> contRawQueue;
   std::deque<ContUnit> contEncodedQueue;
   std::vector<std::thread> batchWorkers;
@@ -181,7 +175,7 @@ struct State {
   bool batchStop = false;
   bool contRunning = false;
   bool contHasBatch = false;
-  std::atomic<size_t> concurrentExecutors{0};
+  size_t ecoresBusy = 0;
 #endif
   OrtMemoryInfo *memory = nullptr;
   size_t inputCount = 0;
@@ -197,34 +191,15 @@ struct State {
     throw std::runtime_error(api->GetErrorMessage(status));
   }
 #ifdef MTRAN_NATIVE_SSRU
-  void wakeIdleWorkersLocked(size_t count) noexcept {
-    for (size_t w = 0; w < workerSlots.size() && count > 0; ++w) {
-      auto &slot = *workerSlots[w];
-      if (slot.idle && !slot.woken) {
-        slot.woken = true;
-        slot.cv.notify_one();
-        --count;
-      }
-    }
-  }
   void wakeContWorkerLocked() noexcept {
-    if (workerSlots.empty())
-      return;
-    auto &slot = *workerSlots[0];
-    if (!slot.woken) {
-      slot.woken = true;
-      slot.cv.notify_one();
-    }
+    batchCv.notify_one();
   }
   void stopBatchWorker() noexcept {
     {
       std::lock_guard lock(batchMutex);
       batchStop = true;
-      for (auto &slot : workerSlots) {
-        slot->woken = true;
-        slot->cv.notify_all();
-      }
     }
+    batchCv.notify_all();
     ecoreCv.notify_all();
     for (auto &t : ecoreWorkers) {
       if (t.joinable())
@@ -237,13 +212,11 @@ struct State {
     }
     batchWorkers.clear();
     std::lock_guard lock(batchMutex);
-    workerSlots.clear();
-    fastQueue.clear();
     contRawQueue.clear();
     contEncodedQueue.clear();
     contRunning = false;
     contHasBatch = false;
-    concurrentExecutors.store(0, std::memory_order_relaxed);
+    ecoresBusy = 0;
   }
   void startBatchWorker();
 #endif
@@ -288,19 +261,18 @@ void runEcorePreEncodeLoop(State &s, size_t ecoreIdx) noexcept {
 #else
   (void)ecoreIdx;
 #endif
-  constexpr size_t kEcoreMinQueue = 8;
   for (;;) {
     State::ContUnit unit;
     {
       std::unique_lock lock(s.batchMutex);
       s.ecoreCv.wait(lock, [&] {
-        return s.batchStop ||
-               (s.contRunning && s.contHasBatch && s.contRawQueue.size() >= kEcoreMinQueue);
+        return s.batchStop || (s.contRunning && !s.contRawQueue.empty());
       });
       if (s.batchStop)
         return;
       unit = std::move(s.contRawQueue.front());
       s.contRawQueue.pop_front();
+      ++s.ecoresBusy;
     }
     try {
       const auto &xVec = unit.group->task->xs[unit.item_idx];
@@ -312,42 +284,24 @@ void runEcorePreEncodeLoop(State &s, size_t ecoreIdx) noexcept {
       unit.pre_failed = true;
       unit.pre_error = "Unknown native pre-encode failure";
     }
-    bool wakePcore = false;
     {
       std::lock_guard lock(s.batchMutex);
+      if (s.ecoresBusy > 0)
+        --s.ecoresBusy;
       if (s.batchStop)
         return;
       s.contEncodedQueue.push_back(std::move(unit));
-      wakePcore = !s.contRunning;
-    }
-    if (wakePcore) {
-      std::lock_guard lock(s.batchMutex);
       if (!s.contRunning && (!s.contEncodedQueue.empty() || !s.contRawQueue.empty()))
         s.wakeContWorkerLocked();
     }
   }
 }
 
-void runBatchWorkerLoop(State &s, size_t workerIdx) noexcept {
+void runBatchWorkerLoop(State &s) noexcept {
 #ifdef MTRAN_SSRU_PACKED
-  mtran::ssru::PcorePool::pinWorkerThread(workerIdx);
-  const size_t pcores_phys = std::max<size_t>(1, mtran::ssru::PcorePool::instance().pcoreCount());
+  mtran::ssru::PcorePool::pinWorkerThread(0);
   const size_t pcores_logical = std::max<size_t>(1, mtran::ssru::PcorePool::instance().pcoreLogicalCount());
-  struct ScopedCore0Pin {
-    size_t workerIdx;
-    bool active = false;
-    ScopedCore0Pin(size_t w, bool enable) noexcept : workerIdx(w), active(enable && w != 0) {
-      if (active)
-        mtran::ssru::PcorePool::pinWorkerThread(0);
-    }
-    ~ScopedCore0Pin() noexcept {
-      if (active)
-        mtran::ssru::PcorePool::pinWorkerThread(workerIdx);
-    }
-  };
 #else
-  (void)workerIdx;
-  const size_t pcores_phys = 1;
   const size_t pcores_logical = 1;
 #endif
   auto notifyOneDone = [&](std::unique_ptr<BatchTask> task) noexcept {
@@ -388,112 +342,16 @@ void runBatchWorkerLoop(State &s, size_t workerIdx) noexcept {
     }
   };
 
-  for (;;) {
-    std::unique_ptr<BatchTask> fastTask;
-    bool runCont = false;
+  const size_t maxBatch = std::clamp<size_t>(pcores_logical, size_t{8}, size_t{12});
 
+  for (;;) {
     std::unique_lock lock(s.batchMutex);
-    auto &slot = *s.workerSlots[workerIdx];
-    for (;;) {
-      if (s.batchStop)
-        break;
-      const bool contReady =
-          (workerIdx == 0) && !s.contRunning &&
-          (!s.contEncodedQueue.empty() || !s.contRawQueue.empty());
-      if (!s.fastQueue.empty() || contReady)
-        break;
-      slot.idle = true;
-      slot.woken = false;
-      slot.cv.wait(lock, [&] { return s.batchStop || slot.woken; });
-      slot.idle = false;
-    }
+    s.batchCv.wait(lock, [&] {
+      return s.batchStop || (!s.contRunning && (!s.contEncodedQueue.empty() || !s.contRawQueue.empty()));
+    });
     if (s.batchStop)
       break;
-
-    if (!s.fastQueue.empty()) {
-      fastTask = std::move(s.fastQueue.front());
-      s.fastQueue.pop_front();
-    } else if (workerIdx == 0 && !s.contRunning &&
-               (!s.contEncodedQueue.empty() || !s.contRawQueue.empty())) {
-      s.contRunning = true;
-      runCont = true;
-    }
-
-    if (fastTask) {
-      std::unique_ptr<BatchTask> fastTask2;
-      if (!s.fastQueue.empty() && s.fastQueue.front()->eos == fastTask->eos) {
-        fastTask2 = std::move(s.fastQueue.front());
-        s.fastQueue.pop_front();
-      }
-      const bool queueNonEmpty = !s.fastQueue.empty();
-      lock.unlock();
-      if (fastTask2) {
-        try {
-          const int64_t *ptrs[2] = {fastTask->xs[0].data(), fastTask2->xs[0].data()};
-          const size_t lens[2] = {fastTask->xs[0].size(), fastTask2->xs[0].size()};
-          const int64_t *cptrs[2] = {
-              fastTask->cs[0].empty() ? nullptr : fastTask->cs[0].data(),
-              fastTask2->cs[0].empty() ? nullptr : fastTask2->cs[0].data()};
-          const size_t clens[2] = {fastTask->cs[0].size(), fastTask2->cs[0].size()};
-          std::vector<std::vector<int64_t>> out;
-          s.translateKernel->translateBatch(ptrs, lens, cptrs, clens, 2,
-                                            fastTask->eos, out, 1, &s.concurrentExecutors);
-          fastTask->outputs.push_back(std::move(out[0]));
-          fastTask2->outputs.push_back(std::move(out[1]));
-        } catch (...) {
-          for (auto *ft : {fastTask.get(), fastTask2.get()}) {
-            try {
-              const int64_t *xp = ft->xs[0].data();
-              const size_t xl = ft->xs[0].size();
-              const int64_t *cp = ft->cs[0].empty() ? nullptr : ft->cs[0].data();
-              const size_t cl = ft->cs[0].size();
-              std::vector<std::vector<int64_t>> out;
-              s.translateKernel->translateBatch(&xp, &xl, &cp, &cl, 1, ft->eos, out, 1, &s.concurrentExecutors);
-              ft->outputs = std::move(out);
-            } catch (const std::exception &ex) {
-              ft->outputs.clear();
-              ft->setError(ex.what());
-            } catch (...) {
-              ft->outputs.clear();
-              ft->setError("Unknown native execution failure");
-            }
-          }
-        }
-        s.concurrentExecutors.fetch_sub(2, std::memory_order_relaxed);
-        notifyOneDone(std::move(fastTask));
-        notifyOneDone(std::move(fastTask2));
-        continue;
-      }
-      const bool singleExec =
-          !queueNonEmpty && (s.concurrentExecutors.load(std::memory_order_relaxed) <= 1);
-      const size_t maxThreads = singleExec ? pcores_phys : 1;
-#ifdef MTRAN_SSRU_PACKED
-      ScopedCore0Pin pinGuard(workerIdx, maxThreads > 1);
-#endif
-      try {
-        const int64_t *xPtr = fastTask->xs[0].data();
-        const size_t xLen = fastTask->xs[0].size();
-        const int64_t *cPtr = fastTask->cs[0].empty() ? nullptr : fastTask->cs[0].data();
-        const size_t cLen = fastTask->cs[0].size();
-        std::vector<std::vector<int64_t>> out;
-        s.translateKernel->translateBatch(&xPtr, &xLen, &cPtr, &cLen, 1,
-                                          fastTask->eos, out, maxThreads,
-                                          &s.concurrentExecutors);
-        fastTask->outputs = std::move(out);
-      } catch (const std::exception &ex) {
-        fastTask->outputs.clear();
-        fastTask->setError(ex.what());
-      } catch (...) {
-        fastTask->outputs.clear();
-        fastTask->setError("Unknown native execution failure");
-      }
-      s.concurrentExecutors.fetch_sub(1, std::memory_order_relaxed);
-      notifyOneDone(std::move(fastTask));
-      continue;
-    }
-
-    if (!runCont)
-      continue;
+    s.contRunning = true;
 
     struct ContGuard {
       State &s;
@@ -508,14 +366,9 @@ void runBatchWorkerLoop(State &s, size_t workerIdx) noexcept {
       }
     } contGuard{s};
 
-    // Wake E-core pre-encoders only for large batched documents behind this wave.
-    if (s.contHasBatch && s.contRawQueue.size() >= 8 && !s.ecoreWorkers.empty())
-      s.ecoreCv.notify_all();
-
     std::unordered_map<size_t, State::ContUnit> activeCont;
     activeCont.reserve(32);
     size_t nextId = 1;
-    size_t maxBatch = s.contHasBatch ? 16 : 8;
 
     auto pushUnitToItems = [&](State::ContUnit &&unit,
                                std::vector<mtran::onnx_async::ContinuousItem> &out) {
@@ -523,8 +376,6 @@ void runBatchWorkerLoop(State &s, size_t workerIdx) noexcept {
         finishUnitErr(unit, unit.pre_error.c_str());
         return;
       }
-      if (unit.group->is_batch)
-        maxBatch = 16;
       const size_t id = nextId++;
       const auto &xs = unit.group->task->xs[unit.item_idx];
       const auto &cs = unit.group->task->cs[unit.item_idx];
@@ -540,29 +391,31 @@ void runBatchWorkerLoop(State &s, size_t workerIdx) noexcept {
       out.push_back(std::move(item));
     };
 
-    auto pullLocked = [&](std::vector<mtran::onnx_async::ContinuousItem> &out, size_t max_new) {
-      while (!s.contEncodedQueue.empty() && out.size() < max_new) {
-        auto unit = std::move(s.contEncodedQueue.front());
-        s.contEncodedQueue.pop_front();
-        pushUnitToItems(std::move(unit), out);
-      }
-      while (!s.contRawQueue.empty() && out.size() < max_new) {
-        auto unit = std::move(s.contRawQueue.front());
-        s.contRawQueue.pop_front();
-        pushUnitToItems(std::move(unit), out);
-      }
-    };
-
     std::vector<mtran::onnx_async::ContinuousItem> initialItems;
     while (initialItems.empty() && (!s.contEncodedQueue.empty() || !s.contRawQueue.empty())) {
-      pullLocked(initialItems, maxBatch);
+      while (!s.contEncodedQueue.empty() && initialItems.size() < maxBatch) {
+        auto unit = std::move(s.contEncodedQueue.front());
+        s.contEncodedQueue.pop_front();
+        pushUnitToItems(std::move(unit), initialItems);
+      }
+      const size_t initialLimit =
+          (s.contHasBatch && s.contRawQueue.size() > 8 && !s.ecoreWorkers.empty())
+              ? size_t{8}
+              : maxBatch;
+      while (!s.contRawQueue.empty() && initialItems.size() < initialLimit) {
+        auto unit = std::move(s.contRawQueue.front());
+        s.contRawQueue.pop_front();
+        pushUnitToItems(std::move(unit), initialItems);
+      }
+    }
+    // Wake E-cores right away when raw work remains behind the initial P-core wave.
+    if (!s.contRawQueue.empty() && !s.ecoreWorkers.empty() &&
+        (s.contHasBatch || s.ecoresBusy < s.ecoreWorkers.size())) {
+      s.ecoreCv.notify_all();
     }
     lock.unlock();
     if (initialItems.empty())
       continue;
-#ifdef MTRAN_SSRU_PACKED
-    ScopedCore0Pin pinGuard(workerIdx, pcores_logical > 1);
-#endif
 
     mtran::onnx_async::ContinuousHook hook;
     hook.on_complete = [&](size_t id, std::vector<int64_t> &&tokens) {
@@ -582,8 +435,30 @@ void runBatchWorkerLoop(State &s, size_t workerIdx) noexcept {
       finishUnitErr(unit, msg);
     };
     hook.pop_refill = [&](std::vector<mtran::onnx_async::ContinuousItem> &out, size_t max_new) {
-      std::lock_guard l(s.batchMutex);
-      pullLocked(out, max_new);
+      bool wakeEcores = false;
+      {
+        std::lock_guard l(s.batchMutex);
+        while (!s.contEncodedQueue.empty() && out.size() < max_new) {
+          auto unit = std::move(s.contEncodedQueue.front());
+          s.contEncodedQueue.pop_front();
+          pushUnitToItems(std::move(unit), out);
+        }
+        while (!s.contRawQueue.empty() && out.size() < max_new) {
+          const bool canSteal =
+              s.ecoreWorkers.empty() ||
+              (activeCont.size() + out.size() < 4) ||
+              (s.ecoresBusy >= s.ecoreWorkers.size() && s.contRawQueue.size() >= 2);
+          if (!canSteal)
+            break;
+          auto unit = std::move(s.contRawQueue.front());
+          s.contRawQueue.pop_front();
+          pushUnitToItems(std::move(unit), out);
+        }
+        wakeEcores = !s.contRawQueue.empty() && !s.ecoreWorkers.empty() &&
+                     (s.ecoresBusy < s.ecoreWorkers.size());
+      }
+      if (wakeEcores)
+        s.ecoreCv.notify_all();
     };
 
     try {
@@ -608,23 +483,14 @@ void State::startBatchWorker() {
   batchStop = false;
   contRunning = false;
   contHasBatch = false;
+  ecoresBusy = 0;
 #ifdef MTRAN_SSRU_PACKED
   auto &pool = mtran::ssru::PcorePool::instance();
-  const size_t nWorkers = translateKernel->hasCandidates()
-                              ? std::max<size_t>(1, pool.pcoreCount())
-                              : 1;
   const size_t nEcores = std::min<size_t>(4, pool.ecoreCount());
 #else
-  const size_t nWorkers = 1;
   const size_t nEcores = 0;
 #endif
-  workerSlots.reserve(nWorkers);
-  for (size_t w = 0; w < nWorkers; ++w)
-    workerSlots.push_back(std::make_unique<WorkerSlot>());
-  batchWorkers.reserve(nWorkers);
-  for (size_t w = 0; w < nWorkers; ++w) {
-    batchWorkers.emplace_back([this, w] { runBatchWorkerLoop(*this, w); });
-  }
+  batchWorkers.emplace_back([this] { runBatchWorkerLoop(*this); });
   ecoreWorkers.reserve(nEcores);
   for (size_t e = 0; e < nEcores; ++e) {
     ecoreWorkers.emplace_back([this, e] { runEcorePreEncodeLoop(*this, e); });
@@ -1149,17 +1015,12 @@ void enqueueBatchTask(Environment &context, State &state, std::unique_ptr<BatchT
     checkNapi(napi_ref_threadsafe_function(context.env, context.tsfn));
     context.tsfnRefd = true;
   }
-  const bool hasCands = state.translateKernel->hasCandidates();
-  const bool workerRoute = (hasCands && !task->isBatch);
-  std::shared_ptr<State::ContGroup> contGroup;
-  if (!workerRoute) {
-    const size_t total = task->xs.size();
-    contGroup = std::make_shared<State::ContGroup>();
-    contGroup->is_batch = task->isBatch;
-    contGroup->remaining.store(total, std::memory_order_relaxed);
-    task->outputs.resize(total);
-    contGroup->task = std::move(task);
-  }
+  const size_t total = task->xs.size();
+  auto contGroup = std::make_shared<State::ContGroup>();
+  contGroup->is_batch = task->isBatch;
+  contGroup->remaining.store(total, std::memory_order_relaxed);
+  task->outputs.resize(total);
+  contGroup->task = std::move(task);
 
   context.batchInflight++;
   state.inflight++;
@@ -1167,24 +1028,16 @@ void enqueueBatchTask(Environment &context, State &state, std::unique_ptr<BatchT
     bool notifyEcores = false;
     {
       std::lock_guard lock(state.batchMutex);
-      if (workerRoute) {
-        state.concurrentExecutors.fetch_add(1, std::memory_order_relaxed);
-        state.fastQueue.push_back(std::move(task));
-        state.wakeIdleWorkersLocked(1);
-      } else {
-        const size_t total = contGroup->task->xs.size();
-        if (contGroup->is_batch)
-          state.contHasBatch = true;
-        for (size_t i = 0; i < total; ++i) {
-          state.contRawQueue.push_back(State::ContUnit{contGroup, i, {}, false, {}});
-        }
-        if (!state.ecoreWorkers.empty() && state.contRunning &&
-            state.contHasBatch && state.contRawQueue.size() >= 8) {
-          notifyEcores = true;
-        }
-        if (!state.contRunning)
-          state.wakeContWorkerLocked();
+      if (contGroup->is_batch)
+        state.contHasBatch = true;
+      for (size_t i = 0; i < total; ++i) {
+        state.contRawQueue.push_back(State::ContUnit{contGroup, i, {}, false, {}});
       }
+      if (!state.ecoreWorkers.empty() && state.contRunning) {
+        notifyEcores = true;
+      }
+      if (!state.contRunning)
+        state.wakeContWorkerLocked();
     }
     if (notifyEcores)
       state.ecoreCv.notify_all();

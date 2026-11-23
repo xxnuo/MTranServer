@@ -505,7 +505,7 @@ static void batchAndInt8Golden() {
                                        std::sin(float(m * 13 + k)) * 0.1f;
           }
         }
-        for (std::size_t mt : {std::size_t(1), std::size_t(4), std::size_t(6)}) {
+        for (std::size_t mt : {std::size_t(1), std::size_t(4), std::size_t(6), std::size_t(12)}) {
           std::vector<std::int64_t> got(rows, -1);
           q4_moved.argMaxBatch(x_rows.data(), rows, x_stride, got.data(), mt);
           for (std::size_t m = 0; m < rows; ++m) {

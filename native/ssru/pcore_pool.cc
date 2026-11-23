@@ -313,7 +313,9 @@ struct PcorePool::Impl {
       workers.emplace_back([this, w] {
 #if defined(__linux__)
         if (w + 1 < topo.physical_pcore_groups.size()) {
-          pinMask(topo.physical_pcore_groups[w + 1]);
+          if (!topo.physical_pcore_groups[w + 1].empty()) {
+            pinMask({topo.physical_pcore_groups[w + 1][0]});
+          }
         } else if (!topo.pcore_ht_siblings.empty()) {
           const std::size_t ht_idx = w + 1 - topo.physical_pcore_groups.size();
           pinMask({topo.pcore_ht_siblings[ht_idx % topo.pcore_ht_siblings.size()]});

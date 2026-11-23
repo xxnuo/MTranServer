@@ -103,7 +103,6 @@ export class TranslationEngine {
         const poolSize = Number.parseInt(process.env.UV_THREADPOOL_SIZE ?? '4', 10) || 4;
         const ssruMaxConcurrentRuns = Math.min(
           config['max-concurrent-runs'] ?? Infinity,
-          Math.max(1, poolSize),
           Math.min(availableParallelism(), Math.max(8, Math.floor(availableParallelism() * 0.75)))
         );
         const ssruTuning: SessionTuning = {

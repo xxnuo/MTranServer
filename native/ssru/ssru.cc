@@ -250,6 +250,7 @@ struct BatchWorkspace::Scratch {
   std::vector<float> shard_logits;
   std::vector<std::uint8_t> a_q, a_zps;
   std::vector<float> a_scales, relu_maxs, tls_relu_maxs, norm_mins, norm_maxs;
+  packed::FullVocabQ4::BatchScratch q4_batch_ws;
 #endif
 };
 
@@ -867,19 +868,23 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
     const float attn_scale = static_cast<float>(1.0 / std::sqrt(static_cast<double>(head_dim)));
     bool shortlist_union_dirty = true;
 
-    std::size_t score_threads = 1;
+    std::size_t pcore_phys = 1;
+    std::size_t max_step_threads = 1;
     std::size_t q4_threads = 1;
 #ifdef MTRAN_SSRU_PACKED
     if (native_) {
       auto& pool = PcorePool::instance();
       const std::size_t capped = std::max<std::size_t>(1, max_threads);
-      score_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
-      q4_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreLogicalCount()));
+      pcore_phys = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+      max_step_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreLogicalCount()));
+      q4_threads = max_step_threads;
     }
 #else
     (void)max_threads;
 #endif
+    (void)pcore_phys;
     (void)q4_threads;
+    const std::size_t score_threads = max_step_threads;
     s.scores.resize(multiply(score_threads, max_src_len));
 
     const auto admitRefills = [&]() {
@@ -981,30 +986,41 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
 #ifdef MTRAN_SSRU_PACKED
     if (native_) {
       auto& pool = PcorePool::instance();
-      const std::size_t threads = score_threads;
-      std::size_t step_threads = threads;
+      std::size_t step_threads = max_step_threads;
 
       s.a_q.resize(multiply(b_cap, std::max(dim, max_ffn_width_)));
       s.a_scales.resize(b_cap);
       s.a_zps.resize(b_cap);
-      s.relu_maxs.resize(multiply(threads, b_cap));
+      s.relu_maxs.resize(multiply(max_step_threads, b_cap));
       s.norm_mins.resize(b_cap);
       s.norm_maxs.resize(b_cap);
-      while (s.shard_ws.size() < threads) {
+      while (s.shard_ws.size() < max_step_threads) {
         s.shard_ws.push_back(std::make_unique<packed::Workspace>());
       }
-      s.shard_idxs.resize(threads);
-      s.shard_logits.resize(threads);
+      s.shard_idxs.resize(max_step_threads);
+      s.shard_logits.resize(max_step_threads);
+      bool q4_scratch_reserved = false;
+      for (std::size_t m = 0; m < active; ++m) {
+        if (s.slot_reqs[m].candidate_count == 0) {
+          native_->getFullVocab().reserveBatchScratch(s.q4_batch_ws, b_cap, max_step_threads);
+          q4_scratch_reserved = true;
+          break;
+        }
+      }
 
       const std::size_t q_chunks = dim / 32;
       const std::size_t rnn_chunks = 2 * q_chunks;
       (void)shortlist_union_dirty;
 
       while (active > 0) {
-        step_threads = (active == 1 && active_submitted &&
-                        active_submitted->load(std::memory_order_relaxed) > 1)
-                           ? 1
-                           : threads;
+        if (active == 1 && active_submitted &&
+            active_submitted->load(std::memory_order_relaxed) > 1) {
+          step_threads = 1;
+        } else if (active < 4) {
+          step_threads = pcore_phys;
+        } else {
+          step_threads = max_step_threads;
+        }
         std::size_t max_active_src_len = 0;
         bool any_pos0 = false;
         bool all_pos0 = true;
@@ -1019,6 +1035,11 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
           else any_short = true;
         }
         const bool shortlist_only = (!any_full && any_short);
+        const bool fuse_q4_in_team = (any_full && !any_short && step_threads == q4_threads);
+        if (fuse_q4_in_team && !q4_scratch_reserved) {
+          native_->getFullVocab().reserveBatchScratch(s.q4_batch_ws, b_cap, max_step_threads);
+          q4_scratch_reserved = true;
+        }
 
         TeamBarrier barrier(step_threads);
         pool.parallelFor(step_threads, [&](std::size_t tid, std::size_t nt) {
@@ -1238,7 +1259,7 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
             if (active == 1) {
               const auto& req = s.slot_reqs[0];
               if (nt > 1 && req.candidate_count >= 512) {
-                const std::size_t st = std::min<std::size_t>(nt, 4);
+                const std::size_t st = std::min<std::size_t>(nt, 6);
                 if (tid < st) {
                   const std::size_t cb = (req.candidate_count * tid) / st;
                   const std::size_t ce = (req.candidate_count * (tid + 1)) / st;
@@ -1282,11 +1303,17 @@ void Decoder::decodeBatchImpl(const Request* initial_requests, std::size_t initi
               }
             }
           }
+          if (fuse_q4_in_team) {
+            native_->getFullVocab().argMaxBatchInTeam(
+                s.q4_batch_ws, s.x.data(), active, dim, s.chosen_tokens.data(),
+                (nt > 1) ? &barrier : nullptr, tid, nt);
+          }
           cancel_guard.done = true;
         });
 
-        // FullVocabQ4 uses up to q4_threads (P-cores + HT siblings) cleanly outside the layer team.
-        if (any_full) {
+        // FullVocabQ4 uses up to q4_threads (P-cores + HT siblings) cleanly outside the layer team
+        // when not fused inside the team (e.g., active < 4 or mixed full/shortlist batch).
+        if (any_full && !fuse_q4_in_team) {
           if (shortlist_only) {
             // Unreachable, keeps structure explicit.
           } else if (!any_short) {

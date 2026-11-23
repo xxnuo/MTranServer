@@ -5,11 +5,47 @@ import protobuf from 'protobufjs';
 
 const littleEndian = endianness() === 'LE';
 
+function sortInt32(arr: Int32Array, left: number, right: number): void {
+  while (left < right) {
+    if (right - left <= 16) {
+      for (let i = left + 1; i <= right; i++) {
+        const v = arr[i];
+        let j = i - 1;
+        while (j >= left && arr[j] > v) {
+          arr[j + 1] = arr[j];
+          j--;
+        }
+        arr[j + 1] = v;
+      }
+      return;
+    }
+    const mid = (left + right) >>> 1;
+    const pivot = arr[mid];
+    let i = left, j = right;
+    while (i <= j) {
+      while (arr[i] < pivot) i++;
+      while (arr[j] > pivot) j--;
+      if (i <= j) {
+        const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+        i++; j--;
+      }
+    }
+    if (j - left < right - i) {
+      if (left < j) sortInt32(arr, left, j);
+      left = i;
+    } else {
+      if (i < right) sortInt32(arr, i, right);
+      right = j;
+    }
+  }
+}
+
 export interface Lexicon { first: number; offsets: number[]; targets: number[] }
 export class Shortlist {
   private readonly wordCount: number;
   private readonly baseWords: Uint32Array;
   private readonly extraWords: Uint32Array;
+  private readonly dirtyWords: Int32Array;
   private readonly baseIds: Int32Array;
   private readonly extraIds: Int32Array;
   private readonly basePrefixLen: number;
@@ -24,6 +60,7 @@ export class Shortlist {
     this.wordCount = (targetSize + 31) >>> 5;
     this.baseWords = new Uint32Array(this.wordCount);
     this.extraWords = new Uint32Array(this.wordCount);
+    this.dirtyWords = new Int32Array(this.wordCount);
     this.offsets = Int32Array.from(lex.offsets);
     this.targets = Uint32Array.from(lex.targets);
     let count = 0;
@@ -68,40 +105,92 @@ export class Shortlist {
   }
   private fillExtra(source: ArrayLike<number | bigint>): number {
     assert(source.length > 0, 'invalid source IDs');
-    const { baseWords, extraWords, offsets, targets, targetSize, shared } = this;
-    extraWords.fill(0);
+    const { baseWords, extraWords, dirtyWords, offsets, targets, targetSize, shared } = this;
     let extraCount = 0;
+    let dirtyCount = 0;
+    let minWord = this.wordCount;
+    let maxWord = -1;
     const maxSource = offsets.length - 1;
-    for (let i = 0; i < source.length; i++) {
-      const raw = source[i];
-      const id = typeof raw === 'bigint' ? Number(raw) : raw;
-      assert(Number.isSafeInteger(id) && id >= 0 && id < maxSource, 'invalid source ID');
-      if (shared && id < targetSize) {
+    try {
+      for (let i = 0; i < source.length; i++) {
+        const raw = source[i];
+        const id = typeof raw === 'bigint' ? Number(raw) : raw;
+        assert(Number.isSafeInteger(id) && id >= 0 && id < maxSource, 'invalid source ID');
+        if (shared && id < targetSize) {
+          const idx = id >>> 5, bit = 1 << (id & 31);
+          const cur = extraWords[idx];
+          if (((baseWords[idx] | cur) & bit) === 0) {
+            if (cur === 0) {
+              dirtyWords[dirtyCount++] = idx;
+              if (idx < minWord) minWord = idx;
+              if (idx > maxWord) maxWord = idx;
+            }
+            extraWords[idx] = cur | bit;
+            extraCount++;
+          }
+        }
+        const start = offsets[id], end = offsets[id + 1];
+        for (let j = start; j < end; j++) {
+          const tid = targets[j];
+          const idx = tid >>> 5, bit = 1 << (tid & 31);
+          const cur = extraWords[idx];
+          if (((baseWords[idx] | cur) & bit) === 0) {
+            if (cur === 0) {
+              dirtyWords[dirtyCount++] = idx;
+              if (idx < minWord) minWord = idx;
+              if (idx > maxWord) maxWord = idx;
+            }
+            extraWords[idx] = cur | bit;
+            extraCount++;
+          }
+        }
+      }
+      let totalCount = this.baseCount + extraCount;
+      for (let id = this.lex.first; id < targetSize && (totalCount & 7) !== 0; id++) {
         const idx = id >>> 5, bit = 1 << (id & 31);
-        if (((baseWords[idx] | extraWords[idx]) & bit) === 0) { extraWords[idx] |= bit; extraCount++; }
+        const cur = extraWords[idx];
+        if (((baseWords[idx] | cur) & bit) === 0) {
+          if (cur === 0) {
+            dirtyWords[dirtyCount++] = idx;
+            if (idx < minWord) minWord = idx;
+            if (idx > maxWord) maxWord = idx;
+          }
+          extraWords[idx] = cur | bit;
+          totalCount++;
+          extraCount++;
+        }
       }
-      const start = offsets[id], end = offsets[id + 1];
-      for (let j = start; j < end; j++) {
-        const tid = targets[j];
-        const idx = tid >>> 5, bit = 1 << (tid & 31);
-        if (((baseWords[idx] | extraWords[idx]) & bit) === 0) { extraWords[idx] |= bit; extraCount++; }
-      }
+    } catch (err) {
+      for (let k = 0; k < dirtyCount; k++) extraWords[dirtyWords[k]] = 0;
+      throw err;
     }
-    let totalCount = this.baseCount + extraCount;
-    for (let id = this.lex.first; id < targetSize && (totalCount & 7) !== 0; id++) {
-      const idx = id >>> 5, bit = 1 << (id & 31);
-      if (((baseWords[idx] | extraWords[idx]) & bit) === 0) { extraWords[idx] |= bit; totalCount++; extraCount++; }
-    }
+    if (dirtyCount === 0) return 0;
     const extraIds = this.extraIds;
     let e = 0;
-    for (let i = this.extraWordStart; i < extraWords.length && e < extraCount; i++) {
-      let w = extraWords[i];
-      if (w === 0) continue;
-      const base = i << 5;
-      while (w !== 0) {
-        const lsb = w & -w;
-        extraIds[e++] = base + (31 - Math.clz32(lsb));
-        w ^= lsb;
+    if (dirtyCount * 6 <= maxWord - minWord + 1) {
+      sortInt32(dirtyWords, 0, dirtyCount - 1);
+      for (let k = 0; k < dirtyCount; k++) {
+        const idx = dirtyWords[k];
+        let w = extraWords[idx];
+        extraWords[idx] = 0;
+        const base = idx << 5;
+        while (w !== 0) {
+          const lsb = w & -w;
+          extraIds[e++] = base + (31 - Math.clz32(lsb));
+          w ^= lsb;
+        }
+      }
+    } else {
+      for (let i = minWord; i <= maxWord; i++) {
+        let w = extraWords[i];
+        if (w === 0) continue;
+        extraWords[i] = 0;
+        const base = i << 5;
+        while (w !== 0) {
+          const lsb = w & -w;
+          extraIds[e++] = base + (31 - Math.clz32(lsb));
+          w ^= lsb;
+        }
       }
     }
     return extraCount;

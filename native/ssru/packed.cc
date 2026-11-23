@@ -2378,6 +2378,18 @@ void ShortlistTable::argMaxBatch(const float* x_rows, std::size_t rows, std::siz
   impl_->argMaxBatch(x_rows, rows, x_stride, union_ids, slot_masks, union_count, out_tokens);
 }
 
+struct FullVocabQ4::BatchScratch::Impl {
+  Workspace work;
+  std::uint8_t* raw_work = nullptr;
+  std::size_t work_bytes = 0;
+  std::vector<const std::uint8_t*> work_ptrs;
+  std::vector<TopK9> tops;
+  std::vector<TopK9> partial;
+  std::vector<int> paths;
+  std::size_t max_rows = 0;
+  std::size_t max_threads = 0;
+};
+
 struct FullVocabQ4::Impl {
   const float* embedding_ = nullptr;
   const std::int8_t* emb_q8_ptr_ = nullptr;
@@ -2735,6 +2747,94 @@ struct FullVocabQ4::Impl {
     return best_id;
   }
 
+  std::size_t perRowWorkBytes() const noexcept {
+    const std::size_t qa_bytes = ((dim_ + 63) & ~std::size_t(63));
+    const std::size_t sa_bytes = ((blocks_ + 7) & ~std::size_t(7)) * sizeof(float);
+    const std::size_t corr_bytes = blocks_ * 8 * sizeof(std::int32_t);
+    return (qa_bytes + sa_bytes + corr_bytes + 64 + 63) & ~std::size_t(63);
+  }
+
+  void reserveBatchScratch(FullVocabQ4::BatchScratch::Impl& bs, std::size_t max_rows,
+                           std::size_t max_threads) const {
+    const std::size_t rows_need = std::max(bs.max_rows, std::max<std::size_t>(1, max_rows));
+    const std::size_t thr_need =
+        std::max(bs.max_threads, std::max<std::size_t>(1, max_threads));
+    const std::size_t row_bytes = perRowWorkBytes();
+    const std::size_t need_work = rows_need * row_bytes;
+    if (need_work > bs.work_bytes || !bs.raw_work) {
+      bs.raw_work = bs.work.resize(need_work);
+      bs.work_bytes = need_work;
+    }
+    if (bs.work_ptrs.size() < rows_need) bs.work_ptrs.resize(rows_need);
+    if (bs.tops.size() < rows_need) bs.tops.resize(rows_need);
+    if (bs.paths.size() < rows_need) bs.paths.resize(rows_need);
+    const std::size_t row_stride = ((rows_need + 15) / 16) * 16;
+    const std::size_t need_partial = thr_need * row_stride;
+    if (bs.partial.size() < need_partial) bs.partial.resize(need_partial);
+    bs.max_rows = rows_need;
+    bs.max_threads = thr_need;
+  }
+
+  void argMaxBatchInTeam(FullVocabQ4::BatchScratch::Impl& bs, const float* x_rows,
+                         std::size_t rows, std::size_t x_stride, std::int64_t* out_tokens,
+                         mtran::ssru::TeamBarrier* barrier, std::size_t tid,
+                         std::size_t nt) const {
+    if (!x_rows || !out_tokens || !rows || x_stride < dim_ ||
+        rows > bs.max_rows || nt > bs.max_threads) {
+      throw std::invalid_argument("Invalid full-vocab Q4 batch arguments");
+    }
+    const std::size_t per_row_work = perRowWorkBytes();
+    const std::size_t row_stride = ((rows + 15) / 16) * 16;
+    std::uint8_t* raw_work = bs.raw_work;
+
+    for (std::size_t m = tid; m < rows; m += nt) {
+      const float* xm = x_rows + m * x_stride;
+      checkFinite(xm, dim_, "Nonfinite full-vocab activation");
+      std::uint8_t* wm = raw_work + m * per_row_work;
+      bs.work_ptrs[m] = wm;
+      bs.paths[m] = static_cast<int>(prepareInput(xm, wm));
+      bs.tops[m].init();
+    }
+    if (nt > 1 && barrier && !barrier->arriveAndWait()) return;
+
+    Q4Path path = static_cast<Q4Path>(bs.paths[0]);
+    for (std::size_t m = 1; m < rows; ++m) {
+      if (static_cast<Q4Path>(bs.paths[m]) != path) {
+        path = Q4Path::None;
+        break;
+      }
+    }
+    const bool ran_simd = (path != Q4Path::None);
+    const std::size_t groups = vocab_ / group_width_;
+    if (ran_simd) {
+      if (nt >= 2) {
+        const std::size_t gb = (groups * tid) / nt;
+        const std::size_t ge = (groups * (tid + 1)) / nt;
+        scanBatchRange(rows, gb, ge, bs.work_ptrs.data(), path,
+                       bs.partial.data() + tid * row_stride);
+        if (barrier && !barrier->arriveAndWait()) return;
+      } else {
+        scanBatchRange(rows, 0, groups, bs.work_ptrs.data(), path, bs.tops.data());
+      }
+    }
+
+    const std::size_t start_col = ran_simd ? (groups * group_width_) : 0;
+    const bool need_tail = (!ran_simd || (vocab_ % group_width_ != 0));
+    for (std::size_t m = tid; m < rows; m += nt) {
+      if (ran_simd && nt >= 2) {
+        for (std::size_t p = 0; p < nt; ++p) {
+          const TopK9& pt = bs.partial[p * row_stride + m];
+          for (int k = 0; k < pt.count; ++k) bs.tops[m].push(pt.scores[k], pt.ids[k]);
+        }
+      }
+      if (need_tail) {
+        appendScalarTail(x_rows + m * x_stride, raw_work + m * per_row_work,
+                         start_col, bs.tops[m]);
+      }
+      out_tokens[m] = static_cast<std::int64_t>(rerankTopK(x_rows + m * x_stride, bs.tops[m]));
+    }
+  }
+
   std::size_t argmax(const float* x, Workspace& workspace, bool allow_parallel) const {
     if (!x) throw std::invalid_argument("Invalid full-vocab activation");
     checkFinite(x, dim_, "Nonfinite full-vocab activation");
@@ -2754,15 +2854,19 @@ struct FullVocabQ4::Impl {
           ? std::min<std::size_t>(pool.pcoreLogicalCount(), std::max<std::size_t>(1, groups / 16))
           : 1;
       if (nthreads >= 2) {
-        std::vector<PaddedTopK9<TopK9>> partial(nthreads);
+        thread_local std::vector<PaddedTopK9<TopK9>> tls_partial;
+        if (tls_partial.size() < nthreads) tls_partial.resize(nthreads);
+        auto* partial_ptr = tls_partial.data();
+        std::size_t actual_nt = 1;
         pool.parallelFor(nthreads, [&](std::size_t tid, std::size_t nthr) {
+          if (tid == 0) actual_nt = nthr;
           const std::size_t gb = (groups * tid) / nthr;
           const std::size_t ge = (groups * (tid + 1)) / nthr;
-          scanRange(gb, ge, work, path, partial[tid].top);
+          scanRange(gb, ge, work, path, partial_ptr[tid].top);
         });
-        for (std::size_t p = 0; p < nthreads; ++p) {
-          for (int k = 0; k < partial[p].top.count; ++k) {
-            top.push(partial[p].top.scores[k], partial[p].top.ids[k]);
+        for (std::size_t p = 0; p < actual_nt; ++p) {
+          for (int k = 0; k < partial_ptr[p].top.count; ++k) {
+            top.push(partial_ptr[p].top.scores[k], partial_ptr[p].top.ids[k]);
           }
         }
       } else {
@@ -2787,69 +2891,80 @@ struct FullVocabQ4::Impl {
       return;
     }
 
-    const std::size_t qa_bytes = ((dim_ + 63) & ~std::size_t(63));
-    const std::size_t sa_bytes = ((blocks_ + 7) & ~std::size_t(7)) * sizeof(float);
-    const std::size_t corr_bytes = blocks_ * 8 * sizeof(std::int32_t);
-    const std::size_t per_row_work = (qa_bytes + sa_bytes + corr_bytes + 64 + 63) & ~std::size_t(63);
+    const std::size_t groups = vocab_ / group_width_;
+    auto& pool = mtran::ssru::PcorePool::instance();
+    const std::size_t cap = std::max<std::size_t>(1, max_threads);
+    const std::size_t nthreads = (cap > 1 && groups >= 4)
+        ? std::min<std::size_t>({cap, pool.pcoreLogicalCount(), groups / 4})
+        : 1;
 
-    thread_local Workspace tls_ws;
-    std::uint8_t* raw_work = tls_ws.resize(rows * per_row_work);
-    std::vector<const std::uint8_t*> work_ptrs(rows);
-    Q4Path path = Q4Path::None;
-
-    for (std::size_t m = 0; m < rows; ++m) {
-      const float* xm = x_rows + m * x_stride;
-      checkFinite(xm, dim_, "Nonfinite full-vocab activation");
-      std::uint8_t* wm = raw_work + m * per_row_work;
-      work_ptrs[m] = wm;
-      const Q4Path p = prepareInput(xm, wm);
-      if (m == 0) path = p;
-      else if (p != path) path = Q4Path::None;
+    thread_local FullVocabQ4::BatchScratch tls_bs;
+    auto& bs = *tls_bs.impl_;
+    reserveBatchScratch(bs, rows, nthreads);
+    if (nthreads <= 1) {
+      argMaxBatchInTeam(bs, x_rows, rows, x_stride, out_tokens, nullptr, 0, 1);
+      return;
     }
-
-    std::vector<TopK9> tops(rows);
-    for (auto& t : tops) t.init();
-
-    const bool ran_simd = (path != Q4Path::None);
-    if (ran_simd) {
-      const std::size_t groups = vocab_ / group_width_;
-      auto& pool = mtran::ssru::PcorePool::instance();
-      const std::size_t cap = std::max<std::size_t>(1, max_threads);
-      const std::size_t nthreads = (cap > 1 && groups >= 4)
-          ? std::min<std::size_t>({cap, pool.pcoreLogicalCount(), groups / 4})
-          : 1;
-      if (nthreads >= 2) {
-        // Group each thread's TopK9 array into cache-separated blocks ([tid * padded_rows + m]).
-        const std::size_t padded_rows = ((rows * sizeof(TopK9) + 63) / 64) * 64 / sizeof(TopK9) + rows;
-        std::vector<TopK9> partial(nthreads * padded_rows);
-        pool.parallelFor(nthreads, [&](std::size_t tid, std::size_t nthr) {
-          const std::size_t gb = (groups * tid) / nthr;
-          const std::size_t ge = (groups * (tid + 1)) / nthr;
-          scanBatchRange(rows, gb, ge, work_ptrs.data(), path, partial.data() + tid * padded_rows);
+    if (rows == 1) {
+      checkFinite(x_rows, dim_, "Nonfinite full-vocab activation");
+      std::uint8_t* w0 = bs.raw_work;
+      const Q4Path path = prepareInput(x_rows, w0);
+      TopK9& top = bs.tops[0];
+      top.init();
+      const bool ran_simd = (path != Q4Path::None);
+      if (ran_simd) {
+        auto* partial_ptr = bs.partial.data();
+        std::size_t actual_nt = 1;
+        pool.parallelFor(nthreads, [&](std::size_t tid, std::size_t nt) {
+          if (tid == 0) actual_nt = nt;
+          const std::size_t gb = (groups * tid) / nt;
+          const std::size_t ge = (groups * (tid + 1)) / nt;
+          scanRange(gb, ge, w0, path, partial_ptr[tid * 16]);
         });
-        for (std::size_t m = 0; m < rows; ++m) {
-          for (std::size_t p = 0; p < nthreads; ++p) {
-            const TopK9& pt = partial[p * padded_rows + m];
-            for (int k = 0; k < pt.count; ++k) tops[m].push(pt.scores[k], pt.ids[k]);
-          }
+        for (std::size_t p = 0; p < actual_nt; ++p) {
+          const TopK9& pt = partial_ptr[p * 16];
+          for (int k = 0; k < pt.count; ++k) top.push(pt.scores[k], pt.ids[k]);
         }
-      } else {
-        scanBatchRange(rows, 0, groups, work_ptrs.data(), path, tops.data());
       }
+      if (!ran_simd || (vocab_ % group_width_ != 0)) {
+        const std::size_t start_col = ran_simd ? (groups * group_width_) : 0;
+        appendScalarTail(x_rows, w0, start_col, top);
+      }
+      out_tokens[0] = static_cast<std::int64_t>(rerankTopK(x_rows, top));
+      return;
     }
 
-    if (!ran_simd || (vocab_ % group_width_ != 0)) {
-      const std::size_t start_col = ran_simd ? ((vocab_ / group_width_) * group_width_) : 0;
-      for (std::size_t m = 0; m < rows; ++m) {
-        appendScalarTail(x_rows + m * x_stride, raw_work + m * per_row_work, start_col, tops[m]);
-      }
-    }
-
-    for (std::size_t m = 0; m < rows; ++m) {
-      out_tokens[m] = static_cast<std::int64_t>(rerankTopK(x_rows + m * x_stride, tops[m]));
-    }
+    mtran::ssru::TeamBarrier barrier(nthreads);
+    pool.parallelFor(nthreads, [&](std::size_t tid, std::size_t nt) {
+      struct CancelGuard {
+        mtran::ssru::TeamBarrier& b;
+        bool done = false;
+        ~CancelGuard() { if (!done) b.cancel(); }
+      } cancel_guard{barrier};
+      argMaxBatchInTeam(bs, x_rows, rows, x_stride, out_tokens,
+                        (nt > 1) ? &barrier : nullptr, tid, nt);
+      cancel_guard.done = true;
+    });
   }
 };
+
+FullVocabQ4::BatchScratch::BatchScratch() : impl_(std::make_unique<Impl>()) {}
+FullVocabQ4::BatchScratch::~BatchScratch() = default;
+FullVocabQ4::BatchScratch::BatchScratch(BatchScratch&&) noexcept = default;
+FullVocabQ4::BatchScratch& FullVocabQ4::BatchScratch::operator=(BatchScratch&&) noexcept = default;
+
+void FullVocabQ4::reserveBatchScratch(BatchScratch& scratch, std::size_t max_rows,
+                                      std::size_t max_threads) const {
+  impl_->reserveBatchScratch(*scratch.impl_, max_rows, max_threads);
+}
+void FullVocabQ4::argMaxBatchInTeam(BatchScratch& scratch, const float* x_rows,
+                                    std::size_t rows, std::size_t x_stride,
+                                    std::int64_t* out_tokens,
+                                    mtran::ssru::TeamBarrier* barrier,
+                                    std::size_t tid, std::size_t nt) const {
+  impl_->argMaxBatchInTeam(*scratch.impl_, x_rows, rows, x_stride, out_tokens,
+                           barrier, tid, nt);
+}
 
 FullVocabQ4::FullVocabQ4(std::unique_ptr<const Impl> impl) noexcept : impl_(std::move(impl)) {}
 FullVocabQ4::FullVocabQ4(const float* embedding, const float* output_bias, std::size_t vocab, std::size_t dim,

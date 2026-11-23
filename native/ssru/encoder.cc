@@ -620,7 +620,9 @@ void Encoder::encodeBatch(const std::int64_t* const* inputs,
     if (native_) {
       auto& pool = PcorePool::instance();
       const std::size_t capped = std::max<std::size_t>(1, max_threads);
-      const std::size_t team_threads = std::min(capped, std::max<std::size_t>(1, pool.pcoreCount()));
+      const std::size_t team_cap =
+          (total_tokens >= 64) ? pool.pcoreLogicalCount() : pool.pcoreCount();
+      const std::size_t team_threads = std::min(capped, std::max<std::size_t>(1, team_cap));
       (void)active_submitted;
 
       s.a_q.resize(multiply(total_tokens, std::max(dim, max_ffn_width_)));
