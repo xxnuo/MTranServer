@@ -156,22 +156,22 @@ Umgebungsvariablen und weitere Optionen stehen in [API_de.md](API_de.md), oder `
 
 ## Leistung
 
-Intel Core i5-14400 (Linux x64, nur CPU, Cache deaktiviert); Median aus drei HTTP-ABBA-Runden, Details im [Benchmark-Bericht](benchmarks/performance-optimization-2026-11-23.md). Weniger ms und mehr Anfragen/s sind besser.
+AMD Ryzen 9 9950X (4-CPU-Kontingent, 3 GiB RAM, nur CPU, Cache deaktiviert); Median aus drei rotierenden HTTP-Runden, Details im [CPU-Vergleich](benchmarks/cpu-comparison-2026-11-23.md) und im [Optimierungsbericht](benchmarks/performance-optimization-2026-11-23.md). Weniger ms und mehr Anfragen/s sind besser.
 
 | Richtung | Eingabe | Parallelität | Standard | Fast |
 | --- | --- | --- | --- | --- |
-| Englisch → Chinesisch | Kurz | 1 | 3.6 ms | **2.3 ms** |
-| Englisch → Chinesisch | Absatz | 1 | 10.2 ms | **7.3 ms** |
-| Chinesisch → Englisch | Kurz | 1 | 5.2 ms | **2.3 ms** |
-| Chinesisch → Englisch | Absatz | 1 | 18.6 ms | **7.6 ms** |
-| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 53.5 ms | **45.7 ms** |
-| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 102.7 ms | **56.2 ms** |
-| Englisch → Chinesisch | Kurz | 8 | 627 Anfragen/s | **831 Anfragen/s** |
-| Chinesisch → Englisch | Kurz | 8 | 424 Anfragen/s | **1063 Anfragen/s** |
+| Englisch → Chinesisch | Kurz | 1 | 1.6 ms | **1.4 ms** |
+| Englisch → Chinesisch | Absatz | 1 | 4.5 ms | **3.8 ms** |
+| Chinesisch → Englisch | Kurz | 1 | 1.9 ms | **1.4 ms** |
+| Chinesisch → Englisch | Absatz | 1 | 5.4 ms | **4.2 ms** |
+| Englisch → Chinesisch | Langtext (32 Sätze) | 1 | 30.6 ms | **23.5 ms** |
+| Chinesisch → Englisch | Langtext (32 Sätze) | 1 | 50.8 ms | **30.8 ms** |
+| Englisch → Chinesisch | Kurz | 8 | 1212 Anfragen/s | **1974 Anfragen/s** |
+| Chinesisch → Englisch | Kurz | 8 | 1125 Anfragen/s | **2134 Anfragen/s** |
 
-Mit beiden Übersetzungsrichtungen geladen: Warm-RSS etwa 444 MiB im Standardmodus (Start 0.94 s) und 523 MiB im Fast-Modus (Start 1.04 s).
+Mit beiden Übersetzungsrichtungen geladen: Warm-RSS etwa 442 MiB im Standardmodus (Start 0.98 s) und 506 MiB im Fast-Modus (Start 0.78 s).
 
-Lange Texte nutzen parallele Satzverarbeitung und kontinuierliches Batch-Scheduling; Details im [Bericht vom 2026-11-23](benchmarks/performance-optimization-2026-11-23.md). `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
+Lange Texte nutzen parallele Satzverarbeitung und kontinuierliches Batch-Scheduling; Details im [CPU-Vergleich 2026-11-23](benchmarks/cpu-comparison-2026-11-23.md) und im [Optimierungsbericht](benchmarks/performance-optimization-2026-11-23.md). `--fast` aktiviert Fast; standardmäßig deaktiviert, da mehr Fehlübersetzungen möglich sind. [Beispiele](../tests/fixtures/translation-quality-regressions.json).
 
 - Desktop: Standardmodus für höhere Übersetzungsgenauigkeit empfohlen. GPU-Beschleunigung wird unterstützt; eine dedizierte GPU kann bei geeigneten Aufgaben um ein Mehrfaches schneller als die CPU sein.
 - Server: Fast-Modus für stabilen Durchsatz und hohe Geschwindigkeit empfohlen, mit Beschleunigung durch verschiedene CPU-Befehlssätze.
@@ -184,7 +184,7 @@ Lange Texte nutzen parallele Satzverarbeitung und kontinuierliches Batch-Schedul
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Sehr hoch | Mittel | [Community-Daten](https://community.libretranslate.com/t/performance-benchmark-data/486): etwa 3 Sätze/s auf einer Mittelklasse-CPU, etwa 15–20 auf einer High-End-CPU |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | Hoch | Schnell | [CTranslate2-Benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Andere große Modelle | Extrem hoch | Sehr langsam | Gute Qualität, hohe Hardware-Anforderungen; für hohe Parallelität wird oft vLLM verwendet |
-| [LinguaSpark](https://github.com/LinguaSpark/server) | Niedriger | Schnell | [CPU-Vergleich](benchmarks/cpu-comparison-2026-11-17.md) |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | Niedriger | Schnell | [CPU-Vergleich](benchmarks/cpu-comparison-2026-11-23.md) |
 | Dieses Projekt | Abhängig von Modellen und Parallelität | Extrem schnell | CPU-Übersetzung, Cache aus |
 
 ## Weiteres

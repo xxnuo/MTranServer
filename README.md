@@ -156,22 +156,22 @@ mtranserver --offline
 
 ## 性能
 
-Intel Core i5-14400（Linux x64，纯 CPU，关闭缓存），HTTP 三轮 ABBA 中位数，详见[实测报告](docs/benchmarks/performance-optimization-2026-11-23.md)。毫秒越低越好，次/秒越高越好。
+AMD Ryzen 9 9950X（4 CPU 配额、3 GiB 内存、纯 CPU、关闭缓存），HTTP 三轮轮换中位数，详见[CPU 对比测试](docs/benchmarks/cpu-comparison-2026-11-23.md)与[双模式优化报告](docs/benchmarks/performance-optimization-2026-11-23.md)。毫秒越低越好，次/秒越高越好。
 
 | 方向 | 输入 | 并发 | 默认 | Fast |
 | --- | --- | --- | --- | --- |
-| 英 → 中 | 短句 | 1 | 3.6 ms | **2.3 ms** |
-| 英 → 中 | 段落 | 1 | 10.2 ms | **7.3 ms** |
-| 中 → 英 | 短句 | 1 | 5.2 ms | **2.3 ms** |
-| 中 → 英 | 段落 | 1 | 18.6 ms | **7.6 ms** |
-| 英 → 中 | 长文（32 句） | 1 | 53.5 ms | **45.7 ms** |
-| 中 → 英 | 长文（32 句） | 1 | 102.7 ms | **56.2 ms** |
-| 英 → 中 | 短句 | 8 | 627 次/秒 | **831 次/秒** |
-| 中 → 英 | 短句 | 8 | 424 次/秒 | **1063 次/秒** |
+| 英 → 中 | 短句 | 1 | 1.6 ms | **1.4 ms** |
+| 英 → 中 | 段落 | 1 | 4.5 ms | **3.8 ms** |
+| 中 → 英 | 短句 | 1 | 1.9 ms | **1.4 ms** |
+| 中 → 英 | 段落 | 1 | 5.4 ms | **4.2 ms** |
+| 英 → 中 | 长文（32 句） | 1 | 30.6 ms | **23.5 ms** |
+| 中 → 英 | 长文（32 句） | 1 | 50.8 ms | **30.8 ms** |
+| 英 → 中 | 短句 | 8 | 1212 次/秒 | **1974 次/秒** |
+| 中 → 英 | 短句 | 8 | 1125 次/秒 | **2134 次/秒** |
 
-同时加载英中、中英模型后，热态内存约为：普通 444 MiB（冷启动就绪 0.94 s）、Fast 523 MiB（就绪 1.04 s）。
+同时加载英中、中英模型后，热态内存约为：普通 442 MiB（热启动就绪 0.98 s）、Fast 506 MiB（就绪 0.78 s）。
 
-长文支持句子并发与连续批调度；详见[2026-11-23 实测报告](docs/benchmarks/performance-optimization-2026-11-23.md)。`--fast` 开启 Fast，默认关闭；可能增加误译。[译文对比](tests/fixtures/translation-quality-regressions.json)。
+长文支持句子并发与连续批调度；详见[2026-11-23 对比测试](docs/benchmarks/cpu-comparison-2026-11-23.md)与[性能优化报告](docs/benchmarks/performance-optimization-2026-11-23.md)。`--fast` 开启 Fast，默认关闭；可能增加误译。[译文对比](tests/fixtures/translation-quality-regressions.json)。
 
 - 桌面场景：推荐普通模式，优先保证翻译准确性；支持 GPU 加速，独显在适合的负载下可能比 CPU 快数倍。
 - 服务器场景：推荐 Fast 模式，侧重稳定吞吐与速度，可利用多种 CPU 指令集加速。
@@ -184,7 +184,7 @@ Intel Core i5-14400（Linux x64，纯 CPU，关闭缓存），HTTP 三轮 ABBA �
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 很高 | 中等 | [社区数据](https://community.libretranslate.com/t/performance-benchmark-data/486)：中端 CPU 约 3 句/秒，高端约 15–20 句/秒 |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | 高 | 快 | [CTranslate2 基准](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | 其他大模型 | 超高 | 很慢 | 效果好，硬件要求高；高并发常用 vLLM |
-| [LinguaSpark](https://github.com/LinguaSpark/server) | 较低 | 快 | [CPU 对比测试](docs/benchmarks/cpu-comparison-2026-11-17.md) |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | 较低 | 快 | [CPU 对比测试](docs/benchmarks/cpu-comparison-2026-11-23.md) |
 | 本项目 | 随模型和并发变化 | 超快 | CPU 翻译，无缓存状态 |
 
 ## 更多

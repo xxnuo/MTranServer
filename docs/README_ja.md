@@ -156,22 +156,22 @@ mtranserver --offline
 
 ## 性能
 
-Intel Core i5-14400（Linux x64、CPU のみ、キャッシュ無効）で HTTP ABBA を 3 回測定した中央値です。詳細は[計測レポート](benchmarks/performance-optimization-2026-11-23.md)を参照してください。ms は低いほど、回/秒は高いほど良好です。
+AMD Ryzen 9 9950X（4 CPU クォータ、3 GiB メモリ、CPU のみ、キャッシュ無効）で HTTP を 3 回測定した中央値です。詳細は [CPU 比較テスト](benchmarks/cpu-comparison-2026-11-23.md)と[最適化レポート](benchmarks/performance-optimization-2026-11-23.md)を参照してください。ms は低いほど、回/秒は高いほど良好です。
 
 | 方向 | 入力 | 同時実行 | 通常 | Fast |
 | --- | --- | --- | --- | --- |
-| 英 → 中 | 短文 | 1 | 3.6 ms | **2.3 ms** |
-| 英 → 中 | 段落 | 1 | 10.2 ms | **7.3 ms** |
-| 中 → 英 | 短文 | 1 | 5.2 ms | **2.3 ms** |
-| 中 → 英 | 段落 | 1 | 18.6 ms | **7.6 ms** |
-| 英 → 中 | 長文（32 文） | 1 | 53.5 ms | **45.7 ms** |
-| 中 → 英 | 長文（32 文） | 1 | 102.7 ms | **56.2 ms** |
-| 英 → 中 | 短文 | 8 | 627 回/秒 | **831 回/秒** |
-| 中 → 英 | 短文 | 8 | 424 回/秒 | **1063 回/秒** |
+| 英 → 中 | 短文 | 1 | 1.6 ms | **1.4 ms** |
+| 英 → 中 | 段落 | 1 | 4.5 ms | **3.8 ms** |
+| 中 → 英 | 短文 | 1 | 1.9 ms | **1.4 ms** |
+| 中 → 英 | 段落 | 1 | 5.4 ms | **4.2 ms** |
+| 英 → 中 | 長文（32 文） | 1 | 30.6 ms | **23.5 ms** |
+| 中 → 英 | 長文（32 文） | 1 | 50.8 ms | **30.8 ms** |
+| 英 → 中 | 短文 | 8 | 1212 回/秒 | **1974 回/秒** |
+| 中 → 英 | 短文 | 8 | 1125 回/秒 | **2134 回/秒** |
 
-英中・中英の両モデルを読み込んだ状態の RSS メモリ：通常 約 444 MiB（起動 0.94 s）、Fast 約 523 MiB（起動 1.04 s）。
+英中・中英の両モデルを読み込んだ状態の RSS メモリ：通常 約 442 MiB（起動 0.98 s）、Fast 約 506 MiB（起動 0.78 s）。
 
-長文は文単位の並列翻訳と連続バッチスケジューリングに対応しています（[2026-11-23 計測レポート](benchmarks/performance-optimization-2026-11-23.md)）。`--fast` で Fast を有効にできます。誤訳が増える可能性があるため、既定では無効です。[訳文比較](../tests/fixtures/translation-quality-regressions.json)。
+長文は文単位の並列翻訳と連続バッチスケジューリングに対応しています（[2026-11-23 CPU 比較](benchmarks/cpu-comparison-2026-11-23.md)・[最適化レポート](benchmarks/performance-optimization-2026-11-23.md)）。`--fast` で Fast を有効にできます。誤訳が増える可能性があるため、既定では無効です。[訳文比較](../tests/fixtures/translation-quality-regressions.json)。
 
 - デスクトップ：翻訳精度を優先する通常モードを推奨します。GPU アクセラレーションに対応し、適した処理では専用 GPU が CPU の数倍高速になる可能性があります。
 - サーバー：安定したスループットと速度を重視する Fast モードを推奨します。複数の CPU 命令セットによる高速化を利用できます。
@@ -184,7 +184,7 @@ Intel Core i5-14400（Linux x64、CPU のみ、キャッシュ無効）で HTTP 
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | 非常に高い | 中程度 | [コミュニティのデータ](https://community.libretranslate.com/t/performance-benchmark-data/486): 中位 CPU で約 3 文/秒、上位 CPU で約 15–20 文/秒 |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | 高い | 速い | [CTranslate2 のベンチマーク](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | その他の大規模モデル | 極めて高い | 非常に遅い | 品質は良いがハードウェア要件が高い。高同時実行には vLLM がよく使われます |
-| [LinguaSpark](https://github.com/LinguaSpark/server) | 低め | 速い | [CPU 比較テスト](benchmarks/cpu-comparison-2026-11-17.md) |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | 低め | 速い | [CPU 比較テスト](benchmarks/cpu-comparison-2026-11-23.md) |
 | 本プロジェクト | モデルと同時実行数による | 非常に速い | CPU 翻訳、キャッシュ無効 |
 
 ## その他

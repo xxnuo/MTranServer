@@ -17,3 +17,5 @@
 [CPU 性能对比：普通、Fast 与 LinguaSpark（2026-11-17，v5.4.3）](cpu-comparison-2026-11-17.md)：Ryzen 9 9950X（4 CPU 配额、3 GiB 内存）普通与 Fast 双模式更新对照，附结构化数据 [cpu-comparison-2026-11-17.json](cpu-comparison-2026-11-17.json)。
 
 [普通与 Fast 双模式深度性能优化与全链路 ABBA 实测报告（2026-11-23）](performance-optimization-2026-11-23.md)：Intel Core i5-14400（6P+4E / 16 线程）相对 `v5.4.6`（`bde0f20`）的 Waves 1–4 优化架构（INT8 `SsruTranslate` 图、ragged 原生编码器、`PcorePool` + `TeamBarrier`、混合 E-core 连续批调度与 `FullVocabQ4` 团队并行）、跨平台/WASM/Electron 验收及 3 轮 Core/HTTP ABBA 对照，附结构化数据 [performance-optimization-2026-11-23.json](performance-optimization-2026-11-23.json)。
+
+[CPU 性能对比：普通、Fast 与 LinguaSpark（2026-11-23，v5.4.6）](cpu-comparison-2026-11-23.md)：Ryzen 9 9950X（4 CPU 配额、3 GiB 内存，`packed-avx512vnni` + Linux cgroup CPU 配额感知提交 `299ece2`）同口径三方复测与 5.4.3 / 5.1.3 演进对照，附结构化数据 [cpu-comparison-2026-11-23.json](cpu-comparison-2026-11-23.json)。

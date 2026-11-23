@@ -1,6 +1,6 @@
 # 普通与 Fast 双模式深度性能优化与全链路 ABBA 实测报告（2026-11-23）
 
-本报告记录在 `v5.4.6`（基线提交 `bde0f20`）基础上针对 ONNX 普通模式（`--no-fast`）与 Fast 模式（`--fast`）开展的四轮（Waves 1–4）系统优化、跨平台/WASM 兼容验收以及三轮严格交替 ABBA 基准测试（候选提交 `b711a71`）。全部结构化基准与兼容数据见 [performance-optimization-2026-11-23.json](performance-optimization-2026-11-23.json)。
+本报告记录在 `v5.4.6`（基线提交 `bde0f20`）基础上针对 ONNX 普通模式（`--no-fast`）与 Fast 模式（`--fast`）开展的四轮（Waves 1–4）系统优化、跨平台/WASM 兼容验收以及三轮严格交替 ABBA 基准测试（候选提交 `b711a71`）。全部结构化基准与兼容数据见 [performance-optimization-2026-11-23.json](performance-optimization-2026-11-23.json)。后续在提交 `299ece2` 增加 Linux cgroup CPU 配额感知后，于 `AMD Ryzen 9 9950X`（4 CPU 配额、3 GiB 内存）完成的同口径与 LinguaSpark 三方对比实测见 [cpu-comparison-2026-11-23.md](cpu-comparison-2026-11-23.md)。
 
 ## 测试环境
 
@@ -8,6 +8,13 @@
 - **运行环境**：`linux-x64`，Node `v26.13.1`，ONNX Runtime `1.30.0`，`MT_CPU_ONLY=true`，`cacheSize=0`，关闭标点转换与日志落盘
 - **模型与语料**：Mozilla `en_zh-Hans` 与 `zh-Hans_en` 双向模型；HTTP 语料包含 27 条输入（10 英中短句、3 英中段落、1 英中长文 32 句/3244 字符、10 中英短句、2 中英段落、1 中英长文 32 句/1516 字符）
 - **测试方法**：将 `bde0f20` 与 `b711a71` 在干净工作树下逐轮交替执行（round 0 baseline→candidate，round 1 candidate→baseline，round 2 baseline→candidate），所有吞吐与延迟指标取 3 轮各自中位数
+
+## Ryzen 9 9950X 三方同口径对照（含 LinguaSpark，4 CPU 配额）
+
+在提交 `299ece2`（`PcorePool` 接入 cgroup v2 `cpu.max` / v1 `cpu.cfs_quota_us` 配额感知）后，于 `AMD Ryzen 9 9950X`（Podman `--cpus 4 --memory 3g`，后端 `packed-avx512vnni`）按历史官方三轮轮换容器口径实测结果如下，详见 [cpu-comparison-2026-11-23.md](cpu-comparison-2026-11-23.md)（3 轮中位数）：
+
+- **普通模式（`--no-fast`，全词表 `FullVocabQ4`）**：热态/峰值 RSS `442.3 / 442.3 MiB`（较 `5.4.3` 降 **22.7% / 41.6%**），启动就绪 `979.0 ms`；单请求短句 `1.57 / 1.90 ms`（快于 LinguaSpark `3.56 / 3.43 ms`），段落 `4.52 / 5.43 ms`（快于 LinguaSpark `16.98 / 16.17 ms`），32 句长文 `30.58 / 50.79 ms`（快 LinguaSpark `4.27–8.99 倍`）；英→中短句 8 并发 `1212.34 req/s`（反超 LinguaSpark `1173.09`），中→英短句 8 并发 `1125.16 req/s`（较 `5.4.3` `+41.4%`），32 句长文 4 并发 `37.73 / 21.73 req/s`（为 LinguaSpark 的 `1.82–4.47 倍`）。
+- **Fast 模式（`--fast`，`ShortlistTable`）**：热态/峰值 RSS `505.6 / 512.9 MiB`（较 `5.4.3` 降 **22.4% / 37.9%**），启动就绪 `781.0 ms`（`-47.4%`）；短句 `1.45 / 1.40 ms`、段落 `3.79 / 4.22 ms`、32 句长文 `23.52 / 30.83 ms`（快 LinguaSpark `7.03–11.69 倍`）；短句 8 并发 `1974.17 / 2134.26 req/s`（为 LinguaSpark 的 `1.60–1.68 倍`），32 句长文 4 并发 `48.83 / 37.41 req/s`（为 LinguaSpark 的 `3.13–5.79 倍`）。
 
 ## 核心优化架构（Waves 1–4）
 

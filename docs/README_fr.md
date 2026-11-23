@@ -156,22 +156,22 @@ Les variables d'environnement et les autres options sont dans [API_fr.md](API_fr
 
 ## Performances
 
-Intel Core i5-14400 (Linux x64, CPU uniquement, cache désactivé) ; médianes de trois séries HTTP ABBA, voir le [rapport de performances](benchmarks/performance-optimization-2026-11-23.md). Moins de ms et plus de req/s sont préférables.
+AMD Ryzen 9 9950X (quota 4 CPU, 3 GiB RAM, CPU uniquement, cache désactivé) ; médianes de trois séries HTTP alternées, voir la [comparaison CPU](benchmarks/cpu-comparison-2026-11-23.md) et le [rapport d'optimisation](benchmarks/performance-optimization-2026-11-23.md). Moins de ms et plus de req/s sont préférables.
 
 | Sens | Entrée | Concurrence | Défaut | Fast |
 | --- | --- | --- | --- | --- |
-| Anglais → chinois | Courte | 1 | 3.6 ms | **2.3 ms** |
-| Anglais → chinois | Paragraphe | 1 | 10.2 ms | **7.3 ms** |
-| Chinois → anglais | Courte | 1 | 5.2 ms | **2.3 ms** |
-| Chinois → anglais | Paragraphe | 1 | 18.6 ms | **7.6 ms** |
-| Anglais → chinois | Texte long (32 phrases) | 1 | 53.5 ms | **45.7 ms** |
-| Chinois → anglais | Texte long (32 phrases) | 1 | 102.7 ms | **56.2 ms** |
-| Anglais → chinois | Courte | 8 | 627 req/s | **831 req/s** |
-| Chinois → anglais | Courte | 8 | 424 req/s | **1063 req/s** |
+| Anglais → chinois | Courte | 1 | 1.6 ms | **1.4 ms** |
+| Anglais → chinois | Paragraphe | 1 | 4.5 ms | **3.8 ms** |
+| Chinois → anglais | Courte | 1 | 1.9 ms | **1.4 ms** |
+| Chinois → anglais | Paragraphe | 1 | 5.4 ms | **4.2 ms** |
+| Anglais → chinois | Texte long (32 phrases) | 1 | 30.6 ms | **23.5 ms** |
+| Chinois → anglais | Texte long (32 phrases) | 1 | 50.8 ms | **30.8 ms** |
+| Anglais → chinois | Courte | 8 | 1212 req/s | **1974 req/s** |
+| Chinois → anglais | Courte | 8 | 1125 req/s | **2134 req/s** |
 
-Avec les deux sens de traduction chargés : RSS à chaud d'environ 444 MiB en Défaut (démarrage 0.94 s) et 523 MiB en Fast (démarrage 1.04 s).
+Avec les deux sens de traduction chargés : RSS à chaud d'environ 442 MiB en Défaut (démarrage 0.98 s) et 506 MiB en Fast (démarrage 0.78 s).
 
-Les textes longs utilisent le traitement concurrent par phrase et l'ordonnancement continu par lots ; voir le [rapport du 2026-11-23](benchmarks/performance-optimization-2026-11-23.md). `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
+Les textes longs utilisent le traitement concurrent par phrase et l'ordonnancement continu par lots ; voir la [comparaison CPU du 2026-11-23](benchmarks/cpu-comparison-2026-11-23.md) et le [rapport d'optimisation](benchmarks/performance-optimization-2026-11-23.md). `--fast` active Fast, désactivé par défaut car il peut augmenter les erreurs de traduction. [Exemples](../tests/fixtures/translation-quality-regressions.json).
 
 - Sur ordinateur : privilégier le mode Défaut pour la précision des traductions. L’accélération GPU est prise en charge ; un GPU dédié peut être plusieurs fois plus rapide que le CPU sur des charges adaptées.
 - Sur serveur : privilégier le mode Fast pour un débit stable et une vitesse élevée, avec une accélération exploitant plusieurs jeux d’instructions CPU.
@@ -184,7 +184,7 @@ Les textes longs utilisent le traitement concurrent par phrase et l'ordonnanceme
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Très élevée | Moyenne | [Données de la communauté](https://community.libretranslate.com/t/performance-benchmark-data/486) : environ 3 phrases/s sur un CPU milieu de gamme, 15–20 sur un CPU haut de gamme |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | Élevée | Rapide | [Mesures CTranslate2](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Autres grands modèles | Extrêmement élevée | Très lente | Bonne qualité, matériel exigeant ; vLLM est courant pour une forte concurrence |
-| [LinguaSpark](https://github.com/LinguaSpark/server) | Plus faible | Rapide | [Comparaison CPU](benchmarks/cpu-comparison-2026-11-17.md) |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | Plus faible | Rapide | [Comparaison CPU](benchmarks/cpu-comparison-2026-11-23.md) |
 | Ce projet | Selon les modèles et la concurrence | Extrêmement rapide | Traduction sur CPU, cache désactivé |
 
 ## Pour aller plus loin

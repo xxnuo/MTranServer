@@ -156,22 +156,22 @@ Environment variables and the remaining options are in [API_en.md](API_en.md), o
 
 ## Performance
 
-Intel Core i5-14400 (Linux x64, CPU-only, cache disabled); medians of three HTTP ABBA rounds, see the [benchmark report](benchmarks/performance-optimization-2026-11-23.md). Lower ms and higher req/s are better.
+AMD Ryzen 9 9950X (4 CPU quota, 3 GiB RAM, CPU-only, cache disabled); medians of three rotated HTTP rounds, see the [CPU comparison](benchmarks/cpu-comparison-2026-11-23.md) and [optimization report](benchmarks/performance-optimization-2026-11-23.md). Lower ms and higher req/s are better.
 
 | Direction | Input | Concurrency | Default | Fast |
 | --- | --- | --- | --- | --- |
-| English → Chinese | Short | 1 | 3.6 ms | **2.3 ms** |
-| English → Chinese | Paragraph | 1 | 10.2 ms | **7.3 ms** |
-| Chinese → English | Short | 1 | 5.2 ms | **2.3 ms** |
-| Chinese → English | Paragraph | 1 | 18.6 ms | **7.6 ms** |
-| English → Chinese | Long text (32 sentences) | 1 | 53.5 ms | **45.7 ms** |
-| Chinese → English | Long text (32 sentences) | 1 | 102.7 ms | **56.2 ms** |
-| English → Chinese | Short | 8 | 627 req/s | **831 req/s** |
-| Chinese → English | Short | 8 | 424 req/s | **1063 req/s** |
+| English → Chinese | Short | 1 | 1.6 ms | **1.4 ms** |
+| English → Chinese | Paragraph | 1 | 4.5 ms | **3.8 ms** |
+| Chinese → English | Short | 1 | 1.9 ms | **1.4 ms** |
+| Chinese → English | Paragraph | 1 | 5.4 ms | **4.2 ms** |
+| English → Chinese | Long text (32 sentences) | 1 | 30.6 ms | **23.5 ms** |
+| Chinese → English | Long text (32 sentences) | 1 | 50.8 ms | **30.8 ms** |
+| English → Chinese | Short | 8 | 1212 req/s | **1974 req/s** |
+| Chinese → English | Short | 8 | 1125 req/s | **2134 req/s** |
 
-With both translation directions loaded: warm RSS is about 444 MiB for Default (0.94 s startup) and 523 MiB for Fast (1.04 s startup).
+With both translation directions loaded: warm RSS is about 442 MiB for Default (0.98 s startup) and 506 MiB for Fast (0.78 s startup).
 
-Long texts use sentence concurrency and continuous batch scheduling; see the [2026-11-23 benchmark report](benchmarks/performance-optimization-2026-11-23.md). Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
+Long texts use sentence concurrency and continuous batch scheduling; see the [2026-11-23 CPU comparison](benchmarks/cpu-comparison-2026-11-23.md) and [optimization report](benchmarks/performance-optimization-2026-11-23.md). Enable Fast with `--fast`; it is off by default and can increase mistranslations. [Examples](../tests/fixtures/translation-quality-regressions.json).
 
 - Desktop: use Default mode to prioritize translation accuracy. GPU acceleration is supported; a discrete GPU may be several times faster than the CPU on suitable workloads.
 - Server: use Fast mode for stable throughput and speed, with acceleration across multiple CPU instruction sets.
@@ -184,7 +184,7 @@ Long texts use sentence concurrency and continuous batch scheduling; see the [20
 | [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) | Very high | Medium | [Community data](https://community.libretranslate.com/t/performance-benchmark-data/486): about 3 sentences/s on a mid-range CPU, about 15–20 on a high-end CPU |
 | [OPUS-MT](https://github.com/Helsinki-NLP/Opus-MT) | High | Fast | [CTranslate2 benchmarks](https://github.com/OpenNMT/CTranslate2#benchmarks) |
 | Other large models | Extremely high | Very slow | Good quality and high hardware requirements; vLLM is commonly used for high concurrency |
-| [LinguaSpark](https://github.com/LinguaSpark/server) | Lower | Fast | [CPU comparison](benchmarks/cpu-comparison-2026-11-17.md) |
+| [LinguaSpark](https://github.com/LinguaSpark/server) | Lower | Fast | [CPU comparison](benchmarks/cpu-comparison-2026-11-23.md) |
 | This project | Depends on models and concurrency | Extremely fast | CPU translation, cache disabled |
 
 ## More
