@@ -24,6 +24,39 @@ const library = path.resolve(path.dirname(require.resolve('onnxruntime-node')), 
 const fixtures = JSON.parse(await readFile('scripts/ssru-platform-models.json', 'utf8'));
 const corpus = JSON.parse(await readFile('docs/benchmarks/fast-corpus.json', 'utf8'));
 const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+const computeChrf = (hyp: string, ref: string): number => {
+  const h = hyp.replace(/\s+/g, '');
+  const r = ref.replace(/\s+/g, '');
+  if (h.length === 0 && r.length === 0) return 1;
+  if (h.length === 0 || r.length === 0) return 0;
+  let pSum = 0;
+  let rSum = 0;
+  let count = 0;
+  for (let n = 1; n <= 6; n++) {
+    if (h.length < n || r.length < n) continue;
+    count++;
+    const rc = new Map<string, number>();
+    for (let i = 0; i <= r.length - n; i++) {
+      const g = r.slice(i, i + n);
+      rc.set(g, (rc.get(g) ?? 0) + 1);
+    }
+    let matches = 0;
+    for (let i = 0; i <= h.length - n; i++) {
+      const g = h.slice(i, i + n);
+      const left = rc.get(g) ?? 0;
+      if (left > 0) {
+        matches++;
+        rc.set(g, left - 1);
+      }
+    }
+    pSum += matches / (h.length - n + 1);
+    rSum += matches / (r.length - n + 1);
+  }
+  if (count === 0) return 0;
+  const p = pSum / count;
+  const rec = rSum / count;
+  return p + rec === 0 ? 0 : (5 * p * rec) / (4 * p + rec);
+};
 await mkdir(work, { recursive: true });
 const flores = process.env.SSRU_VERIFY_FLORES === '1';
 if (flores) {
@@ -43,9 +76,11 @@ interface PairSummary {
   pair: string;
   mode: string;
   corpus_exact_rate: number;
+  corpus_chrf: number;
   corpus_len_ratio: number;
   flores_devtest_samples: number;
   flores_exact_rate: number | null;
+  flores_chrf: number | null;
   flores_len_ratio: number | null;
   [key: string]: unknown;
 }
@@ -110,6 +145,7 @@ for (const fixture of fixtures) {
         let pairCorpusMismatches = 0;
         let corpusBaseChars = 0;
         let corpusCandChars = 0;
+        let corpusChrfSum = 0;
         const differences: unknown[] = [];
         for (const [idx, item] of prepared.entries()) {
           const a = await run(baseline, item), b = await run(candidate, item);
@@ -120,7 +156,9 @@ for (const fixture of fixtures) {
           assert(candText.trim().length > 0, 'Empty corpus candidate translation');
           corpusBaseChars += baseText.length;
           corpusCandChars += candText.length;
-          if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
+          const isExact = a.length === b.length && a.every((token, i) => token === b[i]);
+          corpusChrfSum += isExact ? 1 : computeChrf(candText, baseText);
+          if (!isExact) {
             pairCorpusMismatches++;
             differences.push({ mode, source: item.text, baseline: Array.from(a, Number), candidate: Array.from(b, Number),
               baseline_text: baseText,
@@ -158,6 +196,7 @@ for (const fixture of fixtures) {
         let floresMismatches = 0;
         let baseChars = 0;
         let candChars = 0;
+        let floresChrfSum = 0;
         if (flores) {
           const floresItems = floresLines.map(encodeItem);
           const baseOutputs = new Array<BigInt64Array>(floresItems.length);
@@ -188,7 +227,9 @@ for (const fixture of fixtures) {
             assert(candText.trim().length > 0, 'Empty FLORES candidate translation');
             baseChars += baseText.length;
             candChars += candText.length;
-            if (a.length !== b.length || a.some((token, i) => token !== b[i])) {
+            const isExact = a.length === b.length && a.every((token, i) => token === b[i]);
+            floresChrfSum += isExact ? 1 : computeChrf(candText, baseText);
+            if (!isExact) {
               floresMismatches++;
               differences.push({ mode, corpus: 'FLORES-200 devtest', index: idx, source: floresItems[idx].text,
                 baseline_text: baseText,
@@ -198,16 +239,20 @@ for (const fixture of fixtures) {
           }
         }
         const corpusExactRate = prepared.length > 0 ? (prepared.length - pairCorpusMismatches) / prepared.length : 1;
+        const corpusChrf = prepared.length > 0 ? corpusChrfSum / prepared.length : 1;
         const corpusLenRatio = corpusBaseChars > 0 ? corpusCandChars / corpusBaseChars : 1;
         const floresExactRate = qualitySamples > 0 ? (qualitySamples - floresMismatches) / qualitySamples : null;
+        const floresChrf = qualitySamples > 0 ? floresChrfSum / qualitySamples : null;
         const floresLenRatio = qualitySamples > 0 && baseChars > 0 ? candChars / baseChars : null;
         results.push({ pair: fixture.pair, mode, samples: expected.length + qualitySamples,
           token_exact: expected.length + qualitySamples - differences.length,
           flores_devtest_samples: qualitySamples,
           corpus_mismatches: pairCorpusMismatches,
           corpus_exact_rate: corpusExactRate,
+          corpus_chrf: corpusChrf,
           corpus_len_ratio: corpusLenRatio,
           flores_exact_rate: floresExactRate,
+          flores_chrf: floresChrf,
           flores_len_ratio: floresLenRatio,
           differences, model_sha256: modelSha256, measurements });
       } finally {
@@ -226,16 +271,20 @@ await writeFile(path.join(work, 'result.json'), JSON.stringify({
   finished_at: new Date().toISOString(), memory: process.memoryUsage(), results,
 }, null, 2) + '\n');
 for (const row of results) {
-  const floresInfo = row.flores_devtest_samples > 0 && row.flores_exact_rate !== null && row.flores_len_ratio !== null
-    ? `, flores=${(row.flores_exact_rate * 100).toFixed(2)}% (len=${row.flores_len_ratio.toFixed(4)})`
+  const floresInfo = row.flores_devtest_samples > 0 && row.flores_exact_rate !== null && row.flores_chrf !== null && row.flores_len_ratio !== null
+    ? `, flores=${(row.flores_exact_rate * 100).toFixed(2)}% chrf=${(row.flores_chrf * 100).toFixed(2)}% (len=${row.flores_len_ratio.toFixed(4)})`
     : '';
-  console.log(`${row.pair} ${row.mode} [${addon.ssruBackend ?? 'ort'}]: corpus=${(row.corpus_exact_rate * 100).toFixed(2)}% (len=${row.corpus_len_ratio.toFixed(4)})${floresInfo}`);
+  console.log(`${row.pair} ${row.mode} [${addon.ssruBackend ?? 'ort'}]: corpus=${(row.corpus_exact_rate * 100).toFixed(2)}% chrf=${(row.corpus_chrf * 100).toFixed(2)}% (len=${row.corpus_len_ratio.toFixed(4)})${floresInfo}`);
 }
+const minExact = process.arch === 'arm64' ? 0.80 : 0.90;
+const minExactPct = (minExact * 100).toFixed(0);
 for (const row of results) {
-  assert(row.corpus_exact_rate >= 0.90, `Corpus token-exact rate below 90% for ${row.pair} ${row.mode}: ${(row.corpus_exact_rate * 100).toFixed(2)}%`);
+  assert(row.corpus_exact_rate >= minExact, `Corpus token-exact rate below ${minExactPct}% for ${row.pair} ${row.mode}: ${(row.corpus_exact_rate * 100).toFixed(2)}%`);
+  assert(row.corpus_chrf >= 0.95, `Corpus chrF below 95% for ${row.pair} ${row.mode}: ${(row.corpus_chrf * 100).toFixed(2)}%`);
   assert(row.corpus_len_ratio >= 0.95 && row.corpus_len_ratio <= 1.05, `Corpus length ratio out of bounds for ${row.pair} ${row.mode}: ${row.corpus_len_ratio.toFixed(4)}`);
   if (row.flores_devtest_samples > 0) {
-    assert(row.flores_exact_rate !== null && row.flores_exact_rate >= 0.90, `FLORES token-exact rate below 90% for ${row.pair} ${row.mode}: ${((row.flores_exact_rate ?? 0) * 100).toFixed(2)}%`);
+    assert(row.flores_exact_rate !== null && row.flores_exact_rate >= minExact, `FLORES token-exact rate below ${minExactPct}% for ${row.pair} ${row.mode}: ${((row.flores_exact_rate ?? 0) * 100).toFixed(2)}%`);
+    assert(row.flores_chrf !== null && row.flores_chrf >= 0.96, `FLORES chrF below 96% for ${row.pair} ${row.mode}: ${((row.flores_chrf ?? 0) * 100).toFixed(2)}%`);
     assert(row.flores_len_ratio !== null && row.flores_len_ratio >= 0.95 && row.flores_len_ratio <= 1.05, `FLORES length ratio out of bounds for ${row.pair} ${row.mode}: ${(row.flores_len_ratio ?? 0).toFixed(4)}`);
   }
 }

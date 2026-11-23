@@ -814,18 +814,18 @@ MTRAN_DEFINE_SELF_ATTN(selfAttentionAvx2Fma, MTRAN_OPS_AVX2_FMA, _mm256_fmadd_ps
 #elif defined(__aarch64__) || defined(_M_ARM64)
 
 inline float32x4_t fastExpNeon(float32x4_t x) noexcept {
-  const float32x4_t vlo = vdupq_n_f32(-87.33654475f);
+  const float32x4_t vlo = vdupq_n_f32(-88.37626266f);
   const float32x4_t vhi = vdupq_n_f32(88.37626266f);
   const float32x4_t vlog2e = vdupq_n_f32(1.44269504088896341f);
-  const float32x4_t vln2_hi = vdupq_n_f32(0.693145751953125f);
-  const float32x4_t vln2_lo = vdupq_n_f32(1.42860682030941723e-6f);
+  const float32x4_t vln2_hi = vdupq_n_f32(-0.693145751953125f);
+  const float32x4_t vln2_lo = vdupq_n_f32(-1.42860682030941723e-6f);
   const float32x4_t vone = vdupq_n_f32(1.0f);
   const int32x4_t vbias = vdupq_n_s32(127);
 
   const float32x4_t z = vminq_f32(vmaxq_f32(x, vlo), vhi);
   const float32x4_t k = vrndnq_f32(vmulq_f32(z, vlog2e));
-  float32x4_t r = vfmsq_f32(z, k, vln2_hi);
-  r = vfmsq_f32(r, k, vln2_lo);
+  float32x4_t r = vfmaq_f32(z, k, vln2_hi);
+  r = vfmaq_f32(r, k, vln2_lo);
 
   float32x4_t p = vfmaq_f32(vdupq_n_f32(1.3981999507e-3f), vdupq_n_f32(1.9875691500e-4f), r);
   p = vfmaq_f32(vdupq_n_f32(8.3334519073e-3f), p, r);
@@ -856,16 +856,23 @@ void softmaxRowNeon(float* scores, std::size_t len) noexcept {
     vsum = vaddq_f32(vsum, e);
   }
   float total = vaddvq_f32(vsum);
-  for (; s < len; ++s) {
-    const float e = std::exp(scores[s] - maximum);
-    scores[s] = e;
-    total += e;
+  if (s < len) {
+    alignas(16) float rem[4] = {};
+    const std::size_t rem_n = len - s;
+    for (std::size_t k = 0; k < rem_n; ++k) rem[k] = scores[s + k] - maximum;
+    alignas(16) float out_rem[4];
+    vst1q_f32(out_rem, fastExpNeon(vld1q_f32(rem)));
+    for (std::size_t k = 0; k < rem_n; ++k) {
+      scores[s + k] = out_rem[k];
+      total += out_rem[k];
+    }
   }
 
-  const float32x4_t vtot = vdupq_n_f32(total);
+  const float inv_tot = 1.0f / total;
+  const float32x4_t vinv = vdupq_n_f32(inv_tot);
   s = 0;
-  for (; s + 4 <= len; s += 4) vst1q_f32(scores + s, vdivq_f32(vld1q_f32(scores + s), vtot));
-  for (; s < len; ++s) scores[s] /= total;
+  for (; s + 4 <= len; s += 4) vst1q_f32(scores + s, vmulq_f32(vld1q_f32(scores + s), vinv));
+  for (; s < len; ++s) scores[s] *= inv_tot;
 }
 
 #endif
@@ -1010,7 +1017,6 @@ void instanceNormAffine(const float* x, const float* scale, const float* bias,
     return;
   }
 #elif defined(__aarch64__) || defined(_M_ARM64)
-  const float inv_dim = 1.0f / static_cast<float>(dim);
   const bool track = (out_mins != nullptr || out_maxs != nullptr);
   for (std::size_t r = 0; r < rows; ++r) {
     const float* xr = x + r * dim;
@@ -1020,7 +1026,7 @@ void instanceNormAffine(const float* x, const float* scale, const float* bias,
     for (; i + 4 <= dim; i += 4) vsum = vaddq_f32(vsum, vld1q_f32(xr + i));
     float sum = vaddvq_f32(vsum);
     for (; i < dim; ++i) sum += xr[i];
-    const float mean = sum * inv_dim;
+    const float mean = sum / static_cast<float>(dim);
     const float32x4_t vmean = vdupq_n_f32(mean);
 
     float32x4_t vvar = vdupq_n_f32(0.0f);
@@ -1034,12 +1040,14 @@ void instanceNormAffine(const float* x, const float* scale, const float* bias,
       const float d = xr[i] - mean;
       var += d * d;
     }
-    const float inv_std = 1.0f / std::sqrt(var * inv_dim + 1e-6f);
+    const float inv_std = 1.0f / std::sqrt(var / static_cast<float>(dim) + 1e-6f);
+    const float offset = -mean * inv_std;
     const float32x4_t vinv = vdupq_n_f32(inv_std);
+    const float32x4_t voff = vdupq_n_f32(offset);
     float32x4_t vmin = vdupq_n_f32(0.0f), vmax = vdupq_n_f32(0.0f);
     i = 0;
     for (; i + 4 <= dim; i += 4) {
-      const float32x4_t norm = vmulq_f32(vsubq_f32(vld1q_f32(xr + i), vmean), vinv);
+      const float32x4_t norm = vaddq_f32(vmulq_f32(vld1q_f32(xr + i), vinv), voff);
       const float32x4_t y = vaddq_f32(vmulq_f32(norm, vld1q_f32(scale + i)), vld1q_f32(bias + i));
       vst1q_f32(yr + i, y);
       if (track) {
@@ -1050,7 +1058,8 @@ void instanceNormAffine(const float* x, const float* scale, const float* bias,
     float rmin = track ? vminvq_f32(vmin) : 0.0f;
     float rmax = track ? vmaxvq_f32(vmax) : 0.0f;
     for (; i < dim; ++i) {
-      const float y = ((xr[i] - mean) * inv_std) * scale[i] + bias[i];
+      const float norm = xr[i] * inv_std + offset;
+      const float y = norm * scale[i] + bias[i];
       yr[i] = y;
       if (track) {
         rmin = std::min(rmin, y);
