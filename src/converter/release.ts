@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'yaml';
 
-export interface Weight { dims: number[]; values: Float32Array }
+export interface Weight { dims: number[]; values: Float32Array; int8?: Int8Array; int8Scale?: number }
 export type ModelConfig = Record<string, any>;
 
 export async function readRelease(file: string) {
@@ -50,6 +50,8 @@ export async function readRelease(file: string) {
       continue;
     }
     let values: Float32Array;
+    let int8: Int8Array | undefined;
+    let int8Scale: number | undefined;
     if (h.kind === 0x404) {
       if (n * 4 > bytes.length) throw new Error('Truncated float tensor');
       values = new Float32Array(n);
@@ -61,15 +63,35 @@ export async function readRelease(file: string) {
       if (!(multiplier > 0) || !Number.isFinite(multiplier)) throw new Error('Invalid quantization multiplier');
       const inverse = Math.fround(1 / multiplier);
       values = new Float32Array(n);
-      for (let i = 0; i < n; i++) values[i] = (width === 1 ? bytes.readInt8(i) : bytes.readInt16LE(i * 2)) * inverse;
-      if (!h.name.includes('Wemb')) {
-        if (h.dims.length !== 2) throw new Error('Non-matrix intgemm tensor');
-        const [rows, cols] = h.dims, transposed = new Float32Array(n);
-        for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) transposed[i * cols + j] = values[j * rows + i];
-        values = transposed;
+      if (h.kind === 0x4101) {
+        int8Scale = inverse;
+        int8 = new Int8Array(n);
+        for (let i = 0; i < n; i++) {
+          const q = bytes.readInt8(i);
+          int8[i] = q;
+          values[i] = q * inverse;
+        }
+        if (!h.name.includes('Wemb')) {
+          if (h.dims.length !== 2) throw new Error('Non-matrix intgemm tensor');
+          const [rows, cols] = h.dims, transposed = new Float32Array(n), transposedInt8 = new Int8Array(n);
+          for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
+            transposed[i * cols + j] = values[j * rows + i];
+            transposedInt8[i * cols + j] = int8[j * rows + i];
+          }
+          values = transposed;
+          int8 = transposedInt8;
+        }
+      } else {
+        for (let i = 0; i < n; i++) values[i] = bytes.readInt16LE(i * 2) * inverse;
+        if (!h.name.includes('Wemb')) {
+          if (h.dims.length !== 2) throw new Error('Non-matrix intgemm tensor');
+          const [rows, cols] = h.dims, transposed = new Float32Array(n);
+          for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) transposed[i * cols + j] = values[j * rows + i];
+          values = transposed;
+        }
       }
     } else throw new Error(`Unsupported tensor type ${h.kind.toString(16)}`);
-    weights.set(h.name, { dims: h.dims, values });
+    weights.set(h.name, int8 ? { dims: h.dims, values, int8, int8Scale } : { dims: h.dims, values });
   }
   if (!config || offset !== data.length) throw new Error('Missing metadata or trailing bytes');
   const c = config;

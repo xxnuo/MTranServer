@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,19 @@ struct TensorView {
 struct NamedTensor {
   std::string name;
   TensorView tensor;
+};
+
+// Contiguous row-major INT8 (0x4101); the owner keeps storage alive and immutable.
+struct Int8TensorView {
+  const std::int8_t* data = nullptr;
+  std::size_t size = 0;
+  std::vector<std::int64_t> shape;
+  float scale = 0.0f;
+};
+
+struct NamedInt8Tensor {
+  std::string name;
+  Int8TensorView tensor;
 };
 
 struct Config {
@@ -101,6 +115,30 @@ class Workspace {
   std::vector<float> ffn_a_, ffn_b_, scores_, projection_, bias_, logits_;
 };
 
+struct BatchResult {
+  std::vector<std::int64_t> tokens;
+  bool ended_with_eos = false;
+};
+
+// Reusable workspace across successive decodeBatch calls. On failure results are cleared.
+class BatchWorkspace {
+ public:
+  BatchWorkspace();
+  ~BatchWorkspace();
+  BatchWorkspace(BatchWorkspace&&) noexcept;
+  BatchWorkspace& operator=(BatchWorkspace&&) noexcept;
+  BatchWorkspace(const BatchWorkspace&) = delete;
+  BatchWorkspace& operator=(const BatchWorkspace&) = delete;
+
+  const std::vector<BatchResult>& results() const noexcept { return results_; }
+
+ private:
+  friend class Decoder;
+  struct Scratch;
+  std::vector<BatchResult> results_;
+  std::unique_ptr<Scratch> scratch_;
+};
+
 // Required graph names (l=1..depth, j=1..ffn_depth):
 // Wemb OR decoder_Wemb [vocab,dim]; decoder_ff_logit_out_b [1,vocab];
 // decoder_l{l}_rnn_{Wf,W} [dim,dim], _bf [1,dim],
@@ -115,27 +153,55 @@ class Workspace {
 // Constructor validates weights once; their external storage outlives Decoder.
 class Decoder {
  public:
-  Decoder(Config config, const std::vector<NamedTensor>& weights);
+  Decoder(Config config, const std::vector<NamedTensor>& weights,
+          const std::vector<NamedInt8Tensor>& int8_weights = {});
+  ~Decoder();
+  Decoder(Decoder&&) noexcept;
+  Decoder& operator=(Decoder&&) noexcept;
+  Decoder(const Decoder&) = delete;
+  Decoder& operator=(const Decoder&) = delete;
+
   // Includes EOS; at most 1 + 3*source_length tokens, exactly like graph.ts.
   // First step uses a zero embedding at position 0; later steps gather tokens.
   void decode(const Request& request, LinearBackend backend, Workspace& workspace,
               MathBackend math = {}) const;
+
+  // Continuous-batching decoder over requests[0..count-1]. Uses packed INT8 /
+  // Q4 / ops kernels + PcorePool when compiled with MTRAN_SSRU_PACKED (and
+  // dim % 32 == 0, vocab >= 9), otherwise runs scalar/LinearBackend fallback.
+  void decodeBatch(const Request* requests, std::size_t count,
+                   BatchWorkspace& workspace,
+                   std::size_t max_threads = 1,
+                   std::size_t max_active_batch = 16,
+                   LinearBackend backend = {},
+                   MathBackend math = {}) const;
+
+  bool has_native_fast() const noexcept;
+  std::size_t vocab_size() const noexcept { return vocab_size_; }
   const Config& config() const noexcept { return config_; }
 
  private:
   struct Norm { const float* scale; const float* bias; };
-  struct Linear { Matrix weight; const float* bias; };
+  struct Linear {
+    Matrix weight;
+    Int8TensorView int8_weight{};
+    const float* bias = nullptr;
+  };
   struct Layer {
     Linear gate, state, query, attention;
     Norm rnn_norm, attention_norm, ffn_norm;
     std::vector<Linear> ffn;
   };
+  struct NativeState;
   Config config_;
   TensorView embedding_;
+  Int8TensorView int8_embedding_;
+  std::size_t vocab_size_ = 0;
   const float* output_bias_ = nullptr;
   std::vector<Layer> layers_;
   std::vector<float> frequency_, offset_;
   std::size_t max_ffn_width_ = 0;
+  std::unique_ptr<const NativeState> native_;
 };
 
 }  // namespace mtran::ssru

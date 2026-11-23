@@ -192,18 +192,60 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
       b.node('Gather', ['decoder_ff_logit_out_b', 'candidate_ids'], ia('axis', 1)); g.node.at(-1)!.output = ['shortlist_bias'];
     }
   }
-  const length = b.squeeze(b.op('Shape', 'X'), 0);
-  let pos = b.node('Cast', [b.op('Range', b.icon([], 0), length, b.icon([], 1))], ia('to', 1)); pos = b.unsqueeze(pos, 1);
-  let x = b.node('Gather', [c['tied-embeddings-all'] ? b.emb : 'encoder_Wemb', 'X'], ia('axis', 0));
-  x = b.position(b.reshape(x, 1, 1, -1, b.dim), pos);
-  for (let i = 1; i <= c['enc-depth']; i++) { const p = `encoder_l${i}_self`, k = b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2), v = b.heads(b.linear(x, p + '_Wv', p + '_bv')); x = b.ffn(b.attention(x, p, k, v), `encoder_l${i}_ffn`); }
-  b.op('Identity', x); g.node.at(-1)!.output = ['encoder_hidden'];
-  for (let i = 1; i <= b.depth; i++) { const p = `decoder_l${i}_context`; b.keys.push(b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2)); b.vals.push(b.heads(b.linear(x, p + '_Wv', p + '_bv'))); }
   if (nativeSsru) {
-    const names = g.initializer.map(t => t.name).filter(name => name === b.emb || name === 'decoder_ff_logit_out_b' || name === 'position_frequency' || name === 'position_offset' || /^decoder_l\d+_/.test(name)).sort();
+    const tied = !!c['tied-embeddings-all'];
+    const encEmb = tied ? b.emb : 'encoder_Wemb';
+    const isModelWeight = (name: string) =>
+      name === b.emb || name === encEmb || name === 'decoder_ff_logit_out_b' ||
+      name === 'position_frequency' || name === 'position_offset' ||
+      /^(?:encoder|decoder)_l\d+_(?:self_(?:W[qkvo]|b[qkvo]|Wo_ln_(?:scale|bias))|rnn_(?:Wf?|bf|ffn_ln_(?:scale|bias))|context_(?:W[qkvo]|b[qkvo]|Wo_ln_(?:scale|bias))|ffn_(?:W\d+|b\d+|ffn_ln_(?:scale|bias)))$/.test(name);
+    const isInt8Candidate = (name: string) =>
+      name === b.emb || name === encEmb || /_W(?:[qkvo]|f|\d+)?$/.test(name);
+    const weightNames = g.initializer.map(t => t.name).filter(isModelWeight).sort();
+    const int8WeightNames: string[] = [];
+    const int8ScaleNames: string[] = [];
+    const initializerMap = new Map(g.initializer.map(t => [t.name, t]));
+    for (const name of weightNames) {
+      if (!isInt8Candidate(name)) continue;
+      const w = weights.get(name);
+      if (!w?.int8 || w.int8Scale === undefined || !(w.int8Scale > 0) || !Number.isFinite(w.int8Scale) || w.int8.length !== w.values.length) continue;
+      const t = initializerMap.get(name)!;
+      t.dataType = 3;
+      t.rawData = new Uint8Array(w.int8.buffer, w.int8.byteOffset, w.int8.byteLength);
+      const scaleName = `${name}_int8_scale`;
+      g.initializer.push(ft(scaleName, [], [w.int8Scale]));
+      int8WeightNames.push(name);
+      int8ScaleNames.push(scaleName);
+    }
     const candInput = shortlist ? 'candidate_ids' : b.icon([0]);
-    g.node.push({ name: 'native_ssru', opType: 'SsruDecode', domain: 'com.mtran', input: ['X', 'eos_id', candInput, ...b.keys, ...b.vals, ...names], output: ['Y'], attribute: [ia('dim', b.dim), ia('heads', b.headsCount), ia('depth', b.depth), ia('ffn_depth', c['transformer-ffn-depth']), { name: 'weight_names', type: 8, strings: names.map(name => Buffer.from(name, 'utf8')) }] });
+    if (!tied && !weightNames.includes('encoder_Wemb')) weightNames.push('encoder_Wemb');
+    weightNames.sort();
+    g.node.push({
+      name: 'native_ssru',
+      opType: 'SsruTranslate',
+      domain: 'com.mtran',
+      input: ['X', 'eos_id', candInput, ...weightNames, ...int8ScaleNames],
+      output: ['Y'],
+      attribute: [
+        ia('dim', b.dim),
+        ia('heads', b.headsCount),
+        ia('enc_depth', c['enc-depth']),
+        ia('dec_depth', b.depth),
+        ia('ffn_depth', c['transformer-ffn-depth']),
+        ia('tied_embeddings', tied ? 1 : 0),
+        { name: 'weight_names', type: 8, strings: weightNames.map(name => Buffer.from(name, 'utf8')) },
+        { name: 'int8_weight_names', type: 8, strings: int8WeightNames.map(name => Buffer.from(name, 'utf8')) },
+        { name: 'int8_scale_names', type: 8, strings: int8ScaleNames.map(name => Buffer.from(name, 'utf8')) },
+      ],
+    });
   } else {
+    const length = b.squeeze(b.op('Shape', 'X'), 0);
+    let pos = b.node('Cast', [b.op('Range', b.icon([], 0), length, b.icon([], 1))], ia('to', 1)); pos = b.unsqueeze(pos, 1);
+    let x = b.node('Gather', [c['tied-embeddings-all'] ? b.emb : 'encoder_Wemb', 'X'], ia('axis', 0));
+    x = b.position(b.reshape(x, 1, 1, -1, b.dim), pos);
+    for (let i = 1; i <= c['enc-depth']; i++) { const p = `encoder_l${i}_self`, k = b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2), v = b.heads(b.linear(x, p + '_Wv', p + '_bv')); x = b.ffn(b.attention(x, p, k, v), `encoder_l${i}_ffn`); }
+    b.op('Identity', x); g.node.at(-1)!.output = ['encoder_hidden'];
+    for (let i = 1; i <= b.depth; i++) { const p = `decoder_l${i}_context`; b.keys.push(b.transpose(b.heads(b.linear(x, p + '_Wk', p + '_bk')), 0, 1, 3, 2)); b.vals.push(b.heads(b.linear(x, p + '_Wv', p + '_bv'))); }
     const zero = b.fc([1, 1, 1, b.dim], ...new Float32Array(b.dim));
     const [hidden, cells] = b.decode(zero, b.fc([], 0), Array(b.depth).fill(zero)), first = b.project(hidden);
     const eos = b.squeeze('eos_id', 0), condition = b.op('Not', b.op('Equal', first, eos));
@@ -220,9 +262,9 @@ export function buildModel(weights: Map<string, Weight>, c: ModelConfig, mode: M
     b.node('Concat', [b.unsqueeze(first, 0), 'generated_tokens'], ia('axis', 0)); g.node.at(-1)!.output = ['Y'];
   }
   prune(g);
-  if (mode === 'qall' || mode === 'qdecoder') dynamicInt8(g, mode);
+  if (!nativeSsru && (mode === 'qall' || mode === 'qdecoder')) dynamicInt8(g, mode);
   check(g);
-  const model = { irVersion: 10, producerName: 'mtranserver-ts', graph: g, opsetImport: [{ domain: '', version: 11 }, ...(mode === 'fp32' ? [] : [{ domain: 'com.microsoft', version: 1 }]), ...(nativeSsru ? [{ domain: 'com.mtran', version: 1 }] : [])] };
+  const model = { irVersion: 10, producerName: 'mtranserver-ts', graph: g, opsetImport: [{ domain: '', version: 11 }, ...(!nativeSsru && mode !== 'fp32' ? [{ domain: 'com.microsoft', version: 1 }] : []), ...(nativeSsru ? [{ domain: 'com.mtran', version: 1 }] : [])] };
   const error = modelType.verify(model); if (error) throw new Error(error);
   return modelType.encode(modelType.create(model)).finish();
 }
